@@ -20,15 +20,18 @@
 | MPV stop | 日志 | ✅ state=1 |
 | DV 策略（MPV） | 日志 `dolby-vision-output=no` | ✅ |
 | A/V 偏移（MPV） | 日志 `audio-delay=0.5` / `sub-delay=-0.3` | ✅ |
-| 轨道枚举（MPV） | 日志 audio=1 sub=1 | ✅ |
-| media3 Tracks 映射 | 日志 groups=2 | ✅ |
+| 轨道枚举（MPV） | 日志 audio=2 sub=2（一轨一组） | ✅ |
+| media3 Tracks 映射 | 日志 groups=4 | ✅ |
+| 音轨切换（MPV） | `TrackUtil` → `aid 1→2`，选中态同步 | ✅ |
+| 字幕切换/关闭（MPV） | `sid 1→2→0`，选中态同步 | ✅ |
+| 音轨/字幕切换（Exo） | `TrackUtil` → groups 选中态 en→zh、English→Chinese→关闭 | ✅ |
 
 ## 待验证
 
 | 项 | 说明 |
 |---|---|
-| 正式播放器音轨/字幕对话框 | 需要 UI 点击回归 |
-| MPV 播放中的轨道切换 | `aid`/`sid` 切换后听感/画面确认 |
+| 正式播放器音轨/字幕对话框 | 已按对话框同一路径（`TrackUtil` + `Track`）在 MPV/Exo 真机验证；未做实际触屏点击 |
+| MPV 播放中的轨道切换 | ✅ `aid 1→2`、`sid 1→2→0`，media3 选中态同步；字幕关闭已修复 |
 | ExoPlayer DV 策略 | `0003` 已实现并通过单测/接线验证，状态：待验收（缺真实 DV 样片） |
 | ExoPlayer A/V 偏移 | 音频：PCM 单元测试通过；字幕：delay 0 vs 3000ms 实测差 2862ms ✅ |
 | 预加载 | 当前默认关闭，需开启后验证 |

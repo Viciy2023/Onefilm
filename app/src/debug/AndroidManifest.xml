@@ -25,5 +25,11 @@
         <activity
             android:name=".debug.SubtitleOffsetSmokeActivity"
             android:exported="true" />
+        <activity
+            android:name=".debug.TrackSwitchSmokeActivity"
+            android:exported="true" />
+        <activity
+            android:name=".debug.ExoTrackSwitchSmokeActivity"
+            android:exported="true" />
     </application>
 </manifest>

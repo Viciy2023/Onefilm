@@ -9,6 +9,7 @@ import android.view.SurfaceView;
 import android.view.TextureView;
 
 import androidx.annotation.Nullable;
+import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
 import androidx.media3.common.SimpleBasePlayer;
@@ -164,34 +165,32 @@ public class MpvPlayer extends SimpleBasePlayer {
 
     private Tracks buildTracks() {
         java.util.List<Tracks.Group> groups = new java.util.ArrayList<>();
-        addTrackGroup(groups, bridge.getAudioTrackDetails(), "mpv-a-", androidx.media3.common.MimeTypes.AUDIO_AAC, bridge.getAudioTrack());
-        addTrackGroup(groups, bridge.getSubtitleTrackDetails(), "mpv-s-", androidx.media3.common.MimeTypes.TEXT_SSA, bridge.getSubtitleTrack());
+        addTrackGroups(groups, bridge.getAudioTrackDetails(), "mpv-a-", androidx.media3.common.MimeTypes.AUDIO_AAC, bridge.getAudioTrack());
+        addTrackGroups(groups, bridge.getSubtitleTrackDetails(), "mpv-s-", androidx.media3.common.MimeTypes.TEXT_SSA, bridge.getSubtitleTrack());
         return groups.isEmpty() ? Tracks.EMPTY : new Tracks(groups);
     }
 
-    private static void addTrackGroup(java.util.List<Tracks.Group> out, String[] details, String prefix, String mime, int currentId) {
-        if (details == null || details.length == 0) return;
-        java.util.List<androidx.media3.common.Format> formats = new java.util.ArrayList<>();
-        int selected = -1;
-        for (int i = 0; i < details.length; i++) {
-            String[] parts = details[i].split("\t", -1);
+    /**
+     * OneFilm: media3 requires all formats in one TrackGroup to share the same language, so every
+     * MPV track gets its own single-format group. This also makes the dialog row -&gt; track mapping
+     * unambiguous.
+     */
+    private static void addTrackGroups(java.util.List<Tracks.Group> out, String[] details, String prefix, String mime, int currentId) {
+        if (details == null) return;
+        for (String detail : details) {
+            String[] parts = detail.split("\t", -1);
             int id = parts.length > 0 ? parseInt(parts[0]) : 0;
             String lang = parts.length > 1 && !parts[1].isEmpty() ? parts[1] : null;
             String title = parts.length > 2 && !parts[2].isEmpty() ? parts[2] : null;
-            formats.add(new androidx.media3.common.Format.Builder()
+            androidx.media3.common.Format format = new androidx.media3.common.Format.Builder()
                     .setId(prefix + id)
                     .setLanguage(lang)
                     .setLabel(title)
                     .setSampleMimeType(mime)
-                    .build());
-            if (id == currentId) selected = i;
+                    .build();
+            androidx.media3.common.TrackGroup group = new androidx.media3.common.TrackGroup(prefix + id, format);
+            out.add(new Tracks.Group(group, false, new int[] {androidx.media3.common.C.FORMAT_HANDLED}, new boolean[] {id == currentId}));
         }
-        androidx.media3.common.TrackGroup group = new androidx.media3.common.TrackGroup(formats.toArray(new androidx.media3.common.Format[0]));
-        int[] support = new int[formats.size()];
-        boolean[] isSelected = new boolean[formats.size()];
-        for (int i = 0; i < support.length; i++) support[i] = androidx.media3.common.C.FORMAT_HANDLED;
-        if (selected >= 0) isSelected[selected] = true;
-        out.add(new Tracks.Group(group, false, support, isSelected));
     }
 
     private static int parseInt(String value) {
@@ -207,16 +206,35 @@ public class MpvPlayer extends SimpleBasePlayer {
         for (TrackSelectionOverride override : parameters.overrides.values()) {
             androidx.media3.common.TrackGroup group = override.mediaTrackGroup;
             String groupId = group.id;
-            if (groupId == null || override.trackIndices.isEmpty()) continue;
+            if (groupId == null) continue;
+            boolean audioGroup = groupId.startsWith("mpv-a-");
+            boolean textGroup = groupId.startsWith("mpv-s-");
+            if (!audioGroup && !textGroup) continue;
+            if (override.trackIndices.isEmpty()) {
+                // Toggling the active track off means "disable this track type" in MPV.
+                if (audioGroup) bridge.setAudioTrack(0);
+                else bridge.setSubtitleTrack(0);
+                continue;
+            }
             int index = override.trackIndices.get(0);
-            int id = parseInt(group.getFormat(index).id.substring(groupId.length()));
-            if (groupId.startsWith("mpv-a-")) {
+            String prefix = audioGroup ? "mpv-a-" : "mpv-s-";
+            String formatId = group.getFormat(index).id;
+            int id = formatId != null && formatId.length() > prefix.length()
+                    ? parseInt(formatId.substring(prefix.length())) : 0;
+            android.util.Log.i("MpvTracks", "select group=" + groupId + " index=" + index + " id=" + id);
+            if (audioGroup) {
                 bridge.setAudioTrack(id);
-            } else if (groupId.startsWith("mpv-s-")) {
+            } else {
                 bridge.setSubtitleTrack(id);
             }
-            invalidateState();
         }
+        if (parameters.disabledTrackTypes.contains(C.TRACK_TYPE_AUDIO)) {
+            bridge.setAudioTrack(0);
+        }
+        if (parameters.disabledTrackTypes.contains(C.TRACK_TYPE_TEXT)) {
+            bridge.setSubtitleTrack(0);
+        }
+        invalidateState();
         return Futures.immediateVoidFuture();
     }
 
