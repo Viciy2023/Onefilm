@@ -31,5 +31,8 @@
         <activity
             android:name=".debug.ExoTrackSwitchSmokeActivity"
             android:exported="true" />
+        <activity
+            android:name=".debug.FormalPlayerSmokeActivity"
+            android:exported="true" />
     </application>
 </manifest>

@@ -370,6 +370,7 @@ public class PlayerManager implements ParseCallback {
     }
 
     public void setTrack(Track track) {
+        android.util.Log.i("OneFilmTracks", "dialog select type=" + track.getType() + " selected=" + track.isSelected() + " fmt=" + track.getFormat());
         TrackUtil.setTrackSelection(player, track);
     }
 

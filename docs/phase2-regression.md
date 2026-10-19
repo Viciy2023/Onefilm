@@ -25,12 +25,14 @@
 | 音轨切换（MPV） | `TrackUtil` → `aid 1→2`，选中态同步 | ✅ |
 | 字幕切换/关闭（MPV） | `sid 1→2→0`，选中态同步 | ✅ |
 | 音轨/字幕切换（Exo） | `TrackUtil` → groups 选中态 en→zh、English→Chinese→关闭 | ✅ |
+| 正式播放器切轨（真机触屏） | uiautomator：设置 → 音轨/字幕 → 点行；日志 + 重开对话框选中态 | ✅ MPV：`aid 1→2`、`sid 1→2→0`；Exo：英语→中文 |
+| 引擎切换（MPV↔Exo） | 控制面板点击 + `ExoPlayerImpl Init` / `MpvRuntime setSurface` 日志 | ✅ |
 
 ## 待验证
 
 | 项 | 说明 |
 |---|---|
-| 正式播放器音轨/字幕对话框 | 已按对话框同一路径（`TrackUtil` + `Track`）在 MPV/Exo 真机验证；未做实际触屏点击 |
+| 正式播放器音轨/字幕对话框 | ✅ 已改为真机触屏验证，见上表 |
 | MPV 播放中的轨道切换 | ✅ `aid 1→2`、`sid 1→2→0`，media3 选中态同步；字幕关闭已修复 |
 | ExoPlayer DV 策略 | `0003` 已实现并通过单测/接线验证，状态：待验收（缺真实 DV 样片） |
 | ExoPlayer A/V 偏移 | 音频：PCM 单元测试通过；字幕：delay 0 vs 3000ms 实测差 2862ms ✅ |
