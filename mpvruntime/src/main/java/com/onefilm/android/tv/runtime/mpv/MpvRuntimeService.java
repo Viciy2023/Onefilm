@@ -51,6 +51,18 @@ public class MpvRuntimeService extends Service {
         }
 
         @Override
+        public int getVideoWidth() {
+            Integer value = MPVLib.INSTANCE.getPropertyInt("width");
+            return value == null ? 0 : value;
+        }
+
+        @Override
+        public int getVideoHeight() {
+            Integer value = MPVLib.INSTANCE.getPropertyInt("height");
+            return value == null ? 0 : value;
+        }
+
+        @Override
         public int getAudioTrackCount() {
             return countTracks("audio");
         }

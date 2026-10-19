@@ -193,6 +193,22 @@ public final class MpvRuntimeClient implements MpvPlayer.RuntimeBridge {
         }
     }
 
+    public int getVideoWidth() {
+        try {
+            return runtime == null ? 0 : runtime.getVideoWidth();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public int getVideoHeight() {
+        try {
+            return runtime == null ? 0 : runtime.getVideoHeight();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
     public void setSubtitleTrack(int id) {
         try {
             if (runtime != null) runtime.setSubtitleTrack(id);

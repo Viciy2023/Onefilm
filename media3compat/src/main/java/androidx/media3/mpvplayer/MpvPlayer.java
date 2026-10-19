@@ -15,6 +15,7 @@ import androidx.media3.common.Player;
 import androidx.media3.common.SimpleBasePlayer;
 import androidx.media3.common.TrackSelectionOverride;
 import androidx.media3.common.Tracks;
+import androidx.media3.common.VideoSize;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.mpvplayer.audio.MpvAudioFilter;
 import androidx.media3.mpvplayer.video.MpvVideoEqualizer;
@@ -66,6 +67,10 @@ public class MpvPlayer extends SimpleBasePlayer {
         int getAudioTrack();
 
         int getSubtitleTrack();
+
+        int getVideoWidth();
+
+        int getVideoHeight();
 
         void setAudioTrack(int id);
 
@@ -157,6 +162,7 @@ public class MpvPlayer extends SimpleBasePlayer {
                 .setAvailableCommands(commands)
                 .setPlaybackState(playbackState)
                 .setPlayWhenReady(playWhenReady, Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
+                .setVideoSize(new VideoSize(bridge.getVideoWidth(), bridge.getVideoHeight()))
                 .setPlaylist(Collections.singletonList(data))
                 .setCurrentMediaItemIndex(0)
                 .setContentPositionMs(positionMs)
@@ -165,6 +171,19 @@ public class MpvPlayer extends SimpleBasePlayer {
 
     private Tracks buildTracks() {
         java.util.List<Tracks.Group> groups = new java.util.ArrayList<>();
+        int videoWidth = bridge.getVideoWidth();
+        int videoHeight = bridge.getVideoHeight();
+        if (videoWidth > 0 && videoHeight > 0) {
+            androidx.media3.common.Format format = new androidx.media3.common.Format.Builder()
+                    .setId("mpv-v-1")
+                    .setSampleMimeType(androidx.media3.common.MimeTypes.VIDEO_H264)
+                    .setWidth(videoWidth)
+                    .setHeight(videoHeight)
+                    .build();
+            androidx.media3.common.TrackGroup group =
+                    new androidx.media3.common.TrackGroup("mpv-v-1", format);
+            groups.add(new Tracks.Group(group, false, new int[] {androidx.media3.common.C.FORMAT_HANDLED}, new boolean[] {true}));
+        }
         addTrackGroups(groups, bridge.getAudioTrackDetails(), "mpv-a-", androidx.media3.common.MimeTypes.AUDIO_AAC, bridge.getAudioTrack());
         addTrackGroups(groups, bridge.getSubtitleTrackDetails(), "mpv-s-", androidx.media3.common.MimeTypes.TEXT_SSA, bridge.getSubtitleTrack());
         return groups.isEmpty() ? Tracks.EMPTY : new Tracks(groups);
@@ -428,6 +447,8 @@ public class MpvPlayer extends SimpleBasePlayer {
         @Override public int getSubtitleTrackCount() { return 0; }
         @Override public int getAudioTrack() { return 0; }
         @Override public int getSubtitleTrack() { return 0; }
+        @Override public int getVideoWidth() { return 0; }
+        @Override public int getVideoHeight() { return 0; }
         @Override public void setAudioTrack(int id) { }
         @Override public void setSubtitleTrack(int id) { }
         @Override public String[] getAudioTrackDetails() { return new String[0]; }
