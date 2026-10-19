@@ -18,6 +18,24 @@ class AppSourceDataSource : SourceDataSource {
         VodConfig.get().ensureLoaded()
         val key = Trans.t2s(title).trim()
         if (key.isEmpty()) return@withContext emptyList()
+
+        val cached = SearchResultCache.items.filter {
+            val name = Trans.t2s(it.title)
+            name == key || name.contains(key)
+        }
+        if (cached.isNotEmpty()) {
+            return@withContext cached.map { card ->
+                SourceItem(
+                    siteName = VodConfig.get().getSite(card.key)?.name.orEmpty(),
+                    key = card.key,
+                    id = card.id,
+                    title = card.title,
+                    subtitle = card.subtitle,
+                    posterUrl = card.posterUrl,
+                )
+            }.distinctBy { "${it.key}:${it.id}" }
+        }
+
         val sites = VodConfig.get().getSites().filter { it.isSearchable }
         val results = coroutineScope {
             sites.map { site ->

@@ -71,6 +71,7 @@ class AppSearchDataSource : SearchDataSource {
             }
         }
         if (page == 1) cache[key] = sorted
+        if (page == 1) SearchResultCache.items = sorted
         send(SearchProgress(sorted, true))
     }
 }
