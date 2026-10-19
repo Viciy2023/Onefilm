@@ -6,9 +6,18 @@ plugins {
 }
 
 def localProps = new Properties()
-rootProject.file('local.properties').withInputStream {
-    localProps.load(it)
+def localPropsFile = rootProject.file('local.properties')
+if (localPropsFile.exists()) {
+    localPropsFile.withInputStream {
+        localProps.load(it)
+    }
 }
+
+def hasReleaseSigning =
+    localProps['storeFile'] &&
+    localProps['keyAlias'] &&
+    localProps['storePassword'] &&
+    localProps['keyPassword']
 
 android {
     namespace = 'com.fongmi.android.tv'
@@ -45,11 +54,13 @@ android {
     }
 
     signingConfigs {
-        release {
-            storeFile file(localProps['storeFile'])
-            keyAlias localProps['keyAlias']
-            keyPassword localProps['storePassword']
-            storePassword localProps['storePassword']
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(localProps['storeFile'])
+                keyAlias localProps['keyAlias']
+                keyPassword localProps['storePassword']
+                storePassword localProps['storePassword']
+            }
         }
     }
 
@@ -57,7 +68,9 @@ android {
         release {
             minifyEnabled = true
             shrinkResources = true
-            signingConfig = signingConfigs.release
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.release
+            }
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'proguard-rules-media.pro'
         }
     }
@@ -85,7 +98,34 @@ android {
 
 AbiApkPackaging.configure(project, SingleArtifact.APK.INSTANCE)
 
+tasks.withType(JavaCompile).configureEach {
+    // SPIKE: collect the full missing-API list instead of javac's 100-error cap
+    options.compilerArgs += ["-Xmaxerrs", "3000"]
+}
+
 dependencies {
+    // SPIKE: official media3 in place of the missing FongMi fork AARs
+    implementation "androidx.media3:media3-common:1.8.0"
+    implementation "androidx.media3:media3-container:1.8.0"
+    implementation "androidx.media3:media3-database:1.8.0"
+    implementation "androidx.media3:media3-datasource:1.8.0"
+    implementation "androidx.media3:media3-datasource-okhttp:1.8.0"
+    implementation "androidx.media3:media3-datasource-rtmp:1.8.0"
+    implementation "androidx.media3:media3-decoder:1.8.0"
+    // SPIKE: av1/ffmpeg/iamf extension AARs are not published on Google Maven
+    // implementation "androidx.media3:media3-decoder-av1:1.8.0"
+    // implementation "androidx.media3:media3-decoder-ffmpeg:1.8.0"
+    // implementation "androidx.media3:media3-decoder-iamf:1.8.0"
+    implementation "androidx.media3:media3-exoplayer:1.8.0"
+    implementation "androidx.media3:media3-exoplayer-dash:1.8.0"
+    implementation "androidx.media3:media3-exoplayer-hls:1.8.0"
+    implementation "androidx.media3:media3-exoplayer-rtsp:1.8.0"
+    implementation "androidx.media3:media3-exoplayer-smoothstreaming:1.8.0"
+    implementation "androidx.media3:media3-extractor:1.8.0"
+    implementation "androidx.media3:media3-ui:1.8.0"
+    implementation "androidx.media3:media3-session:1.8.0"
+    implementation "androidx.media3:media3-effect:1.8.0"
+
     implementation fileTree(dir: "libs", include: ["*.aar"])
     implementation project(':catvod')
     implementation project(':chaquo')
@@ -123,3 +163,4 @@ dependencies {
     annotationProcessor libs.glide.compiler
     coreLibraryDesugaring libs.desugar
 }
+

@@ -1,0 +1,10 @@
+# Copy to local.properties and adjust paths. local.properties is git-ignored.
+#
+# Android SDK (required)
+sdk.dir=D\:\\android_sdk
+
+# Release signing (optional for debug builds; required for a signed release)
+# storeFile=C\:\\path\\to\\onefilm-release.jks
+# keyAlias=onefilm
+# storePassword=change-me
+# keyPassword=change-me
