@@ -24,4 +24,5 @@ dependencies {
     implementation "androidx.media3:media3-extractor:1.8.0"
     implementation "androidx.media3:media3-datasource:1.8.0"
     implementation "androidx.media3:media3-datasource-okhttp:1.8.0"
+    implementation libs.okhttp
 }
