@@ -39,7 +39,7 @@ public final class MpvUtil {
 
     public static boolean isAvailable() {
         try {
-            return MpvPlayer.isAvailable();
+            return MpvRuntimeClient.isRuntimeInstalled(App.get());
         } catch (Throwable e) {
             return false;
         }
@@ -50,7 +50,9 @@ public final class MpvUtil {
     }
 
     public static MpvPlayer buildPlayer(int decode, Player.Listener listener) {
-        MpvPlayer player = new MpvPlayer.Builder(App.get()).setDecode(decode).setConfig(buildConfig()).build();
+        MpvRuntimeClient runtime = new MpvRuntimeClient(App.get(), null);
+        runtime.bind();
+        MpvPlayer player = new MpvPlayer.Builder(App.get()).setDecode(decode).setConfig(buildConfig()).setRuntimeBridge(runtime).build();
         setPreferredTextLanguages(player);
         player.addListener(listener);
         return player;

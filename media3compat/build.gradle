@@ -25,4 +25,5 @@ dependencies {
     compileOnly "androidx.media3:media3-datasource:1.8.0"
     compileOnly "androidx.media3:media3-datasource-okhttp:1.8.0"
     implementation libs.okhttp
+    compileOnly libs.guava
 }
