@@ -30,7 +30,7 @@
 | 决策 | 结果 |
 |---|---|
 | 视觉方向 | Apple TV 风：深色影院基底、大留白、精致排版、内容优先 |
-| 配色 | 中性深色 + 青绿强调色（仅用于进度、选中、焦点） |
+| 配色 | 简约白灰（iOS 风）+ 白色强调（仅用于选中、焦点；不使用彩色强调） |
 | 主题 | 深色默认，浅色可选 |
 | 字体 | 系统字体 + 字重/字距排版；时间数字等宽 |
 | 材质 | 大圆角 + 轻毛玻璃（低版本半透明纯色回退） |
@@ -95,15 +95,15 @@
 
 | Token | 值 |
 |---|---|
-| background | `#0A0A0C` |
-| surface | `#141418` |
-| surfaceElevated | `#1C1C22` |
-| textPrimary | `#F5F5F7` |
-| textSecondary | `#9B9BA1` |
-| divider | `#2A2A31` |
-| accent | `#2ED3C6` |
-| accentPressed | `#25B3A8` |
-| focusRing | `#2ED3C6` |
+| background | `#1C1C1E` |
+| surface | `#2C2C2E` |
+| surfaceElevated | `#3A3A3C` |
+| textPrimary | `#F2F2F7` |
+| textSecondary | `#AEAEB2` |
+| divider | `#3A3A3C` |
+| accent | `#F2F2F7` |
+| accentPressed | `#D1D1D6` |
+| focusRing | `#F2F2F7` @ 30% |
 | scrim | `#000000` @ 60% |
 
 浅色主题映射同一语义 token，保持 WCAG AA 对比度。
@@ -122,7 +122,7 @@
 - 卡片圆角 20dp，面板 28dp，按钮胶囊
 - API 31+：轻毛玻璃（背景模糊 + 半透明）
 - API < 31：半透明纯色回退，不牺牲可读性
-- 焦点态：1.03 缩放 + 2dp 青绿焦点环 + 轻微提亮
+- 焦点态：1.03 缩放 + 2dp 白灰焦点环（30% 透明度）+ 轻微提亮
 
 ### 6.4 间距
 
