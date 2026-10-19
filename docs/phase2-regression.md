@@ -33,18 +33,23 @@
 | 偏移设置 UI（Exo） | 同上；日志 `OneFilmOffset ... engine=exo` | ✅ 字幕 130000→173000→0ms；音频 4400→5800ms |
 | 下一集预加载（Exo） | 本地 JSON 站点双集 + `PreloadSetting` 开启 | ✅ `OneFilmPreload request can=true` → `ExoPlayerSession: preload start` → `Preload completed` |
 | Exo 音频延迟崩溃修复 | 双集播放回归 | ✅ 修复 `AudioDelayProcessor` 自拷贝 `IllegalArgumentException` |
+| leanback 构建/安装 | `assembleLeanbackDebug` + `pm install`（MIUI 拒绝 `adb install`） | ✅ |
+| leanback 启动/播放 | 手机横屏 + Exo，60s 视频播放到 ENDED/循环 | ✅ |
+| leanback 控制条 | `DPAD_CENTER` 呼出，截图可见“字幕/音轨/视轨”与焦点环 | ✅ |
 
 ## 待验证
 
 | 项 | 说明 |
 |---|---|
 | ExoPlayer DV 策略 | `0003` 已实现并通过单测/接线验证，状态：待验收（缺真实 DV 样片） |
+| leanback D-pad 切轨 | 手机 + MIUI 环境下方向键被系统 UI 截获；需 TV/模拟器完成 |
 | DLNA | 未回归 |
 
 ## 已知限制
 
 - MPV 的 `IMpvRuntime` 新增 `getVideoWidth/getVideoHeight`，必须同步升级 runtime APK；旧版 runtime 下 PiP 不会触发（数值回落为 0）。
 - 下一集预加载仅 Exo 引擎生效，且需要同时开启“预加载”和“预加载下一集”；MPV 路径当前为空实现。
+- leanback Debug APK 在 MIUI 手机上无法用 `adb install`（`INSTALL_FAILED_USER_RESTRICTED`），改用 `adb push` + `adb shell pm install -r -t --user 0`。
 - MPV runtime 需要安装独立 APK 并被系统允许自启动/后台运行。
 - 首次绑定前命令会 pending，连接后补发。
 - `PlayerView` 不会自动把 Surface 交给 `SimpleBasePlayer`，MPV 模式由 `PlaybackActivity` 自建 SurfaceView 附加。
