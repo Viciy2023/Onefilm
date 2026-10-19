@@ -35,6 +35,7 @@ public final class MpvRuntimeClient implements MpvPlayer.RuntimeBridge {
     private Surface pendingSurface;
     private String pendingUrl;
     private Boolean pendingPlay;
+    private Integer pendingDolbyVisionMode;
 
     private final ServiceConnection connection = new ServiceConnection() {
         @Override
@@ -102,6 +103,7 @@ public final class MpvRuntimeClient implements MpvPlayer.RuntimeBridge {
                 Log.i(TAG, "pending open " + pendingUrl);
                 runtime.open(pendingUrl);
             }
+            if (pendingDolbyVisionMode != null) runtime.setDolbyVisionMode(pendingDolbyVisionMode);
             if (pendingPlay != null) {
                 if (pendingPlay) runtime.play();
                 else runtime.pause();
@@ -144,6 +146,14 @@ public final class MpvRuntimeClient implements MpvPlayer.RuntimeBridge {
         pendingPlay = false;
         try {
             if (runtime != null) runtime.pause();
+        } catch (Exception ignored) {
+        }
+    }
+
+    public void setDolbyVisionMode(int mode) {
+        pendingDolbyVisionMode = mode;
+        try {
+            if (runtime != null) runtime.setDolbyVisionMode(mode);
         } catch (Exception ignored) {
         }
     }

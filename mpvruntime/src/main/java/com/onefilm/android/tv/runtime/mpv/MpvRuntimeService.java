@@ -44,6 +44,13 @@ public class MpvRuntimeService extends Service {
         }
 
         @Override
+        public void setDolbyVisionMode(int mode) {
+            String value = mode == 3 ? "yes" : (mode == 4 ? "no" : "auto");
+            android.util.Log.i("MpvRuntime", "dolby-vision-output=" + value);
+            MPVLib.INSTANCE.setPropertyString("android-dolby-vision-output", value);
+        }
+
+        @Override
         public void seekTo(long positionMs) {
             double seconds = positionMs / 1000.0;
             Double before = MPVLib.INSTANCE.getPropertyDouble("time-pos");

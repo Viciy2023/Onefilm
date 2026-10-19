@@ -10,6 +10,7 @@ interface IMpvRuntime {
     void play();
     void pause();
     void stop();
+    void setDolbyVisionMode(int mode);
     void seekTo(long positionMs);
     long getPosition();
     long getDuration();

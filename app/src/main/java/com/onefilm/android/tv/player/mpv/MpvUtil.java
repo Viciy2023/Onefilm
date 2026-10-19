@@ -51,6 +51,7 @@ public final class MpvUtil {
 
     public static MpvPlayer buildPlayer(int decode, Player.Listener listener) {
         MpvRuntimeClient runtime = new MpvRuntimeClient(App.get(), null);
+        runtime.setDolbyVisionMode(DecodeSetting.getDolbyVisionOutputPolicy());
         runtime.bind();
         MpvPlayer player = new MpvPlayer.Builder(App.get()).setDecode(decode).setConfig(buildConfig()).setRuntimeBridge(runtime).build();
         setPreferredTextLanguages(player);
