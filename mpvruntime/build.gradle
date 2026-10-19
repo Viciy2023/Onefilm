@@ -1,0 +1,32 @@
+plugins {
+    alias libs.plugins.android.application
+}
+
+android {
+    namespace = 'com.onefilm.android.tv.runtime.mpv'
+    compileSdk libs.versions.compileSdk.get().toInteger()
+
+    defaultConfig {
+        applicationId "com.onefilm.android.tv.runtime.mpv"
+        minSdk libs.versions.minSdk.get().toInteger()
+        targetSdk libs.versions.targetSdk.get().toInteger()
+        versionCode 1
+        versionName "0.1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+dependencies {
+    implementation "io.github.wohal:mpv-android-lib:0.2.4"
+    implementation libs.appcompat
+}
