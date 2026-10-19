@@ -451,6 +451,7 @@ public class PlayerManager implements ParseCallback {
     public void setTextOffsetMs(long offsetMs) {
         textOffsetMs = offsetMs;
         if (player instanceof androidx.media3.mpvplayer.MpvPlayer mpv) mpv.setTextOffsetMs(offsetMs);
+        else androidx.media3.exoplayer.text.TextRenderer.setSubtitleOffsetMs(offsetMs);
     }
 
     public long getAudioOffsetMs() {
