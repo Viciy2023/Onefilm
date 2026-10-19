@@ -68,6 +68,8 @@ public class MpvRuntimeService extends Service {
         MPVLib.INSTANCE.create(this);
         MPVLib.INSTANCE.init();
         MPVLib.INSTANCE.setPropertyString("vo", "gpu");
+        MPVLib.INSTANCE.setPropertyString("gpu-context", "android");
+        MPVLib.INSTANCE.setPropertyString("gpu-api", "opengl");
         MPVLib.INSTANCE.setPropertyString("hwdec", "auto-safe");
         MPVLib.INSTANCE.setPropertyString("keep-open", "yes");
     }

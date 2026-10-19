@@ -125,6 +125,7 @@ public class MpvPlayer extends SimpleBasePlayer {
                                 Player.COMMAND_GET_CURRENT_MEDIA_ITEM,
                                 Player.COMMAND_GET_TIMELINE,
                                 Player.COMMAND_SET_MEDIA_ITEM,
+                                Player.COMMAND_SET_VIDEO_SURFACE,
                                 Player.COMMAND_STOP)
                         .build();
         return new State.Builder()
