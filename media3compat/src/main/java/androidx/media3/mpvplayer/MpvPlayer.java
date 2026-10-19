@@ -215,6 +215,11 @@ public class MpvPlayer extends SimpleBasePlayer {
         return false;
     }
 
+    /** OneFilm: manual surface attach for hosts that do not use PlayerView. */
+    public void attachSurface(@Nullable Surface surface) {
+        bridge.setSurface(surface);
+    }
+
     public void setDecode(int decode) {
     }
 
