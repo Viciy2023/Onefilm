@@ -41,6 +41,7 @@ public class ExoDiskPreload {
         manager = createManager(mediaItem);
         player.setPriorityTaskManager(priorityTaskManager);
         manager.start(player, mediaItem, createOptions());
+        android.util.Log.i("OneFilmPreload", "disk preload started item=" + mediaItem.mediaId);
     }
 
     private void stopManager() {

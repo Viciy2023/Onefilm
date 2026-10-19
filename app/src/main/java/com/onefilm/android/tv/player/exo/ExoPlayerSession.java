@@ -111,6 +111,7 @@ final class ExoPlayerSession {
         if (request.equals(preloadRequest)) return;
         clearPreload();
         preloadRequest = request;
+        Log.d(TAG, "preload start " + mediaItem.mediaId + " @" + startPositionMs);
         libassPlaybackSession.setPreloadMediaItem(mediaItem);
         preloadManager.add(request.mediaItem(), 0);
         preloadManager.invalidate();

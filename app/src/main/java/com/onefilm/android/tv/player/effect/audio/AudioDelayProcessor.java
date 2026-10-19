@@ -22,6 +22,7 @@ public final class AudioDelayProcessor extends BaseAudioProcessor {
     private long pendingSilenceBytes;
     private long pendingDropBytes;
     private boolean pendingInit = true;
+    private byte[] scratch = new byte[0];
 
     public static void setDelayMs(long value) {
         delayMs = value;
@@ -44,10 +45,7 @@ public final class AudioDelayProcessor extends BaseAudioProcessor {
     @Override
     public void queueInput(@NonNull ByteBuffer inputBuffer) {
         if (!enabled) {
-            int remaining = inputBuffer.remaining();
-            ByteBuffer out = replaceOutputBuffer(remaining);
-            out.put(inputBuffer);
-            out.flip();
+            copyInputToOutput(inputBuffer);
             return;
         }
 
@@ -77,9 +75,21 @@ public final class AudioDelayProcessor extends BaseAudioProcessor {
             if (!inputBuffer.hasRemaining()) return;
         }
 
+        copyInputToOutput(inputBuffer);
+    }
+
+    /**
+     * Copies the input through a scratch array. media3 can hand back this processor's own output
+     * buffer as the next input buffer, so writing directly with {@code output.put(input)} would
+     * throw "The source buffer is this buffer".
+     */
+    private void copyInputToOutput(@NonNull ByteBuffer inputBuffer) {
         int remaining = inputBuffer.remaining();
+        if (remaining <= 0) return;
+        if (scratch.length < remaining) scratch = new byte[remaining];
+        inputBuffer.get(scratch, 0, remaining);
         ByteBuffer out = replaceOutputBuffer(remaining);
-        out.put(inputBuffer);
+        out.put(scratch, 0, remaining);
         out.flip();
     }
 

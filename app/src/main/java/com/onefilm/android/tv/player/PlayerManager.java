@@ -477,7 +477,9 @@ public class PlayerManager implements ParseCallback {
     }
 
     public boolean preload(PlaySpec spec, long startPositionMs) {
-        if (!canPreloadNext() || spec == null || !PlayerEngineFactory.matches(engine, spec)) return false;
+        boolean can = canPreloadNext();
+        android.util.Log.i("OneFilmPreload", "request can=" + can + " engine=" + engine + " spec=" + (spec == null ? null : spec.getUrl()));
+        if (!can || spec == null || !PlayerEngineFactory.matches(engine, spec)) return false;
         pendingPreload = new PendingPreload(spec.checkUa(), Math.max(0, startPositionMs));
         startPreloadIfReady();
         return true;

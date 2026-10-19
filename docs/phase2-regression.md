@@ -31,18 +31,20 @@
 | 后台播放（非 PiP） | Home 键 + `dumpsys media_session` | ✅ `PLAYING`，position 5.5s→8.6s 继续前进 |
 | 偏移设置 UI（MPV） | 正式播放页 → 设置 → 字幕/音质 → 偏移滑块 | ✅ 字幕 `sub-delay` +173s→0；音频 `audio-delay` 4.3→5.8s |
 | 偏移设置 UI（Exo） | 同上；日志 `OneFilmOffset ... engine=exo` | ✅ 字幕 130000→173000→0ms；音频 4400→5800ms |
+| 下一集预加载（Exo） | 本地 JSON 站点双集 + `PreloadSetting` 开启 | ✅ `OneFilmPreload request can=true` → `ExoPlayerSession: preload start` → `Preload completed` |
+| Exo 音频延迟崩溃修复 | 双集播放回归 | ✅ 修复 `AudioDelayProcessor` 自拷贝 `IllegalArgumentException` |
 
 ## 待验证
 
 | 项 | 说明 |
 |---|---|
 | ExoPlayer DV 策略 | `0003` 已实现并通过单测/接线验证，状态：待验收（缺真实 DV 样片） |
-| 预加载 | 当前默认关闭，需开启后验证 |
 | DLNA | 未回归 |
 
 ## 已知限制
 
 - MPV 的 `IMpvRuntime` 新增 `getVideoWidth/getVideoHeight`，必须同步升级 runtime APK；旧版 runtime 下 PiP 不会触发（数值回落为 0）。
+- 下一集预加载仅 Exo 引擎生效，且需要同时开启“预加载”和“预加载下一集”；MPV 路径当前为空实现。
 - MPV runtime 需要安装独立 APK 并被系统允许自启动/后台运行。
 - 首次绑定前命令会 pending，连接后补发。
 - `PlayerView` 不会自动把 Surface 交给 `SimpleBasePlayer`，MPV 模式由 `PlaybackActivity` 自建 SurfaceView 附加。

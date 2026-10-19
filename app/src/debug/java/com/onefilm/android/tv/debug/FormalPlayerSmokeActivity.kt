@@ -9,7 +9,17 @@ class FormalPlayerSmokeActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        VideoActivity.start(this, intent.getStringExtra("url") ?: URL)
+        val key = intent.getStringExtra("key")
+        if (key != null) {
+            VideoActivity.start(
+                this,
+                key,
+                intent.getStringExtra("id") ?: "1",
+                intent.getStringExtra("name") ?: "Preload Test",
+            )
+        } else {
+            VideoActivity.start(this, intent.getStringExtra("url") ?: URL)
+        }
         finish()
     }
 
