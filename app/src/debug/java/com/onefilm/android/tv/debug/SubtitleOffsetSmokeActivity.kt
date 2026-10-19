@@ -17,6 +17,7 @@ class SubtitleOffsetSmokeActivity : Activity() {
         super.onCreate(savedInstanceState)
         val offsetMs = intent.getLongExtra("offset", 0L)
         TextRenderer.setSubtitleOffsetMs(offsetMs)
+        TextRenderer.debugCueLogging = true
         val playerView = PlayerView(this)
         playerView.useController = false
         setContentView(playerView, ViewGroup.LayoutParams(-1, -1))
