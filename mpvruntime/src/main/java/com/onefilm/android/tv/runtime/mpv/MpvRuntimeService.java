@@ -51,6 +51,18 @@ public class MpvRuntimeService extends Service {
         }
 
         @Override
+        public void setAudioDelayMs(long delayMs) {
+            android.util.Log.i("MpvRuntime", "audio-delay=" + (delayMs / 1000.0));
+            MPVLib.INSTANCE.setPropertyDouble("audio-delay", delayMs / 1000.0);
+        }
+
+        @Override
+        public void setSubtitleDelayMs(long delayMs) {
+            android.util.Log.i("MpvRuntime", "sub-delay=" + (delayMs / 1000.0));
+            MPVLib.INSTANCE.setPropertyDouble("sub-delay", delayMs / 1000.0);
+        }
+
+        @Override
         public void seekTo(long positionMs) {
             double seconds = positionMs / 1000.0;
             Double before = MPVLib.INSTANCE.getPropertyDouble("time-pos");

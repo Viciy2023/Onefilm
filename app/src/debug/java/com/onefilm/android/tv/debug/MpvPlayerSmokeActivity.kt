@@ -34,6 +34,8 @@ class MpvPlayerSmokeActivity : Activity(), SurfaceHolder.Callback {
         client = MpvRuntimeClient(this, null)
         client.bind()
         client.setDolbyVisionMode(4)
+        client.setAudioDelayMs(500)
+        client.setSubtitleDelayMs(-300)
         player = MpvPlayer.Builder(this).setRuntimeBridge(client).build()
         player.setMediaItem(MediaItem.fromUri(URL))
         player.prepare()

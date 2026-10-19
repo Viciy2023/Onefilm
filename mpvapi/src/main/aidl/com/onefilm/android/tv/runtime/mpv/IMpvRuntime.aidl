@@ -11,6 +11,8 @@ interface IMpvRuntime {
     void pause();
     void stop();
     void setDolbyVisionMode(int mode);
+    void setAudioDelayMs(long delayMs);
+    void setSubtitleDelayMs(long delayMs);
     void seekTo(long positionMs);
     long getPosition();
     long getDuration();

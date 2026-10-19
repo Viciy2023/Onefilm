@@ -53,6 +53,10 @@ public class MpvPlayer extends SimpleBasePlayer {
         void pause();
         void stop();
 
+        void setAudioDelayMs(long delayMs);
+
+        void setSubtitleDelayMs(long delayMs);
+
         void seekTo(long positionMs);
 
         long getPosition();
@@ -229,6 +233,14 @@ public class MpvPlayer extends SimpleBasePlayer {
         bridge.setSurface(surface);
     }
 
+    public void setAudioOffsetMs(long delayMs) {
+        bridge.setAudioDelayMs(delayMs);
+    }
+
+    public void setTextOffsetMs(long delayMs) {
+        bridge.setSubtitleDelayMs(delayMs);
+    }
+
     public void setDecode(int decode) {
     }
 
@@ -315,6 +327,8 @@ public class MpvPlayer extends SimpleBasePlayer {
         @Override public void play() { }
         @Override public void pause() { }
         @Override public void stop() { }
+        @Override public void setAudioDelayMs(long delayMs) { }
+        @Override public void setSubtitleDelayMs(long delayMs) { }
         @Override public void seekTo(long positionMs) { }
         @Override public long getPosition() { return 0; }
         @Override public long getDuration() { return 0; }

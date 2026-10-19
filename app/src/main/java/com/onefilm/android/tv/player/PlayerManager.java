@@ -64,6 +64,8 @@ public class PlayerManager implements ParseCallback {
     private PlaySpec spec;
     private Player player;
     private List<MediaChapter> chapters = new ArrayList<>();
+    private long textOffsetMs;
+    private long audioOffsetMs;
 
     private long pendingStartPositionMs;
     private boolean danmakuEnabled;
@@ -443,17 +445,21 @@ public class PlayerManager implements ParseCallback {
     }
 
     public long getTextOffsetMs() {
-        return 0; // OneFilm compat: offset commands are fork-only
+        return textOffsetMs;
     }
 
     public void setTextOffsetMs(long offsetMs) {
+        textOffsetMs = offsetMs;
+        if (player instanceof androidx.media3.mpvplayer.MpvPlayer mpv) mpv.setTextOffsetMs(offsetMs);
     }
 
     public long getAudioOffsetMs() {
-        return 0; // OneFilm compat: offset commands are fork-only
+        return audioOffsetMs;
     }
 
     public void setAudioOffsetMs(long offsetMs) {
+        audioOffsetMs = offsetMs;
+        if (player instanceof androidx.media3.mpvplayer.MpvPlayer mpv) mpv.setAudioOffsetMs(offsetMs);
     }
 
     public void reset() {

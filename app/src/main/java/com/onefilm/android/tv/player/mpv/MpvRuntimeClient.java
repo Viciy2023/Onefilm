@@ -36,6 +36,8 @@ public final class MpvRuntimeClient implements MpvPlayer.RuntimeBridge {
     private String pendingUrl;
     private Boolean pendingPlay;
     private Integer pendingDolbyVisionMode;
+    private Long pendingAudioDelayMs;
+    private Long pendingSubtitleDelayMs;
 
     private final ServiceConnection connection = new ServiceConnection() {
         @Override
@@ -104,6 +106,8 @@ public final class MpvRuntimeClient implements MpvPlayer.RuntimeBridge {
                 runtime.open(pendingUrl);
             }
             if (pendingDolbyVisionMode != null) runtime.setDolbyVisionMode(pendingDolbyVisionMode);
+            if (pendingAudioDelayMs != null) runtime.setAudioDelayMs(pendingAudioDelayMs);
+            if (pendingSubtitleDelayMs != null) runtime.setSubtitleDelayMs(pendingSubtitleDelayMs);
             if (pendingPlay != null) {
                 if (pendingPlay) runtime.play();
                 else runtime.pause();
@@ -146,6 +150,22 @@ public final class MpvRuntimeClient implements MpvPlayer.RuntimeBridge {
         pendingPlay = false;
         try {
             if (runtime != null) runtime.pause();
+        } catch (Exception ignored) {
+        }
+    }
+
+    public void setAudioDelayMs(long delayMs) {
+        pendingAudioDelayMs = delayMs;
+        try {
+            if (runtime != null) runtime.setAudioDelayMs(delayMs);
+        } catch (Exception ignored) {
+        }
+    }
+
+    public void setSubtitleDelayMs(long delayMs) {
+        pendingSubtitleDelayMs = delayMs;
+        try {
+            if (runtime != null) runtime.setSubtitleDelayMs(delayMs);
         } catch (Exception ignored) {
         }
     }
