@@ -20,6 +20,7 @@ import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.feature.category.CategoryRoute
 import com.onefilm.android.tv.compose.feature.detail.DetailRoute
 import com.onefilm.android.tv.compose.feature.library.LibraryRoute
+import com.onefilm.android.tv.compose.feature.player.PlayerRoute
 import com.onefilm.android.tv.compose.feature.search.SearchRoute
 import com.onefilm.android.tv.compose.feature.source.SourceRoute
 import com.onefilm.android.tv.compose.feature.home.HomeScreen
@@ -120,6 +121,7 @@ class ComposeMainActivity : ComponentActivity() {
                                 if (card.key.isNotBlank() && card.id.isNotBlank()) navController.navigate(Routes.detail(card.key, card.id, card.title))
                             }
                         },
+                        playerContent = { PlayerRoute(onBack = { navController.popBackStack() }) },
                         detailContent = { key, id, title ->
                             DetailRoute(
                                 key = key,

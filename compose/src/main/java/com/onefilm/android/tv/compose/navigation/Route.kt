@@ -10,6 +10,7 @@ object Routes {
     const val DETAIL = "detail/{key}/{id}/{title}"
     const val CATEGORY = "category/{key}/{tid}/{name}"
     const val SOURCES = "sources/{title}"
+    const val PLAYER = "player"
 
     fun detail(key: String, id: String, title: String): String =
         "detail/${Uri.encode(key)}/${Uri.encode(id)}/${Uri.encode(title)}"
