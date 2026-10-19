@@ -459,6 +459,7 @@ public class PlayerManager implements ParseCallback {
 
     public void setAudioOffsetMs(long offsetMs) {
         audioOffsetMs = offsetMs;
+        com.onefilm.android.tv.player.effect.audio.AudioDelayProcessor.setDelayMs(offsetMs);
         if (player instanceof androidx.media3.mpvplayer.MpvPlayer mpv) mpv.setAudioOffsetMs(offsetMs);
     }
 

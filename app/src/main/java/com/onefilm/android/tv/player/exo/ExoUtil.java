@@ -112,7 +112,10 @@ public final class ExoUtil {
 
     private static AudioSink buildAudioSink(Context context, boolean enableFloatOutput, boolean enableAudioOutputPlaybackParams, @Nullable AudioProcessor audioProcessor) {
         DefaultAudioSink.Builder builder = new DefaultAudioSink.Builder(context).setEnableFloatOutput(enableFloatOutput).setEnableAudioTrackPlaybackParams(enableAudioOutputPlaybackParams);
-        if (audioProcessor != null) builder.setAudioProcessors(new AudioProcessor[]{audioProcessor});
+        java.util.List<AudioProcessor> processors = new java.util.ArrayList<>();
+        if (audioProcessor != null) processors.add(audioProcessor);
+        processors.add(new com.onefilm.android.tv.player.effect.audio.AudioDelayProcessor());
+        builder.setAudioProcessors(processors.toArray(new AudioProcessor[0]));
         return builder.build();
     }
 
