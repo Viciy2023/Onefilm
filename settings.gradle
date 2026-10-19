@@ -22,6 +22,7 @@ dependencyResolutionManagement {
 
 include ':app'
 include ':core'
+include ':media3compat'
 include ':catvod'
 include ':chaquo'
 include ':quickjs'

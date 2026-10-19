@@ -1,0 +1,27 @@
+plugins {
+    alias libs.plugins.android.library
+}
+
+android {
+    namespace = 'com.onefilm.media3compat'
+    compileSdk libs.versions.compileSdk.get().toInteger()
+
+    defaultConfig {
+        minSdk libs.versions.minSdk.get().toInteger()
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+dependencies {
+    implementation libs.annotation
+    implementation "androidx.media3:media3-common:1.8.0"
+    implementation "androidx.media3:media3-ui:1.8.0"
+    implementation "androidx.media3:media3-exoplayer:1.8.0"
+    implementation "androidx.media3:media3-extractor:1.8.0"
+    implementation "androidx.media3:media3-datasource:1.8.0"
+    implementation "androidx.media3:media3-datasource-okhttp:1.8.0"
+}

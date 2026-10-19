@@ -16,6 +16,7 @@ local.properties
 
 # Local prebuilt libs
 lib-*.aar
+!app/libs/lib-*.aar
 
 # Agent workspace
 .superpowers/
