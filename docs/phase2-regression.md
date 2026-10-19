@@ -43,7 +43,7 @@
 
 | 项 | 说明 |
 |---|---|
-| ExoPlayer DV 策略 | `0003` 已实现并通过单测/接线验证，状态：待验收（缺真实 DV 样片） |
+| ExoPlayer DV 策略 | **收尾阶段验证**：`0003` 已实现并通过单测/接线验证；提供的 `261019.mp4` 经 ffprobe 为 HEVC Main / yuv420p / bt709 SDR，无 `DOVI configuration record`，不能用于 DV 验收 |
 | DLNA 真实设备 | **收尾阶段验证**：假渲染器已通过；真实电视/音箱的 DIDL、Seek 单位、Range 兼容性留到项目收尾阶段 |
 
 ## 已知限制
@@ -58,6 +58,7 @@
 
 - 片源必须真正携带 Dolby Vision 元数据（容器里的 `dvcC`/`dvvC`、RPU），不是普通 HDR10/SDR。
 - 自检：`ffprobe -show_streams` 应出现 `DOVI configuration record` / `dv_profile`，或 MediaInfo 显示 `Dolby Vision`。
+- 已检查 `261019.mp4`：HEVC Main、`yuv420p`、`bt709`，无 DV side data → 不是 DV 样片。
 - 手机录制只有在相机支持“杜比视界 / HDR Dolby Vision”时才行（如 iPhone 12+ 开启 HDR 视频；部分小米/OPPO 旗舰）。普通 HDR10 录像不会进入 DV 解码路径。
 - 测试机显示能力已确认包含 `HDR_TYPE_DOLBY_VISION`（`dumpsys display` 的 `mSupportedHdrTypes` 含 1），因此可同时验证 `ASSUME_SUPPORTED` 与 `ASSUME_UNSUPPORTED`。
 - 建议提供：10–30 秒 DV 片段（优先 Profile 8.1/8.4 单层），外加一段同内容的非 DV 片段做对照。
