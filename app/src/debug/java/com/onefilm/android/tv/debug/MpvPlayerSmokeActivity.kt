@@ -39,6 +39,14 @@ class MpvPlayerSmokeActivity : Activity(), SurfaceHolder.Callback {
         player.play()
 
         handler.postDelayed({
+            player.pause()
+            Log.i(TAG, "paused state=${player.playbackState} playWhenReady=${player.playWhenReady} pos=${player.currentPosition}")
+        }, 2000)
+        handler.postDelayed({
+            player.play()
+            Log.i(TAG, "resumed state=${player.playbackState} playWhenReady=${player.playWhenReady}")
+        }, 4000)
+        handler.postDelayed({
             Log.i(TAG, "before seek state=${player.playbackState} pos=${player.currentPosition} dur=${player.duration}")
             player.seekTo(3000)
         }, 6000)

@@ -45,7 +45,7 @@ public class MpvRuntimeService extends Service {
 
         @Override
         public void seekTo(long positionMs) {
-            MPVLib.INSTANCE.command("seek", String.valueOf(positionMs / 1000.0), "absolute");
+            MPVLib.INSTANCE.setPropertyDouble("time-pos", positionMs / 1000.0);
         }
 
         @Override
