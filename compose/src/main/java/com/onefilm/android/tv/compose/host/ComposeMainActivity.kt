@@ -121,7 +121,7 @@ class ComposeMainActivity : ComponentActivity() {
                                 if (card.key.isNotBlank() && card.id.isNotBlank()) navController.navigate(Routes.detail(card.key, card.id, card.title))
                             }
                         },
-                        playerContent = { PlayerRoute(onBack = { navController.popBackStack() }) },
+                        playerContent = { url -> PlayerRoute(url = url, onBack = { navController.popBackStack() }) },
                         detailContent = { key, id, title ->
                             DetailRoute(
                                 key = key,

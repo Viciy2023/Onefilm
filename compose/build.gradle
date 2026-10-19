@@ -23,6 +23,7 @@ android {
 }
 
 dependencies {
+    implementation files("../app/libs/lib-exoplayer-release.aar", "../app/libs/lib-ui-release.aar", "../app/libs/lib-common-release.aar", "../app/libs/lib-datasource-release.aar")
     implementation platform(libs.compose.bom)
     implementation libs.compose.ui
     implementation libs.compose.material3
