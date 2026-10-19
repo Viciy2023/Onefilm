@@ -1,0 +1,3 @@
+
+# media3 patches must stay LF so git apply works on every platform
+third_party/media3/patches/*.patch -text
