@@ -4,6 +4,7 @@ import com.onefilm.android.tv.App
 import com.onefilm.android.tv.bean.Word
 import com.onefilm.android.tv.compose.bridge.SearchMetaDataSource
 import com.onefilm.android.tv.setting.Setting
+import com.onefilm.android.tv.utils.ZhuToPin
 import com.github.catvod.net.OkHttp
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +28,7 @@ class AppSearchMetaDataSource : SearchMetaDataSource {
         if (text.isBlank()) return@withContext emptyList()
         runCatching {
             val url = "https://suggest.video.iqiyi.com/?if=mobile&key=" +
-                URLEncoder.encode(text, "UTF-8")
+                URLEncoder.encode(ZhuToPin.get(text), "UTF-8")
             OkHttp.newCall(url).execute().use { response ->
                 Word.objectFrom(response.body.string()).data.map { it.title }.filter { it.isNotBlank() }
             }

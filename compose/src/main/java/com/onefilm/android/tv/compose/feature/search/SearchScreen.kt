@@ -40,6 +40,10 @@ fun SearchScreen(
     onSearch: (String) -> Unit,
     onRetry: () -> Unit,
     onCardClick: (MediaCard) -> Unit,
+    history: List<String> = emptyList(),
+    hot: List<String> = emptyList(),
+    suggestions: List<String> = emptyList(),
+    onQueryChange: (String) -> Unit = {},
 ) {
     var query by remember { mutableStateOf("") }
     Column(
@@ -52,7 +56,7 @@ fun SearchScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 value = query,
-                onValueChange = { query = it },
+                onValueChange = { query = it; onQueryChange(it) },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
                 placeholder = { Text("搜索影片、剧集、演员") },
@@ -60,9 +64,21 @@ fun SearchScreen(
             Spacer(Modifier.padding(horizontal = 6.dp))
             Button(onClick = { onSearch(query) }) { Text("搜索") }
         }
+        if (suggestions.isNotEmpty()) {
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                suggestions.take(6).forEach { word ->
+                    Text(
+                        text = word,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.clip(RoundedCornerShape(16.dp)).background(MaterialTheme.colorScheme.surface).clickable { onSearch(word) }.padding(horizontal = 12.dp, vertical = 6.dp),
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(20.dp))
         when (state) {
-            SearchUiState.Idle -> IdleContent()
+            SearchUiState.Idle -> IdleContent(history, hot) { word -> query = word; onSearch(word) }
             SearchUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
@@ -107,8 +123,14 @@ fun SearchScreen(
 }
 
 @Composable
-private fun IdleContent() {
+private fun IdleContent(history: List<String>, hot: List<String>, onPick: (String) -> Unit) {
     Column {
+        if (history.isNotEmpty()) {
+            Text("搜索历史", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { history.take(8).forEach { w -> Text(w, modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.surface).clickable { onPick(w) }.padding(horizontal = 14.dp, vertical = 8.dp), style = MaterialTheme.typography.bodyMedium) } }
+            Spacer(Modifier.height(20.dp))
+        }
         Text(
             text = "热门搜索",
             style = MaterialTheme.typography.titleMedium,
@@ -116,13 +138,13 @@ private fun IdleContent() {
         )
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            listOf("电影", "剧集", "动漫").forEach { label ->
+            hot.take(12).forEach { label ->
                 Text(
                     text = label,
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { }
+                        .clickable { onPick(label) }
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     style = MaterialTheme.typography.bodyMedium,
                 )

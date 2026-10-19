@@ -38,6 +38,7 @@ class ComposeMainActivity : ComponentActivity() {
         val detailDataSource = ComposeDependencies.detailDataSource
         val categoryDataSource = ComposeDependencies.categoryDataSource
         val searchDataSource = ComposeDependencies.searchDataSource
+        val searchMetaDataSource = ComposeDependencies.searchMetaDataSource
         val sourceDataSource = ComposeDependencies.sourceDataSource
         val launcher = ComposeDependencies.detailLauncher
 
@@ -90,6 +91,7 @@ class ComposeMainActivity : ComponentActivity() {
                         searchContent = {
                             SearchRoute(
                                 dataSource = searchDataSource,
+                                metaDataSource = searchMetaDataSource,
                                 onCardClick = { card ->
                                     navController.navigate(Routes.sources(card.title))
                                 },
