@@ -31,7 +31,7 @@
 
 ## M3 Compose 播放器（下一阶段）
 
-- [ ] `PlayerRoute` / `PlayerScreen` 路由与宿主
+- [x] `PlayerRoute` / `PlayerScreen` 路由与宿主（占位）
 - [ ] 视频画面 `AndroidView` 承载 PlayerView / MPV SurfaceView
 - [ ] Compose 控制条：播放/暂停、进度、快进快退
 - [ ] TV 底部精简条 + 右侧面板
