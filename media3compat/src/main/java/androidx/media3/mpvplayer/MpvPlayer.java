@@ -196,6 +196,14 @@ public class MpvPlayer extends SimpleBasePlayer {
     }
 
     @Override
+    protected ListenableFuture<?> handleStop() {
+        playbackState = Player.STATE_IDLE;
+        playWhenReady = false;
+        bridge.stop();
+        return Futures.immediateVoidFuture();
+    }
+
+    @Override
     protected ListenableFuture<?> handleRelease() {
         released = true;
         handler.removeCallbacks(poller);
