@@ -3,6 +3,7 @@ import com.fongmi.gradle.AbiApkPackaging
 
 plugins {
     alias libs.plugins.android.application
+    alias libs.plugins.kotlin.compose
 }
 
 def localProps = new Properties()
@@ -52,6 +53,7 @@ android {
     buildFeatures {
         buildConfig = true
         viewBinding = true
+        compose = true
     }
 
     signingConfigs {
@@ -105,6 +107,15 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 dependencies {
+    implementation platform(libs.compose.bom)
+    implementation libs.activity.compose
+    implementation libs.compose.ui
+    implementation libs.compose.ui.tooling.preview
+    implementation libs.compose.material3
+    implementation libs.tv.material
+    implementation libs.tv.foundation
+    debugImplementation libs.compose.ui.tooling
+
     // SPIKE: official media3 in place of the missing FongMi fork AARs
     implementation "androidx.media3:media3-common:1.8.0"
     implementation "androidx.media3:media3-container:1.8.0"
