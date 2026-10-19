@@ -44,7 +44,11 @@ class MpvPlayerSmokeActivity : Activity(), SurfaceHolder.Callback {
         }, 6000)
         handler.postDelayed({
             Log.i(TAG, "after seek state=${player.playbackState} pos=${player.currentPosition} dur=${player.duration}")
+            player.stop()
         }, 9000)
+        handler.postDelayed({
+            Log.i(TAG, "after stop state=${player.playbackState}")
+        }, 10500)
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
