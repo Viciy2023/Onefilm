@@ -13,6 +13,7 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
 import androidx.media3.common.SimpleBasePlayer;
 import androidx.media3.common.TrackSelectionOverride;
+import androidx.media3.common.Tracks;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.mpvplayer.audio.MpvAudioFilter;
 import androidx.media3.mpvplayer.video.MpvVideoEqualizer;
@@ -68,6 +69,10 @@ public class MpvPlayer extends SimpleBasePlayer {
         void setAudioTrack(int id);
 
         void setSubtitleTrack(int id);
+
+        String[] getAudioTrackDetails();
+
+        String[] getSubtitleTrackDetails();
 
         void seekTo(long positionMs);
 
@@ -131,6 +136,7 @@ public class MpvPlayer extends SimpleBasePlayer {
                         .setMediaItem(item)
                         .setDurationUs(durationUs)
                         .setIsSeekable(true)
+                        .setTracks(buildTracks())
                         .setPeriods(Collections.singletonList(period))
                         .build();
         Player.Commands commands =
@@ -143,6 +149,7 @@ public class MpvPlayer extends SimpleBasePlayer {
                                 Player.COMMAND_GET_TIMELINE,
                                 Player.COMMAND_SET_MEDIA_ITEM,
                                 Player.COMMAND_SET_VIDEO_SURFACE,
+                                Player.COMMAND_SET_TRACK_SELECTION_PARAMETERS,
                                 Player.COMMAND_STOP)
                         .build();
         return new State.Builder()
@@ -153,6 +160,64 @@ public class MpvPlayer extends SimpleBasePlayer {
                 .setCurrentMediaItemIndex(0)
                 .setContentPositionMs(positionMs)
                 .build();
+    }
+
+    private Tracks buildTracks() {
+        java.util.List<Tracks.Group> groups = new java.util.ArrayList<>();
+        addTrackGroup(groups, bridge.getAudioTrackDetails(), "mpv-a-", androidx.media3.common.MimeTypes.AUDIO_AAC, bridge.getAudioTrack());
+        addTrackGroup(groups, bridge.getSubtitleTrackDetails(), "mpv-s-", androidx.media3.common.MimeTypes.TEXT_SSA, bridge.getSubtitleTrack());
+        return groups.isEmpty() ? Tracks.EMPTY : new Tracks(groups);
+    }
+
+    private static void addTrackGroup(java.util.List<Tracks.Group> out, String[] details, String prefix, String mime, int currentId) {
+        if (details == null || details.length == 0) return;
+        java.util.List<androidx.media3.common.Format> formats = new java.util.ArrayList<>();
+        int selected = -1;
+        for (int i = 0; i < details.length; i++) {
+            String[] parts = details[i].split("\t", -1);
+            int id = parts.length > 0 ? parseInt(parts[0]) : 0;
+            String lang = parts.length > 1 && !parts[1].isEmpty() ? parts[1] : null;
+            String title = parts.length > 2 && !parts[2].isEmpty() ? parts[2] : null;
+            formats.add(new androidx.media3.common.Format.Builder()
+                    .setId(prefix + id)
+                    .setLanguage(lang)
+                    .setLabel(title)
+                    .setSampleMimeType(mime)
+                    .build());
+            if (id == currentId) selected = i;
+        }
+        androidx.media3.common.TrackGroup group = new androidx.media3.common.TrackGroup(formats.toArray(new androidx.media3.common.Format[0]));
+        int[] support = new int[formats.size()];
+        boolean[] isSelected = new boolean[formats.size()];
+        for (int i = 0; i < support.length; i++) support[i] = androidx.media3.common.C.FORMAT_HANDLED;
+        if (selected >= 0) isSelected[selected] = true;
+        out.add(new Tracks.Group(group, false, support, isSelected));
+    }
+
+    private static int parseInt(String value) {
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    @Override
+    protected ListenableFuture<?> handleSetTrackSelectionParameters(androidx.media3.common.TrackSelectionParameters parameters) {
+        for (TrackSelectionOverride override : parameters.overrides.values()) {
+            androidx.media3.common.TrackGroup group = override.mediaTrackGroup;
+            String groupId = group.id;
+            if (groupId == null || override.trackIndices.isEmpty()) continue;
+            int index = override.trackIndices.get(0);
+            int id = parseInt(group.getFormat(index).id.substring(groupId.length()));
+            if (groupId.startsWith("mpv-a-")) {
+                bridge.setAudioTrack(id);
+            } else if (groupId.startsWith("mpv-s-")) {
+                bridge.setSubtitleTrack(id);
+            }
+            invalidateState();
+        }
+        return Futures.immediateVoidFuture();
     }
 
     @Override
@@ -347,6 +412,8 @@ public class MpvPlayer extends SimpleBasePlayer {
         @Override public int getSubtitleTrack() { return 0; }
         @Override public void setAudioTrack(int id) { }
         @Override public void setSubtitleTrack(int id) { }
+        @Override public String[] getAudioTrackDetails() { return new String[0]; }
+        @Override public String[] getSubtitleTrackDetails() { return new String[0]; }
         @Override public void seekTo(long positionMs) { }
         @Override public long getPosition() { return 0; }
         @Override public long getDuration() { return 0; }
