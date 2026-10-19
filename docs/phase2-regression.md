@@ -37,13 +37,14 @@
 | leanback 启动/播放 | 手机横屏 + Exo，60s 视频播放到 ENDED/循环 | ✅ |
 | leanback 控制条 | `DPAD_CENTER` 呼出，截图可见“字幕/音轨/视轨”与焦点环 | ✅ |
 | DLNA 投屏 | 自建本地 UPnP MediaRenderer（SSDP + AVTransport） | ✅ 发现设备 → `SetAVTransportURI` → `Play` → `Seek` → 渲染器 `MEDIA GET 200` |
+| leanback D-pad 切轨 | TV 模拟器（API28 x86）+ 120s 双音轨片 | ✅ 方向键打开音轨对话框并切到 Chinese；`OneFilmTracks type=1 selected=true` |
 
 ## 待验证
 
 | 项 | 说明 |
 |---|---|
 | ExoPlayer DV 策略 | `0003` 已实现并通过单测/接线验证，状态：待验收（缺真实 DV 样片） |
-| leanback D-pad 切轨 | 手机 + MIUI 环境下方向键被系统 UI 截获；需 TV/模拟器完成 |
+| DLNA 真实设备 | 假渲染器已通过；真实电视/音箱的 DIDL、Seek 单位、Range 兼容性待实机验证 |
 
 ## 已知限制
 
@@ -51,6 +52,7 @@
 - 下一集预加载仅 Exo 引擎生效，且需要同时开启“预加载”和“预加载下一集”；MPV 路径当前为空实现。
 - leanback Debug APK 在 MIUI 手机上无法用 `adb install`（`INSTALL_FAILED_USER_RESTRICTED`），改用 `adb push` + `adb shell pm install -r -t --user 0`。
 - DLNA 投屏验证使用自建的本地假渲染器（临时脚本，未入库）；真实电视/音箱的兼容性（DIDL、Seek 单位、HTTP Range）仍需实机确认。
+- leanback 的 x86 模拟器测试需要临时把 `x86` 加入 ABI 分裂（测试后已还原；仓库仍只发布 arm64-v8a / armeabi-v7a）。
 - MPV runtime 需要安装独立 APK 并被系统允许自启动/后台运行。
 - 首次绑定前命令会 pending，连接后补发。
 - `PlayerView` 不会自动把 Surface 交给 `SimpleBasePlayer`，MPV 模式由 `PlaybackActivity` 自建 SurfaceView 附加。
