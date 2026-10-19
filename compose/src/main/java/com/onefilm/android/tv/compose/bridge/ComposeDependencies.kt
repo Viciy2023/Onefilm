@@ -10,4 +10,5 @@ object ComposeDependencies {
     lateinit var favoriteStore: FavoriteStore
     lateinit var sourceDataSource: SourceDataSource
     lateinit var detailLauncher: DetailLauncher
+    lateinit var playbackResolver: PlaybackResolver
 }

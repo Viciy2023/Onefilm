@@ -66,7 +66,7 @@ class ComposeMainActivity : ComponentActivity() {
                 AdaptiveNavigation(
                     isTv = isTv,
                     currentRoute = route,
-                    showTabs = route?.startsWith("detail") != true && route?.startsWith("sources") != true,
+                    showTabs = route?.startsWith("detail") != true && route?.startsWith("sources") != true && route?.startsWith("player") != true,
                     onNavigate = { target ->
                         navController.navigate(target) {
                             launchSingleTop = true
@@ -128,15 +128,9 @@ class ComposeMainActivity : ComponentActivity() {
                                 id = id,
                                 dataSource = detailDataSource,
                                 favoriteStore = favoriteStore,
+                        playbackResolver = ComposeDependencies.playbackResolver,
                                 onBack = { navController.popBackStack() },
-                                onPlay = { episodeName ->
-                                    val card = MediaCard(key, id, title, null, null)
-                                    if (episodeName.isNullOrBlank()) {
-                                        launcher.open(this, card)
-                                    } else {
-                                        launcher.openEpisode(this, card, episodeName)
-                                    }
-                                },
+                                onPlayUrl = { url -> navController.navigate(Routes.player(url)) },
                             )
                         },
                         categoryContent = { key, tid, name ->

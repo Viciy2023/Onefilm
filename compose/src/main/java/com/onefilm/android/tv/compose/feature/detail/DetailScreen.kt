@@ -39,7 +39,7 @@ fun DetailScreen(
     state: DetailUiState,
     onRetry: () -> Unit,
     onBack: () -> Unit,
-    onPlay: (episodeName: String?) -> Unit,
+    onPlay: (flagName: String?, episodeUrl: String?) -> Unit,
     favorite: Boolean = false,
     onToggleFavorite: () -> Unit = {},
 ) {
@@ -59,7 +59,7 @@ fun DetailScreen(
 }
 
 @Composable
-private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: (String?) -> Unit, favorite: Boolean, onToggleFavorite: () -> Unit) {
+private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: (String?, String?) -> Unit, favorite: Boolean, onToggleFavorite: () -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 24.dp),
@@ -122,7 +122,7 @@ private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: (String?
                 Modifier.padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Button(onClick = { onPlay(null) }) { Text("播放") }
+                Button(onClick = { onPlay(null, null) }) { Text("播放") }
                 OutlinedButton(onClick = onToggleFavorite) { Text(if (favorite) "已收藏" else "收藏") }
             }
         }
@@ -155,7 +155,7 @@ private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: (String?
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                                    .clickable { onPlay(episode.name) }
+                                    .clickable { onPlay(flag.name, episode.url) }
                                     .padding(horizontal = 14.dp, vertical = 8.dp),
                             )
                         }
