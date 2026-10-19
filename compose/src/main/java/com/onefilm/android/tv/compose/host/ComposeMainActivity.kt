@@ -19,6 +19,7 @@ import com.onefilm.android.tv.compose.design.OneFilmTheme
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.feature.category.CategoryRoute
 import com.onefilm.android.tv.compose.feature.detail.DetailRoute
+import com.onefilm.android.tv.compose.feature.library.LibraryRoute
 import com.onefilm.android.tv.compose.feature.search.SearchRoute
 import com.onefilm.android.tv.compose.feature.source.SourceRoute
 import com.onefilm.android.tv.compose.feature.home.HomeScreen
@@ -39,6 +40,7 @@ class ComposeMainActivity : ComponentActivity() {
         val categoryDataSource = ComposeDependencies.categoryDataSource
         val searchDataSource = ComposeDependencies.searchDataSource
         val searchMetaDataSource = ComposeDependencies.searchMetaDataSource
+        val libraryDataSource = ComposeDependencies.libraryDataSource
         val sourceDataSource = ComposeDependencies.sourceDataSource
         val launcher = ComposeDependencies.detailLauncher
 
@@ -111,6 +113,11 @@ class ComposeMainActivity : ComponentActivity() {
                                     }
                                 },
                             )
+                        },
+                        libraryContent = {
+                            LibraryRoute(libraryDataSource) { card ->
+                                if (card.key.isNotBlank() && card.id.isNotBlank()) navController.navigate(Routes.detail(card.key, card.id, card.title))
+                            }
                         },
                         detailContent = { key, id, title ->
                             DetailRoute(
