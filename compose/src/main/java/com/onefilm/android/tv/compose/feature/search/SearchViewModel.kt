@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.bridge.SearchDataSource
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +13,11 @@ import kotlinx.coroutines.launch
 sealed interface SearchUiState {
     data object Idle : SearchUiState
     data object Loading : SearchUiState
-    data class Content(val keyword: String, val items: List<MediaCard>) : SearchUiState
+    data class Content(
+        val keyword: String,
+        val items: List<MediaCard>,
+        val done: Boolean = false,
+    ) : SearchUiState
     data class Empty(val keyword: String) : SearchUiState
     data class Error(val message: String = "搜索失败，请重试") : SearchUiState
 }
@@ -25,23 +30,24 @@ class SearchViewModel(
     val state: StateFlow<SearchUiState> = _state.asStateFlow()
 
     private var lastKeyword = ""
+    private var job: Job? = null
 
     fun search(keyword: String) {
         lastKeyword = keyword.trim()
+        job?.cancel()
         if (lastKeyword.isEmpty()) {
             _state.value = SearchUiState.Idle
             return
         }
-        viewModelScope.launch {
+        job = viewModelScope.launch {
             _state.value = SearchUiState.Loading
-            _state.value = runCatching { dataSource.search(lastKeyword) }
-                .fold(
-                    onSuccess = { page ->
-                        if (page.items.isEmpty()) SearchUiState.Empty(lastKeyword)
-                        else SearchUiState.Content(lastKeyword, page.items)
-                    },
-                    onFailure = { SearchUiState.Error() },
-                )
+            dataSource.search(lastKeyword).collect { progress ->
+                _state.value = when {
+                    progress.items.isNotEmpty() -> SearchUiState.Content(lastKeyword, progress.items, progress.done)
+                    progress.done -> SearchUiState.Empty(lastKeyword)
+                    else -> SearchUiState.Loading
+                }
+            }
         }
     }
 

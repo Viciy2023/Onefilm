@@ -1,7 +1,9 @@
 package com.onefilm.android.tv.compose.bridge
 
-data class SearchPage(val items: List<MediaCard>)
+import kotlinx.coroutines.flow.Flow
+
+data class SearchProgress(val items: List<MediaCard>, val done: Boolean)
 
 interface SearchDataSource {
-    suspend fun search(keyword: String, page: Int = 1): SearchPage
+    fun search(keyword: String, page: Int = 1): Flow<SearchProgress>
 }
