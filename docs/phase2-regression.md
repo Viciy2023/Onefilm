@@ -38,6 +38,7 @@
 | leanback 控制条 | `DPAD_CENTER` 呼出，截图可见“字幕/音轨/视轨”与焦点环 | ✅ |
 | DLNA 投屏 | 自建本地 UPnP MediaRenderer（SSDP + AVTransport） | ✅ 发现设备 → `SetAVTransportURI` → `Play` → `Seek` → 渲染器 `MEDIA GET 200` |
 | leanback D-pad 切轨 | TV 模拟器（API28 x86）+ 120s 双音轨片 | ✅ 方向键打开音轨对话框并切到 Chinese；`OneFilmTracks type=1 selected=true` |
+| Compose M1：模块/主题/导航/首页 | 9 项 Compose 测试 + 真机真实数据 | ✅ 入口/回退均验证 |
 
 ## 待验证
 
