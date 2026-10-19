@@ -44,7 +44,7 @@
 | 项 | 说明 |
 |---|---|
 | ExoPlayer DV 策略 | `0003` 已实现并通过单测/接线验证，状态：待验收（缺真实 DV 样片） |
-| DLNA 真实设备 | 假渲染器已通过；真实电视/音箱的 DIDL、Seek 单位、Range 兼容性待实机验证 |
+| DLNA 真实设备 | **收尾阶段验证**：假渲染器已通过；真实电视/音箱的 DIDL、Seek 单位、Range 兼容性留到项目收尾阶段 |
 
 ## 已知限制
 
@@ -53,6 +53,14 @@
 - leanback Debug APK 在 MIUI 手机上无法用 `adb install`（`INSTALL_FAILED_USER_RESTRICTED`），改用 `adb push` + `adb shell pm install -r -t --user 0`。
 - DLNA 投屏验证使用自建的本地假渲染器（临时脚本，未入库）；真实电视/音箱的兼容性（DIDL、Seek 单位、HTTP Range）仍需实机确认。
 - leanback 的 x86 模拟器测试需要临时把 `x86` 加入 ABI 分裂（测试后已还原；仓库仍只发布 arm64-v8a / armeabi-v7a）。
+
+## DV 样片要求（待验收）
+
+- 片源必须真正携带 Dolby Vision 元数据（容器里的 `dvcC`/`dvvC`、RPU），不是普通 HDR10/SDR。
+- 自检：`ffprobe -show_streams` 应出现 `DOVI configuration record` / `dv_profile`，或 MediaInfo 显示 `Dolby Vision`。
+- 手机录制只有在相机支持“杜比视界 / HDR Dolby Vision”时才行（如 iPhone 12+ 开启 HDR 视频；部分小米/OPPO 旗舰）。普通 HDR10 录像不会进入 DV 解码路径。
+- 测试机显示能力已确认包含 `HDR_TYPE_DOLBY_VISION`（`dumpsys display` 的 `mSupportedHdrTypes` 含 1），因此可同时验证 `ASSUME_SUPPORTED` 与 `ASSUME_UNSUPPORTED`。
+- 建议提供：10–30 秒 DV 片段（优先 Profile 8.1/8.4 单层），外加一段同内容的非 DV 片段做对照。
 - MPV runtime 需要安装独立 APK 并被系统允许自启动/后台运行。
 - 首次绑定前命令会 pending，连接后补发。
 - `PlayerView` 不会自动把 Surface 交给 `SimpleBasePlayer`，MPV 模式由 `PlaybackActivity` 自建 SurfaceView 附加。
