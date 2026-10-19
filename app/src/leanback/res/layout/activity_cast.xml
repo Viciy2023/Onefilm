@@ -14,7 +14,7 @@
         style="@style/Player.Vod"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:surface_type="none" />
+        app:surface_type="surface_view" />
 
     <include
         android:id="@+id/widget"
