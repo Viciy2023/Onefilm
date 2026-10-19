@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import com.onefilm.android.tv.compose.design.OneFilmTheme
@@ -33,7 +34,8 @@ class ComposeMainActivity : ComponentActivity() {
         setContent {
             OneFilmTheme {
                 val navController = rememberNavController()
-                val route = navController.currentBackStackEntry?.destination?.route
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                val route = backStackEntry?.destination?.route
                 val homeViewModel: HomeViewModel = viewModel(
                     factory = viewModelFactory {
                         initializer { HomeViewModel(dataSource) }
