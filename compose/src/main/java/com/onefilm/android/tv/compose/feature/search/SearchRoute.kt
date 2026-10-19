@@ -32,7 +32,7 @@ fun SearchRoute(
     val scope = rememberCoroutineScope()
     SearchScreen(
         state = state,
-        onSearch = viewModel::search,
+        onSearch = { keyword -> metaDataSource.record(keyword); viewModel.search(keyword) },
         onRetry = viewModel::retry,
         onCardClick = onCardClick,
         history = remember { metaDataSource.history() },

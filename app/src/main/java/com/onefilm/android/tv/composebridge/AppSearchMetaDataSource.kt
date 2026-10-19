@@ -35,6 +35,16 @@ class AppSearchMetaDataSource : SearchMetaDataSource {
         }.getOrDefault(hot())
     }
 
+    override fun record(keyword: String) {
+        if (keyword.isBlank()) return
+        val items = history().toMutableList()
+        items.remove(keyword)
+        items.add(0, keyword)
+        runCatching {
+            Setting.putKeyword(App.gson().toJson(items.take(20)))
+        }
+    }
+
     override suspend fun suggest(text: String): List<String> = withContext(Dispatchers.IO) {
         if (text.isBlank()) return@withContext emptyList()
         runCatching {
