@@ -107,6 +107,9 @@ fun SearchScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
             ) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Text("搜索(${state.completed}/${state.total})", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 4.dp))
+                }
                 itemsIndexed(
                     items = state.items,
                     key = { index, card -> "${card.key}:${card.id}:$index" },

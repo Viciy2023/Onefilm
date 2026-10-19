@@ -17,6 +17,8 @@ sealed interface SearchUiState {
         val keyword: String,
         val items: List<MediaCard>,
         val done: Boolean = false,
+        val completed: Int = 0,
+        val total: Int = 0,
     ) : SearchUiState
     data class Empty(val keyword: String) : SearchUiState
     data class Error(val message: String = "搜索失败，请重试") : SearchUiState
@@ -43,7 +45,7 @@ class SearchViewModel(
             _state.value = SearchUiState.Loading
             dataSource.search(lastKeyword).collect { progress ->
                 _state.value = when {
-                    progress.items.isNotEmpty() -> SearchUiState.Content(lastKeyword, progress.items, progress.done)
+                    progress.items.isNotEmpty() -> SearchUiState.Content(lastKeyword, progress.items, progress.done, progress.completed, progress.total)
                     progress.done -> SearchUiState.Empty(lastKeyword)
                     else -> SearchUiState.Loading
                 }

@@ -10,8 +10,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 class AppSearchDataSource : SearchDataSource {
 
@@ -26,23 +29,32 @@ class AppSearchDataSource : SearchDataSource {
         }
         if (page == 1) cache[key]?.let { send(SearchProgress(it, true)); return@channelFlow }
 
+        // quickSearch 源优先，其余源继续并行；并发 32，返回一个追加一个。
         val sites = VodConfig.get().getSites().filter { it.isSearchable }
+            .sortedByDescending { it.isQuickSearch }
+        val semaphore = Semaphore(32)
+        val completed = AtomicInteger(0)
         val seen = LinkedHashSet<String>()
         val items = ArrayList<MediaCard>()
 
         val jobs = sites.map { site ->
             launch(Dispatchers.IO) {
-                runCatching {
-                    withTimeout(5_000) { SiteApi.searchContent(site, key, false, page.toString()).list }
-                }.onSuccess { vods ->
-                    val snapshot: List<MediaCard>
-                    synchronized(items) {
-                        HomeFeedMapper.fromVods(vods, site.key).forEach { card ->
-                            if (seen.add("${card.key}:${card.id}")) items.add(card)
+                semaphore.withPermit {
+                    runCatching {
+                        withTimeout(5_000) { SiteApi.searchContent(site, key, false, page.toString()).list }
+                    }.onSuccess { vods ->
+                        val snapshot: List<MediaCard>
+                        val doneCount = completed.incrementAndGet()
+                        synchronized(items) {
+                            HomeFeedMapper.fromVods(vods, site.key).forEach { card ->
+                                if (seen.add("${card.key}:${card.id}")) items.add(card)
+                            }
+                            snapshot = items.toList()
                         }
-                        snapshot = items.toList()
+                        send(SearchProgress(snapshot, false, doneCount, sites.size))
+                    }.onFailure {
+                        completed.incrementAndGet()
                     }
-                    send(SearchProgress(snapshot, false))
                 }
             }
         }
@@ -62,6 +74,6 @@ class AppSearchDataSource : SearchDataSource {
             cache[key] = sorted
             SearchResultCache.items = sorted
         }
-        send(SearchProgress(sorted, true))
+        send(SearchProgress(sorted, true, sites.size, sites.size))
     }
 }
