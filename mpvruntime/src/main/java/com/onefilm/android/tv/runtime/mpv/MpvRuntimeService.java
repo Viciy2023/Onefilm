@@ -45,7 +45,15 @@ public class MpvRuntimeService extends Service {
 
         @Override
         public void seekTo(long positionMs) {
-            MPVLib.INSTANCE.setPropertyDouble("time-pos", positionMs / 1000.0);
+            double seconds = positionMs / 1000.0;
+            Double before = MPVLib.INSTANCE.getPropertyDouble("time-pos");
+            android.util.Log.i("MpvRuntime", "seek before=" + before + " target=" + seconds);
+            MPVLib.INSTANCE.command("seek", String.valueOf(seconds), "absolute");
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                Double after = MPVLib.INSTANCE.getPropertyDouble("time-pos");
+                Boolean seeking = MPVLib.INSTANCE.getPropertyBoolean("seeking");
+                android.util.Log.i("MpvRuntime", "seek after=" + after + " seeking=" + seeking);
+            }, 600);
         }
 
         @Override
