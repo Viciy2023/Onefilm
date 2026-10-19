@@ -37,7 +37,14 @@
         </intent>
     </queries>
 
-    <application
+    <queries>
+    <package android:name="com.onefilm.android.tv.runtime.mpv" />
+    <intent>
+        <action android:name="com.onefilm.android.tv.runtime.mpv.BIND" />
+    </intent>
+</queries>
+
+<application
         android:name=".App"
         android:allowBackup="false"
         android:appCategory="video"

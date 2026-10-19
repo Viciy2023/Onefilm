@@ -124,6 +124,7 @@ dependencies {
     implementation libs.annotation
     implementation project(':core')
     implementation project(':media3compat')
+    implementation project(':mpvapi')
     implementation fileTree(dir: "libs", include: ["*.aar"])
     implementation project(':catvod')
     implementation project(':chaquo')

@@ -33,4 +33,5 @@ android {
 dependencies {
     implementation "io.github.wohal:mpv-android-lib:0.2.4"
     implementation libs.appcompat
+    implementation project(':mpvapi')
 }

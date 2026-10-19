@@ -16,5 +16,8 @@
         <activity
             android:name=".debug.ChapterSmokeActivity"
             android:exported="true" />
+        <activity
+            android:name=".debug.MpvClientSmokeActivity"
+            android:exported="true" />
     </application>
 </manifest>
