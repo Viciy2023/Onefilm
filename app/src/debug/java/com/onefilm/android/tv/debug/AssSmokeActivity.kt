@@ -1,4 +1,4 @@
-﻿package com.onefilm.android.tv.debug
+package com.onefilm.android.tv.debug
 
 import android.app.Activity
 import android.os.Bundle
@@ -10,7 +10,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import io.github.assrender.AssExtractorsFactory
 import io.github.assrender.AssHandler
-import io.github.assrender.AssRenderersFactory
+// import io.github.assrender.AssRenderersFactory
 import io.github.assrender.SubtitleOverlayView
 
 /** Debug-only libass verification: real MKV with an embedded ASS track. */
@@ -22,7 +22,8 @@ class AssSmokeActivity : Activity() {
         super.onCreate(savedInstanceState)
         val overlay = SubtitleOverlayView(this)
         val handler = AssHandler(this, overlay, 640, 360)
-        player = ExoPlayer.Builder(this, AssRenderersFactory(this, handler)).build()
+        handler.onAssTrackDetected = { handler.selectTrack(0) }
+        player = ExoPlayer.Builder(this).build()
         handler.player = player
         val mediaSourceFactory = DefaultMediaSourceFactory(
             DefaultHttpDataSource.Factory(),

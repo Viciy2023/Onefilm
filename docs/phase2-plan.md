@@ -5,7 +5,7 @@
 | 项 | 状态 | 说明 |
 |---|---|---|
 | 3.1 弹幕 | ✅ 可用（真机渲染验证） | Canvas 引擎，XML 解析、泳道、样式、过滤 |
-| 3.2 libass | ⏳ 待验证 | assrender 已接入；缺带 ASS 的测试片源 |
+| 3.2 libass | ✅ 已验证 | assrender 引擎 + App 接线；自动像素检测通过 |
 | 3.3 MPV | 🔜 方案 B | 独立 runtime 模块，隔离 `libavcodec.so` |
 | 3.4 Dolby Vision | 🔜 待做 | 需要自建 media3 fork |
 | 3.5 预加载/偏移/选集章节 | 🔜 待做 | 部分需要 media3 fork 扩展 Player |

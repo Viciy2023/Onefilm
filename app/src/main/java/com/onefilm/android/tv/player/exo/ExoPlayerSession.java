@@ -70,6 +70,7 @@ final class ExoPlayerSession {
             this.assOverlay = new SubtitleOverlayView(App.get());
             this.assHandler = new AssHandler(App.get(), assOverlay, w, h);
             this.assHandler.setPlayer(player);
+            this.assHandler.setOnAssTrackDetected(() -> { assHandler.selectTrack(0); return kotlin.Unit.INSTANCE; });
         } else {
             this.assOverlay = null;
             this.assHandler = null;
