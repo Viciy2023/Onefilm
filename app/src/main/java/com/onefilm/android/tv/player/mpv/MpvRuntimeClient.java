@@ -149,6 +149,15 @@ public final class MpvRuntimeClient implements MpvPlayer.RuntimeBridge {
     }
 
     @Override
+    public void stop() {
+        pendingPlay = false;
+        try {
+            if (runtime != null) runtime.stop();
+        } catch (Exception ignored) {
+        }
+    }
+
+    @Override
     public void seekTo(long positionMs) {
         try {
             if (runtime != null) runtime.seekTo(positionMs);

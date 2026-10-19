@@ -3,7 +3,6 @@ package com.onefilm.android.tv.runtime.mpv;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-import android.os.RemoteException;
 import android.view.Surface;
 
 import androidx.annotation.Nullable;
@@ -16,6 +15,7 @@ public class MpvRuntimeService extends Service {
     private final IMpvRuntime.Stub binder = new IMpvRuntime.Stub() {
         @Override
         public void setSurface(Surface surface) {
+            android.util.Log.i("MpvRuntime", "setSurface valid=" + (surface != null && surface.isValid()));
             if (surface == null) {
                 MPVLib.INSTANCE.detachSurface();
             } else {
@@ -36,6 +36,11 @@ public class MpvRuntimeService extends Service {
         @Override
         public void pause() {
             MPVLib.INSTANCE.setPropertyBoolean("pause", true);
+        }
+
+        @Override
+        public void stop() {
+            MPVLib.INSTANCE.command("stop");
         }
 
         @Override

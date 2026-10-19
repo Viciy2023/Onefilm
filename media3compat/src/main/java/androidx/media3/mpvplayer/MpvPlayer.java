@@ -51,6 +51,7 @@ public class MpvPlayer extends SimpleBasePlayer {
         void play();
 
         void pause();
+        void stop();
 
         void seekTo(long positionMs);
 
@@ -305,6 +306,7 @@ public class MpvPlayer extends SimpleBasePlayer {
         @Override public void open(String url) { }
         @Override public void play() { }
         @Override public void pause() { }
+        @Override public void stop() { }
         @Override public void seekTo(long positionMs) { }
         @Override public long getPosition() { return 0; }
         @Override public long getDuration() { return 0; }

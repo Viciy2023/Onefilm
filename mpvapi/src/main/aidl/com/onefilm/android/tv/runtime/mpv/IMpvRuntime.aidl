@@ -9,6 +9,7 @@ interface IMpvRuntime {
     void open(String url);
     void play();
     void pause();
+    void stop();
     void seekTo(long positionMs);
     long getPosition();
     long getDuration();
