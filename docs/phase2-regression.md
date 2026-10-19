@@ -40,3 +40,4 @@
 - 首次绑定前命令会 pending，连接后补发。
 - `PlayerView` 不会自动把 Surface 交给 `SimpleBasePlayer`，MPV 模式由 `PlaybackActivity` 自建 SurfaceView 附加。
 - 弹幕/字幕 overlay 与 MPV Surface 的层级关系仍需真机确认。
+- Exo DV 需要 `video/dolby-vision` 样片；当前没有可用素材，不能宣称完成。
