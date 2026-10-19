@@ -27,13 +27,13 @@
 - [x] 搜索历史点击回填与持久化完整回归
 - [x] 分类筛选真实条件与分页
 - [ ] 来源页换源与旧播放器兜底策略对齐
-- [ ] 详情页播放改为进入 Compose 播放器（取消旧 Activity 兜底）
+- [x] 详情页播放改为进入 Compose 播放器（取消旧 Activity 兜底）
 
 ## M3 Compose 播放器（下一阶段）
 
 - [x] `PlayerRoute` / `PlayerScreen` 路由与宿主（占位）
-- [ ] 选集 URL 解析：`SiteApi.playerContent(key, flag, episodeUrl)`
-- [ ] 视频画面 `AndroidView` 承载 PlayerView / MPV SurfaceView
+- [x] 选集 URL 解析：`SiteApi.playerContent(key, flag, episodeUrl)`
+- [x] 视频画面 `AndroidView` 承载 PlayerView / MPV SurfaceView（ExoPlayer 起播）
 - [ ] Compose 控制条：播放/暂停、进度、快进快退
 - [ ] TV 底部精简条 + 右侧面板
 - [ ] 手机手势：双击播放、左右进度、上下亮度/音量
@@ -79,5 +79,5 @@
 
 ## 当前焦点
 
-M2 收尾：只剩“详情页播放切换到 Compose 播放器”。
-M3 已完成路由骨架；下一步：解析选集真实播放地址 + AndroidView 承载 PlayerView + 最小控制条。
+M2 已完成：详情“播放”与选集均进入 Compose 播放器，真机验证起播。
+M3 已完成路由骨架、真实地址解析、AndroidView 起播；下一步：Compose 控制条、播放进度记忆、错误/缓冲状态。
