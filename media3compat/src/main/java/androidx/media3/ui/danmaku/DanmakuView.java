@@ -24,6 +24,7 @@ public final class DanmakuView extends View {
     private Player player;
     private boolean enabled = true;
     private long lastLayoutMs = -1;
+    private Long testClock;
 
     public DanmakuView(Context context) {
         this(context, null);
@@ -33,6 +34,12 @@ public final class DanmakuView extends View {
         super(context, attrs);
         paint.setTypeface(Typeface.DEFAULT_BOLD);
         setWillNotDraw(false);
+    }
+
+    /** Debug/test clock override; null follows the player. */
+    public void setClock(@Nullable Long positionMs) {
+        this.testClock = positionMs;
+        invalidate();
     }
 
     public void setPlayer(@Nullable Player player) {
@@ -70,7 +77,7 @@ public final class DanmakuView extends View {
     protected void onDraw(Canvas canvas) {
         if (!enabled) return;
         if (getWidth() == 0 || getHeight() == 0) return;
-        long positionMs = player == null ? 0 : player.getCurrentPosition();
+        long positionMs = testClock != null ? testClock : (player == null ? 0 : player.getCurrentPosition());
         if (positionMs != lastLayoutMs) layoutLanes(positionMs);
         float scale = Math.max(0.5f, config.textScale);
         int alpha = (int) (255 * (1f - clamp(config.transparency)));

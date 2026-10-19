@@ -4,5 +4,8 @@
         <activity
             android:name=".debug.ComposeSmokeActivity"
             android:exported="true" />
+        <activity
+            android:name=".debug.DanmakuSmokeActivity"
+            android:exported="true" />
     </application>
 </manifest>
