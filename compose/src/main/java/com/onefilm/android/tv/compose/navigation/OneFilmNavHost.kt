@@ -15,6 +15,7 @@ fun OneFilmNavHost(
     navController: NavHostController,
     homeContent: @Composable () -> Unit,
     detailContent: @Composable (key: String, id: String, title: String) -> Unit,
+    categoryContent: @Composable (key: String, tid: String, name: String) -> Unit,
 ) {
     NavHost(navController = navController, startDestination = Routes.HOME) {
         composable(Routes.HOME) { homeContent() }
@@ -33,6 +34,20 @@ fun OneFilmNavHost(
                 entry.arguments?.getString("key").orEmpty(),
                 entry.arguments?.getString("id").orEmpty(),
                 entry.arguments?.getString("title").orEmpty(),
+            )
+        }
+        composable(
+            route = Routes.CATEGORY,
+            arguments = listOf(
+                navArgument("key") { type = NavType.StringType },
+                navArgument("tid") { type = NavType.StringType },
+                navArgument("name") { type = NavType.StringType },
+            ),
+        ) { entry ->
+            categoryContent(
+                entry.arguments?.getString("key").orEmpty(),
+                entry.arguments?.getString("tid").orEmpty(),
+                entry.arguments?.getString("name").orEmpty(),
             )
         }
     }

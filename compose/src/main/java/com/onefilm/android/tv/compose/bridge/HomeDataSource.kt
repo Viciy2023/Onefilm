@@ -13,7 +13,13 @@ data class MediaCard(
 
 data class HomeSection(val title: String, val items: List<MediaCard>)
 
-data class HomeFeed(val hero: List<MediaCard>, val sections: List<HomeSection>)
+data class HomeCategory(val key: String, val id: String, val name: String)
+
+data class HomeFeed(
+    val hero: List<MediaCard>,
+    val sections: List<HomeSection>,
+    val categories: List<HomeCategory> = emptyList(),
+)
 
 interface HomeDataSource {
     suspend fun load(): HomeFeed

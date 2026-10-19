@@ -17,6 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import com.onefilm.android.tv.compose.design.OneFilmTheme
 import com.onefilm.android.tv.compose.bridge.MediaCard
+import com.onefilm.android.tv.compose.feature.category.CategoryRoute
 import com.onefilm.android.tv.compose.feature.detail.DetailRoute
 import com.onefilm.android.tv.compose.feature.home.HomeScreen
 import com.onefilm.android.tv.compose.feature.home.HomeViewModel
@@ -33,6 +34,7 @@ class ComposeMainActivity : ComponentActivity() {
             Configuration.UI_MODE_TYPE_TELEVISION
         val dataSource = ComposeDependencies.homeDataSource
         val detailDataSource = ComposeDependencies.detailDataSource
+        val categoryDataSource = ComposeDependencies.categoryDataSource
         val launcher = ComposeDependencies.detailLauncher
 
         setContent {
@@ -72,6 +74,11 @@ class ComposeMainActivity : ComponentActivity() {
                                 onCardClick = { card ->
                                     navController.navigate(Routes.detail(card.key, card.id, card.title))
                                 },
+                                onCategoryClick = { category ->
+                                    navController.navigate(
+                                        Routes.category(category.key, category.id, category.name),
+                                    )
+                                },
                             )
                         },
                         detailContent = { key, id, title ->
@@ -87,6 +94,18 @@ class ComposeMainActivity : ComponentActivity() {
                                     } else {
                                         launcher.openEpisode(this, card, episodeName)
                                     }
+                                },
+                            )
+                        },
+                        categoryContent = { key, tid, name ->
+                            CategoryRoute(
+                                key = key,
+                                tid = tid,
+                                title = name,
+                                dataSource = categoryDataSource,
+                                onBack = { navController.popBackStack() },
+                                onCardClick = { card ->
+                                    navController.navigate(Routes.detail(card.key, card.id, card.title))
                                 },
                             )
                         },
