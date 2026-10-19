@@ -13,5 +13,8 @@
         <activity
             android:name=".debug.AssSmokeActivity"
             android:exported="true" />
+        <activity
+            android:name=".debug.ChapterSmokeActivity"
+            android:exported="true" />
     </application>
 </manifest>
