@@ -73,7 +73,7 @@
             android:exported="false"
             tools:node="merge">
             <meta-data
-                android:name="com.fongmi.android.tv.Startup"
+                android:name="com.onefilm.android.tv.Startup"
                 android:value="androidx.startup" />
         </provider>
 

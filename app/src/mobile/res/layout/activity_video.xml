@@ -61,7 +61,7 @@
         android:layout_height="match_parent"
         android:layout_below="@+id/video">
 
-        <com.fongmi.android.tv.ui.custom.ProgressLayout
+        <com.onefilm.android.tv.ui.custom.ProgressLayout
             android:id="@+id/progressLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent">
@@ -307,6 +307,6 @@
 
                 </androidx.appcompat.widget.LinearLayoutCompat>
             </androidx.core.widget.NestedScrollView>
-        </com.fongmi.android.tv.ui.custom.ProgressLayout>
+        </com.onefilm.android.tv.ui.custom.ProgressLayout>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 </RelativeLayout>

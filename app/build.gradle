@@ -20,19 +20,19 @@ def hasReleaseSigning =
     localProps['keyPassword']
 
 android {
-    namespace = 'com.fongmi.android.tv'
+    namespace = 'com.onefilm.android.tv'
 
     compileSdk libs.versions.compileSdk.get().toInteger()
 
     defaultConfig {
-        applicationId "com.fongmi.android.tv"
+        applicationId "com.onefilm.android.tv"
         minSdk libs.versions.minSdk.get().toInteger()
         targetSdk libs.versions.targetSdk.get().toInteger()
         versionCode 1
         versionName "0.1.0"
         javaCompileOptions {
             annotationProcessorOptions {
-                arguments = ["room.schemaLocation": "$projectDir/schemas".toString(), "eventBusIndex": "com.fongmi.android.tv.event.EventIndex"]
+                arguments = ["room.schemaLocation": "$projectDir/schemas".toString(), "eventBusIndex": "com.onefilm.android.tv.event.EventIndex"]
             }
         }
     }
@@ -45,6 +45,7 @@ android {
         }
         mobile {
             dimension "device"
+            applicationIdSuffix ".mobile"
         }
     }
 

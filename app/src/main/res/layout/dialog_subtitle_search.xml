@@ -53,7 +53,7 @@
         app:trackThickness="2dp"
         tools:visibility="visible" />
 
-    <com.fongmi.android.tv.ui.custom.CustomRecyclerView
+    <com.onefilm.android.tv.ui.custom.CustomRecyclerView
         android:id="@+id/recycler"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

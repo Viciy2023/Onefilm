@@ -10,7 +10,7 @@
         android:layout_height="180dp"
         android:scaleType="centerCrop" />
 
-    <com.fongmi.android.tv.ui.custom.CustomEditText
+    <com.onefilm.android.tv.ui.custom.CustomEditText
         android:id="@+id/text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
