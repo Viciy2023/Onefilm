@@ -451,6 +451,7 @@ public class PlayerManager implements ParseCallback {
 
     public void setTextOffsetMs(long offsetMs) {
         textOffsetMs = offsetMs;
+        android.util.Log.i("OneFilmOffset", "subtitle offsetMs=" + offsetMs + " engine=" + (player instanceof androidx.media3.mpvplayer.MpvPlayer ? "mpv" : "exo"));
         if (player instanceof androidx.media3.mpvplayer.MpvPlayer mpv) mpv.setTextOffsetMs(offsetMs);
         else androidx.media3.exoplayer.text.TextRenderer.setSubtitleOffsetMs(offsetMs);
     }
@@ -461,6 +462,7 @@ public class PlayerManager implements ParseCallback {
 
     public void setAudioOffsetMs(long offsetMs) {
         audioOffsetMs = offsetMs;
+        android.util.Log.i("OneFilmOffset", "audio offsetMs=" + offsetMs + " engine=" + (player instanceof androidx.media3.mpvplayer.MpvPlayer ? "mpv" : "exo"));
         com.onefilm.android.tv.player.effect.audio.AudioDelayProcessor.setDelayMs(offsetMs);
         if (player instanceof androidx.media3.mpvplayer.MpvPlayer mpv) mpv.setAudioOffsetMs(offsetMs);
     }
