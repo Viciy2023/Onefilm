@@ -23,6 +23,8 @@ import androidx.media3.extractor.ExtractorsFactory;
 import androidx.media3.extractor.ts.TsExtractor;
 
 import com.onefilm.android.tv.App;
+import io.github.assrender.AssExtractorsFactory;
+import io.github.assrender.AssHandler;
 import com.onefilm.android.tv.setting.PreloadSetting;
 import com.github.catvod.net.OkHttp;
 import com.github.catvod.utils.Path;
@@ -39,16 +41,18 @@ public class ExoMediaSourceFactory implements MediaSource.Factory {
 
     private final DefaultMediaSourceFactory defaultMediaSourceFactory;
     private final LibassPlaybackSession libassPlaybackSession;
+    private final AssHandler assHandler;
 
     private HttpDataSource.Factory httpDataSourceFactory;
     private DataSource.Factory dataSourceFactory;
 
-    private ExoMediaSourceFactory(LibassPlaybackSession libassPlaybackSession) {
+    private ExoMediaSourceFactory(LibassPlaybackSession libassPlaybackSession, AssHandler assHandler) {
         this.libassPlaybackSession = libassPlaybackSession;
-        this.defaultMediaSourceFactory = new DefaultMediaSourceFactory(getDataSourceFactory(), createDefaultExtractorsFactory());
+        this.assHandler = assHandler;
+        this.defaultMediaSourceFactory = new DefaultMediaSourceFactory(getDataSourceFactory(), createDefaultExtractorsFactory(assHandler));
     }
 
-    static MediaSourceFactorySupplier supplier(LibassPlaybackSession libassPlaybackSession) {
+    static MediaSourceFactorySupplier supplier(LibassPlaybackSession libassPlaybackSession, AssHandler assHandler) {
         return new MediaSourceFactorySupplier() {
             @NonNull
             @Override
@@ -64,7 +68,7 @@ public class ExoMediaSourceFactory implements MediaSource.Factory {
 
             @Override
             public MediaSource.Factory get() {
-                return new ExoMediaSourceFactory(libassPlaybackSession);
+                return new ExoMediaSourceFactory(libassPlaybackSession, assHandler);
             }
         };
     }
@@ -116,11 +120,12 @@ public class ExoMediaSourceFactory implements MediaSource.Factory {
     public MediaSource createMediaSource(@NonNull MediaItem mediaItem) {
         getHttpDataSourceFactory().setDefaultRequestProperties(ExoUtil.extractHeaders(mediaItem));
         if (!libassPlaybackSession.isAvailable()) return defaultMediaSourceFactory.createMediaSource(mediaItem);
-        LibassPlaybackSession.MediaComponents components = libassPlaybackSession.createMediaComponents(mediaItem, createDefaultExtractorsFactory());
+        LibassPlaybackSession.MediaComponents components = libassPlaybackSession.createMediaComponents(mediaItem, createDefaultExtractorsFactory(assHandler));
         return new DefaultMediaSourceFactory(getDataSourceFactory(), components.extractorsFactory).setSubtitleParserFactory(components.subtitleParserFactory).createMediaSource(mediaItem);
     }
 
-    private static ExtractorsFactory createDefaultExtractorsFactory() {
+    private static ExtractorsFactory createDefaultExtractorsFactory(AssHandler assHandler) {
+        if (assHandler != null) return new AssExtractorsFactory(assHandler);
         return new DefaultExtractorsFactory().setTsExtractorTimestampSearchBytes(TsExtractor.DEFAULT_TIMESTAMP_SEARCH_BYTES * 10);
     }
 

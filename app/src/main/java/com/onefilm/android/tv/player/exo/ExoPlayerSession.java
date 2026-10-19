@@ -22,6 +22,8 @@ import androidx.media3.exoplayer.trackselection.SecondaryTextTrackSelector;
 import androidx.media3.exoplayer.trackselection.TrackSelector;
 
 import com.onefilm.android.tv.App;
+import io.github.assrender.AssHandler;
+import io.github.assrender.SubtitleOverlayView;
 import com.onefilm.android.tv.player.subtitle.AndroidFontConfig;
 import com.onefilm.android.tv.player.subtitle.ExternalFont;
 import com.onefilm.android.tv.setting.PlayerSetting;
@@ -43,6 +45,8 @@ final class ExoPlayerSession {
     private final DecodeTrackSelectorFactory decodeTrackSelectorFactory;
     private final LibassSubtitleController libassSubtitleController;
     private final LibassPlaybackSession libassPlaybackSession;
+    private final SubtitleOverlayView assOverlay;
+    private final AssHandler assHandler;
     private final DefaultPreloadManager preloadManager;
     private final boolean libassEnabled;
     private final ExoPlayer player;
@@ -60,11 +64,29 @@ final class ExoPlayerSession {
         this.preloadManager = builder.build();
         this.preloadManager.addListener(new PreloadListener());
         this.player = ExoUtil.buildPlayer(listener, builder);
+        if (libassEnabled) {
+            int w = App.get().getResources().getDisplayMetrics().widthPixels;
+            int h = App.get().getResources().getDisplayMetrics().heightPixels;
+            this.assOverlay = new SubtitleOverlayView(App.get());
+            this.assHandler = new AssHandler(App.get(), assOverlay, w, h);
+            this.assHandler.setPlayer(player);
+        } else {
+            this.assOverlay = null;
+            this.assHandler = null;
+        }
         this.libassSubtitleController = new LibassSubtitleController(player, libassPlaybackSession, secondaryTextTrackSelectorFactory, secondaryTextOutput);
     }
 
     ExoPlayer player() {
         return player;
+    }
+
+    SubtitleOverlayView assOverlay() {
+        return assOverlay;
+    }
+
+    AssHandler assHandler() {
+        return assHandler;
     }
 
     LibassPlaybackSession libassPlaybackSession() {
@@ -114,6 +136,7 @@ final class ExoPlayerSession {
         libassSubtitleController.close();
         preloadManager.release();
         player.release();
+        if (assHandler != null) assHandler.release();
         libassPlaybackSession.close();
     }
 

@@ -10,17 +10,20 @@ import androidx.media3.ui.libass.LibassPlayerViewController;
 
 import com.onefilm.android.tv.player.engine.PlayerEngine.SecondarySubtitleState;
 import com.onefilm.android.tv.setting.SubtitleSetting;
+import io.github.assrender.SubtitleOverlayView;
 
 final class ExoSubtitleController {
 
     private final LibassSubtitleController libassSubtitleController;
     private final LibassPlaybackSession libassPlaybackSession;
     private final LibassPlayerViewController playerViewController;
+    private final SubtitleOverlayView assOverlay;
 
     ExoSubtitleController(ExoPlayerSession session) {
         libassPlaybackSession = session.libassPlaybackSession();
         libassSubtitleController = session.libassSubtitleController();
         playerViewController = new LibassPlayerViewController(session.player(), libassPlaybackSession, libassSubtitleController);
+        this.assOverlay = session.assOverlay();
         applySubtitleStyle();
         applySecondarySubtitleMode();
     }
@@ -31,6 +34,7 @@ final class ExoSubtitleController {
 
     void bindPlayerView(PlayerView playerView) {
         playerViewController.bind(playerView);
+        if (assOverlay != null && assOverlay.getParent() == null) playerView.addView(assOverlay, new PlayerView.LayoutParams(PlayerView.LayoutParams.MATCH_PARENT, PlayerView.LayoutParams.MATCH_PARENT));
     }
 
     void applySubtitleStyle() {
