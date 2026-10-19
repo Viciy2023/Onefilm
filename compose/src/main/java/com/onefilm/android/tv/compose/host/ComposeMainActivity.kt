@@ -61,7 +61,7 @@ class ComposeMainActivity : ComponentActivity() {
                 AdaptiveNavigation(
                     isTv = isTv,
                     currentRoute = route,
-                    showTabs = route?.startsWith("detail") != true,
+                    showTabs = route?.startsWith("detail") != true && route?.startsWith("sources") != true,
                     onNavigate = { target ->
                         navController.navigate(target) {
                             launchSingleTop = true
