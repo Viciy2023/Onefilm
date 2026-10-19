@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -39,6 +40,8 @@ fun DetailScreen(
     onRetry: () -> Unit,
     onBack: () -> Unit,
     onPlay: (episodeName: String?) -> Unit,
+    favorite: Boolean = false,
+    onToggleFavorite: () -> Unit = {},
 ) {
     when (state) {
         DetailUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -51,12 +54,12 @@ fun DetailScreen(
                 Button(onClick = onRetry) { Text("重试") }
             }
         }
-        is DetailUiState.Content -> DetailContent(state.info, onBack, onPlay)
+        is DetailUiState.Content -> DetailContent(state.info, onBack, onPlay, favorite, onToggleFavorite)
     }
 }
 
 @Composable
-private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: (String?) -> Unit) {
+private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: (String?) -> Unit, favorite: Boolean, onToggleFavorite: () -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 24.dp),
@@ -120,6 +123,7 @@ private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: (String?
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Button(onClick = { onPlay(null) }) { Text("播放") }
+                OutlinedButton(onClick = onToggleFavorite) { Text(if (favorite) "已收藏" else "收藏") }
             }
         }
         info.description?.let { desc ->

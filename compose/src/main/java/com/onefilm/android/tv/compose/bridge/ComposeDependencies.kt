@@ -7,6 +7,7 @@ object ComposeDependencies {
     lateinit var searchDataSource: SearchDataSource
     lateinit var searchMetaDataSource: SearchMetaDataSource
     lateinit var libraryDataSource: LibraryDataSource
+    lateinit var favoriteStore: FavoriteStore
     lateinit var sourceDataSource: SourceDataSource
     lateinit var detailLauncher: DetailLauncher
 }

@@ -41,6 +41,7 @@ class ComposeMainActivity : ComponentActivity() {
         val searchDataSource = ComposeDependencies.searchDataSource
         val searchMetaDataSource = ComposeDependencies.searchMetaDataSource
         val libraryDataSource = ComposeDependencies.libraryDataSource
+        val favoriteStore = ComposeDependencies.favoriteStore
         val sourceDataSource = ComposeDependencies.sourceDataSource
         val launcher = ComposeDependencies.detailLauncher
 
@@ -124,6 +125,7 @@ class ComposeMainActivity : ComponentActivity() {
                                 key = key,
                                 id = id,
                                 dataSource = detailDataSource,
+                                favoriteStore = favoriteStore,
                                 onBack = { navController.popBackStack() },
                                 onPlay = { episodeName ->
                                     val card = MediaCard(key, id, title, null, null)
