@@ -104,11 +104,11 @@ public class PlayerManager implements ParseCallback {
     }
 
     public List<MediaChapter> getCurrentMediaChapters() {
-        return List.of(); // OneFilm compat: chapters are not provided by official media3
+        return player.getCurrentMediaChapters();
     }
 
     public List<MediaEdition> getCurrentMediaEditions() {
-        return List.of(); // OneFilm compat: editions are not provided by official media3
+        return player.getCurrentMediaEditions();
     }
 
     public MediaItem getCurrentMediaItem() {
@@ -299,11 +299,11 @@ public class PlayerManager implements ParseCallback {
     }
 
     public void selectChapter(MediaChapter chapter) {
-        // OneFilm compat: chapter selection is not supported by official media3.
+        player.selectChapter(chapter);
     }
 
     public void selectEdition(MediaEdition edition) {
-        // OneFilm compat: edition selection is not supported by official media3.
+        player.selectEdition(edition);
     }
 
     public void setDanmakuConfig(DanmakuConfig config) {
@@ -663,7 +663,15 @@ public class PlayerManager implements ParseCallback {
             callback.onTracksChanged();
         }
 
-        // OneFilm compat: official media3 Player.Listener has no chapter/edition callbacks.
+        @Override
+        public void onMediaChaptersChanged(@NonNull List<MediaChapter> chapters) {
+            callback.onMediaOptionsChanged();
+        }
+
+        @Override
+        public void onMediaEditionsChanged(@NonNull List<MediaEdition> editions) {
+            callback.onMediaOptionsChanged();
+        }
 
         @Override
         public void onPlayerError(@NonNull PlaybackException e) {
