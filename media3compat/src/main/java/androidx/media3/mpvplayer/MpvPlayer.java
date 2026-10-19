@@ -57,6 +57,18 @@ public class MpvPlayer extends SimpleBasePlayer {
 
         void setSubtitleDelayMs(long delayMs);
 
+        int getAudioTrackCount();
+
+        int getSubtitleTrackCount();
+
+        int getAudioTrack();
+
+        int getSubtitleTrack();
+
+        void setAudioTrack(int id);
+
+        void setSubtitleTrack(int id);
+
         void seekTo(long positionMs);
 
         long getPosition();
@@ -329,6 +341,12 @@ public class MpvPlayer extends SimpleBasePlayer {
         @Override public void stop() { }
         @Override public void setAudioDelayMs(long delayMs) { }
         @Override public void setSubtitleDelayMs(long delayMs) { }
+        @Override public int getAudioTrackCount() { return 0; }
+        @Override public int getSubtitleTrackCount() { return 0; }
+        @Override public int getAudioTrack() { return 0; }
+        @Override public int getSubtitleTrack() { return 0; }
+        @Override public void setAudioTrack(int id) { }
+        @Override public void setSubtitleTrack(int id) { }
         @Override public void seekTo(long positionMs) { }
         @Override public long getPosition() { return 0; }
         @Override public long getDuration() { return 0; }

@@ -51,6 +51,49 @@ public class MpvRuntimeService extends Service {
         }
 
         @Override
+        public int getAudioTrackCount() {
+            return countTracks("audio");
+        }
+
+        @Override
+        public int getSubtitleTrackCount() {
+            return countTracks("sub");
+        }
+
+        @Override
+        public int getAudioTrack() {
+            Integer id = MPVLib.INSTANCE.getPropertyInt("aid");
+            return id == null ? 0 : id;
+        }
+
+        @Override
+        public int getSubtitleTrack() {
+            Integer id = MPVLib.INSTANCE.getPropertyInt("sid");
+            return id == null ? 0 : id;
+        }
+
+        @Override
+        public void setAudioTrack(int id) {
+            MPVLib.INSTANCE.setPropertyInt("aid", id);
+        }
+
+        @Override
+        public void setSubtitleTrack(int id) {
+            MPVLib.INSTANCE.setPropertyInt("sid", id);
+        }
+
+        private int countTracks(String type) {
+            Integer count = MPVLib.INSTANCE.getPropertyInt("track-list/count");
+            if (count == null) return 0;
+            int found = 0;
+            for (int i = 0; i < count; i++) {
+                String trackType = MPVLib.INSTANCE.getPropertyString("track-list/" + i + "/type");
+                if (type.equals(trackType)) found++;
+            }
+            return found;
+        }
+
+        @Override
         public void setAudioDelayMs(long delayMs) {
             android.util.Log.i("MpvRuntime", "audio-delay=" + (delayMs / 1000.0));
             MPVLib.INSTANCE.setPropertyDouble("audio-delay", delayMs / 1000.0);

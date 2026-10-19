@@ -42,6 +42,11 @@ class MpvPlayerSmokeActivity : Activity(), SurfaceHolder.Callback {
         player.play()
 
         handler.postDelayed({
+            Log.i(TAG, "tracks audio=${client.audioTrackCount} sub=${client.subtitleTrackCount} aid=${client.audioTrack} sid=${client.subtitleTrack}")
+            client.setSubtitleTrack(0)
+            Log.i(TAG, "after sub off sid=${client.subtitleTrack}")
+        }, 3000)
+        handler.postDelayed({
             player.pause()
             Log.i(TAG, "paused state=${player.playbackState} playWhenReady=${player.playWhenReady} pos=${player.currentPosition}")
         }, 2000)

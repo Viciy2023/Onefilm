@@ -154,6 +154,52 @@ public final class MpvRuntimeClient implements MpvPlayer.RuntimeBridge {
         }
     }
 
+    public int getAudioTrackCount() {
+        try {
+            return runtime == null ? 0 : runtime.getAudioTrackCount();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public int getSubtitleTrackCount() {
+        try {
+            return runtime == null ? 0 : runtime.getSubtitleTrackCount();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public int getAudioTrack() {
+        try {
+            return runtime == null ? 0 : runtime.getAudioTrack();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public int getSubtitleTrack() {
+        try {
+            return runtime == null ? 0 : runtime.getSubtitleTrack();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public void setAudioTrack(int id) {
+        try {
+            if (runtime != null) runtime.setAudioTrack(id);
+        } catch (Exception ignored) {
+        }
+    }
+
+    public void setSubtitleTrack(int id) {
+        try {
+            if (runtime != null) runtime.setSubtitleTrack(id);
+        } catch (Exception ignored) {
+        }
+    }
+
     public void setAudioDelayMs(long delayMs) {
         pendingAudioDelayMs = delayMs;
         try {

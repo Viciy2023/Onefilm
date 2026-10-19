@@ -13,6 +13,12 @@ interface IMpvRuntime {
     void setDolbyVisionMode(int mode);
     void setAudioDelayMs(long delayMs);
     void setSubtitleDelayMs(long delayMs);
+    int getAudioTrackCount();
+    int getSubtitleTrackCount();
+    int getAudioTrack();
+    int getSubtitleTrack();
+    void setAudioTrack(int id);
+    void setSubtitleTrack(int id);
     void seekTo(long positionMs);
     long getPosition();
     long getDuration();
