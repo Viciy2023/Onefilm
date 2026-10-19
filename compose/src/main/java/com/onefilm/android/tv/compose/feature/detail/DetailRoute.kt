@@ -46,7 +46,7 @@ fun DetailRoute(
                 title = info?.title.orEmpty(),
                 posterUrl = info?.posterUrl,
             )
-            favorite = favoriteStore.isFavorite(key, id)
+            favorite = !favorite
         },
     )
 }
