@@ -118,4 +118,12 @@ public class PlayerSetting {
     public static void putBuffer(int buffer) {
         Prefers.put("buffer", Math.clamp(buffer, MIN_BUFFER, MAX_BUFFER));
     }
+
+    public static boolean isComposeUi() {
+        return Prefers.getBoolean("compose_ui", true);
+    }
+
+    public static void putComposeUi(boolean enabled) {
+        Prefers.put("compose_ui", enabled);
+    }
 }
