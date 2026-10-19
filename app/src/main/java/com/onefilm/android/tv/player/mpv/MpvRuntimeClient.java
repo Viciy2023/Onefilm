@@ -200,6 +200,22 @@ public final class MpvRuntimeClient implements MpvPlayer.RuntimeBridge {
         }
     }
 
+    public String[] getAudioTrackDetails() {
+        try {
+            return runtime == null ? new String[0] : runtime.getAudioTrackDetails();
+        } catch (Exception e) {
+            return new String[0];
+        }
+    }
+
+    public String[] getSubtitleTrackDetails() {
+        try {
+            return runtime == null ? new String[0] : runtime.getSubtitleTrackDetails();
+        } catch (Exception e) {
+            return new String[0];
+        }
+    }
+
     public void setAudioDelayMs(long delayMs) {
         pendingAudioDelayMs = delayMs;
         try {

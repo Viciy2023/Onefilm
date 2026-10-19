@@ -19,6 +19,8 @@ interface IMpvRuntime {
     int getSubtitleTrack();
     void setAudioTrack(int id);
     void setSubtitleTrack(int id);
+    String[] getAudioTrackDetails();
+    String[] getSubtitleTrackDetails();
     void seekTo(long positionMs);
     long getPosition();
     long getDuration();
