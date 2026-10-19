@@ -65,6 +65,7 @@ fun HeroBanner(
             Text(
                 text = title.ifBlank { "未命名" },
                 style = MaterialTheme.typography.displayLarge,
+                color = Color.White,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -72,6 +73,7 @@ fun HeroBanner(
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )

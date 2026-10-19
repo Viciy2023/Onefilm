@@ -11,9 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -32,39 +32,37 @@ fun AdaptiveNavigation(
         Routes.LIBRARY to "收藏",
         Routes.SETTINGS to "设置",
     )
-    if (isTv) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 48.dp, vertical = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
-            ) {
-                items.forEach { (route, label) ->
-                    NavTab(label = label, selected = currentRoute == route) { onNavigate(route) }
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground,
+    ) {
+        if (isTv) {
+            Column(Modifier.fillMaxSize()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 48.dp, vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(24.dp),
+                ) {
+                    items.forEach { (route, label) ->
+                        NavTab(label = label, selected = currentRoute == route) { onNavigate(route) }
+                    }
                 }
+                Box(Modifier.weight(1f)) { content() }
             }
-            Box(Modifier.weight(1f)) { content() }
-        }
-    } else {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-        ) {
-            Box(Modifier.weight(1f)) { content() }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
-                items.forEach { (route, label) ->
-                    NavTab(label = label, selected = currentRoute == route) { onNavigate(route) }
+        } else {
+            Column(Modifier.fillMaxSize()) {
+                Box(Modifier.weight(1f)) { content() }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                ) {
+                    items.forEach { (route, label) ->
+                        NavTab(label = label, selected = currentRoute == route) { onNavigate(route) }
+                    }
                 }
             }
         }

@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,7 +36,10 @@ fun SectionRow(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
-            items(items, key = { it.key + it.id }) { item ->
+            itemsIndexed(
+                items = items,
+                key = { index, item -> "${item.key}:${item.id}:$index" },
+            ) { _, item ->
                 PosterCard(
                     title = item.title,
                     posterUrl = item.posterUrl,

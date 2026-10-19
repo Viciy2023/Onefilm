@@ -85,6 +85,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
         CoreContext.INSTANCE.init(this);
         Notify.createChannel();
         registerActivityLifecycleCallbacks(this);
+        com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setHomeDataSource(new com.onefilm.android.tv.composebridge.AppHomeDataSource());
+        com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setDetailLauncher(new com.onefilm.android.tv.composebridge.AppDetailLauncher());
     }
 
     @Override

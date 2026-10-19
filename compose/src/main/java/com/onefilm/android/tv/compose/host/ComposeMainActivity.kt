@@ -6,14 +6,17 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.compose.rememberNavController
+import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import com.onefilm.android.tv.compose.design.OneFilmTheme
+import com.onefilm.android.tv.compose.feature.home.HomeScreen
+import com.onefilm.android.tv.compose.feature.home.HomeViewModel
 import com.onefilm.android.tv.compose.navigation.AdaptiveNavigation
 import com.onefilm.android.tv.compose.navigation.OneFilmNavHost
 
@@ -24,11 +27,22 @@ class ComposeMainActivity : ComponentActivity() {
         val isTv = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
             (resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) ==
             Configuration.UI_MODE_TYPE_TELEVISION
+        val dataSource = ComposeDependencies.homeDataSource
+        val launcher = ComposeDependencies.detailLauncher
 
         setContent {
             OneFilmTheme {
                 val navController = rememberNavController()
                 val route = navController.currentBackStackEntry?.destination?.route
+                val homeViewModel: HomeViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer { HomeViewModel(dataSource) }
+                    },
+                )
+                val homeState by homeViewModel.state.collectAsState()
+
+                LaunchedEffect(Unit) { homeViewModel.retry() }
+
                 BackHandler(enabled = navController.previousBackStackEntry != null) {
                     navController.popBackStack()
                 }
@@ -43,9 +57,11 @@ class ComposeMainActivity : ComponentActivity() {
                     },
                 ) {
                     OneFilmNavHost(navController) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("首页", style = MaterialTheme.typography.headlineMedium)
-                        }
+                        HomeScreen(
+                            state = homeState,
+                            onRetry = homeViewModel::retry,
+                            onCardClick = { card -> launcher.open(this, card) },
+                        )
                     }
                 }
             }
