@@ -29,7 +29,7 @@
 |---|---|
 | 正式播放器音轨/字幕对话框 | 需要 UI 点击回归 |
 | MPV 播放中的轨道切换 | `aid`/`sid` 切换后听感/画面确认 |
-| ExoPlayer DV 策略 | 需要 media3 fork 渲染器补丁 + DV 片源（`0003` 未完成） |
+| ExoPlayer DV 策略 | `0003` 已实现：AUTO/ASSUME_SUPPORTED/ASSUME_UNSUPPORTED、HEVC 基础层回退、隧道开关；JVM 单测 4/4，真机非 DV 片源回归通过；真实 DV 片源播放待验证 |
 | ExoPlayer A/V 偏移 | 音频：PCM 单元测试通过；字幕：delay 0 vs 3000ms 实测差 2862ms ✅ |
 | 预加载 | 当前默认关闭，需开启后验证 |
 | DLNA / PiP / 后台播放 | 未回归 |
@@ -40,4 +40,5 @@
 - 首次绑定前命令会 pending，连接后补发。
 - `PlayerView` 不会自动把 Surface 交给 `SimpleBasePlayer`，MPV 模式由 `PlaybackActivity` 自建 SurfaceView 附加。
 - 弹幕/字幕 overlay 与 MPV Surface 的层级关系仍需真机确认。
-- Exo DV 需要 `video/dolby-vision` 样片；当前没有可用素材，不能宣称完成。
+- Exo DV 的策略选择与格式重映射已由单测覆盖，但“真实 DV 片源在 DV/非 DV 设备上的成像”仍需样片与对应硬件，当前不能宣称完整通过。
+- DV `ASSUME_UNSUPPORTED` 只解码 HEVC 基础层；Profile 5（IPTPQc2）会出现色彩异常，属于预期限制。

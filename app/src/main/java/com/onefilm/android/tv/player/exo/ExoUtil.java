@@ -29,6 +29,7 @@ import androidx.media3.exoplayer.text.TextRenderer;
 import androidx.media3.exoplayer.trackselection.DecodeTrackSelector;
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
 import androidx.media3.exoplayer.util.EventLogger;
+import androidx.media3.exoplayer.video.MediaCodecVideoRenderer;
 
 import com.onefilm.android.tv.App;
 import com.onefilm.android.tv.BuildConfig;
@@ -46,6 +47,7 @@ import java.util.stream.Collectors;
 public final class ExoUtil {
 
     public static ExoPlayer buildPlayer(Player.Listener listener, DefaultPreloadManager.Builder preloadManagerBuilder) {
+        MediaCodecVideoRenderer.setDolbyVisionOutputPolicy(DecodeSetting.getDolbyVisionOutputPolicy());
         ExoPlayer.Builder playerBuilder = new ExoPlayer.Builder(App.get()).setSkipSilenceEnabled(SpeedSetting.isSkipSilence());
         ExoPlayer player = preloadManagerBuilder.buildExoPlayer(playerBuilder);
         if (BuildConfig.DEBUG) player.addAnalyticsListener(new EventLogger());

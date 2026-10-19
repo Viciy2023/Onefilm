@@ -56,6 +56,10 @@ android {
         compose = true
     }
 
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+
     signingConfigs {
         if (hasReleaseSigning) {
             release {
@@ -122,6 +126,7 @@ dependencies {
     implementation libs.guava
     implementation "com.github.LumeraD3v:assrender:1.0.2"
     implementation libs.annotation
+    testImplementation 'junit:junit:4.13.2'
     implementation project(':core')
     implementation project(':media3compat')
     implementation project(':mpvapi')

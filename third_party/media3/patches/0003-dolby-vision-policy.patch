@@ -1,0 +1,110 @@
+diff --git a/libraries/exoplayer/src/main/java/androidx/media3/exoplayer/video/MediaCodecVideoRenderer.java b/libraries/exoplayer/src/main/java/androidx/media3/exoplayer/video/MediaCodecVideoRenderer.java
+index 8714b04..e402b47 100644
+--- a/libraries/exoplayer/src/main/java/androidx/media3/exoplayer/video/MediaCodecVideoRenderer.java
++++ b/libraries/exoplayer/src/main/java/androidx/media3/exoplayer/video/MediaCodecVideoRenderer.java
+@@ -127,6 +127,61 @@ public class MediaCodecVideoRenderer extends MediaCodecRenderer
+   private static final String KEY_CROP_BOTTOM = "crop-bottom";
+   private static final String KEY_CROP_TOP = "crop-top";
+ 
++  // OneFilm: Dolby Vision output policy. Values mirror
++  // androidx.media3.common.DolbyVisionOutputPolicy from the OneFilm compatibility module.
++  public static final int DV_POLICY_AUTO = 0;
++  public static final int DV_POLICY_PREFER_TUNNELED = 1;
++  public static final int DV_POLICY_PREFER_NON_TUNNELED = 2;
++  public static final int DV_POLICY_ASSUME_SUPPORTED = 3;
++  public static final int DV_POLICY_ASSUME_UNSUPPORTED = 4;
++
++  private static volatile int dolbyVisionOutputPolicy = DV_POLICY_AUTO;
++
++  /**
++   * OneFilm: Sets how Dolby Vision output is handled by this renderer.
++   *
++   * <p>{@link #DV_POLICY_AUTO} keeps the upstream behaviour. {@link
++   * #DV_POLICY_ASSUME_UNSUPPORTED} forces the HEVC base layer to be decoded by rewriting the
++   * input format MIME type. This is useful on devices that report Dolby Vision support but fail
++   * to decode it, or that only expose an HEVC decoder.
++   */
++  public static void setDolbyVisionOutputPolicy(int policy) {
++    int clamped = Math.max(DV_POLICY_AUTO, Math.min(DV_POLICY_ASSUME_UNSUPPORTED, policy));
++    if (clamped != dolbyVisionOutputPolicy) {
++      dolbyVisionOutputPolicy = clamped;
++      Log.i("DolbyVisionPolicy", "output policy=" + clamped);
++    }
++  }
++
++  public static int getDolbyVisionOutputPolicy() {
++    return dolbyVisionOutputPolicy;
++  }
++
++  public static boolean shouldAllowDolbyVisionTunneling(int policy) {
++    return policy != DV_POLICY_PREFER_NON_TUNNELED && policy != DV_POLICY_ASSUME_UNSUPPORTED;
++  }
++
++  public static boolean shouldUseAlternativeDecoderForDolbyVision(Context context, int policy) {
++    if (policy == DV_POLICY_ASSUME_UNSUPPORTED) {
++      return true;
++    }
++    if (policy == DV_POLICY_ASSUME_SUPPORTED) {
++      return false;
++    }
++    return SDK_INT >= 26 && !Api26.doesDisplaySupportDolbyVision(context);
++  }
++
++  /**
++   * OneFilm: Rewrites a Dolby Vision format so the HEVC base layer can be decoded by a regular
++   * HEVC decoder when Dolby Vision output is assumed to be unsupported.
++   */
++  public static Format remapDolbyVisionFormatForUnsupportedOutput(Format format) {
++    if (!MimeTypes.VIDEO_DOLBY_VISION.equals(format.sampleMimeType)) {
++      return format;
++    }
++    return format.buildUpon().setSampleMimeType(MimeTypes.VIDEO_H265).setCodecs(null).build();
++  }
++
+   // Long edge length in pixels for standard video formats, in decreasing in order.
+   private static final int[] STANDARD_LONG_EDGE_VIDEO_PX =
+       new int[] {1920, 1600, 1440, 1280, 960, 854, 640, 540, 480};
+@@ -728,12 +783,16 @@ public class MediaCodecVideoRenderer extends MediaCodecRenderer
+ 
+     if (SDK_INT >= 26
+         && MimeTypes.VIDEO_DOLBY_VISION.equals(format.sampleMimeType)
+-        && !Api26.doesDisplaySupportDolbyVision(context)) {
++        && (dolbyVisionOutputPolicy == DV_POLICY_ASSUME_UNSUPPORTED
++            || !Api26.doesDisplaySupportDolbyVision(context))) {
+       decoderSupport = DECODER_SUPPORT_FALLBACK_MIMETYPE;
+     }
+ 
+     @TunnelingSupport int tunnelingSupport = TUNNELING_NOT_SUPPORTED;
+-    if (isFormatSupported) {
++    boolean allowTunneling =
++        !MimeTypes.VIDEO_DOLBY_VISION.equals(format.sampleMimeType)
++            || shouldAllowDolbyVisionTunneling(dolbyVisionOutputPolicy);
++    if (isFormatSupported && allowTunneling) {
+       List<MediaCodecInfo> tunnelingDecoderInfos =
+           getDecoderInfos(
+               context,
+@@ -799,7 +858,7 @@ public class MediaCodecVideoRenderer extends MediaCodecRenderer
+     }
+     if (SDK_INT >= 26
+         && MimeTypes.VIDEO_DOLBY_VISION.equals(format.sampleMimeType)
+-        && !Api26.doesDisplaySupportDolbyVision(context)) {
++        && shouldUseAlternativeDecoderForDolbyVision(context, dolbyVisionOutputPolicy)) {
+       List<MediaCodecInfo> alternativeDecoderInfos =
+           MediaCodecUtil.getAlternativeDecoderInfos(
+               mediaCodecSelector, format, requiresSecureDecoder, requiresTunnelingDecoder);
+@@ -1527,6 +1586,15 @@ public class MediaCodecVideoRenderer extends MediaCodecRenderer
+   @Nullable
+   protected DecoderReuseEvaluation onInputFormatChanged(FormatHolder formatHolder)
+       throws ExoPlaybackException {
++    if (dolbyVisionOutputPolicy == DV_POLICY_ASSUME_UNSUPPORTED
++        && formatHolder.format != null
++        && MimeTypes.VIDEO_DOLBY_VISION.equals(formatHolder.format.sampleMimeType)) {
++      Format originalFormat = formatHolder.format;
++      formatHolder.format = remapDolbyVisionFormatForUnsupportedOutput(originalFormat);
++      Log.i(
++          "DolbyVisionPolicy",
++          "ASSUME_UNSUPPORTED: decoding HEVC base layer, original codecs=" + originalFormat.codecs);
++    }
+     @Nullable DecoderReuseEvaluation evaluation = super.onInputFormatChanged(formatHolder);
+     eventDispatcher.inputFormatChanged(checkNotNull(formatHolder.format), evaluation);
+     if (videoFrameReleaseEarlyTimeForecaster != null) {

@@ -34,12 +34,14 @@ powershell -File scripts/build-media3.ps1 -Modules lib-ui
 
 放在 `third_party/media3/patches/`，命名 `0001-xxx.patch`。
 
-已计划：
+当前补丁：
 
 - `0001-player-view-render.patch` — Surface/TextureView 切换
-- `0002-player-chapters-editions.patch`
-- `0003-dolby-vision-policy.patch`
-- `0004-av-offset.patch`
+- `0002-player-chapters-editions.patch` — 章节/版本扩展
+- `0003-dolby-vision-policy.patch` — Dolby Vision 输出策略（替代解码器 / HEVC 基础层 / 隧道开关）
+- `0004-subtitle-offset.patch` — 字幕时间轴偏移 + 调试 cue 日志
+
+应用顺序按文件编号；`0003` 只修改 `MediaCodecVideoRenderer`，`0004` 只修改 `TextRenderer`。
 
 ## 注意
 

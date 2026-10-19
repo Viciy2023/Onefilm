@@ -8,6 +8,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.text.TextRenderer
+import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.ui.PlayerView
 
 /** Debug-only: Exo subtitle offset via the forked TextRenderer. */
@@ -18,6 +19,11 @@ class SubtitleOffsetSmokeActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val offsetMs = intent.getLongExtra("offset", 0L)
+        val dvPolicy = intent.getIntExtra("dv", -1)
+        if (dvPolicy >= 0) {
+            MediaCodecVideoRenderer.setDolbyVisionOutputPolicy(dvPolicy)
+            android.util.Log.i("DolbyVisionPolicy", "applied=" + MediaCodecVideoRenderer.getDolbyVisionOutputPolicy())
+        }
         TextRenderer.setSubtitleOffsetMs(offsetMs)
         TextRenderer.debugCueLogging = true
         android.util.Log.i("SubtitleOffset", "start elapsed=" + android.os.SystemClock.elapsedRealtime() + " offset=" + offsetMs)
