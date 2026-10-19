@@ -38,7 +38,7 @@ fun DetailScreen(
     state: DetailUiState,
     onRetry: () -> Unit,
     onBack: () -> Unit,
-    onPlay: () -> Unit,
+    onPlay: (episodeName: String?) -> Unit,
 ) {
     when (state) {
         DetailUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -56,7 +56,7 @@ fun DetailScreen(
 }
 
 @Composable
-private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: () -> Unit) {
+private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: (String?) -> Unit) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 24.dp),
@@ -119,7 +119,7 @@ private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: () -> Un
                 Modifier.padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Button(onClick = onPlay) { Text("播放") }
+                Button(onClick = { onPlay(null) }) { Text("播放") }
             }
         }
         info.description?.let { desc ->
@@ -151,7 +151,7 @@ private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: () -> Un
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(16.dp))
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                                    .clickable(onClick = onPlay)
+                                    .clickable { onPlay(episode.name) }
                                     .padding(horizontal = 14.dp, vertical = 8.dp),
                             )
                         }

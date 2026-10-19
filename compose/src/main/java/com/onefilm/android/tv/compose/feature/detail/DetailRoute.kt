@@ -15,7 +15,7 @@ fun DetailRoute(
     id: String,
     dataSource: DetailDataSource,
     onBack: () -> Unit,
-    onPlay: () -> Unit,
+    onPlay: (episodeName: String?) -> Unit,
 ) {
     val viewModel: DetailViewModel = viewModel(
         key = "$key:$id",

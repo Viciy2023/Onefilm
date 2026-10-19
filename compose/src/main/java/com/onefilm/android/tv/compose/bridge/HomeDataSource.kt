@@ -21,4 +21,5 @@ interface HomeDataSource {
 
 interface DetailLauncher {
     fun open(context: Context, card: MediaCard)
+    fun openEpisode(context: Context, card: MediaCard, mark: String)
 }

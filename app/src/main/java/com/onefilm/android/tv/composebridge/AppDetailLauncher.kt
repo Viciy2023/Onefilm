@@ -11,4 +11,9 @@ class AppDetailLauncher : DetailLauncher {
         if (context !is Activity) return
         VideoActivity.start(context, card.key, card.id, card.title, card.posterUrl ?: "")
     }
+
+    override fun openEpisode(context: Context, card: MediaCard, mark: String) {
+        if (context !is Activity) return
+        VideoActivity.start(context, card.key, card.id, card.title, card.posterUrl ?: "", mark)
+    }
 }

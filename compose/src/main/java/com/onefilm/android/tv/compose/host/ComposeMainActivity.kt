@@ -80,11 +80,13 @@ class ComposeMainActivity : ComponentActivity() {
                                 id = id,
                                 dataSource = detailDataSource,
                                 onBack = { navController.popBackStack() },
-                                onPlay = {
-                                    launcher.open(
-                                        this,
-                                        MediaCard(key, id, title, null, null),
-                                    )
+                                onPlay = { episodeName ->
+                                    val card = MediaCard(key, id, title, null, null)
+                                    if (episodeName.isNullOrBlank()) {
+                                        launcher.open(this, card)
+                                    } else {
+                                        launcher.openEpisode(this, card, episodeName)
+                                    }
                                 },
                             )
                         },
