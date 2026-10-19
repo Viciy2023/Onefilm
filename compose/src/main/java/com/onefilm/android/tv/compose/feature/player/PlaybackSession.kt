@@ -175,6 +175,12 @@ object PlaybackSession {
         player?.setPlaybackParameters(PlaybackParameters(value))
     }
 
+    fun cycleSpeed() {
+        val values = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
+        val next = values[(values.indexOf(speed).takeIf { it >= 0 }?.plus(1) ?: 1) % values.size]
+        updateSpeed(next)
+    }
+
     fun retry() {
         val target = player ?: return
         error = null

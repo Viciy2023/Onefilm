@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 
 enum class PlayerGlyph {
-    Play, Pause, Previous, Next, Fullscreen, ExitFullscreen, More, Episodes, Back,
+    Play, Pause, Previous, Next, Fullscreen, ExitFullscreen, More, Episodes, Back, Subtitle, Audio,
 }
 
 /** 纯 Canvas 图标，避免依赖图标字体在部分设备缺字。 */
@@ -103,6 +103,48 @@ fun PlayerIcon(
             PlayerGlyph.Back -> {
                 drawLine(tint, Offset(w * 0.62f, h * 0.24f), Offset(w * 0.36f, h * 0.5f), stroke.width)
                 drawLine(tint, Offset(w * 0.36f, h * 0.5f), Offset(w * 0.62f, h * 0.76f), stroke.width)
+            }
+            PlayerGlyph.Subtitle -> {
+                drawRoundRect(
+                    color = tint,
+                    topLeft = Offset(w * 0.16f, h * 0.26f),
+                    size = Size(w * 0.68f, h * 0.48f),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(w * 0.08f),
+                    style = stroke,
+                )
+                drawLine(tint, Offset(w * 0.28f, h * 0.52f), Offset(w * 0.46f, h * 0.52f), stroke.width * 0.8f)
+                drawLine(tint, Offset(w * 0.54f, h * 0.52f), Offset(w * 0.72f, h * 0.52f), stroke.width * 0.8f)
+                drawLine(tint, Offset(w * 0.28f, h * 0.64f), Offset(w * 0.62f, h * 0.64f), stroke.width * 0.8f)
+            }
+            PlayerGlyph.Audio -> {
+                val path = Path().apply {
+                    moveTo(w * 0.18f, h * 0.38f)
+                    lineTo(w * 0.34f, h * 0.38f)
+                    lineTo(w * 0.50f, h * 0.24f)
+                    lineTo(w * 0.50f, h * 0.76f)
+                    lineTo(w * 0.34f, h * 0.62f)
+                    lineTo(w * 0.18f, h * 0.62f)
+                    close()
+                }
+                drawPath(path, tint)
+                drawArc(
+                    color = tint,
+                    startAngle = -55f,
+                    sweepAngle = 110f,
+                    useCenter = false,
+                    topLeft = Offset(w * 0.46f, h * 0.30f),
+                    size = Size(w * 0.36f, h * 0.40f),
+                    style = stroke,
+                )
+                drawArc(
+                    color = tint.copy(alpha = 0.6f),
+                    startAngle = -55f,
+                    sweepAngle = 110f,
+                    useCenter = false,
+                    topLeft = Offset(w * 0.54f, h * 0.20f),
+                    size = Size(w * 0.32f, h * 0.60f),
+                    style = stroke,
+                )
             }
         }
     }
