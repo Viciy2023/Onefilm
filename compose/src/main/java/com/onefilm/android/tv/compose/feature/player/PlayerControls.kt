@@ -52,8 +52,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -140,13 +144,13 @@ fun PlayerControls(
             ) { PlaybackSession.toggleRepeat() },
         )
         add(MenuEntry(if (danmakuOn) "弹幕 开" else "弹幕 关") { danmakuOn = !danmakuOn })
+        add(MenuEntry("片头 00:00"))
+        add(MenuEntry("片尾 00:00"))
+        add(MenuEntry("画面 适应"))
         add(MenuEntry("解码 硬解"))
         add(MenuEntry("渲染 Surface"))
         add(MenuEntry("字幕 默认"))
         add(MenuEntry("音轨 默认"))
-        add(MenuEntry("片头 00:00"))
-        add(MenuEntry("片尾 00:00"))
-        add(MenuEntry("画面 适应"))
     }
 
     LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore) {
@@ -451,24 +455,55 @@ private fun MenuRow(
     onFullscreen: () -> Unit,
 ) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val itemWidth = if (inline) 58.dp else 64.dp
-        val fullscreenWidth = 34.dp
-        val moreWidth = 44.dp
+        val density = LocalDensity.current
+        val measurer = rememberTextMeasurer()
+        val textStyle = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        val spacing = 4.dp
+        val fullscreenWidth = 40.dp
+        val moreWidth = 58.dp
+        val minWidth = if (inline) 54.dp else 58.dp
+        val widths = entries.map { entry ->
+            val textWidth = with(density) {
+                measurer.measure(entry.label, textStyle).size.width.toDp()
+            }
+            maxOf(textWidth + 22.dp, minWidth)
+        }
         val available = (maxWidth - fullscreenWidth).coerceAtLeast(0.dp)
-        var visible = (available / itemWidth).toInt().coerceAtLeast(0)
-        val hasOverflow = visible < entries.size
+        var used = 0.dp
+        var visible = 0
+        for (width in widths) {
+            if (used + width + spacing <= available) {
+                used += width + spacing
+                visible++
+            } else {
+                break
+            }
+        }
+        var hasOverflow = visible < entries.size
         if (hasOverflow) {
-            visible = ((available - moreWidth) / itemWidth).toInt().coerceAtLeast(0)
+            used = 0.dp
+            visible = 0
+            val limited = (available - moreWidth).coerceAtLeast(0.dp)
+            for (width in widths) {
+                if (used + width + spacing <= limited) {
+                    used += width + spacing
+                    visible++
+                } else {
+                    break
+                }
+            }
+            hasOverflow = visible < entries.size
         }
         Row(
             Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(spacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            entries.take(visible).forEach { entry ->
-                MenuText(entry)
+            entries.take(visible).forEachIndexed { index, entry ->
+                MenuText(entry, widths[index])
             }
             if (hasOverflow) {
-                MenuText(MenuEntry("更多") { onMore(entries.drop(visible)) })
+                MenuText(MenuEntry("更多") { onMore(entries.drop(visible)) }, moreWidth)
             }
             Spacer(Modifier.weight(1f))
             IconAction(
@@ -479,30 +514,32 @@ private fun MenuRow(
     }
 }
 
-/** 进度条下方的紧凑菜单项：一行一个功能，无边框。 */
+/** 进度条下方的紧凑菜单项：自适应宽度，保证手机可点按。 */
 @Composable
-private fun MenuText(entry: MenuEntry) {
+private fun MenuText(entry: MenuEntry, width: Dp) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     Box(
         Modifier
-            .clip(RoundedCornerShape(7.dp))
+            .width(width)
+            .height(40.dp)
+            .clip(RoundedCornerShape(8.dp))
             .background(if (focused) Press else Color.Transparent)
             .clickable(
                 interactionSource = interaction,
                 indication = null,
                 enabled = entry.enabled,
                 onClick = entry.onClick,
-            )
-            .padding(horizontal = 5.dp, vertical = 6.dp),
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = entry.label,
-            color = if (entry.enabled) InkDim else InkFaint,
-            fontSize = 11.sp,
+            color = if (entry.enabled) Ink.copy(alpha = 0.92f) else InkFaint,
+            fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -614,6 +651,7 @@ private fun FlatTile(
     Box(
         modifier
             .clip(RoundedCornerShape(10.dp))
+            .heightIn(min = 44.dp)
             .background(
                 when {
                     emphasis -> Ink
