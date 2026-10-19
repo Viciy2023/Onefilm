@@ -4,23 +4,53 @@ import android.app.Activity
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.widget.TextView
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.LinearLayout
+import androidx.media3.common.MediaItem
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 import com.onefilm.android.tv.player.media.ChapterLoader
 
-/** Debug-only chapter loader verification using the same Range path as the app. */
+/** Debug-only: plays an MKV, lists parsed chapters, seeks on click. */
 class ChapterSmokeActivity : Activity() {
+
+    private lateinit var player: ExoPlayer
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val text = TextView(this)
-        text.textSize = 18f
-        text.setPadding(32, 64, 32, 32)
-        setContentView(text)
-        ChapterLoader.load(this, Uri.parse(URL)) { chapters ->
-            val summary = chapters.joinToString("\n") { "${it.label} @ ${it.timeUs / 1000}ms" }
-            text.text = "chapters=${chapters.size}\n\n$summary"
-            Log.i(TAG, "chapters=${chapters.size}")
+        val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        val playerView = PlayerView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f)
         }
+        val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        root.addView(playerView)
+        root.addView(list, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        setContentView(root)
+
+        player = ExoPlayer.Builder(this).build()
+        playerView.player = player
+        player.setMediaItem(MediaItem.fromUri(URL))
+        player.prepare()
+        player.play()
+
+        ChapterLoader.load(this, Uri.parse(URL)) { chapters ->
+            chapters.forEach { chapter ->
+                val button = Button(this).apply {
+                    text = "${chapter.label} @ ${chapter.timeUs / 1000}ms"
+                    setOnClickListener {
+                        player.seekTo(chapter.timeUs / 1000)
+                        Log.i(TAG, "seek ${chapter.label} target=${chapter.timeUs / 1000} pos=${player.currentPosition}")
+                    }
+                }
+                list.addView(button)
+            }
+        }
+    }
+
+    override fun onDestroy() {
+        player.release()
+        super.onDestroy()
     }
 
     private companion object {
