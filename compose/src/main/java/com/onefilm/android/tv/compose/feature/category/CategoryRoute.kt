@@ -26,12 +26,15 @@ fun CategoryRoute(
         },
     )
     val state by viewModel.state.collectAsState()
+    val selectedFilters by viewModel.selectedFilters.collectAsState()
     LaunchedEffect(key, tid) { viewModel.retry() }
     CategoryScreen(
         title = title,
         state = state,
+        selectedFilters = selectedFilters,
         onRetry = viewModel::retry,
         onBack = onBack,
         onCardClick = onCardClick,
+        onToggleFilter = viewModel::toggleFilter,
     )
 }

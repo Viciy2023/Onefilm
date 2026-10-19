@@ -72,7 +72,9 @@ class ComposeMainActivity : ComponentActivity() {
                                 state = homeState,
                                 onRetry = homeViewModel::retry,
                                 onCardClick = { card ->
-                                    navController.navigate(Routes.detail(card.key, card.id, card.title))
+                                    if (card.key.isNotBlank() && card.id.isNotBlank()) {
+                                        navController.navigate(Routes.detail(card.key, card.id, card.title))
+                                    }
                                 },
                                 onCategoryClick = { category ->
                                     navController.navigate(
@@ -105,7 +107,9 @@ class ComposeMainActivity : ComponentActivity() {
                                 dataSource = categoryDataSource,
                                 onBack = { navController.popBackStack() },
                                 onCardClick = { card ->
-                                    navController.navigate(Routes.detail(card.key, card.id, card.title))
+                                    if (card.key.isNotBlank() && card.id.isNotBlank()) {
+                                        navController.navigate(Routes.detail(card.key, card.id, card.title))
+                                    }
                                 },
                             )
                         },

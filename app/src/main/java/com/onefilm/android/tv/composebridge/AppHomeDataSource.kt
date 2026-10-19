@@ -22,6 +22,7 @@ class AppHomeDataSource : HomeDataSource {
         val result = SiteApi.homeContent(site)
         val vods = HomeFeedMapper.fromVods(result.list, site.key)
         val categories = result.types.map { HomeCategory(site.key, it.typeId, it.typeName) }
+        CategoryFilterStore.put(result.types)
         val sections = buildList {
             HomeFeedMapper.fromHistory(History.get()).takeIf { it.isNotEmpty() }?.let {
                 add(HomeSection("继续观看", it))
