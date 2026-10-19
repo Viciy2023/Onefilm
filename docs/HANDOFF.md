@@ -9,14 +9,15 @@
 
 ## 1. 当前状态
 
-- 项目目录 `F:\APK\Onefilm` 目前只有文档和计划。
+- 项目目录 `F:\APK\Onefilm` 现有 FongMi 5.6.3 源码、docs、以及 `spike/media3-official` 分支。
+- 已确认 **17 个 `lib-*.aar` 无法公开获取，也无法从 APK 还原**；改为按 `docs/media3-fork-plan.md` 自行实现兼容层。
+- 当前分支 `spike/media3-official`：已接入官方 media3 1.8.0，编译剩 125 个错误 / 22 个定制类（见计划文档）。
 - 还没有：
-  - `git init`
-  - 导入 FongMi 源码
-  - 创建 Android 工程
-  - 写任何业务代码
-- 用户最后确认：**环境准备已完成，暂停等确认，暂不开始 Task 1**。
-- 新窗口不要直接开始改代码；先等用户明确“开始 Task 1”。
+  - 可编译的两个 flavor
+  - 身份/包名改名（Task 3–4）
+  - `:core`/`:ui`/`:designsystem`（Task 6–11）
+- 用户最后确认：**长期项目，先做可编译基线，再逐步恢复 MPV/libass/弹幕/DV 引擎**。
+- 新窗口不要直接开始改代码；先读 `docs/media3-fork-plan.md` 与 `.superpowers/sdd/.../progress.md`。
 
 ---
 
