@@ -1,0 +1,29 @@
+plugins {
+    alias libs.plugins.android.library
+}
+
+android {
+    namespace = 'com.onefilm.android.tv.core'
+    compileSdk libs.versions.compileSdk.get().toInteger()
+
+    defaultConfig {
+        minSdk libs.versions.minSdk.get().toInteger()
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+    }
+}
+
+dependencies {
+    implementation libs.annotation
+    implementation libs.gson
+    implementation libs.simple.xml
+}

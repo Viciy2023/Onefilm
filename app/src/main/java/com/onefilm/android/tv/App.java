@@ -12,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.os.HandlerCompat;
 
+import com.onefilm.android.tv.core.CoreContext;
 import com.onefilm.android.tv.utils.Notify;
 import com.fongmi.hook.Hook;
 import com.github.catvod.Init;
@@ -81,6 +82,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @Override
     public void onCreate() {
         super.onCreate();
+        CoreContext.INSTANCE.init(this);
         Notify.createChannel();
         registerActivityLifecycleCallbacks(this);
     }

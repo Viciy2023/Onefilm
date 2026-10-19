@@ -140,6 +140,7 @@ dependencies {
     implementation "androidx.media3:media3-session:1.8.0"
     implementation "androidx.media3:media3-effect:1.8.0"
 
+    implementation project(':core')
     implementation fileTree(dir: "libs", include: ["*.aar"])
     implementation project(':catvod')
     implementation project(':chaquo')
