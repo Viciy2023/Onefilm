@@ -9,6 +9,7 @@ import android.view.View;
 
 import androidx.annotation.Nullable;
 import androidx.media3.common.Player;
+import androidx.media3.ui.PlayerView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +26,7 @@ public final class DanmakuView extends View {
     private boolean enabled = true;
     private long lastLayoutMs = -1;
     private Long testClock;
+    private PlayerView host;
 
     public DanmakuView(Context context) {
         this(context, null);
@@ -40,6 +42,10 @@ public final class DanmakuView extends View {
     public void setClock(@Nullable Long positionMs) {
         this.testClock = positionMs;
         invalidate();
+    }
+
+    public void setHost(PlayerView host) {
+        this.host = host;
     }
 
     public void setPlayer(@Nullable Player player) {
@@ -77,7 +83,8 @@ public final class DanmakuView extends View {
     protected void onDraw(Canvas canvas) {
         if (!enabled) return;
         if (getWidth() == 0 || getHeight() == 0) return;
-        long positionMs = testClock != null ? testClock : (player == null ? 0 : player.getCurrentPosition());
+        Player active = host != null ? host.getPlayer() : player;
+        long positionMs = testClock != null ? testClock : (active == null ? 0 : active.getCurrentPosition());
         if (positionMs != lastLayoutMs) layoutLanes(positionMs);
         float scale = Math.max(0.5f, config.textScale);
         int alpha = (int) (255 * (1f - clamp(config.transparency)));
@@ -85,12 +92,15 @@ public final class DanmakuView extends View {
         paint.setStyle(Paint.Style.FILL);
         drawItems(canvas, items, positionMs, scale, alpha);
         drawItems(canvas, local, positionMs, scale, alpha);
-        if (player != null && player.isPlaying()) postInvalidateOnAnimation();
+        if (active != null && active.isPlaying()) postInvalidateOnAnimation();
     }
 
     private void drawItems(Canvas canvas, List<DanmakuItem> list, long positionMs, float scale, int alpha) {
         float laneHeight = paint.getFontMetrics(null) * -1f + config.lineSpacing;
         for (DanmakuItem item : list) {
+            if (item.mode == DanmakuItem.MODE_SCROLL && !config.showScroll) continue;
+            if (item.mode == DanmakuItem.MODE_TOP && !config.showTop) continue;
+            if (item.mode == DanmakuItem.MODE_BOTTOM && !config.showBottom) continue;
             long elapsed = positionMs - item.timeMs;
             if (elapsed < 0) continue;
             long duration = item.mode == DanmakuItem.MODE_SCROLL ? config.durationMs : config.fixedDurationMs;

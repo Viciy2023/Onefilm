@@ -40,6 +40,7 @@ public final class DanmakuPlayerViewController {
         DanmakuView view = new DanmakuView(playerView.getContext());
         view.setConfig(config);
         view.setEnabled(enabled);
+        view.setHost(playerView);
         view.setPlayer(playerView.getPlayer());
         PlayerView.LayoutParams params = new PlayerView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
