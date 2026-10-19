@@ -33,6 +33,7 @@ import com.onefilm.android.tv.player.effect.audio.AudioEffectBands;
 import com.onefilm.android.tv.player.engine.PlayerEngine;
 import com.onefilm.android.tv.player.engine.PlayerEngine.SecondarySubtitleState;
 import com.onefilm.android.tv.player.engine.PlayerEngineFactory;
+import com.onefilm.android.tv.player.media.ChapterLoader;
 import com.onefilm.android.tv.player.media.PlaySpec;
 import com.onefilm.android.tv.player.parse.ParseJob;
 import com.onefilm.android.tv.player.track.TrackUtil;
@@ -45,6 +46,7 @@ import com.onefilm.android.tv.utils.ResUtil;
 import com.onefilm.android.tv.utils.Util;
 import com.google.common.net.HttpHeaders;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +62,7 @@ public class PlayerManager implements ParseCallback {
     private ParseJob parseJob;
     private PlaySpec spec;
     private Player player;
+    private List<MediaChapter> chapters = new ArrayList<>();
 
     private long pendingStartPositionMs;
     private boolean danmakuEnabled;
@@ -103,8 +106,17 @@ public class PlayerManager implements ParseCallback {
         return engine == null ? Format.NO_VALUE : engine.getAudioChannelCount();
     }
 
+    private void loadChapters(@Nullable MediaItem mediaItem) {
+        chapters = new ArrayList<>();
+        if (mediaItem == null || mediaItem.localConfiguration == null) return;
+        ChapterLoader.load(App.get(), mediaItem.localConfiguration.uri, list -> {
+            chapters = new ArrayList<>(list);
+            callback.onMediaOptionsChanged();
+        });
+    }
+
     public List<MediaChapter> getCurrentMediaChapters() {
-        return player.getCurrentMediaChapters();
+        return chapters;
     }
 
     public List<MediaEdition> getCurrentMediaEditions() {
@@ -299,7 +311,7 @@ public class PlayerManager implements ParseCallback {
     }
 
     public void selectChapter(MediaChapter chapter) {
-        player.selectChapter(chapter);
+        if (chapter != null) player.seekTo(chapter.timeUs / 1000);
     }
 
     public void selectEdition(MediaEdition edition) {
@@ -648,6 +660,11 @@ public class PlayerManager implements ParseCallback {
         public void onPlaybackStateChanged(int state) {
             if (state == Player.STATE_READY || state == Player.STATE_ENDED) App.removeCallbacks(runnable);
             if (state == Player.STATE_READY) startPreloadIfReady();
+        }
+
+        @Override
+        public void onMediaItemTransition(@Nullable MediaItem mediaItem, int reason) {
+            loadChapters(mediaItem);
         }
 
         @Override
