@@ -30,13 +30,13 @@
 | PiP（MPV） | Home 键 + `dumpsys activity` + 截图 | ✅ `mode=pinned`、`mLastReportedPictureInPictureMode=true` |
 | 后台播放（非 PiP） | Home 键 + `dumpsys media_session` | ✅ `PLAYING`，position 5.5s→8.6s 继续前进 |
 | 偏移设置 UI（MPV） | 正式播放页 → 设置 → 字幕/音质 → 偏移滑块 | ✅ 字幕 `sub-delay` +173s→0；音频 `audio-delay` 4.3→5.8s |
+| 偏移设置 UI（Exo） | 同上；日志 `OneFilmOffset ... engine=exo` | ✅ 字幕 130000→173000→0ms；音频 4400→5800ms |
 
 ## 待验证
 
 | 项 | 说明 |
 |---|---|
 | ExoPlayer DV 策略 | `0003` 已实现并通过单测/接线验证，状态：待验收（缺真实 DV 样片） |
-| 偏移设置 UI（Exo） | 引擎级已通过（音频 PCM 单测、字幕 cue 时序）；UI 滑块点击因自动化时序不稳未完成 |
 | 预加载 | 当前默认关闭，需开启后验证 |
 | DLNA | 未回归 |
 
