@@ -2,6 +2,7 @@ package com.onefilm.android.tv.player;
 
 import android.net.Uri;
 import android.text.TextUtils;
+import android.view.Surface;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -392,6 +393,14 @@ public class PlayerManager implements ParseCallback {
 
     public void previewAudioSetting(boolean original) {
         effects.previewAudioSetting(original);
+    }
+
+    public boolean isMpv() {
+        return isMpvEngine();
+    }
+
+    public void attachMpvSurface(Surface surface) {
+        if (player instanceof androidx.media3.mpvplayer.MpvPlayer mpv) mpv.attachSurface(surface);
     }
 
     private boolean isMpvEngine() {

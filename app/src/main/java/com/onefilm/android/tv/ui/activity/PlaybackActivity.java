@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.os.IBinder;
 import android.view.View;
 import android.view.ViewGroup;
@@ -408,8 +410,23 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         getPlayerView().setPlayer(null);
     }
 
+    private SurfaceView mpvSurfaceView;
+
+    private void attachMpvSurface() {
+        if (mpvSurfaceView != null) return;
+        SurfaceView view = new SurfaceView(this);
+        view.getHolder().addCallback(new SurfaceHolder.Callback() {
+            @Override public void surfaceCreated(SurfaceHolder holder) { player().attachMpvSurface(holder.getSurface()); }
+            @Override public void surfaceChanged(SurfaceHolder holder, int f, int w, int h) { }
+            @Override public void surfaceDestroyed(SurfaceHolder holder) { player().attachMpvSurface(null); }
+        });
+        getPlayerView().addView(view, 1, new PlayerView.LayoutParams(PlayerView.LayoutParams.MATCH_PARENT, PlayerView.LayoutParams.MATCH_PARENT));
+        mpvSurfaceView = view;
+    }
+
     private void syncPlayerView(Player player) {
         player().bindPlayerView(getPlayerView());
+        if (player().isMpv()) attachMpvSurface();
         danmakuController.bind(getPlayerView());
         getPlayerView().setPlayer(player);
         syncDanmakuSource();
