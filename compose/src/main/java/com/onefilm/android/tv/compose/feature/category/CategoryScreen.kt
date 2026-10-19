@@ -15,8 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -44,7 +47,9 @@ fun CategoryScreen(
     onBack: () -> Unit,
     onCardClick: (MediaCard) -> Unit,
     onToggleFilter: (filterKey: String, value: String, selected: Boolean) -> Unit,
+    onLoadMore: () -> Unit,
 ) {
+    var showFilters by rememberSaveable { mutableStateOf(false) }
     when (state) {
         CategoryUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -57,7 +62,16 @@ fun CategoryScreen(
             }
         }
         is CategoryUiState.Content -> CategoryContent(
-            title, state.page, selectedFilters, onBack, onCardClick, onToggleFilter,
+            title,
+            state.page,
+            selectedFilters,
+            showFilters,
+            onToggleShow = { showFilters = !showFilters },
+            onBack,
+            onCardClick,
+            onToggleFilter,
+            onLoadMore,
+            state.endReached,
         )
     }
 }
@@ -67,11 +81,14 @@ private fun CategoryContent(
     fallbackTitle: String,
     page: CategoryPage,
     selectedFilters: Map<String, String>,
+    showFilters: Boolean,
+    onToggleShow: () -> Unit,
     onBack: () -> Unit,
     onCardClick: (MediaCard) -> Unit,
     onToggleFilter: (filterKey: String, value: String, selected: Boolean) -> Unit,
+    onLoadMore: () -> Unit,
+    endReached: Boolean,
 ) {
-    var showFilters by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
@@ -94,7 +111,7 @@ private fun CategoryContent(
                     modifier = Modifier
                         .clip(RoundedCornerShape(16.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable { showFilters = !showFilters }
+                        .clickable(onClick = onToggleShow)
                         .padding(horizontal = 14.dp, vertical = 8.dp),
                 )
             }
@@ -146,6 +163,19 @@ private fun CategoryContent(
                     subtitle = card.subtitle,
                     onClick = { onCardClick(card) },
                 )
+            }
+            if (!endReached) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    LaunchedEffect(page.items.size) { onLoadMore() }
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
             }
         }
     }

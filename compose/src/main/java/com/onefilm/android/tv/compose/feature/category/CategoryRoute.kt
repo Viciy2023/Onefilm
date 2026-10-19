@@ -36,5 +36,6 @@ fun CategoryRoute(
         onBack = onBack,
         onCardClick = onCardClick,
         onToggleFilter = viewModel::toggleFilter,
+        onLoadMore = viewModel::loadMore,
     )
 }
