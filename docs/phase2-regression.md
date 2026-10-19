@@ -29,7 +29,7 @@
 |---|---|
 | 正式播放器音轨/字幕对话框 | 需要 UI 点击回归 |
 | MPV 播放中的轨道切换 | `aid`/`sid` 切换后听感/画面确认 |
-| ExoPlayer DV 策略 | `0003` 已实现：AUTO/ASSUME_SUPPORTED/ASSUME_UNSUPPORTED、HEVC 基础层回退、隧道开关；JVM 单测 4/4，真机非 DV 片源回归通过；真实 DV 片源播放待验证 |
+| ExoPlayer DV 策略 | `0003` 已实现并通过单测/接线验证，状态：待验收（缺真实 DV 样片） |
 | ExoPlayer A/V 偏移 | 音频：PCM 单元测试通过；字幕：delay 0 vs 3000ms 实测差 2862ms ✅ |
 | 预加载 | 当前默认关闭，需开启后验证 |
 | DLNA / PiP / 后台播放 | 未回归 |
