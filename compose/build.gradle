@@ -1,0 +1,47 @@
+plugins {
+    alias libs.plugins.android.library
+    alias libs.plugins.kotlin.compose
+}
+
+android {
+    namespace = 'com.onefilm.android.tv.compose'
+    compileSdk libs.versions.compileSdk.get().toInteger()
+
+    defaultConfig {
+        minSdk libs.versions.minSdk.get().toInteger()
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildFeatures {
+        compose = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+dependencies {
+    implementation platform(libs.compose.bom)
+    implementation libs.compose.ui
+    implementation libs.compose.material3
+    implementation libs.compose.ui.tooling.preview
+    implementation libs.activity.compose
+    implementation libs.navigation.compose
+    implementation libs.lifecycle.viewmodel.compose
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7'
+    implementation libs.tv.material
+    implementation libs.tv.foundation
+    implementation 'io.coil-kt:coil-compose:2.7.0'
+
+    debugImplementation libs.compose.ui.tooling
+    debugImplementation libs.compose.ui.test.manifest
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0'
+
+    androidTestImplementation platform(libs.compose.bom)
+    androidTestImplementation libs.compose.ui.test.junit4
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+}

@@ -128,6 +128,7 @@ dependencies {
     implementation libs.annotation
     testImplementation 'junit:junit:4.13.2'
     implementation project(':core')
+    implementation project(':compose')
     implementation project(':media3compat')
     implementation project(':mpvapi')
     implementation fileTree(dir: "libs", include: ["*.aar"])

@@ -3,6 +3,8 @@ agp = "9.3.1"
 kotlin = "2.3.20"
 composeBom = "2026.09.00"
 activityCompose = "1.13.0"
+navigationCompose = "2.7.7"
+lifecycleViewModelCompose = "2.8.7"
 tvMaterial = "1.1.0"
 tvFoundation = "1.0.0"
 python = "17.0.0"
@@ -122,6 +124,10 @@ compose-ui = { group = "androidx.compose.ui", name = "ui" }
 compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleViewModelCompose" }
+compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 tv-material = { group = "androidx.tv", name = "tv-material", version.ref = "tvMaterial" }
 tv-foundation = { group = "androidx.tv", name = "tv-foundation", version.ref = "tvFoundation" }
 

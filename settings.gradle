@@ -28,4 +28,5 @@ include ':mpvapi'
 include ':catvod'
 include ':chaquo'
 include ':quickjs'
+include ':compose'
 rootProject.name = "OneFilm"
