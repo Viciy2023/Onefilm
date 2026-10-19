@@ -121,6 +121,7 @@ dependencies {
     implementation("androidx.media3:media3-effect:1.8.0") { exclude group: "androidx.media3" }
     implementation libs.guava
     implementation "com.github.LumeraD3v:assrender:1.0.2"
+    implementation "io.github.wohal:mpv-android-lib:0.2.4"
     implementation libs.annotation
     implementation project(':core')
     implementation project(':media3compat')
