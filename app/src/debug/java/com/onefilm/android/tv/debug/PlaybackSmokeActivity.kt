@@ -22,6 +22,8 @@ class PlaybackSmokeActivity : Activity() {
         player.setMediaItem(MediaItem.fromUri(URL))
         player.prepare()
         player.play()
+        playerView.postDelayed({ playerView.setRender(1) }, 4000)
+        playerView.postDelayed({ playerView.setRender(0) }, 9000)
     }
 
     override fun onDestroy() {

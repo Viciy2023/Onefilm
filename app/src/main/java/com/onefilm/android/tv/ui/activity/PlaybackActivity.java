@@ -422,6 +422,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
     private void configurePlayerView() {
         PlayerView playerView = getPlayerView();
+        playerView.setRender(PlayerSetting.getRender());
         danmakuController.setOkHttpClient(OkHttp.player());
         danmakuController.setEnabled(DanmakuSetting.isShow());
         danmakuController.setConfig(DanmakuSetting.getConfig());
