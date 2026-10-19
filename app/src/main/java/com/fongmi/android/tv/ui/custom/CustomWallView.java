@@ -149,7 +149,7 @@ public class CustomWallView extends FrameLayout implements DefaultLifecycleObser
         player = new ExoPlayer.Builder(getContext()).build();
         player.setRepeatMode(Player.REPEAT_MODE_ALL);
         player.setPlayWhenReady(true);
-        player.mute();
+        player.setVolume(0f);
     }
 
     private void ensureVideoView() {

@@ -2,12 +2,11 @@ package com.fongmi.android.tv.player.media;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 
 import androidx.annotation.NonNull;
 import androidx.media3.common.util.BitmapLoader;
-import androidx.media3.datasource.DataSourceBitmapLoader;
-import androidx.media3.session.MediaSession;
 
 import com.bumptech.glide.load.model.GlideUrl;
 import com.fongmi.android.tv.utils.ImgUtil;
@@ -20,31 +19,38 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.SettableFuture;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Objects;
 
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
+/**
+ * OneFilm compatibility shim for FongMi's fork of DataSourceBitmapLoader.
+ * Phase 1 decodes artwork locally instead of using the media3-session loader.
+ */
 public final class ArtworkBitmapLoader implements BitmapLoader {
 
     private static final long MAX_ARTWORK_BYTES = 16L * 1024 * 1024;
 
-    private final DataSourceBitmapLoader decoder;
+    private final Context context;
 
     public ArtworkBitmapLoader(Context context) {
-        decoder = new DataSourceBitmapLoader.Builder(context).setMaximumOutputDimension(MediaSession.getBitmapDimensionLimit(context) * 2 - 1).build();
+        this.context = context.getApplicationContext();
     }
 
     @Override
     public boolean supportsMimeType(@NonNull String mimeType) {
-        return decoder.supportsMimeType(mimeType);
+        return mimeType.startsWith("image/");
     }
 
     @NonNull
     @Override
     public ListenableFuture<Bitmap> decodeBitmap(@NonNull byte[] data) {
-        return decoder.decodeBitmap(data);
+        Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+        if (bitmap == null) return Futures.immediateFailedFuture(new IOException("Unsupported artwork"));
+        return Futures.immediateFuture(bitmap);
     }
 
     @NonNull
@@ -52,11 +58,22 @@ public final class ArtworkBitmapLoader implements BitmapLoader {
     public ListenableFuture<Bitmap> loadBitmap(@NonNull Uri uri) {
         try {
             Object model = ImgUtil.getUrl(uri.toString());
-            if (!(model instanceof GlideUrl url)) return decoder.loadBitmap(uri);
+            if (!(model instanceof GlideUrl url)) return decodeUri(uri);
             String scheme = UrlUtil.scheme(url.toStringUrl());
-            if (!"http".equals(scheme) && !"https".equals(scheme)) return decoder.loadBitmap(uri);
-            return Futures.transformAsync(loadBytes(url), data -> decoder.decodeBitmap(Objects.requireNonNull(data)), MoreExecutors.directExecutor());
+            if (!"http".equals(scheme) && !"https".equals(scheme)) return decodeUri(uri);
+            return Futures.transformAsync(loadBytes(url), data -> decodeBitmap(Objects.requireNonNull(data)), MoreExecutors.directExecutor());
         } catch (RuntimeException error) {
+            return Futures.immediateFailedFuture(error);
+        }
+    }
+
+    private ListenableFuture<Bitmap> decodeUri(Uri uri) {
+        try (InputStream input = context.getContentResolver().openInputStream(uri)) {
+            if (input == null) return Futures.immediateFailedFuture(new IOException("Cannot open " + uri));
+            Bitmap bitmap = BitmapFactory.decodeStream(input);
+            if (bitmap == null) return Futures.immediateFailedFuture(new IOException("Unsupported artwork"));
+            return Futures.immediateFuture(bitmap);
+        } catch (Exception error) {
             return Futures.immediateFailedFuture(error);
         }
     }
@@ -83,16 +100,16 @@ public final class ArtworkBitmapLoader implements BitmapLoader {
     private record ArtworkCallback(SettableFuture<byte[]> future) implements Callback {
 
         @Override
-        public void onFailure(@NonNull Call call, @NonNull IOException error) {
-            future.setException(error);
+        public void onFailure(@NonNull Call call, @NonNull IOException e) {
+            future.setException(e);
         }
 
         @Override
         public void onResponse(@NonNull Call call, @NonNull Response response) {
             try (response) {
-                if (!future.isCancelled()) future.set(readBytes(response));
-            } catch (IOException error) {
-                future.setException(error);
+                future.set(readBytes(response));
+            } catch (Exception e) {
+                future.setException(e);
             }
         }
     }

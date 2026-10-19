@@ -69,7 +69,7 @@ public final class AudioEffectProcessor extends BaseAudioProcessor {
     }
 
     @Override
-    protected void onFlush(@NonNull StreamMetadata streamMetadata) {
+    protected void onFlush() {
         resetState();
     }
 

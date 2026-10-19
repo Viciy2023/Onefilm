@@ -56,7 +56,6 @@ final class ExoSubtitleController {
 
     private void applySecondarySubtitleStyle(SubtitleView subtitleView) {
         SubtitleSetting.applyStyle(subtitleView);
-        subtitleView.setBottomPosition(0.0f);
         subtitleView.setBottomPaddingFraction(getSecondaryBottomPositionFraction());
     }
 

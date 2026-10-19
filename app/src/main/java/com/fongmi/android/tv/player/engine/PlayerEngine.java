@@ -15,8 +15,8 @@ import java.util.List;
 
 public interface PlayerEngine {
 
-    int SOFT = C.DECODE_SOFTWARE;
-    int HARD = C.DECODE_HARDWARE;
+    int SOFT = 0; // OneFilm compat: official media3 has no C.DECODE_SOFTWARE
+    int HARD = 1; // OneFilm compat: official media3 has no C.DECODE_HARDWARE
 
     Type getType();
 

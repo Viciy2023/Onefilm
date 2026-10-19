@@ -16,6 +16,8 @@ public final class DanmakuConfig {
     public static final int COLOR_MODE_DEFAULT = 0;
     public static final int COLOR_MODE_OVERRIDE = 1;
     public static final int COLOR_MODE_RANDOM = 2;
+    public static final int COLOR_MODE_COLORFUL = 3;
+    public static final int COLOR_MODE_GRADIENT = 4;
 
     public static final DanmakuConfig DEFAULT = new Builder().build();
 

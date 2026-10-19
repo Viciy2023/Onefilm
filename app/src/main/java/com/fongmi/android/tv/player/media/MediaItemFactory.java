@@ -59,7 +59,6 @@ public final class MediaItemFactory {
                 .setDrmConfiguration(buildDrmConfig(spec.getDrm()))
                 .setRequestMetadata(buildRequestMetadata(spec))
                 .setMediaMetadata(spec.getMetadata())
-                .setAdblock(Setting.isAdblock())
                 .setMimeType(spec.getFormat())
                 .setImageDurationMs(15000)
                 .setMediaId(spec.getKey());
