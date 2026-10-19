@@ -24,6 +24,17 @@ class AppSearchMetaDataSource : SearchMetaDataSource {
         Word.objectFrom(Setting.getHot()).data.map { it.title }.filter { it.isNotBlank() }
     }.getOrDefault(emptyList())
 
+    override suspend fun refreshHot(): List<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val url = "https://api.web.360kan.com/v1/rank?cat=1"
+            OkHttp.newCall(url).execute().use { response ->
+                val body = response.body.string()
+                Setting.putHot(body)
+                Word.objectFrom(body).data.map { it.title }.filter { it.isNotBlank() }
+            }
+        }.getOrDefault(hot())
+    }
+
     override suspend fun suggest(text: String): List<String> = withContext(Dispatchers.IO) {
         if (text.isBlank()) return@withContext emptyList()
         runCatching {

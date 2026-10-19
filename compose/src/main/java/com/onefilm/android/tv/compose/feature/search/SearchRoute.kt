@@ -1,6 +1,7 @@
 package com.onefilm.android.tv.compose.feature.search
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,6 +27,8 @@ fun SearchRoute(
     )
     val state by viewModel.state.collectAsState()
     var suggestions by remember { mutableStateOf(emptyList<String>()) }
+    var hot by remember { mutableStateOf(metaDataSource.hot()) }
+    LaunchedEffect(Unit) { hot = metaDataSource.refreshHot() }
     val scope = rememberCoroutineScope()
     SearchScreen(
         state = state,
@@ -33,7 +36,7 @@ fun SearchRoute(
         onRetry = viewModel::retry,
         onCardClick = onCardClick,
         history = remember { metaDataSource.history() },
-        hot = remember { metaDataSource.hot() },
+        hot = hot,
         suggestions = suggestions,
         onQueryChange = { q -> scope.launch { suggestions = metaDataSource.suggest(q) } },
     )
