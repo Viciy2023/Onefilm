@@ -28,14 +28,19 @@ fun FocusableSurface(
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val shape = RoundedCornerShape(20.dp)
+    val borderModifier = if (focused) {
+        Modifier.border(
+            width = 2.dp,
+            color = OneFilmColors.Accent.copy(alpha = 0.3f),
+            shape = shape,
+        )
+    } else {
+        Modifier
+    }
     Box(
         modifier = modifier
             .scale(if (focused) 1.03f else 1f)
-            .border(
-                width = if (focused) 2.dp else 0.dp,
-                color = OneFilmColors.Accent,
-                shape = shape,
-            )
+            .then(borderModifier)
             .clip(shape)
             .focusable(interactionSource = interaction)
             .clickable(
