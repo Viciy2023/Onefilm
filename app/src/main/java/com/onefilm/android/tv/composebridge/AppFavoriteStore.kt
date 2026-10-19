@@ -8,20 +8,20 @@ class AppFavoriteStore : FavoriteStore {
 
     private fun key(key: String, id: String) = "$key@@@$id"
 
-    override fun isFavorite(key: String, id: String): Boolean = Keep.find(key(key, id)) != null
+    override fun isFavorite(key: String, id: String): Boolean =
+        Keep.getVod().any { it.siteKey == key && it.vodId == id }
 
     override fun toggle(key: String, id: String, siteName: String, title: String, posterUrl: String?) {
-        val full = key(key, id)
-        val existing = Keep.find(full)
+        val existing = Keep.getVod().firstOrNull { it.siteKey == key && it.vodId == id }
         if (existing != null) {
             existing.delete()
             return
         }
         Keep().apply {
-            setKey(full)
+            setKey(key(key, id))
             setSiteName(siteName.ifBlank { VodConfig.get().getSite(key)?.name.orEmpty() })
             setVodName(title)
             setVodPic(posterUrl.orEmpty())
-        }.save()
+        }.save(VodConfig.getCid())
     }
 }
