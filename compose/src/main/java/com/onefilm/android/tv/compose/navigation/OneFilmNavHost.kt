@@ -13,21 +13,26 @@ import com.onefilm.android.tv.compose.feature.settings.SettingsScreen
 fun OneFilmNavHost(
     navController: NavHostController,
     homeContent: @Composable () -> Unit,
-    searchContent: @Composable () -> Unit,
+    searchContent: @Composable (query: String?) -> Unit,
     libraryContent: @Composable () -> Unit,
-    playerContent: @Composable (url: String) -> Unit,
+    playerContent: @Composable () -> Unit,
     sourceContent: @Composable (title: String) -> Unit,
-    detailContent: @Composable (key: String, id: String, title: String) -> Unit,
+    resolveContent: @Composable (title: String) -> Unit,
+    detailContent: @Composable (key: String, id: String, title: String, poster: String?) -> Unit,
     categoryContent: @Composable (key: String, tid: String, name: String) -> Unit,
 ) {
     NavHost(navController = navController, startDestination = Routes.HOME) {
         composable(Routes.HOME) { homeContent() }
-        composable(Routes.SEARCH) { searchContent() }
+        composable(Routes.SEARCH) { searchContent(null) }
+        composable(
+            route = Routes.SEARCH_QUERY,
+            arguments = listOf(navArgument("q") { type = NavType.StringType }),
+        ) { entry ->
+            searchContent(entry.arguments?.getString("q").orEmpty())
+        }
         composable(Routes.LIBRARY) { libraryContent() }
         composable(Routes.SETTINGS) { SettingsScreen() }
-        composable(Routes.PLAYER, arguments = listOf(navArgument("url") { type = NavType.StringType })) { entry ->
-            playerContent(entry.arguments?.getString("url").orEmpty())
-        }
+        composable(Routes.PLAYER) { playerContent() }
         composable(
             route = Routes.SOURCES,
             arguments = listOf(navArgument("title") { type = NavType.StringType }),
@@ -35,17 +40,28 @@ fun OneFilmNavHost(
             sourceContent(entry.arguments?.getString("title").orEmpty())
         }
         composable(
+            route = Routes.RESOLVE,
+            arguments = listOf(navArgument("title") { type = NavType.StringType }),
+        ) { entry ->
+            resolveContent(entry.arguments?.getString("title").orEmpty())
+        }
+        composable(
             route = Routes.DETAIL,
             arguments = listOf(
                 navArgument("key") { type = NavType.StringType },
                 navArgument("id") { type = NavType.StringType },
                 navArgument("title") { type = NavType.StringType },
+                navArgument("poster") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                },
             ),
         ) { entry ->
             detailContent(
                 entry.arguments?.getString("key").orEmpty(),
                 entry.arguments?.getString("id").orEmpty(),
                 entry.arguments?.getString("title").orEmpty(),
+                entry.arguments?.getString("poster"),
             )
         }
         composable(

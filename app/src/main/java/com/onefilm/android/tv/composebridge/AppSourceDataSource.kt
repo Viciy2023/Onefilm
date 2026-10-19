@@ -3,6 +3,7 @@ package com.onefilm.android.tv.composebridge
 import com.onefilm.android.tv.api.SiteApi
 import com.onefilm.android.tv.api.config.VodConfig
 import com.onefilm.android.tv.compose.bridge.SourceDataSource
+import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.bridge.SourceItem
 import com.github.catvod.utils.Trans
 import kotlinx.coroutines.Dispatchers
@@ -11,6 +12,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 
 class AppSourceDataSource : SourceDataSource {
 
@@ -37,10 +39,11 @@ class AppSourceDataSource : SourceDataSource {
         }
 
         val sites = VodConfig.get().getSites().filter { it.isSearchable }
-        val results = coroutineScope {
-            sites.map { site ->
+        val found = java.util.Collections.synchronizedList(mutableListOf<SourceItem>())
+        coroutineScope {
+            val jobs = sites.map { site ->
                 async {
-                    runCatching {
+                    val list = runCatching {
                         withTimeout(5_000) {
                             SiteApi.searchContent(site, key, false, "1").list
                         }
@@ -57,10 +60,25 @@ class AppSourceDataSource : SourceDataSource {
                             posterUrl = vod.pic.orEmpty().ifBlank { null },
                         )
                     }
+                    found.addAll(list)
                 }
-            }.awaitAll().flatten()
+            }
+            // 不等待所有站点：个别 JS 源会卡死，最多等 6 秒后返回已拿到的结果。
+            withTimeoutOrNull(6_000) { jobs.awaitAll() }
         }
-        results.distinctBy { "${it.key}:${it.id}" }
+        val results = found.toList().distinctBy { "${it.key}:${it.id}" }
             .sortedByDescending { Trans.t2s(it.title) == key }
+        if (results.isNotEmpty()) {
+            SearchResultCache.items = (results.map { item ->
+                MediaCard(
+                    key = item.key,
+                    id = item.id,
+                    title = item.title,
+                    subtitle = item.subtitle,
+                    posterUrl = item.posterUrl,
+                )
+            } + SearchResultCache.items).distinctBy { "${it.key}:${it.id}" }
+        }
+        results
     }
 }

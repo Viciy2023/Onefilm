@@ -20,9 +20,12 @@ import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.feature.category.CategoryRoute
 import com.onefilm.android.tv.compose.feature.detail.DetailRoute
 import com.onefilm.android.tv.compose.feature.library.LibraryRoute
+import com.onefilm.android.tv.compose.feature.player.PlaybackSession
 import com.onefilm.android.tv.compose.feature.player.PlayerRoute
 import com.onefilm.android.tv.compose.feature.search.SearchRoute
+import com.onefilm.android.tv.compose.feature.search.SearchSession
 import com.onefilm.android.tv.compose.feature.source.SourceRoute
+import com.onefilm.android.tv.compose.feature.source.ResolveRoute
 import com.onefilm.android.tv.compose.feature.home.HomeScreen
 import com.onefilm.android.tv.compose.feature.home.HomeViewModel
 import com.onefilm.android.tv.compose.navigation.AdaptiveNavigation
@@ -47,10 +50,22 @@ class ComposeMainActivity : ComponentActivity() {
         val launcher = ComposeDependencies.detailLauncher
 
         setContent {
+            PlaybackSession.historyStore = ComposeDependencies.playbackHistoryStore
             OneFilmTheme {
                 val navController = rememberNavController()
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val route = backStackEntry?.destination?.route
+                LaunchedEffect(route) {
+                    val keepPlaying = route?.startsWith("detail") == true ||
+                        route?.startsWith("player") == true
+                    if (!keepPlaying) PlaybackSession.release()
+                    val keepSearching = route?.startsWith("search") == true ||
+                        route?.startsWith("detail") == true ||
+                        route?.startsWith("sources") == true ||
+                        route?.startsWith("resolve") == true ||
+                        route?.startsWith("player") == true
+                    if (!keepSearching) SearchSession.cancel()
+                }
                 val homeViewModel: HomeViewModel = viewModel(
                     factory = viewModelFactory {
                         initializer { HomeViewModel(dataSource) }
@@ -66,7 +81,8 @@ class ComposeMainActivity : ComponentActivity() {
                 AdaptiveNavigation(
                     isTv = isTv,
                     currentRoute = route,
-                    showTabs = route?.startsWith("detail") != true && route?.startsWith("sources") != true && route?.startsWith("player") != true,
+                    showTabs = route?.startsWith("detail") != true && route?.startsWith("sources") != true &&
+                        route?.startsWith("resolve") != true && route?.startsWith("player") != true,
                     onNavigate = { target ->
                         navController.navigate(target) {
                             launchSingleTop = true
@@ -81,8 +97,12 @@ class ComposeMainActivity : ComponentActivity() {
                                 state = homeState,
                                 onRetry = homeViewModel::retry,
                                 onCardClick = { card ->
-                                    if (card.key.isNotBlank() && card.id.isNotBlank()) {
-                                        navController.navigate(Routes.detail(card.key, card.id, card.title))
+                                    if (card.key.isNotBlank() && card.id.isNotBlank() &&
+                                        !card.id.startsWith("msearch:")
+                                    ) {
+                                        navController.navigate(Routes.detail(card.key, card.id, card.title, card.posterUrl))
+                                    } else if (card.title.isNotBlank()) {
+                                        navController.navigate(Routes.search(card.title))
                                     }
                                 },
                                 onCategoryClick = { category ->
@@ -92,12 +112,19 @@ class ComposeMainActivity : ComponentActivity() {
                                 },
                             )
                         },
-                        searchContent = {
+                        searchContent = { initialQuery ->
                             SearchRoute(
                                 dataSource = searchDataSource,
                                 metaDataSource = searchMetaDataSource,
+                                initialQuery = initialQuery,
                                 onCardClick = { card ->
-                                    navController.navigate(Routes.sources(card.title))
+                                    if (card.key.isNotBlank() && card.id.isNotBlank() &&
+                                        !card.id.startsWith("msearch:")
+                                    ) {
+                                        navController.navigate(Routes.detail(card.key, card.id, card.title, card.posterUrl))
+                                    } else if (card.title.isNotBlank()) {
+                                        navController.navigate(Routes.sources(card.title))
+                                    }
                                 },
                             )
                         },
@@ -116,21 +143,43 @@ class ComposeMainActivity : ComponentActivity() {
                                 },
                             )
                         },
+                        resolveContent = { title ->
+                            ResolveRoute(
+                                title = title,
+                                dataSource = sourceDataSource,
+                                onResolved = { item ->
+                                    navController.navigate(
+                                        Routes.detail(item.key, item.id, item.title, item.posterUrl),
+                                    ) {
+                                        popUpTo(Routes.RESOLVE) { inclusive = true }
+                                    }
+                                },
+                                onBack = { navController.popBackStack() },
+                                onSearch = {
+                                    navController.navigate(Routes.SEARCH) {
+                                        popUpTo(Routes.RESOLVE) { inclusive = true }
+                                    }
+                                },
+                            )
+                        },
                         libraryContent = {
                             LibraryRoute(libraryDataSource) { card ->
-                                if (card.key.isNotBlank() && card.id.isNotBlank()) navController.navigate(Routes.detail(card.key, card.id, card.title))
+                                if (card.key.isNotBlank() && card.id.isNotBlank()) navController.navigate(Routes.detail(card.key, card.id, card.title, card.posterUrl))
                             }
                         },
-                        playerContent = { url -> PlayerRoute(url = url, onBack = { navController.popBackStack() }) },
-                        detailContent = { key, id, title ->
+                        playerContent = { PlayerRoute(onBack = { navController.popBackStack() }) },
+                        detailContent = { key, id, title, poster ->
                             DetailRoute(
                                 key = key,
                                 id = id,
+                                previewTitle = title,
+                                previewPoster = poster,
                                 dataSource = detailDataSource,
                                 favoriteStore = favoriteStore,
                         playbackResolver = ComposeDependencies.playbackResolver,
+                        historyStore = ComposeDependencies.playbackHistoryStore,
                                 onBack = { navController.popBackStack() },
-                                onPlayUrl = { url -> navController.navigate(Routes.player(url)) },
+                                onEnterFullscreen = { navController.navigate(Routes.PLAYER) },
                             )
                         },
                         categoryContent = { key, tid, name ->
@@ -141,8 +190,12 @@ class ComposeMainActivity : ComponentActivity() {
                                 dataSource = categoryDataSource,
                                 onBack = { navController.popBackStack() },
                                 onCardClick = { card ->
-                                    if (card.key.isNotBlank() && card.id.isNotBlank()) {
-                                        navController.navigate(Routes.detail(card.key, card.id, card.title))
+                                    if (card.key.isNotBlank() && card.id.isNotBlank() &&
+                                        !card.id.startsWith("msearch:")
+                                    ) {
+                                        navController.navigate(Routes.detail(card.key, card.id, card.title, card.posterUrl))
+                                    } else if (card.title.isNotBlank()) {
+                                        navController.navigate(Routes.search(card.title))
                                     }
                                 },
                             )

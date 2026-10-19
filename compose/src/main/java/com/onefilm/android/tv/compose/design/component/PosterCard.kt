@@ -19,7 +19,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 
 @Composable
 fun PosterCard(
@@ -44,8 +43,8 @@ fun PosterCard(
                     Text("无海报", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
-                AsyncImage(
-                    model = posterUrl,
+                RemoteImage(
+                    rawUrl = posterUrl,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),

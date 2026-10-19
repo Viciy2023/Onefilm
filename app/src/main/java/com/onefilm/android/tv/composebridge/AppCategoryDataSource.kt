@@ -20,6 +20,7 @@ class AppCategoryDataSource : CategoryDataSource {
         VodConfig.get().ensureLoaded()
         val extend = HashMap(selected)
         val result = SiteApi.categoryContent(key, tid, page.toString(), true, extend)
+        android.util.Log.d("ComposeCategory", "key=$key tid=$tid list=${result.list.size} firstId=${result.list.firstOrNull()?.id} firstName=${result.list.firstOrNull()?.name}")
         val type = result.types.firstOrNull { it.typeId == tid }
         val filterGroups = if (!type?.filters.isNullOrEmpty()) {
             type!!.filters.map(CategoryFilterStore::fromFilter)

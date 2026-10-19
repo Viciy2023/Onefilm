@@ -23,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 
 @Composable
 fun HeroBanner(
@@ -41,8 +40,8 @@ fun HeroBanner(
             .background(MaterialTheme.colorScheme.surfaceVariant),
     ) {
         if (!backdropUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = backdropUrl,
+            RemoteImage(
+                rawUrl = backdropUrl,
                 contentDescription = title,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),

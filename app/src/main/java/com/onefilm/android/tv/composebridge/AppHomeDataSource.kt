@@ -20,7 +20,12 @@ class AppHomeDataSource : HomeDataSource {
             return@withContext HomeFeed(emptyList(), emptyList())
         }
         val result = SiteApi.homeContent(site)
-        val vods = HomeFeedMapper.fromVods(result.list, site.key)
+        android.util.Log.d("ComposeHome", "site=${site.key} list=${result.list.size} firstId=${result.list.firstOrNull()?.id} firstName=${result.list.firstOrNull()?.name} firstPic=${result.list.firstOrNull()?.pic}")
+        val vods = HomeFeedMapper.fromVods(
+            result.list.filter { it.name.orEmpty().isNotBlank() },
+            site.key,
+        )
+        val hero = (vods.filter { !it.posterUrl.isNullOrBlank() }.ifEmpty { vods }).take(5)
         val categories = result.types.map { HomeCategory(site.key, it.typeId, it.typeName) }
         CategoryFilterStore.put(result.types)
         val sections = buildList {
@@ -32,6 +37,6 @@ class AppHomeDataSource : HomeDataSource {
             }
             if (vods.isNotEmpty()) add(HomeSection("推荐", vods))
         }
-        HomeFeed(hero = vods.take(5), sections = sections, categories = categories)
+        HomeFeed(hero = hero, sections = sections, categories = categories)
     }
 }

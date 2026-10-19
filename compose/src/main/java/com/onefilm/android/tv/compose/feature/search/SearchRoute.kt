@@ -21,6 +21,7 @@ fun SearchRoute(
     dataSource: SearchDataSource,
     metaDataSource: SearchMetaDataSource,
     onCardClick: (MediaCard) -> Unit,
+    initialQuery: String? = null,
 ) {
     val viewModel: SearchViewModel = viewModel(
         factory = viewModelFactory { initializer { SearchViewModel(dataSource) } },
@@ -29,6 +30,13 @@ fun SearchRoute(
     var suggestions by remember { mutableStateOf(emptyList<String>()) }
     var hot by remember { mutableStateOf(metaDataSource.hot()) }
     LaunchedEffect(Unit) { hot = metaDataSource.refreshHot() }
+    LaunchedEffect(initialQuery) {
+        val keyword = initialQuery?.trim().orEmpty()
+        if (keyword.isNotEmpty() && !viewModel.hasSession(keyword)) {
+            metaDataSource.record(keyword)
+            viewModel.search(keyword)
+        }
+    }
     val scope = rememberCoroutineScope()
     SearchScreen(
         state = state,
@@ -38,6 +46,7 @@ fun SearchRoute(
         history = remember { metaDataSource.history() },
         hot = hot,
         suggestions = suggestions,
+        initialQuery = initialQuery,
         onQueryChange = { q -> scope.launch { suggestions = metaDataSource.suggest(q) } },
     )
 }

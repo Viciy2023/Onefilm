@@ -95,6 +95,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setFavoriteStore(new com.onefilm.android.tv.composebridge.AppFavoriteStore());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setDetailLauncher(new com.onefilm.android.tv.composebridge.AppDetailLauncher());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setPlaybackResolver(new com.onefilm.android.tv.composebridge.AppPlaybackResolver());
+        com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setPlaybackHistoryStore(new com.onefilm.android.tv.composebridge.AppPlaybackHistoryStore());
     }
 
     @Override

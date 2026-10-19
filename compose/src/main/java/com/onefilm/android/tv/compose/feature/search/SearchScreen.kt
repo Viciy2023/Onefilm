@@ -48,12 +48,18 @@ fun SearchScreen(
     history: List<String> = emptyList(),
     hot: List<String> = emptyList(),
     suggestions: List<String> = emptyList(),
+    initialQuery: String? = null,
     onQueryChange: (String) -> Unit = {},
 ) {
-    var query by remember { mutableStateOf("") }
+    var query by remember(initialQuery) { mutableStateOf(initialQuery.orEmpty()) }
     val focusRequester = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
-    LaunchedEffect(Unit) { focusRequester.requestFocus(); keyboard?.show() }
+    LaunchedEffect(Unit) {
+        if (initialQuery.isNullOrBlank()) {
+            focusRequester.requestFocus()
+            keyboard?.show()
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()

@@ -33,6 +33,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.onefilm.android.tv.compose.bridge.DetailInfo
+import com.onefilm.android.tv.compose.design.component.RemoteImage
+import com.onefilm.android.tv.compose.feature.player.InlinePlayer
 
 @Composable
 fun DetailScreen(
@@ -42,24 +44,126 @@ fun DetailScreen(
     onPlay: (flagName: String?, episodeUrl: String?) -> Unit,
     favorite: Boolean = false,
     onToggleFavorite: () -> Unit = {},
+    playingUrl: String? = null,
+    onExpandPlayer: () -> Unit = {},
+    previewTitle: String? = null,
+    previewPoster: String? = null,
 ) {
     when (state) {
-        DetailUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        is DetailUiState.Error -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(state.message, style = MaterialTheme.typography.bodyLarge)
-                Spacer(Modifier.height(12.dp))
-                Button(onClick = onRetry) { Text("重试") }
+        DetailUiState.Loading -> {
+            if (!previewTitle.isNullOrBlank()) {
+                DetailPlaceholder(
+                    title = previewTitle,
+                    posterUrl = previewPoster,
+                    onBack = onBack,
+                    loading = true,
+                )
+            } else {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
             }
         }
-        is DetailUiState.Content -> DetailContent(state.info, onBack, onPlay, favorite, onToggleFavorite)
+        is DetailUiState.Error -> {
+            DetailPlaceholder(
+                title = previewTitle.orEmpty().ifBlank { "影片详情" },
+                posterUrl = previewPoster,
+                onBack = onBack,
+                loading = false,
+                message = "详情加载失败，请重试",
+                onRetry = onRetry,
+            )
+        }
+        is DetailUiState.Content -> DetailContent(
+            state.info,
+            onBack,
+            onPlay,
+            favorite,
+            onToggleFavorite,
+            playingUrl,
+            onExpandPlayer,
+        )
     }
 }
 
 @Composable
-private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: (String?, String?) -> Unit, favorite: Boolean, onToggleFavorite: () -> Unit) {
+private fun DetailPlaceholder(
+    title: String,
+    posterUrl: String?,
+    onBack: () -> Unit,
+    loading: Boolean,
+    message: String? = null,
+    onRetry: () -> Unit = {},
+) {
+    Column(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+        ) {
+            RemoteImage(
+                rawUrl = posterUrl,
+                contentDescription = title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Brush.verticalGradient(listOf(Color(0x44000000), Color(0xCC000000)))),
+            )
+            Text(
+                text = "‹",
+                style = MaterialTheme.typography.headlineMedium,
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0x66000000))
+                    .padding(horizontal = 14.dp, vertical = 4.dp)
+                    .clickable(onClick = onBack),
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.displayLarge,
+                color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(20.dp),
+            )
+        }
+        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+            if (loading) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(12.dp))
+                    Text("正在加载剧集…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(message.orEmpty(), style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.height(12.dp))
+                    Button(onClick = onRetry) { Text("重试") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailContent(
+    info: DetailInfo,
+    onBack: () -> Unit,
+    onPlay: (String?, String?) -> Unit,
+    favorite: Boolean,
+    onToggleFavorite: () -> Unit,
+    playingUrl: String?,
+    onExpandPlayer: () -> Unit,
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 24.dp),
@@ -72,19 +176,44 @@ private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: (String?
                     .aspectRatio(16f / 9f)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
             ) {
-                if (!info.posterUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = info.posterUrl,
-                        contentDescription = info.title,
-                        contentScale = ContentScale.Crop,
+                if (playingUrl != null) {
+                    InlinePlayer(
+                        onExpand = onExpandPlayer,
                         modifier = Modifier.fillMaxSize(),
                     )
+                } else {
+                    if (!info.posterUrl.isNullOrBlank()) {
+                        RemoteImage(
+                            rawUrl = info.posterUrl,
+                            contentDescription = info.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xDD000000)))),
+                    )
+                    Column(
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(20.dp),
+                    ) {
+                        Text(
+                            info.title,
+                            style = MaterialTheme.typography.displayLarge,
+                            color = Color.White,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            listOfNotNull(info.year, info.area, info.remarks).joinToString(" · "),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White,
+                        )
+                    }
                 }
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xDD000000)))),
-                )
                 Text(
                     text = "‹",
                     style = MaterialTheme.typography.headlineMedium,
@@ -97,24 +226,6 @@ private fun DetailContent(info: DetailInfo, onBack: () -> Unit, onPlay: (String?
                         .padding(horizontal = 14.dp, vertical = 4.dp)
                         .clickable(onClick = onBack),
                 )
-                Column(
-                    Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(20.dp),
-                ) {
-                    Text(
-                        info.title,
-                        style = MaterialTheme.typography.displayLarge,
-                        color = Color.White,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        listOfNotNull(info.year, info.area, info.remarks).joinToString(" · "),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White,
-                    )
-                }
             }
         }
         item("actions") {
