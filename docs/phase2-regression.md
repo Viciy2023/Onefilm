@@ -30,7 +30,7 @@
 | 正式播放器音轨/字幕对话框 | 需要 UI 点击回归 |
 | MPV 播放中的轨道切换 | `aid`/`sid` 切换后听感/画面确认 |
 | ExoPlayer DV 策略 | 需要 media3 fork 渲染器补丁 + DV 片源（`0003` 未完成） |
-| ExoPlayer A/V 偏移 | 音频：PCM 单元测试通过；字幕：TextRenderer 补丁已接入，待片源验证 |
+| ExoPlayer A/V 偏移 | 音频：PCM 单元测试通过；字幕：delay 0 vs 3000ms 实测差 2862ms ✅ |
 | 预加载 | 当前默认关闭，需开启后验证 |
 | DLNA / PiP / 后台播放 | 未回归 |
 
