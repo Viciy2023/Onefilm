@@ -26,6 +26,7 @@ fun AdaptiveNavigation(
     isTv: Boolean,
     currentRoute: String?,
     onNavigate: (String) -> Unit,
+    showTabs: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val items = listOf(
@@ -41,14 +42,16 @@ fun AdaptiveNavigation(
     ) {
         if (isTv) {
             Column(Modifier.fillMaxSize()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 48.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp),
-                ) {
-                    items.forEach { (route, label) ->
-                        NavTab(label = label, selected = currentRoute == route) { onNavigate(route) }
+                if (showTabs) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 48.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp),
+                    ) {
+                        items.forEach { (route, label) ->
+                            NavTab(label = label, selected = currentRoute == route) { onNavigate(route) }
+                        }
                     }
                 }
                 Box(Modifier.weight(1f).statusBarsPadding()) { content() }
@@ -56,15 +59,17 @@ fun AdaptiveNavigation(
         } else {
             Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f).statusBarsPadding()) { content() }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    items.forEach { (route, label) ->
-                        NavTab(label = label, selected = currentRoute == route) { onNavigate(route) }
+                if (showTabs) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                        items.forEach { (route, label) ->
+                            NavTab(label = label, selected = currentRoute == route) { onNavigate(route) }
+                        }
                     }
                 }
             }

@@ -16,10 +16,13 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import com.onefilm.android.tv.compose.design.OneFilmTheme
+import com.onefilm.android.tv.compose.bridge.MediaCard
+import com.onefilm.android.tv.compose.feature.detail.DetailRoute
 import com.onefilm.android.tv.compose.feature.home.HomeScreen
 import com.onefilm.android.tv.compose.feature.home.HomeViewModel
 import com.onefilm.android.tv.compose.navigation.AdaptiveNavigation
 import com.onefilm.android.tv.compose.navigation.OneFilmNavHost
+import com.onefilm.android.tv.compose.navigation.Routes
 
 class ComposeMainActivity : ComponentActivity() {
 
@@ -29,6 +32,7 @@ class ComposeMainActivity : ComponentActivity() {
             (resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) ==
             Configuration.UI_MODE_TYPE_TELEVISION
         val dataSource = ComposeDependencies.homeDataSource
+        val detailDataSource = ComposeDependencies.detailDataSource
         val launcher = ComposeDependencies.detailLauncher
 
         setContent {
@@ -51,6 +55,7 @@ class ComposeMainActivity : ComponentActivity() {
                 AdaptiveNavigation(
                     isTv = isTv,
                     currentRoute = route,
+                    showTabs = route?.startsWith("detail") != true,
                     onNavigate = { target ->
                         navController.navigate(target) {
                             launchSingleTop = true
@@ -58,13 +63,32 @@ class ComposeMainActivity : ComponentActivity() {
                         }
                     },
                 ) {
-                    OneFilmNavHost(navController) {
-                        HomeScreen(
-                            state = homeState,
-                            onRetry = homeViewModel::retry,
-                            onCardClick = { card -> launcher.open(this, card) },
-                        )
-                    }
+                    OneFilmNavHost(
+                        navController = navController,
+                        homeContent = {
+                            HomeScreen(
+                                state = homeState,
+                                onRetry = homeViewModel::retry,
+                                onCardClick = { card ->
+                                    navController.navigate(Routes.detail(card.key, card.id, card.title))
+                                },
+                            )
+                        },
+                        detailContent = { key, id, title ->
+                            DetailRoute(
+                                key = key,
+                                id = id,
+                                dataSource = detailDataSource,
+                                onBack = { navController.popBackStack() },
+                                onPlay = {
+                                    launcher.open(
+                                        this,
+                                        MediaCard(key, id, title, null, null),
+                                    )
+                                },
+                            )
+                        },
+                    )
                 }
             }
         }
