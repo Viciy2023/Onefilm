@@ -1,0 +1,21 @@
+# IDE
+.idea
+.vscode
+.settings
+
+# Gradle / build
+.gradle
+*build/
+/Release
+
+# Local config (never commit)
+local.properties
+
+# Signing
+*.jks
+
+# Local prebuilt libs
+lib-*.aar
+
+# Agent workspace
+.superpowers/
