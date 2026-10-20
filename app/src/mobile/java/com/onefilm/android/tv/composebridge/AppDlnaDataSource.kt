@@ -27,6 +27,7 @@ class AppDlnaDataSource : DlnaDataSource {
         positionMs: Long,
         headers: Map<String, String>,
     ) {
+        android.util.Log.i("OneFilmCast", "cast title=$title positionMs=$positionMs url=$url")
         val manager = DLNACastManager.get()
         val device = manager.registered.firstOrNull { it.uuid == deviceId } ?: return
         DLNACast(CastVideo(title, url, positionMs, headers), Runnable {}).cast(device)

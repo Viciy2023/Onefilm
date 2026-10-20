@@ -66,7 +66,11 @@ public record DLNACast(CastVideo video, Runnable runnable) {
         return new Play(service) {
             @Override
             public void success(ActionInvocation i) {
-                if (video.position() > 0) control.execute(seekAction(service));
+                if (video.position() > 0) {
+                    control.execute(seekAction(service));
+                    // 部分电视在 Play 回调时还没准备好 Seek，延迟再发一次。
+                    App.post(() -> control.execute(seekAction(service)), 2000);
+                }
                 App.post(runnable);
             }
 
