@@ -3,6 +3,7 @@ package com.onefilm.android.tv.composebridge
 import com.onefilm.android.tv.App
 import com.onefilm.android.tv.bean.Word
 import com.onefilm.android.tv.compose.bridge.SearchMetaDataSource
+import com.onefilm.android.tv.compose.bridge.SearchRank
 import com.onefilm.android.tv.setting.Setting
 import com.onefilm.android.tv.utils.ZhuToPin
 import com.github.catvod.net.OkHttp
@@ -23,6 +24,30 @@ class AppSearchMetaDataSource : SearchMetaDataSource {
     override fun hot(): List<String> = runCatching {
         Word.objectFrom(Setting.getHot()).data.map { it.title }.filter { it.isNotBlank() }
     }.getOrDefault(emptyList())
+
+    override suspend fun refreshRankings(): List<SearchRank> = withContext(Dispatchers.IO) {
+        listOf(
+            "电视榜" to 3,
+            "电影榜" to 2,
+            "综艺榜" to 4,
+        ).mapNotNull { (title, cat) ->
+            runCatching {
+                val url = "https://api.web.360kan.com/v1/rank?cat=$cat"
+                OkHttp.newCall(url).execute().use { response ->
+                    SearchRank(
+                        title = title,
+                        words = Word.objectFrom(response.body.string()).data
+                            .map { it.title }
+                            .filter { it.isNotBlank() },
+                    )
+                }
+            }.getOrNull()
+        }.filter { it.words.isNotEmpty() }
+    }
+
+    override fun clearHistory() {
+        Setting.putKeyword("[]")
+    }
 
     override suspend fun refreshHot(): List<String> = withContext(Dispatchers.IO) {
         runCatching {

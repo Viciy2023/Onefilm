@@ -14,6 +14,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.bridge.SearchDataSource
 import com.onefilm.android.tv.compose.bridge.SearchMetaDataSource
+import com.onefilm.android.tv.compose.bridge.SearchRank
 import kotlinx.coroutines.launch
 
 @Composable
@@ -29,7 +30,12 @@ fun SearchRoute(
     val state by viewModel.state.collectAsState()
     var suggestions by remember { mutableStateOf(emptyList<String>()) }
     var hot by remember { mutableStateOf(metaDataSource.hot()) }
-    LaunchedEffect(Unit) { hot = metaDataSource.refreshHot() }
+    var history by remember { mutableStateOf(metaDataSource.history()) }
+    var rankings by remember { mutableStateOf<List<SearchRank>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        hot = metaDataSource.refreshHot()
+        rankings = metaDataSource.refreshRankings()
+    }
     LaunchedEffect(initialQuery) {
         val keyword = initialQuery?.trim().orEmpty()
         if (keyword.isNotEmpty() && !viewModel.hasSession(keyword)) {
@@ -40,13 +46,22 @@ fun SearchRoute(
     val scope = rememberCoroutineScope()
     SearchScreen(
         state = state,
-        onSearch = { keyword -> metaDataSource.record(keyword); viewModel.search(keyword) },
+        onSearch = { keyword ->
+            metaDataSource.record(keyword)
+            history = metaDataSource.history()
+            viewModel.search(keyword)
+        },
         onRetry = viewModel::retry,
         onCardClick = onCardClick,
-        history = remember { metaDataSource.history() },
+        history = history,
         hot = hot,
+        rankings = rankings,
         suggestions = suggestions,
         initialQuery = initialQuery,
         onQueryChange = { q -> scope.launch { suggestions = metaDataSource.suggest(q) } },
+        onClearHistory = {
+            metaDataSource.clearHistory()
+            history = emptyList()
+        },
     )
 }
