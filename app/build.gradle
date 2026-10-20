@@ -131,6 +131,7 @@ dependencies {
     implementation libs.zxing.core
     implementation libs.gson
     implementation libs.okhttp
+    implementation "androidx.documentfile:documentfile:1.0.1"
     implementation project(':compose')
     implementation project(':media3compat')
     implementation project(':mpvapi')

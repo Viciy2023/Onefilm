@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
@@ -66,14 +67,17 @@ fun NetdiskScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var editing by remember { mutableStateOf<NetdiskDrive?>(null) }
     var adding by remember { mutableStateOf(false) }
+    var page by remember { mutableStateOf(1) }
+    var loadingMore by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     val drive = currentDrive
     LaunchedEffect(drive?.id, currentPath) {
         if (drive == null) return@LaunchedEffect
+        page = 1
         loading = true
         error = null
-        runCatching { dataSource.listEntries(drive, currentPath) }
+        runCatching { dataSource.listEntries(drive, currentPath, 1) }
             .onSuccess { entries = it }
             .onFailure { error = it.message ?: "读取网盘失败" }
         loading = false
@@ -150,6 +154,29 @@ fun NetdiskScreen(
                                     .onFailure { error = it.message ?: "解析文件失败" }
                                 loading = false
                             }
+                        }
+                    }
+                }
+                if (drive.type == 2 && entries.size >= 100) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        Box(Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                            Button(
+                                onClick = {
+                                    if (!loadingMore) {
+                                        loadingMore = true
+                                        scope.launch {
+                                            runCatching { dataSource.listEntries(drive, currentPath, page + 1) }
+                                                .onSuccess {
+                                                    entries = entries + it
+                                                    page += 1
+                                                }
+                                                .onFailure { error = it.message ?: "加载更多失败" }
+                                            loadingMore = false
+                                        }
+                                    }
+                                },
+                                enabled = !loadingMore,
+                            ) { Text(if (loadingMore) "加载中…" else "加载更多") }
                         }
                     }
                 }
@@ -267,15 +294,32 @@ private fun DriveDialog(
     onDismiss: () -> Unit,
     onSave: (NetdiskDrive) -> Unit,
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var type by remember(drive?.id) { mutableStateOf(drive?.type ?: 1) }
     var name by remember(drive?.id) { mutableStateOf(drive?.name.orEmpty()) }
     var url by remember(drive?.id) { mutableStateOf("") }
     var initPath by remember(drive?.id) { mutableStateOf("") }
     var username by remember(drive?.id) { mutableStateOf("") }
     var password by remember(drive?.id) { mutableStateOf("") }
+    var localUri by remember(drive?.id) { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(drive?.id) {
+    val folderPicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree(),
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            }
+            localUri = uri.toString()
+            if (name.isBlank()) name = uri.lastPathSegment.orEmpty()
+        }
+    }
+
+    androidx.compose.runtime.LaunchedEffect(drive?.id) {
         if (drive != null) {
             runCatching {
                 JSONObject(drive.configJson).let { json ->
@@ -283,103 +327,163 @@ private fun DriveDialog(
                     initPath = json.optString("initPath")
                     username = json.optString("username")
                     password = json.optString("password")
+                    localUri = json.optString("uri")
                 }
             }
         }
     }
 
-    AlertDialog(
+    androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (drive == null) "添加网盘" else "编辑网盘") },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        androidx.compose.material3.Surface(
+            modifier = Modifier.fillMaxWidth(0.56f),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 8.dp,
+        ) {
+            Column(
+                Modifier.padding(horizontal = 24.dp, vertical = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(1 to "WebDAV", 2 to "Alist 网页").forEach { (value, label) ->
+                    listOf(0 to "本地目录", 1 to "WebDAV", 2 to "Alist 网页").forEach { (value, label) ->
                         val selected = type == value
                         Text(
                             text = label,
                             color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-                            fontSize = 15.sp,
+                            fontSize = 14.sp,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(percent = 50))
                                 .background(if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable { type = value }
-                                .padding(horizontal = 16.dp, vertical = 7.dp),
+                                .clickable { type = value; error = null }
+                                .padding(horizontal = 13.dp, vertical = 5.dp),
                         )
                     }
                 }
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("空间名称") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = url,
-                    onValueChange = { url = it },
-                    label = { Text(if (type == 1) "WebDAV 地址" else "Alist 网页地址") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = initPath,
-                    onValueChange = { initPath = it },
-                    label = { Text("初始路径（可选）") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                if (type == 1) {
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = username,
-                        onValueChange = { username = it },
-                        label = { Text("用户名") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                FieldRow("空间名称") {
+                    CompactField(name, "例如：家庭 NAS", { name = it })
                 }
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("密码") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                when (type) {
+                    0 -> FieldRow("本地目录") {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = localUri.ifBlank { "未选择目录" },
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Spacer(Modifier.size(10.dp))
+                            OutlinedButton(onClick = { folderPicker.launch(null) }) { Text("选择目录") }
+                        }
+                    }
+                    1 -> {
+                        FieldRow("WebDAV 地址") { CompactField(url, "https://example.com/dav/", { url = it }) }
+                        FieldRow("初始路径") { CompactField(initPath, "可选，例如 media", { initPath = it }) }
+                        FieldRow("用户名") { CompactField(username, "可选", { username = it }) }
+                        FieldRow("密码") { CompactField(password, "可选", { password = it }) }
+                    }
+                    else -> {
+                        FieldRow("Alist 地址") { CompactField(url, "https://alist.example.com/", { url = it }) }
+                        FieldRow("初始路径") { CompactField(initPath, "可选，例如 media", { initPath = it }) }
+                        FieldRow("密码") { CompactField(password, "可选", { password = it }) }
+                    }
+                }
                 error?.let {
-                    Spacer(Modifier.height(8.dp))
                     Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
                 }
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    OutlinedButton(onClick = onDismiss) { Text("取消") }
+                    Spacer(Modifier.size(12.dp))
+                    Button(onClick = {
+                        if (name.isBlank()) {
+                            error = "空间名称不能为空"
+                        } else if (type == 0 && localUri.isBlank()) {
+                            error = "请选择本地目录"
+                        } else if (type != 0 && url.isBlank()) {
+                            error = "网盘地址不能为空"
+                        } else {
+                            val json = JSONObject().apply {
+                                when (type) {
+                                    0 -> put("uri", localUri)
+                                    1 -> {
+                                        put("url", url.trim().trimEnd('/') + "/")
+                                        put("initPath", initPath.trim().trim('/'))
+                                        put("username", username.trim())
+                                        put("password", password)
+                                    }
+                                    else -> {
+                                        put("url", url.trim().trimEnd('/') + "/")
+                                        put("initPath", initPath.trim().trim('/'))
+                                        put("password", password)
+                                    }
+                                }
+                            }
+                            onSave(
+                                NetdiskDrive(
+                                    id = drive?.id ?: 0,
+                                    name = name.trim(),
+                                    type = type,
+                                    configJson = json.toString(),
+                                ),
+                            )
+                        }
+                    }) { Text("保存") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FieldRow(label: String, content: @Composable () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(width = 120.dp, height = 40.dp),
+        )
+        Box(Modifier.weight(1f)) { content() }
+    }
+}
+
+@Composable
+private fun CompactField(
+    value: String,
+    hint: String,
+    onValueChange: (String) -> Unit,
+) {
+    androidx.compose.foundation.text.BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        textStyle = androidx.compose.ui.text.TextStyle(
+            fontSize = 15.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(40.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.55f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 9.dp),
+        decorationBox = { inner ->
+            Box(contentAlignment = Alignment.CenterStart) {
+                if (value.isBlank()) {
+                    Text(hint, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                inner()
             }
         },
-        confirmButton = {
-            TextButton(onClick = {
-                if (name.isBlank() || url.isBlank()) {
-                    error = "空间名称和地址不能为空"
-                } else {
-                    val json = JSONObject().apply {
-                        put("url", url.trim().trimEnd('/') + "/")
-                        put("initPath", initPath.trim().trim('/'))
-                        if (type == 1) {
-                            put("username", username.trim())
-                        }
-                        put("password", password)
-                    }
-                    onSave(
-                        NetdiskDrive(
-                            id = drive?.id ?: 0,
-                            name = name.trim(),
-                            type = type,
-                            configJson = json.toString(),
-                        ),
-                    )
-                }
-            }) { Text("保存") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
     )
 }

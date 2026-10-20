@@ -1,5 +1,7 @@
 package com.onefilm.android.tv.composebridge
 
+import android.net.Uri
+import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -51,11 +53,12 @@ class AppNetdiskDataSource : NetdiskDataSource {
         dao.delete(id)
     }
 
-    override suspend fun listEntries(drive: NetdiskDrive, path: String): List<NetdiskEntry> =
+    override suspend fun listEntries(drive: NetdiskDrive, path: String, page: Int): List<NetdiskEntry> =
         withContext(Dispatchers.IO) {
             when (drive.type) {
+                0 -> listLocal(drive, path)
                 1 -> listWebDav(drive, path)
-                2 -> listAlist(drive, path)
+                2 -> listAlist(drive, path, page)
                 else -> emptyList()
             }
         }
@@ -63,6 +66,7 @@ class AppNetdiskDataSource : NetdiskDataSource {
     override suspend fun resolve(drive: NetdiskDrive, entry: NetdiskEntry): NetdiskPlayback =
         withContext(Dispatchers.IO) {
             when (drive.type) {
+                0 -> NetdiskPlayback(entry.fileUrl ?: entry.path)
                 1 -> {
                     val config = config(drive)
                     val url = webDavUrl(config, entry.path)
@@ -77,6 +81,26 @@ class AppNetdiskDataSource : NetdiskDataSource {
                 else -> throw IllegalStateException("不支持的网盘类型")
             }
         }
+
+    private fun listLocal(drive: NetdiskDrive, path: String): List<NetdiskEntry> {
+        val config = config(drive)
+        val context = App.get()
+        val treeUri = config.get("uri")?.asString.orEmpty()
+        if (treeUri.isBlank()) throw IllegalStateException("本地目录未选择")
+        val folder = if (path.isBlank()) {
+            DocumentFile.fromTreeUri(context, Uri.parse(treeUri))
+        } else {
+            DocumentFile.fromSingleUri(context, Uri.parse(path))
+        } ?: throw IllegalStateException("无法打开本地目录")
+        return folder.listFiles().map { file ->
+            NetdiskEntry(
+                name = file.name.orEmpty().ifBlank { "未命名" },
+                path = file.uri.toString(),
+                isDirectory = file.isDirectory,
+                fileUrl = if (file.isFile) file.uri.toString() else null,
+            )
+        }.sortedWith(compareByDescending<NetdiskEntry> { it.isDirectory }.thenBy { it.name })
+    }
 
     private fun listWebDav(drive: NetdiskDrive, path: String): List<NetdiskEntry> {
         val config = config(drive)
@@ -145,7 +169,7 @@ class AppNetdiskDataSource : NetdiskDataSource {
         return result.sortedWith(compareByDescending<NetdiskEntry> { it.isDirectory }.thenBy { it.name })
     }
 
-    private fun listAlist(drive: NetdiskDrive, path: String): List<NetdiskEntry> {
+    private fun listAlist(drive: NetdiskDrive, path: String, page: Int): List<NetdiskEntry> {
         val config = config(drive)
         val base = config.get("url")?.asString.orEmpty().trimEnd('/')
         val root = config.get("initPath")?.asString.orEmpty().trim('/')
@@ -154,7 +178,7 @@ class AppNetdiskDataSource : NetdiskDataSource {
         val payload = JsonObject().apply {
             addProperty("path", if (fullPath == "") "/" else fullPath)
             addProperty("password", config.get("password")?.asString.orEmpty())
-            addProperty("page_num", 1)
+            addProperty("page_num", page)
             addProperty("page_size", 100)
         }
         val request = Request.Builder()

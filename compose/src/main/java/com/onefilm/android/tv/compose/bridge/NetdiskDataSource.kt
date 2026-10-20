@@ -27,7 +27,7 @@ interface NetdiskDataSource {
 
     fun deleteDrive(id: Int)
 
-    suspend fun listEntries(drive: NetdiskDrive, path: String): List<NetdiskEntry>
+    suspend fun listEntries(drive: NetdiskDrive, path: String, page: Int = 1): List<NetdiskEntry>
 
     suspend fun resolve(drive: NetdiskDrive, entry: NetdiskEntry): NetdiskPlayback
 }
