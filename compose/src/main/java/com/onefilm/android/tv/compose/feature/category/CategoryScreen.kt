@@ -1,39 +1,51 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.onefilm.android.tv.compose.feature.category
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.onefilm.android.tv.compose.bridge.CategoryFilterGroup
 import com.onefilm.android.tv.compose.bridge.CategoryPage
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.design.component.TvPosterCard
@@ -50,6 +62,11 @@ fun CategoryScreen(
     onLoadMore: () -> Unit,
 ) {
     var showFilters by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        CategoryFilterController.show.collect { showFilters = true }
+    }
+    BackHandler(enabled = showFilters) { showFilters = false }
+
     when (state) {
         CategoryUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
@@ -62,87 +79,33 @@ fun CategoryScreen(
             }
         }
         is CategoryUiState.Content -> CategoryContent(
-            title,
-            state.page,
-            selectedFilters,
-            showFilters,
-            onToggleShow = { showFilters = !showFilters },
-            onBack,
-            onCardClick,
-            onToggleFilter,
-            onLoadMore,
-            state.endReached,
+            page = state.page,
+            selectedFilters = selectedFilters,
+            showFilters = showFilters,
+            onDismissFilters = { showFilters = false },
+            onCardClick = onCardClick,
+            onToggleFilter = onToggleFilter,
+            onLoadMore = onLoadMore,
+            endReached = state.endReached,
         )
     }
 }
 
 @Composable
 private fun CategoryContent(
-    fallbackTitle: String,
     page: CategoryPage,
     selectedFilters: Map<String, String>,
     showFilters: Boolean,
-    onToggleShow: () -> Unit,
-    onBack: () -> Unit,
+    onDismissFilters: () -> Unit,
     onCardClick: (MediaCard) -> Unit,
     onToggleFilter: (filterKey: String, value: String, selected: Boolean) -> Unit,
     onLoadMore: () -> Unit,
     endReached: Boolean,
 ) {
-    Column(Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 48.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (page.filters.isNotEmpty()) {
-                Text(
-                    text = if (showFilters) "收起筛选" else "筛选",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable(onClick = onToggleShow)
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                )
-            }
-        }
-        if (showFilters) {
-            page.filters.forEach { group ->
-                Text(
-                    text = group.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                ) {
-                    items(group.options) { option ->
-                        val checked = selectedFilters[group.key] == option.value
-                        Text(
-                            text = option.name.ifBlank { option.value },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (checked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
-                                .clickable {
-                                    onToggleFilter(group.key, option.value, !checked)
-                                }
-                                .padding(horizontal = 14.dp, vertical = 8.dp),
-                        )
-                    }
-                }
-            }
-        }
+    Box(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(5),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 48.dp, vertical = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -163,15 +126,120 @@ private fun CategoryContent(
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     LaunchedEffect(page.items.size) { onLoadMore() }
                     Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
+                        Modifier.fillMaxWidth().padding(24.dp),
                         contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator()
+                    ) { CircularProgressIndicator() }
+                }
+            }
+        }
+
+        if (showFilters) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.35f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onDismissFilters,
+                    ),
+            )
+            FilterBottomSheet(
+                filters = page.filters,
+                selectedFilters = selectedFilters,
+                onToggleFilter = onToggleFilter,
+                onDismiss = onDismissFilters,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.56f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun FilterBottomSheet(
+    filters: List<CategoryFilterGroup>,
+    selectedFilters: Map<String, String>,
+    onToggleFilter: (filterKey: String, value: String, selected: Boolean) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier
+            .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = {},
+            )
+            .padding(horizontal = 32.dp, vertical = 22.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("筛选", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.weight(1f))
+            Text(
+                "返回键或点击空白关闭",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 16.sp,
+            )
+        }
+        Spacer(Modifier.height(16.dp))
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            filters.forEach { group ->
+                Text(
+                    text = group.name,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    group.options.forEach { option ->
+                        val checked = selectedFilters[group.key] == option.value
+                        FilterOption(
+                            text = option.name.ifBlank { option.value },
+                            selected = checked,
+                            onClick = { onToggleFilter(group.key, option.value, !checked) },
+                        )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun FilterOption(text: String, selected: Boolean, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    Text(
+        text = text,
+        color = when {
+            selected -> MaterialTheme.colorScheme.background
+            else -> MaterialTheme.colorScheme.onSurface
+        },
+        fontSize = 18.sp,
+        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+        modifier = Modifier
+            .border(
+                if (focused) 2.dp else 0.dp,
+                if (focused) MaterialTheme.colorScheme.onSurface else Color.Transparent,
+                RoundedCornerShape(percent = 50),
+            )
+            .clip(RoundedCornerShape(percent = 50))
+            .background(
+                if (selected) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.surfaceVariant,
+            )
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 11.dp),
+    )
 }

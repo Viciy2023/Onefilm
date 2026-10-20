@@ -37,6 +37,7 @@ import com.onefilm.android.tv.compose.feature.home.HomeViewModel
 import com.onefilm.android.tv.compose.navigation.AdaptiveNavigation
 import com.onefilm.android.tv.compose.navigation.TvHeader
 import com.onefilm.android.tv.compose.navigation.TvHeaderVariant
+import com.onefilm.android.tv.compose.feature.category.CategoryFilterController
 import com.onefilm.android.tv.compose.navigation.OneFilmNavHost
 import com.onefilm.android.tv.compose.navigation.Routes
 
@@ -165,7 +166,13 @@ class ComposeMainActivity : ComponentActivity() {
                                 onLine = { navController.navigate(Routes.LINES) },
                                 onNetwork = { navController.navigate(Routes.NETDISK) },
                                 onCategory = { category ->
-                                    navController.navigate(Routes.category(category.key, category.id, category.name))
+                                    if (route?.startsWith("category") == true &&
+                                        CategoryFilterController.matches(category.key, category.id)
+                                    ) {
+                                        CategoryFilterController.requestShow()
+                                    } else {
+                                        navController.navigate(Routes.category(category.key, category.id, category.name))
+                                    }
                                 },
                             )
                         }

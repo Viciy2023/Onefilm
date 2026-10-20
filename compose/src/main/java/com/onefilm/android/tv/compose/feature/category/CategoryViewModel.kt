@@ -29,7 +29,7 @@ class CategoryViewModel(
     fun toggleFilter(filterKey: String, value: String, selectedNow: Boolean) {
         if (selectedNow) selected[filterKey] = value else selected.remove(filterKey)
         _selectedFilters.value = selected.toMap()
-        load(reset = true)
+        load(reset = true, keepContent = true)
     }
 
     fun loadMore() {
@@ -39,12 +39,12 @@ class CategoryViewModel(
         load(reset = false)
     }
 
-    private fun load(reset: Boolean) {
+    private fun load(reset: Boolean, keepContent: Boolean = false) {
         if (loading) return
         loading = true
         if (reset) page = 1
         viewModelScope.launch {
-            if (reset) _state.value = CategoryUiState.Loading
+            if (reset && !keepContent) _state.value = CategoryUiState.Loading
             runCatching { dataSource.load(key, tid, page, selected) }
                 .onSuccess { pageData ->
                     val previous = (_state.value as? CategoryUiState.Content)?.page
