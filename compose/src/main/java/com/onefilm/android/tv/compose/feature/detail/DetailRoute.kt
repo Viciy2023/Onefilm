@@ -20,6 +20,7 @@ import com.onefilm.android.tv.compose.bridge.PlaybackResolver
 import com.onefilm.android.tv.compose.bridge.PlaybackHistoryStore
 import com.onefilm.android.tv.compose.feature.player.PlaybackEpisode
 import com.onefilm.android.tv.compose.feature.player.PlaybackSession
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -49,58 +50,88 @@ fun DetailRoute(
     LaunchedEffect(key, id) {
         if (DetailCache.get(key, id) == null) viewModel.retry()
     }
+    var autoStarted by rememberSaveable(key, id) { mutableStateOf(false) }
+
+    fun startPlayback(flagName: String?, episodeUrl: String?) {
+        val info = (state as? DetailUiState.Content)?.info ?: return
+        val history = historyStore.find(key, id)
+        var flag = info.flags.firstOrNull { it.name == flagName }
+        var episode = flag?.episodes?.firstOrNull { it.url == episodeUrl }
+        if (flag == null && history != null) {
+            for (candidate in info.flags) {
+                val matched = candidate.episodes.firstOrNull { it.url == history.episodeUrl }
+                if (matched != null) {
+                    flag = candidate
+                    episode = matched
+                    break
+                }
+            }
+        }
+        if (flag == null) flag = info.flags.firstOrNull()
+        if (episode == null) episode = flag?.episodes?.firstOrNull()
+        if (flag == null || episode == null) return
+        val sourceUrl = episode.url
+        if (sourceUrl.isBlank()) return
+        val index = flag.episodes.indexOf(episode).coerceAtLeast(0)
+        val selectedFlag = flag
+        scope.launch {
+            val url = playbackResolver.resolve(key, selectedFlag.name, sourceUrl)
+            if (!url.isNullOrBlank()) {
+                PlaybackSession.setQueue(
+                    key = key,
+                    id = id,
+                    vodTitle = info.title,
+                    vodPoster = info.posterUrl,
+                    flag = selectedFlag.name,
+                    episodes = selectedFlag.episodes.map { PlaybackEpisode(it.name, it.url) },
+                    index = index,
+                )
+                val resumeFromHistory = history?.episodeUrl == sourceUrl
+                val start = if (resumeFromHistory) {
+                    (history!!.positionMs - 10_000L).coerceAtLeast(0L)
+                } else {
+                    0L
+                }
+                if (history != null) {
+                    PlaybackSession.setMarks(history.openingMs, history.endingMs)
+                } else {
+                    PlaybackSession.setMarks(0L, 0L)
+                }
+                PlaybackSession.play(context, url, start)
+                PlaybackSession.preloadNext(playbackResolver)
+                if (resumeFromHistory) PlaybackSession.updateSpeed(history!!.speed)
+                playingUrl = url
+            }
+        }
+    }
+
+    LaunchedEffect(state, key, id) {
+        val info = (state as? DetailUiState.Content)?.info ?: return@LaunchedEffect
+        if (autoStarted) return@LaunchedEffect
+        autoStarted = true
+        if (PlaybackSession.siteKey == key && PlaybackSession.vodId == id && PlaybackSession.player != null) {
+            playingUrl = PlaybackSession.url
+            return@LaunchedEffect
+        }
+        delay(350)
+        val history = historyStore.find(key, id)
+        val flag = history?.let { saved ->
+            info.flags.firstOrNull { candidate ->
+                candidate.episodes.any { it.url == saved.episodeUrl }
+            }
+        } ?: info.flags.firstOrNull()
+        val episode = flag?.episodes?.firstOrNull { it.url == history?.episodeUrl }
+            ?: flag?.episodes?.firstOrNull()
+        if (flag != null && episode != null) {
+            startPlayback(flag.name, episode.url)
+        }
+    }
+
     DetailScreen(
         state = state,
         onRetry = viewModel::retry,
         onBack = onBack,
-        onPlay = { flagName, episodeUrl ->
-            val info = (state as? DetailUiState.Content)?.info
-            if (info == null) return@DetailScreen
-            val history = historyStore.find(key, id)
-            var flag = info.flags.firstOrNull { it.name == flagName }
-            var episode = flag?.episodes?.firstOrNull { it.url == episodeUrl }
-            if (flagName == null && history != null) {
-                for (candidate in info.flags) {
-                    val matched = candidate.episodes.firstOrNull { it.url == history.episodeUrl }
-                    if (matched != null) {
-                        flag = candidate
-                        episode = matched
-                        break
-                    }
-                }
-            }
-            if (flag == null) flag = info.flags.firstOrNull()
-            if (episode == null) episode = flag?.episodes?.firstOrNull()
-            if (flag == null || episode == null) return@DetailScreen
-            val sourceUrl = episode.url
-            val index = flag.episodes.indexOf(episode).coerceAtLeast(0)
-            val selectedFlag = flag
-            if (sourceUrl.isBlank()) return@DetailScreen
-            scope.launch {
-                val url = playbackResolver.resolve(key, selectedFlag.name, sourceUrl)
-                if (!url.isNullOrBlank()) {
-                    PlaybackSession.setQueue(
-                        key = key,
-                        id = id,
-                        vodTitle = info.title,
-                        vodPoster = info.posterUrl,
-                        flag = selectedFlag.name,
-                        episodes = selectedFlag.episodes.map { PlaybackEpisode(it.name, it.url) },
-                        index = index,
-                    )
-                    val start = if (history?.episodeUrl == sourceUrl) history.positionMs else 0L
-                    if (history != null) {
-                        PlaybackSession.setMarks(history.openingMs, history.endingMs)
-                    } else {
-                        PlaybackSession.setMarks(0L, 0L)
-                    }
-                    PlaybackSession.play(context, url, start)
-                    PlaybackSession.preloadNext(playbackResolver)
-                    if (history?.episodeUrl == sourceUrl) PlaybackSession.updateSpeed(history.speed)
-                    playingUrl = url
-                }
-            }
-        },
+        onPlay = { flagName, episodeUrl -> startPlayback(flagName, episodeUrl) },
         playingUrl = playingUrl,
         onExpandPlayer = onEnterFullscreen,
         previewTitle = previewTitle,

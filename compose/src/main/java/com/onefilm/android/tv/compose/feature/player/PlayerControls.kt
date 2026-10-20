@@ -61,6 +61,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -88,6 +89,7 @@ import androidx.media3.ui.PlayerView
 import androidx.media3.ui.danmaku.DanmakuView
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import com.onefilm.android.tv.compose.bridge.DlnaDevice
+import com.onefilm.android.tv.compose.design.component.AppLogoLoading
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 
@@ -336,10 +338,9 @@ fun PlayerControls(
             },
     ) {
         if (PlaybackSession.isBuffering && PlaybackSession.error == null) {
-            CircularProgressIndicator(
-                color = Ink,
-                strokeWidth = 2.dp,
-                modifier = Modifier.align(Alignment.Center).size(30.dp),
+            AppLogoLoading(
+                modifier = Modifier.align(Alignment.Center),
+                size = 64.dp,
             )
         }
         PlaybackSession.error?.let { message ->
@@ -542,7 +543,7 @@ fun PlayerControls(
 /** 详情页顶部小窗播放器。 */
 @Composable
 fun InlinePlayer(onExpand: () -> Unit, modifier: Modifier = Modifier) {
-    Box(modifier.background(Color.Black)) {
+    Box(modifier.background(Color.Black).clipToBounds()) {
         VideoSurface(Modifier.fillMaxSize())
         PlayerControls(
             inline = true,

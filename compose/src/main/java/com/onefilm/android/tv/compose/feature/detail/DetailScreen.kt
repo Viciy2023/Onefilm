@@ -31,6 +31,11 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,8 +52,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.onefilm.android.tv.compose.bridge.DetailInfo
+import com.onefilm.android.tv.compose.design.component.AppLogoLoading
 import com.onefilm.android.tv.compose.design.component.RemoteImage
 import com.onefilm.android.tv.compose.feature.player.InlinePlayer
+import kotlinx.coroutines.delay
 
 @Composable
 fun DetailScreen(
@@ -75,7 +82,7 @@ fun DetailScreen(
                 )
             } else {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    AppLogoLoading(size = 84.dp)
                 }
             }
         }
@@ -155,7 +162,7 @@ private fun DetailPlaceholder(
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
             if (loading) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator()
+                    AppLogoLoading(size = 84.dp)
                     Spacer(Modifier.height(12.dp))
                     Text("正在加载剧集…", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -185,6 +192,14 @@ private fun DetailContent(
         mutableStateOf(info.flags.firstOrNull()?.name)
     }
     var reversed by remember(info.title) { mutableStateOf(false) }
+    var inlineReady by remember(info.title) { mutableStateOf(false) }
+    LaunchedEffect(playingUrl, info.title) {
+        inlineReady = false
+        if (playingUrl != null) {
+            delay(250)
+            inlineReady = true
+        }
+    }
     val selectedFlag = info.flags.firstOrNull { it.name == selectedFlagName } ?: info.flags.firstOrNull()
     val episodes = selectedFlag?.episodes.orEmpty()
     val visibleEpisodes = if (reversed) episodes.reversed() else episodes
@@ -210,7 +225,7 @@ private fun DetailContent(
             ) {
                 Text(
                     text = info.title.ifBlank { "未命名" },
-                    fontSize = 32.sp,
+                    fontSize = 40.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -224,14 +239,14 @@ private fun DetailContent(
                         info.remarks?.let { append("    $it") }
                     },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 17.sp,
+                    fontSize = 24.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 info.actor?.let {
                     Text(
                         text = "演员：$it",
-                        fontSize = 17.sp,
+                        fontSize = 24.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -239,7 +254,7 @@ private fun DetailContent(
                 info.director?.let {
                     Text(
                         text = "导演：$it",
-                        fontSize = 17.sp,
+                        fontSize = 24.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -248,7 +263,7 @@ private fun DetailContent(
                 if (!address.isNullOrBlank()) {
                     Text(
                         text = "播放地址：$address",
-                        fontSize = 15.sp,
+                        fontSize = 21.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
@@ -257,7 +272,7 @@ private fun DetailContent(
                 info.description?.let {
                     Text(
                         text = "内容简介：$it",
-                        fontSize = 16.sp,
+                        fontSize = 19.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 4,
                         overflow = TextOverflow.Ellipsis,
@@ -265,10 +280,10 @@ private fun DetailContent(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(onClick = { reversed = !reversed }) {
-                        Text(if (reversed) "正序" else "倒序", fontSize = 17.sp)
+                        Text(if (reversed) "正序" else "倒序", fontSize = 24.sp)
                     }
                     Button(onClick = onToggleFavorite) {
-                        Text(if (favorite) "已收藏" else "加入收藏", fontSize = 17.sp)
+                        Text(if (favorite) "已收藏" else "加入收藏", fontSize = 24.sp)
                     }
                 }
             }
@@ -281,7 +296,13 @@ private fun DetailContent(
                     .background(Color.Black),
             ) {
                 if (playingUrl != null) {
-                    InlinePlayer(onExpand = onExpandPlayer, modifier = Modifier.fillMaxSize())
+                    if (inlineReady) {
+                        InlinePlayer(onExpand = onExpandPlayer, modifier = Modifier.fillMaxSize())
+                    } else {
+                        Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+                            AppLogoLoading(size = 76.dp)
+                        }
+                    }
                 } else {
                     if (!info.posterUrl.isNullOrBlank()) {
                         RemoteImage(
@@ -299,7 +320,7 @@ private fun DetailContent(
                     Text(
                         text = "点击播放",
                         color = Color.White,
-                        fontSize = 20.sp,
+                        fontSize = 24.sp,
                         modifier = Modifier
                             .align(Alignment.Center)
                             .clickable {
@@ -312,7 +333,7 @@ private fun DetailContent(
 
         Spacer(Modifier.height(18.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("线路", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(64.dp))
+            Text("线路", fontSize = 24.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(88.dp))
             LazyRow(
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -322,7 +343,7 @@ private fun DetailContent(
                     Text(
                         text = flag.name.ifBlank { "默认线路" },
                         color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 18.sp,
+                        fontSize = 21.sp,
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                         modifier = Modifier
                             .clip(RoundedCornerShape(percent = 50))
@@ -351,7 +372,7 @@ private fun DetailContent(
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
+                        .height(58.dp)
                         .clip(RoundedCornerShape(10.dp))
                         .background(
                             if (playing) MaterialTheme.colorScheme.onSurface
@@ -363,7 +384,7 @@ private fun DetailContent(
                     Text(
                         text = episode.name.ifBlank { "未命名" },
                         color = if (playing) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 18.sp,
+                        fontSize = 21.sp,
                         fontWeight = if (playing) FontWeight.SemiBold else FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
