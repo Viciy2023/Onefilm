@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -48,6 +50,7 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
     var editType by remember { mutableStateOf<Int?>(null) }
     var editUrl by remember { mutableStateOf("") }
     var configLoading by remember { mutableStateOf(false) }
+    var reloadingType by remember { mutableStateOf<Int?>(null) }
     var configError by remember { mutableStateOf<String?>(null) }
     var showQr by remember { mutableStateOf(false) }
     var qrUrl by remember { mutableStateOf("") }
@@ -81,9 +84,36 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
         )
 
         Section("接口配置") {
-            ConfigRow("点播接口", snapshot.configUrl) { openConfig(0, snapshot.configUrl) }
-            ConfigRow("直播接口", snapshot.liveConfigUrl) { openConfig(1, snapshot.liveConfigUrl) }
-            ConfigRow("壁纸接口", snapshot.wallConfigUrl) { openConfig(2, snapshot.wallConfigUrl) }
+            ConfigRow("点播接口", snapshot.configUrl, onEdit = { openConfig(0, snapshot.configUrl) }, onReload = {
+                val url = snapshot.configUrl
+                if (url.isNotBlank()) {
+                    reloadingType = 0
+                    dataSource.loadConfig(0, url) { ok, _ ->
+                        reloadingType = null
+                        if (ok) snapshot = dataSource.load()
+                    }
+                }
+            })
+            ConfigRow("直播接口", snapshot.liveConfigUrl, onEdit = { openConfig(1, snapshot.liveConfigUrl) }, onReload = {
+                val url = snapshot.liveConfigUrl
+                if (url.isNotBlank()) {
+                    reloadingType = 1
+                    dataSource.loadConfig(1, url) { ok, _ ->
+                        reloadingType = null
+                        if (ok) snapshot = dataSource.load()
+                    }
+                }
+            })
+            ConfigRow("壁纸接口", snapshot.wallConfigUrl, onEdit = { openConfig(2, snapshot.wallConfigUrl) }, onReload = {
+                val url = snapshot.wallConfigUrl
+                if (url.isNotBlank()) {
+                    reloadingType = 2
+                    dataSource.loadConfig(2, url) { ok, _ ->
+                        reloadingType = null
+                        if (ok) snapshot = dataSource.load()
+                    }
+                }
+            })
             ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
             ActionRow("扫码推送", "手机扫码打开配置页") {
                 qrUrl = dataSource.configPushUrl()
@@ -359,8 +389,42 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
 }
 
 @Composable
-private fun ConfigRow(title: String, value: String, onClick: () -> Unit) {
-    ActionRow(title, value.ifBlank { "未配置，点击设置" }, onClick)
+private fun ConfigRow(
+    title: String,
+    value: String,
+    onEdit: () -> Unit,
+    onReload: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onEdit)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, style = MaterialTheme.typography.bodyLarge)
+        Spacer(Modifier.weight(1f))
+        Text(
+            value.ifBlank { "未配置" },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 240.dp),
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text = "加载",
+            style = MaterialTheme.typography.labelLarge,
+            color = if (value.isNotBlank()) MaterialTheme.colorScheme.onSurface
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable(enabled = value.isNotBlank(), onClick = onReload)
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+        )
+    }
 }
 
 @Composable
