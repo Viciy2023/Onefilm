@@ -154,7 +154,12 @@ private fun TvPosterSection(
         LazyRow(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 8.dp),
+            contentPadding = PaddingValues(
+                start = horizontalPadding,
+                top = 36.dp,
+                end = horizontalPadding,
+                bottom = 8.dp,
+            ),
             horizontalArrangement = Arrangement.spacedBy(32.dp),
         ) {
             items(pages.size) { pageIndex ->

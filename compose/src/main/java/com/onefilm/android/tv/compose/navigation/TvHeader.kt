@@ -3,23 +3,21 @@ package com.onefilm.android.tv.compose.navigation
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,7 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
@@ -46,13 +44,10 @@ import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.delay
 
 private val TvInk = Color(0xFF1C1C1E)
-private val TvMuted = Color(0xFF6C6C70)
-private val TvSurface = Color(0xFFF2F2F7)
 
 data class TvNavEntry(
     val label: String,
     val icon: String,
-    val selected: Boolean,
     val onClick: () -> Unit,
 )
 
@@ -82,17 +77,26 @@ fun TvHeader(
         ?: siteName?.takeIf { it.isNotBlank() }
         ?: "ONEFILM 影视"
 
-    Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+    BoxWithConstraints(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+        // TV 盒子在不同设备上可能上报 1.0 或 2.5 的 density。
+        // 用可用宽度做一次自适应，避免 2400px 屏上导航和分类缩成一小条。
+        val scale = (maxWidth.value / 1000f).coerceIn(1f, 2.4f)
+        val initialNavFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+        LaunchedEffect(Unit) {
+            delay(600)
+            initialNavFocus.requestFocus()
+        }
+        Column(Modifier.fillMaxWidth()) {
         // 第一行：品牌 / 当前接口 / 时间。三栏等宽，避免内容挤压品牌与时间。
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = 6.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = (6 * scale).dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                 Text(
                     text = "ONEFILM",
                     color = TvInk,
-                    fontSize = 28.sp,
+                    fontSize = (28 * scale).sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp,
                 )
@@ -101,7 +105,7 @@ fun TvHeader(
                 Text(
                     text = centerText,
                     color = TvInk,
-                    fontSize = 20.sp,
+                    fontSize = (18 * scale).sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
@@ -112,159 +116,137 @@ fun TvHeader(
                 Text(
                     text = "$date   $time",
                     color = TvInk,
-                    fontSize = 16.sp,
+                    fontSize = (16 * scale).sp,
                     fontWeight = FontWeight.Medium,
                 )
             }
         }
 
-        // 第二行：分类标签。数量不多时等权铺满整行，数量过多时横向滚动。
-        val allCategories = listOf(HomeCategory("", "", "主页")) + categories
-        if (allCategories.size <= 10) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                allCategories.forEachIndexed { index, category ->
-                    TvCategoryChip(
-                        category = category,
-                        selected = index == 0 && currentRoute?.startsWith(Routes.HOME) == true,
-                        onClick = {
-                            if (index == 0) onNavigate(Routes.HOME) else onCategory(category)
-                        },
-                    )
-                }
-            }
-        } else {
-            LazyRow(
-                Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                items(allCategories) { category ->
-                    val home = category.key.isBlank()
-                    TvCategoryChip(
-                        category = category,
-                        selected = home && currentRoute?.startsWith(Routes.HOME) == true,
-                        onClick = {
-                            if (home) onNavigate(Routes.HOME) else onCategory(category)
-                        },
-                    )
-                }
+        // 第二行：功能导航。九项等权铺满，图标 + 文字。
+        val entries = listOf(
+            TvNavEntry("首页", "⌂") { onNavigate(Routes.HOME) },
+            TvNavEntry("搜索", "⌕") { onNavigate(Routes.SEARCH) },
+            TvNavEntry("收藏", "★") { onNavigate(Routes.LIBRARY) },
+            TvNavEntry("历史", "↺") { onNavigate(Routes.LIBRARY) },
+            TvNavEntry("直播", "▶", onLive),
+            TvNavEntry("配置", "⚙", onConfig),
+            TvNavEntry("线路", "⇄", onLine),
+            TvNavEntry("网盘", "☁", onNetwork),
+            TvNavEntry("设置", "☰") { onNavigate(Routes.SETTINGS) },
+        )
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = (4 * scale).dp),
+            horizontalArrangement = Arrangement.spacedBy((12 * scale).dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            entries.forEachIndexed { index, entry ->
+                TvNavTab(
+                    entry = entry,
+                    modifier = Modifier.weight(1f),
+                    uiScale = scale,
+                    focusRequester = if (index == 0) initialNavFocus else null,
+                )
             }
         }
 
-        // 第三行：功能导航。九项等权铺满，图标 + 文字，和分类标签形成明确的层级差。
-        val entries = listOf(
-            TvNavEntry("首页", "⌂", currentRoute?.startsWith("home") == true) { onNavigate(Routes.HOME) },
-            TvNavEntry("搜索", "⌕", currentRoute?.startsWith("search") == true) { onNavigate(Routes.SEARCH) },
-            TvNavEntry("收藏", "★", currentRoute?.startsWith("library") == true) { onNavigate(Routes.LIBRARY) },
-            TvNavEntry("历史", "↺", false) { onNavigate(Routes.LIBRARY) },
-            TvNavEntry("直播", "▶", false, onLive),
-            TvNavEntry("配置", "⚙", false, onConfig),
-            TvNavEntry("线路", "⇄", false, onLine),
-            TvNavEntry("网盘", "☁", false, onNetwork),
-            TvNavEntry("设置", "☰", currentRoute?.startsWith("settings") == true) { onNavigate(Routes.SETTINGS) },
-        )
+        // 第三行：分类标签。从左往右自然排列，超出屏宽后横向滑动。
+        val allCategories = listOf(HomeCategory("", "", "主页")) + categories
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 48.dp, vertical = (2 * scale).dp),
+            horizontalArrangement = Arrangement.spacedBy((6 * scale).dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            entries.forEach { entry ->
-                TvNavTab(entry, Modifier.weight(1f))
+            allCategories.forEach { category ->
+                val home = category.key.isBlank()
+                TvCategoryChip(
+                    category = category,
+                    onClick = {
+                        if (home) onNavigate(Routes.HOME) else onCategory(category)
+                    },
+                    scale = scale,
+                )
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)))
+        }
     }
 }
 
 @Composable
-private fun TvNavTab(entry: TvNavEntry, modifier: Modifier = Modifier) {
+private fun TvNavTab(
+    entry: TvNavEntry,
+    modifier: Modifier = Modifier,
+    uiScale: Float = 1f,
+    focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
+) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
-    val scale by animateFloatAsState(if (focused) 1.05f else 1f, tween(120), label = "tv-nav")
-    val shape = RoundedCornerShape(16.dp)
-    val background = if (entry.selected) TvInk else MaterialTheme.colorScheme.surface
-    val contentColor = if (entry.selected) MaterialTheme.colorScheme.background else TvInk
-    Row(
-        modifier
-            .height(50.dp)
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .shadow(if (focused) 12.dp else 2.dp, shape)
-            .clip(shape)
-            .background(background)
-            .border(
-                width = if (focused) 2.dp else 1.dp,
-                color = if (focused) Color.White.copy(alpha = 0.65f) else Color.Black.copy(alpha = 0.06f),
-                shape = shape,
-            )
-            .clickable(interactionSource = interaction, indication = null, onClick = entry.onClick)
-            .padding(horizontal = 4.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
+    val localFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+    val targetFocus = focusRequester ?: localFocus
+    val focusScale by animateFloatAsState(if (focused) 1.03f else 1f, tween(120), label = "tv-nav")
+    val shape = RoundedCornerShape(percent = 50)
+    val contentColor = if (focused) MaterialTheme.colorScheme.background else TvInk
+    Box(modifier, contentAlignment = Alignment.Center) {
+        Row(
             Modifier
-                .size(22.dp)
-                .clip(CircleShape)
-                .background(if (entry.selected) Color.White.copy(alpha = 0.16f) else TvSurface),
-            contentAlignment = Alignment.Center,
+                .focusRequester(targetFocus)
+                .graphicsLayer { scaleX = focusScale; scaleY = focusScale }
+                .clip(shape)
+                .background(if (focused) TvInk else Color.Transparent)
+                .clickable(interactionSource = interaction, indication = null) {
+                    targetFocus.requestFocus()
+                    entry.onClick()
+                }
+                .padding(horizontal = (10 * uiScale).dp, vertical = (5 * uiScale).dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = entry.icon,
                 color = contentColor,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontSize = (14 * uiScale).sp,
+                fontWeight = FontWeight.Medium,
+            )
+            Spacer(Modifier.width((5 * uiScale).dp))
+            Text(
+                text = entry.label,
+                color = contentColor,
+                fontSize = (15 * uiScale).sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
             )
         }
-        Spacer(Modifier.width(4.dp))
-        Text(
-            text = entry.label,
-            color = contentColor,
-            fontSize = 16.sp,
-            fontWeight = if (entry.selected) FontWeight.SemiBold else FontWeight.Medium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 
 @Composable
 private fun TvCategoryChip(
     category: HomeCategory,
-    selected: Boolean = false,
     onClick: () -> Unit,
+    scale: Float = 1f,
     modifier: Modifier = Modifier,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
-    val shape = RoundedCornerShape(14.dp)
-    val background = if (selected) TvInk else TvSurface
-    val contentColor = if (selected) MaterialTheme.colorScheme.background else TvInk
-    Box(
-        modifier
-            .height(34.dp)
-            .shadow(if (focused) 8.dp else 0.dp, shape)
+    val localFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+    val shape = RoundedCornerShape(percent = 50)
+    Text(
+        text = category.name.ifBlank { "未命名" },
+        color = if (focused) MaterialTheme.colorScheme.background else TvInk,
+        fontSize = (14 * scale).sp,
+        fontWeight = FontWeight.Normal,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        modifier = modifier
+            .focusRequester(localFocus)
             .clip(shape)
-            .background(background)
-            .border(
-                width = if (focused) 2.dp else 1.dp,
-                color = if (focused) Color.White.copy(alpha = 0.55f) else Color.Black.copy(alpha = 0.04f),
-                shape = shape,
-            )
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 6.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = category.name.ifBlank { "未命名" },
-            color = contentColor,
-            fontSize = 16.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
+            .background(if (focused) TvInk else Color.Transparent)
+            .clickable(interactionSource = interaction, indication = null) {
+                localFocus.requestFocus()
+                onClick()
+            }
+            .padding(horizontal = (10 * scale).dp, vertical = (4 * scale).dp),
+    )
 }
