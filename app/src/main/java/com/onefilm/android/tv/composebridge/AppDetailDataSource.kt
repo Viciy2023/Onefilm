@@ -33,6 +33,12 @@ class AppDetailDataSource : DetailDataSource {
                         episodes = flag.episodes.map { DetailEpisode(it.name.orEmpty(), it.url.orEmpty()) },
                     )
                 },
+                sourceName = vod.siteName.orEmpty().ifBlank { null },
+                actor = vod.actor.orEmpty().ifBlank { null },
+                director = vod.director.orEmpty().ifBlank { null },
+                playUrl = vod.playUrl.orEmpty()
+                    .ifBlank { vod.flags.firstOrNull()?.episodes?.firstOrNull()?.url.orEmpty() }
+                    .takeIf { it.isNotBlank() },
             )
             DetailCache.put(info)
             info

@@ -10,12 +10,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -23,6 +30,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +44,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.onefilm.android.tv.compose.bridge.DetailInfo
 import com.onefilm.android.tv.compose.design.component.RemoteImage
@@ -168,23 +181,107 @@ private fun DetailContent(
     onExpandPlayer: () -> Unit,
     playingEpisodeUrl: String?,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        item("hero") {
+    var selectedFlagName by remember(info.title) {
+        mutableStateOf(info.flags.firstOrNull()?.name)
+    }
+    var reversed by remember(info.title) { mutableStateOf(false) }
+    val selectedFlag = info.flags.firstOrNull { it.name == selectedFlagName } ?: info.flags.firstOrNull()
+    val episodes = selectedFlag?.episodes.orEmpty()
+    val visibleEpisodes = if (reversed) episodes.reversed() else episodes
+
+    LaunchedEffect(playingEpisodeUrl) {
+        if (playingEpisodeUrl != null) {
+            info.flags.firstOrNull { flag -> flag.episodes.any { it.url == playingEpisodeUrl } }
+                ?.let { selectedFlagName = it.name }
+        }
+    }
+
+    Column(Modifier.fillMaxSize().padding(horizontal = 40.dp, vertical = 24.dp)) {
+        Row(
+            Modifier.fillMaxWidth().weight(1.15f),
+            horizontalArrangement = Arrangement.spacedBy(28.dp),
+        ) {
+            Column(
+                Modifier
+                    .weight(0.60f)
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = info.title.ifBlank { "未命名" },
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = buildString {
+                        append("来源：")
+                        append(info.sourceName ?: info.key)
+                        info.year?.let { append("    年份：$it") }
+                        info.area?.let { append("    地区：$it") }
+                        info.remarks?.let { append("    $it") }
+                    },
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 17.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                info.actor?.let {
+                    Text(
+                        text = "演员：$it",
+                        fontSize = 17.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                info.director?.let {
+                    Text(
+                        text = "导演：$it",
+                        fontSize = 17.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                val address = selectedFlag?.episodes?.firstOrNull()?.url ?: info.playUrl
+                if (!address.isNullOrBlank()) {
+                    Text(
+                        text = "播放地址：$address",
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                info.description?.let {
+                    Text(
+                        text = "内容简介：$it",
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 4,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedButton(onClick = { reversed = !reversed }) {
+                        Text(if (reversed) "正序" else "倒序", fontSize = 17.sp)
+                    }
+                    Button(onClick = onToggleFavorite) {
+                        Text(if (favorite) "已收藏" else "加入收藏", fontSize = 17.sp)
+                    }
+                }
+            }
             Box(
                 Modifier
+                    .weight(0.40f)
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.Black),
             ) {
                 if (playingUrl != null) {
-                    InlinePlayer(
-                        onExpand = onExpandPlayer,
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                    InlinePlayer(onExpand = onExpandPlayer, modifier = Modifier.fillMaxSize())
                 } else {
                     if (!info.posterUrl.isNullOrBlank()) {
                         RemoteImage(
@@ -197,91 +294,80 @@ private fun DetailContent(
                     Box(
                         Modifier
                             .fillMaxSize()
-                            .background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xDD000000)))),
+                            .background(Brush.verticalGradient(listOf(Color(0x22000000), Color(0xAA000000)))),
                     )
-                    Column(
-                        Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(20.dp),
-                    ) {
-                        Text(
-                            info.title,
-                            style = MaterialTheme.typography.displayLarge,
-                            color = Color.White,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            listOfNotNull(info.year, info.area, info.remarks).joinToString(" · "),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White,
-                        )
-                    }
-                }
-                Text(
-                    text = "‹",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = Color.White,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(16.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Color(0x66000000))
-                        .padding(horizontal = 14.dp, vertical = 4.dp)
-                        .clickable(onClick = onBack),
-                )
-            }
-        }
-        item("actions") {
-            Row(
-                Modifier.padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Button(onClick = { onPlay(null, null) }) { Text("播放") }
-                OutlinedButton(onClick = onToggleFavorite) { Text(if (favorite) "已收藏" else "收藏") }
-            }
-        }
-        info.description?.let { desc ->
-            item("desc") {
-                Text(
-                    text = desc,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
-            }
-        }
-        info.flags.forEach { flag ->
-            item("flag:${flag.name}") {
-                Column {
                     Text(
-                        text = flag.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(horizontal = 16.dp),
+                        text = "点击播放",
+                        color = Color.White,
+                        fontSize = 20.sp,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .clickable {
+                                onPlay(selectedFlag?.name, episodes.firstOrNull()?.url)
+                            },
                     )
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                    ) {
-                        items(flag.episodes) { episode ->
-                            val playing = playingEpisodeUrl != null && episode.url == playingEpisodeUrl
-                            Text(
-                                text = episode.name.ifBlank { "未命名" },
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = if (playing) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (playing) MaterialTheme.colorScheme.background
-                                else MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(16.dp))
-                                    .background(
-                                        if (playing) MaterialTheme.colorScheme.onSurface
-                                        else MaterialTheme.colorScheme.surfaceVariant,
-                                    )
-                                    .clickable { onPlay(flag.name, episode.url) }
-                                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                }
+            }
+        }
+
+        Spacer(Modifier.height(18.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("线路", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(64.dp))
+            LazyRow(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                items(info.flags) { flag ->
+                    val selected = flag.name == selectedFlag?.name
+                    Text(
+                        text = flag.name.ifBlank { "默认线路" },
+                        color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
+                        fontSize = 18.sp,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(percent = 50))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.onSurface
+                                else MaterialTheme.colorScheme.surfaceVariant,
                             )
-                        }
-                    }
+                            .clickable {
+                                selectedFlagName = flag.name
+                                reversed = false
+                            }
+                            .padding(horizontal = 18.dp, vertical = 9.dp),
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(14.dp))
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(6),
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            itemsIndexed(visibleEpisodes) { _, episode ->
+                val playing = playingEpisodeUrl != null && episode.url == playingEpisodeUrl
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(
+                            if (playing) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                        .clickable { onPlay(selectedFlag?.name, episode.url) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = episode.name.ifBlank { "未命名" },
+                        color = if (playing) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
+                        fontSize = 18.sp,
+                        fontWeight = if (playing) FontWeight.SemiBold else FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
         }

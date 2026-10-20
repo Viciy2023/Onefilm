@@ -14,6 +14,10 @@ data class DetailInfo(
     val area: String?,
     val remarks: String?,
     val flags: List<DetailFlag>,
+    val sourceName: String? = null,
+    val actor: String? = null,
+    val director: String? = null,
+    val playUrl: String? = null,
 )
 
 interface DetailDataSource {
