@@ -92,7 +92,7 @@ fun TvPosterCard(
                 Text(
                     text = label,
                     color = Color.White,
-                    fontSize = 17.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -115,7 +115,7 @@ fun TvPosterCard(
                 Text(
                     text = title.ifBlank { "未命名" },
                     color = Color.White,
-                    fontSize = 26.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
@@ -126,7 +126,7 @@ fun TvPosterCard(
                     Text(
                         text = it,
                         color = Color.White.copy(alpha = 0.75f),
-                        fontSize = 16.sp,
+                        fontSize = 13.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 1,
