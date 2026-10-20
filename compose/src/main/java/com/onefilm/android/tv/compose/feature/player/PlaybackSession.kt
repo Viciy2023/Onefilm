@@ -233,6 +233,13 @@ object PlaybackSession {
         subtitleLabel = next.name
     }
 
+    val subtitleScale: Float get() = legacy?.subtitleScale() ?: 1f
+    val subtitlePosition: Float get() = legacy?.subtitlePosition() ?: 0f
+    val subtitleColor: String get() = legacy?.subtitleColorLabel() ?: "白"
+    fun cycleSubtitleScale() { legacy?.cycleSubtitleScale() }
+    fun cycleSubtitlePosition() { legacy?.cycleSubtitlePosition() }
+    fun cycleSubtitleColor() { legacy?.cycleSubtitleColor() }
+
     fun cycleAudio() {
         val tracks = legacy?.tracks()?.filter { it.type == C.TRACK_TYPE_AUDIO }.orEmpty()
         if (tracks.isEmpty()) {

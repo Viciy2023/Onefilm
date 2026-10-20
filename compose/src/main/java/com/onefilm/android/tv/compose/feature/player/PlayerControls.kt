@@ -269,6 +269,15 @@ fun PlayerControls(
         add(MenuEntry("解码 ${PlaybackSession.decodeLabel}") { PlaybackSession.toggleDecode() })
         add(MenuEntry("渲染 ${PlaybackSession.renderLabel}") { PlaybackSession.toggleRenderMode() })
         add(MenuEntry("字幕 ${PlaybackSession.subtitleLabel}") { PlaybackSession.cycleSubtitle() })
+        add(MenuEntry("字幕大小 %.1fx".format(PlaybackSession.subtitleScale)) {
+            PlaybackSession.cycleSubtitleScale()
+        })
+        add(MenuEntry("字幕位置 ${PlaybackSession.subtitlePosition.toInt()}") {
+            PlaybackSession.cycleSubtitlePosition()
+        })
+        add(MenuEntry("字幕颜色 ${PlaybackSession.subtitleColor}") {
+            PlaybackSession.cycleSubtitleColor()
+        })
         add(MenuEntry("音轨 ${PlaybackSession.audioLabel}") { PlaybackSession.cycleAudio() })
         add(MenuEntry("视轨 ${PlaybackSession.videoLabel}") { PlaybackSession.cycleVideo() })
         add(MenuEntry("字幕偏移 ${PlaybackSession.textOffsetMs}ms") { PlaybackSession.shiftTextOffset(100L) })

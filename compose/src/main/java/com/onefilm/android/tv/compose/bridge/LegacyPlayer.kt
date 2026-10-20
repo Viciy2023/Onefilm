@@ -47,6 +47,12 @@ interface LegacyPlayer {
     fun audioOffset(): Long
     fun setDanmakuEnabled(enabled: Boolean)
     fun preload(url: String, key: String, title: String)
+    fun subtitleScale(): Float
+    fun cycleSubtitleScale()
+    fun subtitlePosition(): Float
+    fun cycleSubtitlePosition()
+    fun subtitleColorLabel(): String
+    fun cycleSubtitleColor()
     fun release()
 }
 

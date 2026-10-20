@@ -24,6 +24,7 @@ import com.onefilm.android.tv.player.media.PlaySpec
 import com.onefilm.android.tv.player.track.TrackUtil
 import com.onefilm.android.tv.service.PlaybackService
 import com.onefilm.android.tv.setting.PlayerSetting
+import com.onefilm.android.tv.setting.SubtitleSetting
 
 /** 包装旧 PlayerManager，优先复用 PlaybackService 的实例以保留 MediaSession/后台播放。 */
 class AppLegacyPlayer : LegacyPlayer {
@@ -223,6 +224,42 @@ class AppLegacyPlayer : LegacyPlayer {
         val metadata = MediaMetadata.Builder().setTitle(title).build()
         val spec = PlaySpec.from(key, url, mutableMapOf(), metadata).checkUa()
         manager?.preload(spec, 0L)
+    }
+
+    override fun subtitleScale(): Float = SubtitleSetting.getScale()
+
+    override fun cycleSubtitleScale() {
+        val values = listOf(0.8f, 1.0f, 1.2f, 1.5f)
+        val next = values[(values.indexOfFirst { it == subtitleScale() }.takeIf { it >= 0 }?.plus(1) ?: 1) % values.size]
+        SubtitleSetting.putScale(next)
+        manager?.applySubtitleStyle()
+    }
+
+    override fun subtitlePosition(): Float = SubtitleSetting.getPosition()
+
+    override fun cycleSubtitlePosition() {
+        val values = listOf(-5f, 0f, 5f, 10f, 20f)
+        val next = values[(values.indexOfFirst { it == subtitlePosition() }.takeIf { it >= 0 }?.plus(1) ?: 1) % values.size]
+        SubtitleSetting.putPosition(next)
+        manager?.applySubtitleStyle()
+    }
+
+    private var subtitleColorIndex = 0
+
+    override fun subtitleColorLabel(): String {
+        return listOf("白", "黄", "青", "绿")[subtitleColorIndex % 4]
+    }
+
+    override fun cycleSubtitleColor() {
+        subtitleColorIndex = (subtitleColorIndex + 1) % 4
+        val colors = listOf(
+            SubtitleSetting.SUBTITLE_COLOR_WHITE,
+            SubtitleSetting.SUBTITLE_COLOR_YELLOW,
+            SubtitleSetting.SUBTITLE_COLOR_CYAN,
+            SubtitleSetting.SUBTITLE_COLOR_GREEN,
+        )
+        SubtitleSetting.putTextColor(colors[subtitleColorIndex])
+        manager?.applySubtitleStyle()
     }
 
     override fun release() {
