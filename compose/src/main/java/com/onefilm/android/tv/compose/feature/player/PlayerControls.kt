@@ -228,6 +228,8 @@ fun PlayerControls(
         add(MenuEntry("重播") { PlaybackSession.replay() })
         add(MenuEntry("刷新") { PlaybackSession.refresh() })
         add(MenuEntry("选集", PlaybackSession.queue.size > 1) { showEpisodes = true })
+        add(MenuEntry("片头 ${formatTime(PlaybackSession.openingMs)}") { PlaybackSession.markOpening() })
+        add(MenuEntry("片尾 ${formatTime(PlaybackSession.endingMs)}") { PlaybackSession.markEnding() })
         add(MenuEntry("${PlaybackSession.speed}x") { PlaybackSession.cycleSpeed() })
         add(
             MenuEntry(
@@ -259,7 +261,6 @@ fun PlayerControls(
                 }
             }
         })
-        add(MenuEntry("片头 ${formatTime(PlaybackSession.openingMs)}") { PlaybackSession.markOpening() })
         add(MenuEntry("片尾 ${formatTime(PlaybackSession.endingMs)}") { PlaybackSession.markEnding() })
         add(MenuEntry("画面 ${PlaybackSession.resizeLabel}") { PlaybackSession.cycleResizeMode() })
         add(MenuEntry("引擎 ${if (PlaybackSession.engineMpv) "MPV" else "Exo"}") {
