@@ -17,7 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +40,10 @@ import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
 @Composable
 fun SettingsScreen(dataSource: SettingsDataSource) {
     var snapshot by remember { mutableStateOf(dataSource.load()) }
+    var editType by remember { mutableStateOf<Int?>(null) }
+    var editUrl by remember { mutableStateOf("") }
+    var configLoading by remember { mutableStateOf(false) }
+    var configError by remember { mutableStateOf<String?>(null) }
 
     fun refresh(change: SettingsDataSource.() -> Unit) {
         dataSource.change()
@@ -56,6 +63,28 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+
+        Section("接口配置") {
+            ConfigRow("点播接口", snapshot.configUrl) {
+                editType = 0
+                editUrl = snapshot.configUrl
+                configError = null
+            }
+            ConfigRow("直播接口", snapshot.liveConfigUrl) {
+                editType = 1
+                editUrl = snapshot.liveConfigUrl
+                configError = null
+            }
+            ConfigRow("壁纸接口", snapshot.wallConfigUrl) {
+                editType = 2
+                editUrl = snapshot.wallConfigUrl
+                configError = null
+            }
+            ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
+            SwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
+                refresh { setIncognito(it) }
+            }
+        }
 
         Section("播放设置") {
             ChoiceRow(
@@ -203,6 +232,68 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
 
         Spacer(Modifier.height(24.dp))
     }
+
+    val type = editType
+    if (type != null) {
+        AlertDialog(
+            onDismissRequest = { if (!configLoading) editType = null },
+            title = {
+                Text(
+                    when (type) {
+                        0 -> "点播接口"
+                        1 -> "直播接口"
+                        else -> "壁纸接口"
+                    },
+                )
+            },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = editUrl,
+                        onValueChange = { editUrl = it },
+                        singleLine = true,
+                        label = { Text("配置 URL") },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    configError?.let {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            it,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !configLoading && editUrl.isNotBlank(),
+                    onClick = {
+                        configLoading = true
+                        dataSource.loadConfig(type, editUrl.trim()) { ok, message ->
+                            configLoading = false
+                            if (ok) {
+                                snapshot = dataSource.load()
+                                editType = null
+                            } else {
+                                configError = message
+                            }
+                        }
+                    },
+                ) { Text(if (configLoading) "保存中…" else "保存") }
+            },
+            dismissButton = {
+                TextButton(enabled = !configLoading, onClick = { editType = null }) {
+                    Text("取消")
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun ConfigRow(title: String, value: String, onClick: () -> Unit) {
+    ActionRow(title, value.ifBlank { "未配置，点击设置" }, onClick)
 }
 
 @Composable

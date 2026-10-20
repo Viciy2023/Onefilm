@@ -26,6 +26,10 @@ data class SettingsSnapshot(
     val ua: String,
     val version: String,
     val configUrl: String,
+    val liveConfigUrl: String,
+    val wallConfigUrl: String,
+    val incognito: Boolean,
+    val dohLabel: String,
 )
 
 /** Compose 设置页与旧 *Setting 类的桥接。 */
@@ -59,4 +63,8 @@ interface SettingsDataSource {
     fun setPreloadSizeMb(sizeMb: Int)
 
     fun resetUa()
+
+    fun loadConfig(type: Int, url: String, onResult: (Boolean, String) -> Unit)
+    fun cycleDoh()
+    fun setIncognito(enabled: Boolean)
 }

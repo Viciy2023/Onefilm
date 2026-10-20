@@ -4,11 +4,13 @@ import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
 import androidx.media3.ui.danmaku.DanmakuConfig
 import androidx.media3.ui.danmaku.DanmakuParser
 import androidx.media3.ui.danmaku.DanmakuView
+import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import com.onefilm.android.tv.compose.bridge.DanmakuDataSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,12 +37,24 @@ object DanmakuController {
         private set
     var textScale by mutableFloatStateOf(1f)
         private set
+    private var durationMs by mutableLongStateOf(8000L)
+
+    private fun syncSettings() {
+        val config = ComposeDependencies.danmakuDataSource.displayConfig()
+        enabled = config.show
+        textScale = config.scale
+        transparency = config.transparency
+        densityLines = config.lines
+        durationMs = config.durationMs
+        applyConfig()
+    }
 
     private fun applyConfig() {
         view?.setConfig(
             DanmakuConfig.Builder()
                 .setTextScale(textScale)
                 .setTransparency(transparency)
+                .setDurationMs(durationMs)
                 .setMaxScrollLines(densityLines)
                 .build(),
         )
@@ -77,7 +91,7 @@ object DanmakuController {
 
     fun attach(target: DanmakuView) {
         view = target
-        applyConfig()
+        syncSettings()
         xml?.let { runCatching { target.setItems(DanmakuParser.parseXml(it)) } }
         target.setEnabled(enabled)
         target.setClock(lastPosition)
@@ -108,6 +122,7 @@ object DanmakuController {
     }
 
     fun ensureLoaded(context: Context, key: String, dataSource: DanmakuDataSource) {
+        syncSettings()
         if (enabled) load(context, key, dataSource)
     }
 

@@ -1,6 +1,12 @@
 package com.onefilm.android.tv.composebridge
 
 import androidx.media3.common.DolbyVisionOutputPolicy
+import com.onefilm.android.tv.App
+import com.onefilm.android.tv.api.config.LiveConfig
+import com.onefilm.android.tv.api.config.WallConfig
+import com.onefilm.android.tv.bean.Config
+import com.onefilm.android.tv.impl.Callback
+import com.github.catvod.bean.Doh
 import com.onefilm.android.tv.BuildConfig
 import com.onefilm.android.tv.api.config.VodConfig
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
@@ -49,6 +55,10 @@ class AppSettingsDataSource : SettingsDataSource {
         ua = Setting.getUa(),
         version = BuildConfig.VERSION_NAME,
         configUrl = VodConfig.getUrl().orEmpty(),
+        liveConfigUrl = LiveConfig.getUrl().orEmpty(),
+        wallConfigUrl = WallConfig.getUrl().orEmpty(),
+        incognito = Setting.isIncognito(),
+        dohLabel = runCatching { Doh.objectFrom(Setting.getDoh()).getName() }.getOrNull().orEmpty(),
     )
 
     override fun setEngine(mpv: Boolean) {
@@ -149,6 +159,36 @@ class AppSettingsDataSource : SettingsDataSource {
 
     override fun resetUa() {
         Setting.putUa("")
+    }
+
+    override fun loadConfig(type: Int, url: String, onResult: (Boolean, String) -> Unit) {
+        val config = Config.create(type, url)
+        val callback = object : Callback() {
+            override fun success() {
+                App.post { onResult(true, "") }
+            }
+
+            override fun error(msg: String) {
+                App.post { onResult(false, msg) }
+            }
+        }
+        when (type) {
+            0 -> VodConfig.load(config, callback)
+            1 -> LiveConfig.load(config, callback)
+            else -> WallConfig.load(config, callback)
+        }
+    }
+
+    override fun cycleDoh() {
+        val items = VodConfig.get().doh
+        if (items.isEmpty()) return
+        val current = items.indexOf(Doh.objectFrom(Setting.getDoh()))
+        val next = items[(current + 1).takeIf { it >= 0 }?.mod(items.size) ?: 0]
+        Setting.putDoh(next.toString())
+    }
+
+    override fun setIncognito(enabled: Boolean) {
+        Setting.putIncognito(enabled)
     }
 
     private fun dolbyLabel(mode: Int): String = when (mode) {
