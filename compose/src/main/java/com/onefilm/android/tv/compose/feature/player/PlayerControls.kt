@@ -56,6 +56,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,6 +87,8 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.danmaku.DanmakuView
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
+import com.onefilm.android.tv.compose.bridge.DlnaDevice
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 
 private val Ink = Color(0xFFF5F5F7)
@@ -209,6 +212,10 @@ fun PlayerControls(
     var dragging by remember { mutableStateOf(false) }
     var showEpisodes by remember { mutableStateOf(false) }
     var showMore by remember { mutableStateOf(false) }
+    var showDlna by remember { mutableStateOf(false) }
+    var dlnaDevices by remember { mutableStateOf<List<DlnaDevice>>(emptyList()) }
+    var dlnaLoading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     var overflowEntries by remember { mutableStateOf<List<MenuEntry>>(emptyList()) }
     var danmakuOn by remember { mutableStateOf(true) }
     var tick by remember { mutableIntStateOf(0) }
@@ -252,6 +259,18 @@ fun PlayerControls(
                             .setAspectRatio(Rational(16, 9))
                             .build(),
                     )
+                }
+            }
+        })
+        add(MenuEntry("投屏") {
+            val source = ComposeDependencies.dlnaDataSource
+            if (source != null) {
+                showDlna = true
+                dlnaLoading = true
+                dlnaDevices = emptyList()
+                scope.launch {
+                    dlnaDevices = runCatching { source.devices() }.getOrDefault(emptyList())
+                    dlnaLoading = false
                 }
             }
         })
@@ -485,6 +504,33 @@ fun PlayerControls(
                 onDismiss = { showMore = false },
             )
         }
+
+        AnimatedVisibility(
+            visible = showDlna,
+            enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it / 2 }) + fadeOut(),
+        ) {
+            DlnaPopup(
+                devices = dlnaDevices,
+                loading = dlnaLoading,
+                onDismiss = { showDlna = false },
+                onPick = { device ->
+                    val source = ComposeDependencies.dlnaDataSource
+                    val url = PlaybackSession.url
+                    if (source != null && url != null) {
+                        source.cast(
+                            deviceId = device.id,
+                            title = PlaybackSession.title,
+                            url = url,
+                            positionMs = PlaybackSession.positionMs(),
+                            headers = emptyMap(),
+                        )
+                        PlaybackSession.player?.pause()
+                    }
+                    showDlna = false
+                },
+            )
+        }
     }
 }
 
@@ -668,6 +714,44 @@ private fun MenuText(entry: MenuEntry, width: Dp) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+@Composable
+private fun DlnaPopup(
+    devices: List<DlnaDevice>,
+    loading: Boolean,
+    onDismiss: () -> Unit,
+    onPick: (DlnaDevice) -> Unit,
+) {
+    Box(
+        Modifier.fillMaxSize().padding(end = 14.dp, bottom = 64.dp),
+        contentAlignment = Alignment.BottomEnd,
+    ) {
+        Column(
+            Modifier
+                .widthIn(max = 380.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Panel)
+                .padding(10.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("投屏设备", color = Ink, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.weight(1f))
+                TextAction("关闭", onClick = onDismiss)
+            }
+            Spacer(Modifier.height(6.dp))
+            when {
+                loading -> Text("正在搜索设备…", color = InkDim, fontSize = 12.sp)
+                devices.isEmpty() -> Text("未发现投屏设备", color = InkDim, fontSize = 12.sp)
+                else -> devices.forEach { device ->
+                    FlatTile(
+                        text = device.name.ifBlank { device.id },
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                    ) { onPick(device) }
+                }
+            }
+        }
     }
 }
 

@@ -83,4 +83,4 @@
 - [x] 弹幕开关接入 `DanmakuApi` + `media3compat` 的 `DanmakuView`
 - [x] PiP / 后台播放 / MediaSession：已绑定 `PlaybackService`，全屏按 Home 自动进入 PiP
 - [x] 下一集预加载：Compose 解析下一集地址并调用 `PlayerManager.preload`
-- [ ] DLNA：未接（需 mobile flavor 桥接 CastDialog/DLNACastManager）
+- [x] DLNA：mobile flavor 桥接 DLNACastManager，更多菜单可发现设备并投屏（待真实设备回归）
