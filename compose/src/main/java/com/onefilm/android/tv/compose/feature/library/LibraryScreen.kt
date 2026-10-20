@@ -10,21 +10,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.bridge.LibraryData
 import com.onefilm.android.tv.compose.bridge.MediaCard
+import com.onefilm.android.tv.compose.design.component.AppLogoLoading
 import com.onefilm.android.tv.compose.design.component.TvPosterCard
 
 @Composable
@@ -33,21 +28,29 @@ fun LibraryScreen(
     onCardClick: (MediaCard) -> Unit,
     initialTab: Int = 0,
 ) {
-    var selected by remember(initialTab) { mutableIntStateOf(initialTab.coerceIn(0, 1)) }
+    val historyMode = initialTab == 1
     Column(Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 24.dp)) {
-        Text("我的片库", style = MaterialTheme.typography.headlineMedium)
-        TabRow(selectedTabIndex = selected) {
-            listOf("收藏", "历史").forEachIndexed { index, title ->
-                Tab(selected = selected == index, onClick = { selected = index }, text = { Text(title) })
-            }
-        }
+        Text(
+            text = if (historyMode) "历史" else "收藏",
+            fontSize = 30.sp,
+            style = MaterialTheme.typography.headlineMedium,
+        )
         when {
-            data == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+            data == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    AppLogoLoading(size = 84.dp)
+                    Text("正在赶路，请等等！", fontSize = 18.sp)
+                }
+            }
             else -> {
-                val items = if (selected == 0) data.favorites else data.history
+                val items = if (historyMode) data.history else data.favorites
                 if (items.isEmpty()) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(if (selected == 0) "暂无收藏内容" else "暂无观看记录", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            if (historyMode) "暂无观看记录" else "暂无收藏内容",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontSize = 18.sp,
+                        )
                     }
                 } else LazyVerticalGrid(
                     columns = GridCells.Fixed(5),

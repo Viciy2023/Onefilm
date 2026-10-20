@@ -72,7 +72,7 @@ fun CategoryScreen(
 
     when (state) {
         CategoryUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+            com.onefilm.android.tv.compose.design.component.AppLoadingState()
         }
         is CategoryUiState.Error -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {

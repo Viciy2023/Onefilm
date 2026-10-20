@@ -482,7 +482,7 @@ private fun SearchResults(
                 SearchUiState.Idle, SearchUiState.Loading -> Box(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
-                ) { CircularProgressIndicator() }
+                ) { com.onefilm.android.tv.compose.design.component.AppLoadingState() }
                 is SearchUiState.Empty -> Box(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,

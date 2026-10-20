@@ -137,9 +137,9 @@ fun TvHeader(
         // 第二行：功能导航。九项等权铺满，图标 + 文字。
         val entries = listOf(
             TvNavEntry("首页", "⌂") { onNavigate(Routes.HOME) },
-            TvNavEntry("搜索", "⌕") { onNavigate(Routes.SEARCH) },
-            TvNavEntry("收藏", "★") { onNavigate(Routes.LIBRARY) },
             TvNavEntry("历史", "↺") { onNavigate(Routes.HISTORY) },
+            TvNavEntry("收藏", "★") { onNavigate(Routes.LIBRARY) },
+            TvNavEntry("搜索", "⌕") { onNavigate(Routes.SEARCH) },
             TvNavEntry("直播", "▶", onLive),
             TvNavEntry("配置", "⚙", onConfig),
             TvNavEntry("线路", "⇄", onLine),

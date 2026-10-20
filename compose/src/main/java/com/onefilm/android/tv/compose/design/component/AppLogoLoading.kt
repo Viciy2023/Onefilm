@@ -7,7 +7,12 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -15,6 +20,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.R
 
 /** 统一加载状态：应用 LOGO 匀速旋转。 */
@@ -38,4 +44,16 @@ fun AppLogoLoading(
         contentDescription = "加载中",
         modifier = modifier.size(size).rotate(angle),
     )
+}
+
+@Composable
+fun AppLoadingState(
+    text: String = "正在赶路，请等等！",
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier, horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+        AppLogoLoading(size = 84.dp)
+        Spacer(Modifier.height(14.dp))
+        Text(text, fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 }

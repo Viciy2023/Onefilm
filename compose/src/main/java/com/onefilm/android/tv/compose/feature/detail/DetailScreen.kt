@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,12 +32,14 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -188,9 +191,8 @@ private fun DetailContent(
     onExpandPlayer: () -> Unit,
     playingEpisodeUrl: String?,
 ) {
-    var selectedFlagName by remember(info.title) {
-        mutableStateOf(info.flags.firstOrNull()?.name)
-    }
+    var selectedFlagIndex by remember(info.title) { mutableIntStateOf(0) }
+    var manualFlagSelection by remember(info.title) { mutableStateOf(false) }
     var reversed by remember(info.title) { mutableStateOf(false) }
     var inlineReady by remember(info.title) { mutableStateOf(false) }
     LaunchedEffect(playingUrl, info.title) {
@@ -200,14 +202,14 @@ private fun DetailContent(
             inlineReady = true
         }
     }
-    val selectedFlag = info.flags.firstOrNull { it.name == selectedFlagName } ?: info.flags.firstOrNull()
+    val selectedFlag = info.flags.getOrNull(selectedFlagIndex) ?: info.flags.firstOrNull()
     val episodes = selectedFlag?.episodes.orEmpty()
     val visibleEpisodes = if (reversed) episodes.reversed() else episodes
 
     LaunchedEffect(playingEpisodeUrl) {
-        if (playingEpisodeUrl != null) {
-            info.flags.firstOrNull { flag -> flag.episodes.any { it.url == playingEpisodeUrl } }
-                ?.let { selectedFlagName = it.name }
+        if (!manualFlagSelection && playingEpisodeUrl != null) {
+            val index = info.flags.indexOfFirst { flag -> flag.episodes.any { it.url == playingEpisodeUrl } }
+            if (index >= 0) selectedFlagIndex = index
         }
     }
 
@@ -338,8 +340,8 @@ private fun DetailContent(
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                items(info.flags) { flag ->
-                    val selected = flag.name == selectedFlag?.name
+                itemsIndexed(info.flags) { index, flag ->
+                    val selected = index == selectedFlagIndex
                     Text(
                         text = flag.name.ifBlank { "默认线路" },
                         color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
@@ -352,7 +354,8 @@ private fun DetailContent(
                                 else MaterialTheme.colorScheme.surfaceVariant,
                             )
                             .clickable {
-                                selectedFlagName = flag.name
+                                selectedFlagIndex = index
+                                manualFlagSelection = true
                                 reversed = false
                             }
                             .padding(horizontal = 18.dp, vertical = 9.dp),

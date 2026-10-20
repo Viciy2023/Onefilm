@@ -55,7 +55,9 @@ fun HomeScreen(
     isTv: Boolean = false,
 ) {
     when (state) {
-        HomeUiState.Loading -> CenterMessage("正在加载") { CircularProgressIndicator() }
+        HomeUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            com.onefilm.android.tv.compose.design.component.AppLoadingState()
+        }
         HomeUiState.Empty -> StatusMessage("暂无内容", onRetry)
         is HomeUiState.Error -> StatusMessage(state.message, onRetry)
         is HomeUiState.Content ->

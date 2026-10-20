@@ -75,9 +75,9 @@ fun ResolveRoute(
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (loading) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator()
-                    Spacer(Modifier.height(16.dp))
-                    Text("正在聚合《$title》的片源…", style = MaterialTheme.typography.bodyLarge)
+                    com.onefilm.android.tv.compose.design.component.AppLoadingState(
+                        text = "正在聚合《$title》的片源…",
+                    )
                     Spacer(Modifier.height(6.dp))
                     Text(
                         "从全部可搜索站点中查找，找到后自动进入详情",

@@ -67,7 +67,7 @@ fun SourceRoute(
                 Text("来源加载失败", style = MaterialTheme.typography.bodyLarge)
             }
             items == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                com.onefilm.android.tv.compose.design.component.AppLoadingState()
             }
             items.isNullOrEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("没有找到其他站点来源", style = MaterialTheme.typography.bodyLarge)

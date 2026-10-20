@@ -129,7 +129,7 @@ fun NetdiskScreen(
                 },
             )
             loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                com.onefilm.android.tv.compose.design.component.AppLoadingState()
             }
             entries.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("此目录为空", color = MaterialTheme.colorScheme.onSurfaceVariant)
