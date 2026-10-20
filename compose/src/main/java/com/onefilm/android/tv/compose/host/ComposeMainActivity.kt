@@ -62,7 +62,9 @@ class ComposeMainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val isTv = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
             (resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) ==
-            Configuration.UI_MODE_TYPE_TELEVISION
+            Configuration.UI_MODE_TYPE_TELEVISION ||
+            !packageName.endsWith(".mobile")
+        if (isTv) requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         val dataSource = ComposeDependencies.homeDataSource
         val detailDataSource = ComposeDependencies.detailDataSource
         val categoryDataSource = ComposeDependencies.categoryDataSource
