@@ -117,19 +117,6 @@ fun SearchScreen(
         } else {
             SearchResults(
                 state = state,
-                query = query,
-                onQueryChange = {
-                    query = it
-                    onQueryChange(it)
-                },
-                onSearch = {
-                    if (it.isNotBlank()) {
-                        query = it
-                        keyboard?.hide()
-                        onSearch(it)
-                    }
-                },
-                onRetry = onRetry,
                 onCardClick = onCardClick,
             )
         }
@@ -432,81 +419,114 @@ private fun KeywordChip(text: String, modifier: Modifier = Modifier, onClick: ()
 @Composable
 private fun SearchResults(
     state: SearchUiState,
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onSearch: (String) -> Unit,
-    onRetry: () -> Unit,
     onCardClick: (MediaCard) -> Unit,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
-            value = query,
-            onValueChange = onQueryChange,
-            modifier = Modifier.weight(1f),
-            singleLine = true,
-            textStyle = MaterialTheme.typography.titleMedium,
-            placeholder = { Text("输入要搜索的影片、剧集、演员", fontSize = 18.sp) },
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
-        )
-        Spacer(Modifier.width(10.dp))
-        Button(onClick = { onSearch(query) }) { Text("搜索", fontSize = 17.sp) }
-        Spacer(Modifier.width(10.dp))
-        TextButton(onClick = onRetry) { Text("重试", fontSize = 17.sp) }
+    val content = state as? SearchUiState.Content
+    val items = content?.items.orEmpty()
+    val sites = remember(content?.keyword, items.size) {
+        items.map { it.siteName?.takeIf { name -> name.isNotBlank() } ?: it.key }
+            .filter { it.isNotBlank() }
+            .distinct()
     }
-    Spacer(Modifier.height(12.dp))
-    when (state) {
-        SearchUiState.Idle, SearchUiState.Loading -> Box(
-            Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) { CircularProgressIndicator() }
-        is SearchUiState.Empty -> Box(
-            Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) { Text("没有找到“${state.keyword}”相关结果", fontSize = 18.sp) }
-        is SearchUiState.Error -> Box(
-            Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
+    var selectedSite by remember(content?.keyword) { mutableStateOf<String?>(null) }
+    val visibleItems = if (selectedSite == null) items else items.filter {
+        (it.siteName?.takeIf { name -> name.isNotBlank() } ?: it.key) == selectedSite
+    }
+
+    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+        Column(
+            Modifier
+                .width(300.dp)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(18.dp))
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(vertical = 16.dp),
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(state.message, fontSize = 18.sp)
-                Spacer(Modifier.height(12.dp))
-                Button(onClick = onRetry) { Text("重试") }
+            Text(
+                text = "搜索",
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 18.dp),
+            )
+            Text(
+                text = content?.let { "(${it.completed}/${it.total})" } ?: "",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 15.sp,
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 2.dp),
+            )
+            Spacer(Modifier.height(12.dp))
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SiteButton(
+                    text = "全部显示",
+                    selected = selectedSite == null,
+                    onClick = { selectedSite = null },
+                )
+                sites.forEach { site ->
+                    SiteButton(
+                        text = site,
+                        selected = selectedSite == site,
+                        onClick = { selectedSite = site },
+                    )
+                }
             }
         }
-        is SearchUiState.Content -> LazyVerticalGrid(
-            columns = GridCells.Fixed(5),
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(22.dp),
-        ) {
-            item(span = { GridItemSpan(maxLineSpan) }) {
-                Text(
-                    "搜索(${state.completed}/${state.total})",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 15.sp,
-                )
-            }
-            itemsIndexed(
-                items = state.items,
-                key = { index, card -> "${card.key}:${card.id}:$index" },
-            ) { _, card ->
-                TvPosterCard(
-                    title = card.title,
-                    posterUrl = card.posterUrl,
-                    subtitle = card.subtitle,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { onCardClick(card) },
-                )
-            }
-            if (!state.done) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
+        Box(Modifier.weight(1f).fillMaxHeight()) {
+            when (state) {
+                SearchUiState.Idle, SearchUiState.Loading -> Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) { CircularProgressIndicator() }
+                is SearchUiState.Empty -> Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) { Text("没有找到“${state.keyword}”相关结果", fontSize = 18.sp) }
+                is SearchUiState.Error -> Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) { Text(state.message, fontSize = 18.sp, color = MaterialTheme.colorScheme.error) }
+                is SearchUiState.Content -> LazyVerticalGrid(
+                    columns = GridCells.Fixed(5),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(22.dp),
+                ) {
+                    itemsIndexed(
+                        items = visibleItems,
+                        key = { index, card -> "${card.key}:${card.id}:$index" },
+                    ) { _, card ->
+                        TvPosterCard(
+                            title = card.title,
+                            posterUrl = card.posterUrl,
+                            subtitle = card.subtitle,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { onCardClick(card) },
+                        )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun SiteButton(text: String, selected: Boolean, onClick: () -> Unit) {
+    Text(
+        text = text,
+        color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
+        fontSize = 19.sp,
+        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+    )
 }

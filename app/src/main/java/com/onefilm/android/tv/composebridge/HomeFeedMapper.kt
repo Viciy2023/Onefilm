@@ -3,6 +3,7 @@ package com.onefilm.android.tv.composebridge
 import com.onefilm.android.tv.bean.History
 import com.onefilm.android.tv.bean.Keep
 import com.onefilm.android.tv.bean.Vod
+import com.onefilm.android.tv.api.config.VodConfig
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.db.AppDatabase
 
@@ -15,6 +16,7 @@ object HomeFeedMapper {
             title = vod.name.orEmpty().ifBlank { "未命名" },
             subtitle = vod.remarks.orEmpty().ifBlank { null },
             posterUrl = vod.pic.orEmpty().ifBlank { null },
+            siteName = runCatching { VodConfig.get().getSite(siteKey).name }.getOrNull(),
         )
     }
 

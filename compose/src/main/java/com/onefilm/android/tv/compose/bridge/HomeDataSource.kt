@@ -9,6 +9,7 @@ data class MediaCard(
     val subtitle: String?,
     val posterUrl: String?,
     val progress: Float? = null,
+    val siteName: String? = null,
 )
 
 data class HomeSection(val title: String, val items: List<MediaCard>)
