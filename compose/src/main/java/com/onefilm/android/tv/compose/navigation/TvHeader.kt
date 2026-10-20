@@ -51,12 +51,18 @@ data class TvNavEntry(
     val onClick: () -> Unit,
 )
 
+enum class TvHeaderVariant {
+    Full,
+    CategoryOnly,
+}
+
 @Composable
 fun TvHeader(
     currentRoute: String?,
     categories: List<HomeCategory>,
     notice: String?,
     siteName: String? = null,
+    variant: TvHeaderVariant = TvHeaderVariant.Full,
     onNavigate: (String) -> Unit,
     onLive: () -> Unit,
     onConfig: () -> Unit,
@@ -82,11 +88,17 @@ fun TvHeader(
         // 用可用宽度做一次自适应，避免 2400px 屏上导航和分类缩成一小条。
         val scale = (maxWidth.value / 1000f).coerceIn(1f, 2.4f)
         val initialNavFocus = remember { androidx.compose.ui.focus.FocusRequester() }
-        LaunchedEffect(Unit) {
+        val initialCategoryFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+        LaunchedEffect(variant) {
             delay(600)
-            initialNavFocus.requestFocus()
+            if (variant == TvHeaderVariant.Full) {
+                initialNavFocus.requestFocus()
+            } else {
+                initialCategoryFocus.requestFocus()
+            }
         }
         Column(Modifier.fillMaxWidth()) {
+        if (variant == TvHeaderVariant.Full) {
         // 第一行：品牌 / 当前接口 / 时间。三栏等宽，避免内容挤压品牌与时间。
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = (6 * scale).dp),
@@ -148,6 +160,7 @@ fun TvHeader(
                 )
             }
         }
+        }
 
         // 第三行：分类标签。从左往右自然排列，超出屏宽后横向滑动。
         val allCategories = listOf(HomeCategory("", "", "主页")) + categories
@@ -155,11 +168,16 @@ fun TvHeader(
             Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 48.dp, vertical = (2 * scale).dp),
+                .padding(
+                    start = 48.dp,
+                    top = if (variant == TvHeaderVariant.CategoryOnly) (14 * scale).dp else (2 * scale).dp,
+                    end = 48.dp,
+                    bottom = (2 * scale).dp,
+                ),
             horizontalArrangement = Arrangement.spacedBy((6 * scale).dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            allCategories.forEach { category ->
+            allCategories.forEachIndexed { index, category ->
                 val home = category.key.isBlank()
                 TvCategoryChip(
                     category = category,
@@ -167,6 +185,7 @@ fun TvHeader(
                         if (home) onNavigate(Routes.HOME) else onCategory(category)
                     },
                     scale = scale,
+                    focusRequester = if (index == 0) initialCategoryFocus else null,
                 )
             }
         }
@@ -226,11 +245,13 @@ private fun TvCategoryChip(
     category: HomeCategory,
     onClick: () -> Unit,
     scale: Float = 1f,
+    focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
     modifier: Modifier = Modifier,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val localFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+    val targetFocus = focusRequester ?: localFocus
     val shape = RoundedCornerShape(percent = 50)
     Text(
         text = category.name.ifBlank { "未命名" },
@@ -240,11 +261,11 @@ private fun TvCategoryChip(
         textAlign = TextAlign.Center,
         maxLines = 1,
         modifier = modifier
-            .focusRequester(localFocus)
+            .focusRequester(targetFocus)
             .clip(shape)
             .background(if (focused) TvInk else Color.Transparent)
             .clickable(interactionSource = interaction, indication = null) {
-                localFocus.requestFocus()
+                targetFocus.requestFocus()
                 onClick()
             }
             .padding(horizontal = (10 * scale).dp, vertical = (4 * scale).dp),

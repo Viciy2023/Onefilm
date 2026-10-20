@@ -36,7 +36,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.onefilm.android.tv.compose.bridge.CategoryPage
 import com.onefilm.android.tv.compose.bridge.MediaCard
-import com.onefilm.android.tv.compose.design.component.PosterCard
+import com.onefilm.android.tv.compose.design.component.TvPosterCard
 
 @Composable
 fun CategoryScreen(
@@ -147,20 +147,21 @@ private fun CategoryContent(
             }
         }
         LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
+            columns = GridCells.Fixed(5),
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            contentPadding = PaddingValues(horizontal = 48.dp, vertical = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             itemsIndexed(
                 items = page.items,
                 key = { index, card -> "${card.key}:${card.id}:$index" },
             ) { _, card ->
-                PosterCard(
+                TvPosterCard(
                     title = card.title,
                     posterUrl = card.posterUrl,
                     subtitle = card.subtitle,
+                    modifier = Modifier.fillMaxWidth(),
                     onClick = { onCardClick(card) },
                 )
             }

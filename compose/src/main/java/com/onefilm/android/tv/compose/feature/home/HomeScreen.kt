@@ -3,7 +3,6 @@ package com.onefilm.android.tv.compose.feature.home
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,7 +12,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,21 +36,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.unit.dp
 import com.onefilm.android.tv.compose.bridge.HomeCategory
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.design.component.HeroBanner
 import com.onefilm.android.tv.compose.design.component.PosterItem
+import com.onefilm.android.tv.compose.design.component.TvPosterCard
 import com.onefilm.android.tv.compose.design.component.SectionRow
 
 @Composable
@@ -177,7 +168,13 @@ private fun TvPosterSection(
                             for (col in 0 until 5) {
                                 val item = page.getOrNull(row * 5 + col)
                                 if (item != null) {
-                                    TvPosterCard(item, cardWidth) { onCardClick(item) }
+                                    TvPosterCard(
+                                        title = item.title,
+                                        posterUrl = item.posterUrl,
+                                        subtitle = item.subtitle,
+                                        width = cardWidth,
+                                        onClick = { onCardClick(item) },
+                                    )
                                 } else {
                                     Spacer(Modifier.width(cardWidth))
                                 }
@@ -212,77 +209,6 @@ private fun TvPosterSection(
     }
 }
 
-@Composable
-private fun TvPosterCard(card: MediaCard, width: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
-    val interaction = remember { MutableInteractionSource() }
-    val focused by interaction.collectIsFocusedAsState()
-    val scale by animateFloatAsState(if (focused) 1.05f else 1f, tween(120), label = "tv-poster")
-    val shape = RoundedCornerShape(14.dp)
-    Box(
-        Modifier
-            .width(width)
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .shadow(if (focused) 16.dp else 0.dp, shape)
-            .clip(shape)
-            .border(if (focused) 2.dp else 0.dp, Color.White.copy(alpha = 0.35f), shape)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
-    ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .aspectRatio(2f / 3f)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-        ) {
-            if (!card.posterUrl.isNullOrBlank()) {
-                androidx.compose.foundation.Image(
-                    painter = coil.compose.rememberAsyncImagePainter(
-                        com.onefilm.android.tv.compose.design.parseImageSource(card.posterUrl)?.url,
-                    ),
-                    contentDescription = card.title,
-                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color.Transparent, Color(0x33000000), Color(0xE6000000)),
-                        ),
-                    ),
-            )
-            Column(
-                Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-            ) {
-                Text(
-                    text = card.title.ifBlank { "未命名" },
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                card.subtitle?.takeIf { it.isNotBlank() }?.let {
-                    Text(
-                        text = it,
-                        color = Color.White.copy(alpha = 0.75f),
-                        fontSize = 13.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            }
-        }
-    }
-}
 @Composable
 private fun CategoryRail(
     categories: List<HomeCategory>,

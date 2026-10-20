@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -24,7 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.onefilm.android.tv.compose.bridge.LibraryData
 import com.onefilm.android.tv.compose.bridge.MediaCard
-import com.onefilm.android.tv.compose.design.component.PosterCard
+import com.onefilm.android.tv.compose.design.component.TvPosterCard
 
 @Composable
 fun LibraryScreen(
@@ -32,7 +33,7 @@ fun LibraryScreen(
     onCardClick: (MediaCard) -> Unit,
 ) {
     var selected by remember { mutableIntStateOf(0) }
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 24.dp)) {
         Text("我的片库", style = MaterialTheme.typography.headlineMedium)
         TabRow(selectedTabIndex = selected) {
             listOf("收藏", "历史").forEachIndexed { index, title ->
@@ -48,13 +49,19 @@ fun LibraryScreen(
                         Text(if (selected == 0) "暂无收藏内容" else "暂无观看记录", style = MaterialTheme.typography.bodyLarge)
                     }
                 } else LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    contentPadding = PaddingValues(vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    columns = GridCells.Fixed(5),
+                    contentPadding = PaddingValues(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
                     itemsIndexed(items, key = { index, card -> "${card.key}:${card.id}:$index" }) { _, card ->
-                        PosterCard(card.title, card.posterUrl, card.subtitle, onClick = { onCardClick(card) })
+                        TvPosterCard(
+                            title = card.title,
+                            posterUrl = card.posterUrl,
+                            subtitle = card.subtitle,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { onCardClick(card) },
+                        )
                     }
                 }
             }

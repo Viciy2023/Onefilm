@@ -35,6 +35,7 @@ import com.onefilm.android.tv.compose.feature.home.HomeUiState
 import com.onefilm.android.tv.compose.feature.home.HomeViewModel
 import com.onefilm.android.tv.compose.navigation.AdaptiveNavigation
 import com.onefilm.android.tv.compose.navigation.TvHeader
+import com.onefilm.android.tv.compose.navigation.TvHeaderVariant
 import com.onefilm.android.tv.compose.navigation.OneFilmNavHost
 import com.onefilm.android.tv.compose.navigation.Routes
 
@@ -130,26 +131,34 @@ class ComposeMainActivity : ComponentActivity() {
                         }
                     },
                     tvHeader = {
-                        val feed = (homeState as? HomeUiState.Content)?.feed
-                        TvHeader(
-                            currentRoute = route,
-                            categories = feed?.categories.orEmpty(),
-                            notice = null,
-                            siteName = feed?.siteName,
-                            onNavigate = { target ->
-                                navController.navigate(target) {
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            },
-                            onLive = { ComposeDependencies.liveLauncher.open(this@ComposeMainActivity) },
-                            onConfig = { navController.navigate(Routes.SETTINGS) },
-                            onLine = { navController.navigate(Routes.SETTINGS) },
-                            onNetwork = { navController.navigate(Routes.SETTINGS) },
-                            onCategory = { category ->
-                                navController.navigate(Routes.category(category.key, category.id, category.name))
-                            },
-                        )
+                        val variant = when {
+                            route?.startsWith(Routes.HOME) == true -> TvHeaderVariant.Full
+                            route?.startsWith("category") == true -> TvHeaderVariant.CategoryOnly
+                            else -> null
+                        }
+                        if (variant != null) {
+                            val feed = (homeState as? HomeUiState.Content)?.feed
+                            TvHeader(
+                                currentRoute = route,
+                                categories = feed?.categories.orEmpty(),
+                                notice = null,
+                                siteName = feed?.siteName,
+                                variant = variant,
+                                onNavigate = { target ->
+                                    navController.navigate(target) {
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
+                                },
+                                onLive = { ComposeDependencies.liveLauncher.open(this@ComposeMainActivity) },
+                                onConfig = { navController.navigate(Routes.SETTINGS) },
+                                onLine = { navController.navigate(Routes.SETTINGS) },
+                                onNetwork = { navController.navigate(Routes.SETTINGS) },
+                                onCategory = { category ->
+                                    navController.navigate(Routes.category(category.key, category.id, category.name))
+                                },
+                            )
+                        }
                     },
                 ) {
                     OneFilmNavHost(

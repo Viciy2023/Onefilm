@@ -37,7 +37,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
 import com.onefilm.android.tv.compose.bridge.MediaCard
-import com.onefilm.android.tv.compose.design.component.PosterCard
+import com.onefilm.android.tv.compose.design.component.TvPosterCard
 
 @Composable
 fun SearchScreen(
@@ -63,7 +63,7 @@ fun SearchScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(horizontal = 48.dp, vertical = 24.dp),
     ) {
         Text("搜索", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(16.dp))
@@ -107,11 +107,11 @@ fun SearchScreen(
                 }
             }
             is SearchUiState.Content -> LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
+                columns = GridCells.Fixed(5),
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                contentPadding = PaddingValues(vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     Text("搜索(${state.completed}/${state.total})", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 4.dp))
@@ -120,10 +120,11 @@ fun SearchScreen(
                     items = state.items,
                     key = { index, card -> "${card.key}:${card.id}:$index" },
                 ) { _, card ->
-                    PosterCard(
+                    TvPosterCard(
                         title = card.title,
                         posterUrl = card.posterUrl,
                         subtitle = card.subtitle,
+                        modifier = Modifier.fillMaxWidth(),
                         onClick = { onCardClick(card) },
                     )
                 }
