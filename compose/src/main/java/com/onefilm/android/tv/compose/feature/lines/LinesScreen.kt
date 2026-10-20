@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +37,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.onefilm.android.tv.compose.bridge.ConfigLine
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 
@@ -55,19 +59,22 @@ fun LinesScreen(
         error = null
     }
 
-    Box(
-        Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background.copy(alpha = 0.92f)),
-        contentAlignment = Alignment.Center,
+    Dialog(
+        onDismissRequest = onDone,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
-        Column(
-            Modifier
-                .width(760.dp)
-                .fillMaxHeight(0.72f)
-                .clip(RoundedCornerShape(24.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 30.dp, vertical = 24.dp),
+        Surface(
+            modifier = Modifier.width(460.dp),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 8.dp,
         ) {
-            Text("线路", fontSize = 30.sp, fontWeight = FontWeight.Bold)
+            Column(
+                Modifier
+                    .heightIn(max = 420.dp)
+                    .padding(horizontal = 30.dp, vertical = 24.dp),
+            ) {
+            Text("线路", fontSize = 26.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 listOf("点播线路", "直播线路", "壁纸线路").forEachIndexed { index, label ->
@@ -90,12 +97,12 @@ fun LinesScreen(
             }
             Spacer(Modifier.height(14.dp))
             if (lines.isEmpty()) {
-                Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
                     Text("暂无线路，请先在配置页添加。", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 Column(
-                    Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+                    Modifier.fillMaxWidth().heightIn(max = 260.dp).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     lines.forEach { line ->
@@ -137,6 +144,7 @@ fun LinesScreen(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -165,15 +173,6 @@ private fun LineRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            line.url.takeIf { it.isNotBlank() }?.let {
-                Text(
-                    text = it,
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
         }
         Spacer(Modifier.width(12.dp))
         Text(

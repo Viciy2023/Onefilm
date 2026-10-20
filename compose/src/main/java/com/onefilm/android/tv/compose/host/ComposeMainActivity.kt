@@ -12,6 +12,9 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -38,6 +41,8 @@ import com.onefilm.android.tv.compose.navigation.AdaptiveNavigation
 import com.onefilm.android.tv.compose.navigation.TvHeader
 import com.onefilm.android.tv.compose.navigation.TvHeaderVariant
 import com.onefilm.android.tv.compose.feature.category.CategoryFilterController
+import com.onefilm.android.tv.compose.feature.config.ConfigScreen
+import com.onefilm.android.tv.compose.feature.lines.LinesScreen
 import com.onefilm.android.tv.compose.navigation.OneFilmNavHost
 import com.onefilm.android.tv.compose.navigation.Routes
 
@@ -111,6 +116,8 @@ class ComposeMainActivity : ComponentActivity() {
                     },
                 )
                 val homeState by homeViewModel.state.collectAsState()
+                var showConfigDialog by remember { mutableStateOf(false) }
+                var showLinesDialog by remember { mutableStateOf(false) }
 
                 LaunchedEffect(Unit) { homeViewModel.retry() }
 
@@ -162,8 +169,8 @@ class ComposeMainActivity : ComponentActivity() {
                                     }
                                 },
                                 onLive = { ComposeDependencies.liveLauncher.open(this@ComposeMainActivity) },
-                                onConfig = { navController.navigate(Routes.CONFIG) },
-                                onLine = { navController.navigate(Routes.LINES) },
+                                onConfig = { showConfigDialog = true },
+                                onLine = { showLinesDialog = true },
                                 onNetwork = { navController.navigate(Routes.NETDISK) },
                                 onCategory = { category ->
                                     if (route?.startsWith("category") == true &&
@@ -174,6 +181,23 @@ class ComposeMainActivity : ComponentActivity() {
                                         navController.navigate(Routes.category(category.key, category.id, category.name))
                                     }
                                 },
+                            )
+                        }
+                        if (showConfigDialog) {
+                            ConfigScreen(
+                                dataSource = ComposeDependencies.settingsDataSource,
+                                onBack = { showConfigDialog = false },
+                                onDone = {
+                                    showConfigDialog = false
+                                    homeViewModel.retry()
+                                },
+                            )
+                        }
+                        if (showLinesDialog) {
+                            LinesScreen(
+                                dataSource = ComposeDependencies.settingsDataSource,
+                                onConfigChanged = homeViewModel::retry,
+                                onDone = { showLinesDialog = false },
                             )
                         }
                     },

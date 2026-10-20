@@ -39,7 +39,7 @@ fun LibraryScreen(
             data == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     AppLogoLoading(size = 84.dp)
-                    Text("正在赶路，请等等！", fontSize = 18.sp)
+                    Text("哎呀！正在加载中呢，你等等呀！", fontSize = 18.sp)
                 }
             }
             else -> {

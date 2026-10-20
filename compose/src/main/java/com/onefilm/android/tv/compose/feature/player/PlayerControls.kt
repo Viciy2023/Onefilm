@@ -338,10 +338,18 @@ fun PlayerControls(
             },
     ) {
         if (PlaybackSession.isBuffering && PlaybackSession.error == null) {
-            AppLogoLoading(
-                modifier = Modifier.align(Alignment.Center),
-                size = 64.dp,
-            )
+            Column(
+                Modifier.align(Alignment.Center),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                AppLogoLoading(size = 64.dp)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "哎呀！正在加载中呢，你等等呀！",
+                    color = Ink,
+                    fontSize = 13.sp,
+                )
+            }
         }
         PlaybackSession.error?.let { message ->
             Row(
