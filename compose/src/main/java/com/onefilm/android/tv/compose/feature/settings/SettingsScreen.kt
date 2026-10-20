@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -41,6 +42,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
 import com.onefilm.android.tv.compose.design.ThemeController
@@ -80,16 +82,18 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+            .padding(horizontal = 40.dp, vertical = 20.dp),
     ) {
-        Text("设置", style = MaterialTheme.typography.headlineMedium)
-        Text(
-            "播放、字幕、弹幕、预加载与网络参数均绑定旧版 *Setting 类",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Text("设置", fontSize = 34.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+        Spacer(Modifier.height(10.dp))
+        Row(
+            Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Column(
+                Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
 
         Section("接口配置") {
             ConfigRow("点播接口", snapshot.configUrl, onEdit = { openConfig(0, snapshot.configUrl) }, onReload = {
@@ -157,6 +161,11 @@ fun SettingsScreen(
             }
         }
 
+            }
+            Column(
+                Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
         Section("播放设置") {
             ChoiceRow(
                 title = "播放引擎",
@@ -209,6 +218,11 @@ fun SettingsScreen(
             )
         }
 
+            }
+            Column(
+                Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
         Section("字幕设置") {
             ChoiceRow(
                 title = "字幕样式",
@@ -274,6 +288,11 @@ fun SettingsScreen(
             }
         }
 
+            }
+            Column(
+                Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
         Section("预加载设置") {
             SwitchRow("开启预加载", "使用旧 PlayerManager 预加载", snapshot.preloadEnabled) {
                 refresh { setPreloadEnabled(it) }
@@ -310,8 +329,8 @@ fun SettingsScreen(
             InfoRow("配置地址", snapshot.configUrl.ifBlank { "未配置" })
             InfoRow("开源许可", "GPL-3.0 · 基于 FongMi/TV")
         }
-
-        Spacer(Modifier.height(24.dp))
+            }
+        }
     }
 
     if (editBlockWords) {
@@ -399,7 +418,7 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(4.dp))
                     OutlinedTextField(
                         value = editName,
                         onValueChange = { editName = it },
@@ -407,7 +426,7 @@ fun SettingsScreen(
                         label = { Text("线路名称") },
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(4.dp))
                     OutlinedTextField(
                         value = editUrl,
                         onValueChange = { editUrl = it },
@@ -416,7 +435,7 @@ fun SettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                     )
                     configError?.let {
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(4.dp))
                         Text(
                             it,
                             color = MaterialTheme.colorScheme.error,
@@ -463,10 +482,10 @@ private fun ConfigRow(
         Modifier
             .fillMaxWidth()
             .clickable(onClick = onEdit)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 8.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, style = MaterialTheme.typography.bodyLarge)
+        Text(title, fontSize = 14.sp)
         Spacer(Modifier.width(8.dp))
         Text(
             value.ifBlank { "未配置" },
@@ -489,7 +508,7 @@ private fun ConfigRow(
         ) {
             Text(
                 text = "加载",
-                style = MaterialTheme.typography.labelLarge,
+                fontSize = 12.sp,
                 color = if (value.isNotBlank()) MaterialTheme.colorScheme.onSurface
                 else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -500,37 +519,22 @@ private fun ConfigRow(
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            text = title,
+            fontSize = 18.sp,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+        )
+        Column(
             Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded }
-                .padding(horizontal = 4.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .clip(RoundedCornerShape(14.dp))
+                .background(MaterialTheme.colorScheme.surface),
+            verticalArrangement = Arrangement.spacedBy(1.dp),
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = if (expanded) "−" else "+",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        if (expanded) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(MaterialTheme.colorScheme.surface),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                content()
-            }
+            content()
         }
     }
 }
@@ -546,11 +550,11 @@ private fun SwitchRow(
         Modifier
             .fillMaxWidth()
             .clickable { onChange(!checked) }
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 8.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(title, fontSize = 14.sp)
             Text(
                 subtitle,
                 style = MaterialTheme.typography.bodySmall,
@@ -568,8 +572,8 @@ private fun ChoiceRow(
     options: List<Pair<String, Boolean>>,
     onSelect: (Int) -> Unit,
 ) {
-    Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-        Text(title, style = MaterialTheme.typography.bodyLarge)
+    Column(Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
+        Text(title, fontSize = 14.sp)
         if (!subtitle.isNullOrBlank()) {
             Text(
                 subtitle,
@@ -577,7 +581,7 @@ private fun ChoiceRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -604,11 +608,11 @@ private fun SettingChip(label: String, selected: Boolean, onClick: () -> Unit) {
                 },
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 10.dp, vertical = 4.dp),
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            fontSize = 12.sp,
             color = if (selected) MaterialTheme.colorScheme.background
             else MaterialTheme.colorScheme.onSurface,
         )
@@ -621,21 +625,21 @@ private fun ActionRow(title: String, value: String, onClick: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(title, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        Text(value, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun InfoRow(title: String, value: String) {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+        Text(title, fontSize = 12.sp, modifier = Modifier.weight(1f))
         Text(
             value,
             style = MaterialTheme.typography.bodySmall,
