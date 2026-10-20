@@ -23,6 +23,7 @@ android {
 }
 
 dependencies {
+    implementation project(':media3compat')
     implementation files("../app/libs/lib-exoplayer-release.aar", "../app/libs/lib-ui-release.aar", "../app/libs/lib-common-release.aar", "../app/libs/lib-datasource-release.aar")
     implementation platform(libs.compose.bom)
     implementation libs.compose.ui
@@ -35,6 +36,7 @@ dependencies {
     implementation libs.tv.material
     implementation libs.tv.foundation
     implementation 'io.coil-kt:coil-compose:2.7.0'
+    implementation 'com.google.guava:guava:33.3.1-android'
 
     debugImplementation libs.compose.ui.tooling
     debugImplementation libs.compose.ui.test.manifest

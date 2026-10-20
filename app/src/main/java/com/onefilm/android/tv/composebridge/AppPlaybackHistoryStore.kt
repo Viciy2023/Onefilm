@@ -14,6 +14,8 @@ class AppPlaybackHistoryStore : PlaybackHistoryStore {
             durationMs = history.duration.coerceAtLeast(0L),
             episodeUrl = history.episodeUrl,
             speed = history.speed.takeIf { it > 0f } ?: 1f,
+            openingMs = history.opening.coerceAtLeast(0L),
+            endingMs = history.ending.coerceAtLeast(0L),
         )
     }
 
@@ -28,6 +30,8 @@ class AppPlaybackHistoryStore : PlaybackHistoryStore {
         positionMs: Long,
         durationMs: Long,
         speed: Float,
+        openingMs: Long,
+        endingMs: Long,
     ) {
         if (positionMs <= 0L || durationMs <= 0L) return
         val cid = VodConfig.getCid()
@@ -46,6 +50,8 @@ class AppPlaybackHistoryStore : PlaybackHistoryStore {
             setDuration(durationMs)
             setCreateTime(System.currentTimeMillis())
             setSpeed(speed)
+            setOpening(openingMs)
+            setEnding(endingMs)
         }
         history.save()
     }

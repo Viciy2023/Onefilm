@@ -47,12 +47,12 @@
 - [x] 播放错误、重试、缓冲提示
 - [ ] TV 底部精简条 + 右侧面板
 - [ ] 手机手势：双击播放、左右进度、上下亮度/音量
-- [ ] 字幕面板（轨道、样式、偏移）
-- [ ] 音轨/视轨面板
-- [ ] 弹幕开关、透明度、速度、屏蔽词（复用 Canvas 引擎）
-- [ ] 播放引擎切换（Exo / MPV）
-- [ ] PiP / 后台播放 / MediaSession 回归
-- [ ] 解码/渲染/字幕/音轨/片头片尾从入口升级为真实能力
+- [x] 字幕轨道切换 + 字幕偏移（接入旧 PlayerManager）
+- [x] 音轨/视轨切换（接入旧 TrackUtil/PlayerManager）
+- [x] 弹幕开关 + DanmakuApi/DanmakuView 接入（样式面板待补）
+- [x] 播放引擎切换（Exo / MPV，复用旧 PlayerManager）
+- [ ] PiP / 后台播放 / MediaSession 回归（当前为独立 PlayerManager，未接 PlaybackService）
+- [x] 硬解/软解、Surface/Texture、画面适应、片头/片尾、字幕/音画偏移
 
 ## M4 设置页（功能接入）
 
@@ -91,4 +91,4 @@
 
 M2 已完成；搜索卡片/榜单卡片统一走并行流式搜索，详情页秒开预览并缓存。
 M3 已完成自定义扁平控制条、倍速/选集/上下集、History 续播、横屏沉浸式与错误重试。
-下一步：字幕/音轨/弹幕真实能力、解码渲染切换、TV 焦点回归。
+播放内核已切回旧 PlayerManager：MPV/Exo、轨道、解码、渲染、偏移、片头片尾均已接入。下一步：PiP/后台/MediaSession、预加载、TV 焦点与弹幕样式面板。

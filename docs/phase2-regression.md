@@ -69,3 +69,18 @@
 - 弹幕/字幕 overlay 与 MPV Surface 的层级关系仍需真机确认。
 - Exo DV 的策略选择与格式重映射已由单测覆盖，但“真实 DV 片源在 DV/非 DV 设备上的成像”仍需样片与对应硬件，当前不能宣称完整通过。
 - DV `ASSUME_UNSUPPORTED` 只解码 HEVC 基础层；Profile 5（IPTPQc2）会出现色彩异常，属于预期限制。
+
+## Compose 新播放器内核接入（2026-10-20）
+
+- [x] PlaybackSession 改为持有旧 `PlayerManager`，不再直接 new ExoPlayer
+- [x] Exo / MPV 引擎切换（复用 `PlayerManager.setEngine`）
+- [x] MPV SurfaceView 手动挂载，Exo 使用 `PlayerView` + `bindPlayerView`
+- [x] 音轨 / 字幕 / 视轨枚举与切换（复用 `TrackUtil`）
+- [x] 硬解 / 软解切换
+- [x] Surface / Texture 渲染切换
+- [x] 字幕偏移 / 音画偏移（旧 `setTextOffsetMs` / `setAudioOffsetMs`）
+- [x] 片头 / 片尾标记与自动跳过
+- [x] 弹幕开关接入 `DanmakuApi` + `media3compat` 的 `DanmakuView`
+- [ ] PiP / 后台播放 / MediaSession：仍走独立 PlayerManager，未接 `PlaybackService`
+- [ ] 下一集预加载：PlayerManager 已具备，Compose 尚未调用
+- [ ] DLNA：未接

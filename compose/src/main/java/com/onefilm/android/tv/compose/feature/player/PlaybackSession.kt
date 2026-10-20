@@ -1,17 +1,23 @@
 package com.onefilm.android.tv.compose.feature.player
 
 import android.content.Context
+import android.view.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.media3.common.MediaItem
+import androidx.media3.common.C
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.AspectRatioFrameLayout
+import androidx.media3.ui.PlayerView
+import com.onefilm.android.tv.compose.bridge.ComposeDependencies
+import com.onefilm.android.tv.compose.bridge.LegacyPlayer
+import com.onefilm.android.tv.compose.bridge.LegacyPlayerListener
+import com.onefilm.android.tv.compose.bridge.LegacyTrack
 import com.onefilm.android.tv.compose.bridge.PlaybackHistoryStore
 import com.onefilm.android.tv.compose.bridge.PlaybackResolver
 import kotlinx.coroutines.CoroutineScope
@@ -22,12 +28,19 @@ import kotlinx.coroutines.launch
 data class PlaybackEpisode(val name: String, val url: String)
 
 /**
- * 进程内共享播放会话：详情页小窗与全屏共用同一个 ExoPlayer，
- * 同时保存选集队列、倍速和旧版 History 所需的影片信息。
+ * Compose 播放会话：内核统一走旧 PlayerManager（Exo/MPV、解码、轨道、偏移），
+ * 这里只维护 UI 状态、选集队列和 History。
  */
 object PlaybackSession {
-    private var player: ExoPlayer? = null
+    private var legacy: LegacyPlayer? = null
+    private var playerRef: Player? = null
     private var currentUrl: String? = null
+    private var appContext: Context? = null
+    private var openingApplied = false
+    private var endingApplied = false
+    private var subtitleOff = false
+    private var audioIndex = 0
+    private var videoIndex = 0
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     var historyStore: PlaybackHistoryStore? = null
@@ -58,12 +71,35 @@ object PlaybackSession {
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    var resizeMode by mutableIntStateOf(AspectRatioFrameLayout.RESIZE_MODE_FIT)
+        private set
+    var softwareDecode by mutableStateOf(false)
+        private set
+    var textureRender by mutableStateOf(false)
+        private set
+    var engineMpv by mutableStateOf(false)
+        private set
+    var subtitleLabel by mutableStateOf("默认")
+        private set
+    var audioLabel by mutableStateOf("默认")
+        private set
+    var videoLabel by mutableStateOf("默认")
+        private set
+    var textOffsetMs by mutableLongStateOf(0L)
+        private set
+    var audioOffsetMs by mutableLongStateOf(0L)
+        private set
+    var openingMs by mutableLongStateOf(0L)
+        private set
+    var endingMs by mutableLongStateOf(0L)
+        private set
 
-    val exoPlayer: ExoPlayer? get() = player
+    val player: Player? get() = playerRef
+    val legacyPlayer: LegacyPlayer? get() = legacy
     val url: String? get() = currentUrl
     val currentEpisode: PlaybackEpisode? get() = queue.getOrNull(currentIndex)
 
-    private val listener = object : Player.Listener {
+    private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(playing: Boolean) {
             isPlaying = playing
         }
@@ -71,7 +107,8 @@ object PlaybackSession {
         override fun onPlaybackStateChanged(state: Int) {
             isBuffering = state == Player.STATE_BUFFERING
             if (state == Player.STATE_READY) {
-                durationMs = player?.duration?.coerceAtLeast(0L) ?: 0L
+                durationMs = playerRef?.duration?.coerceAtLeast(0L) ?: 0L
+                refreshTrackLabels()
             }
             if (state == Player.STATE_ENDED) {
                 isPlaying = false
@@ -87,6 +124,157 @@ object PlaybackSession {
         override fun onRepeatModeChanged(repeatMode: Int) {
             this@PlaybackSession.repeatMode = repeatMode
         }
+    }
+
+    private val legacyListener = object : LegacyPlayerListener {
+        override fun onPrepare() {
+            error = null
+            attachPlayer(legacy?.player)
+        }
+
+        override fun onTracksChanged() {
+            refreshTrackLabels()
+        }
+
+        override fun onDecodeChanged() {
+            softwareDecode = legacy?.decodeText()?.contains("软") == true
+        }
+
+        override fun onError(message: String) {
+            error = message
+        }
+
+        override fun onPlayerRebuild(player: Player?) {
+            engineMpv = legacy?.isMpv() == true
+            attachPlayer(player)
+        }
+    }
+
+    private fun attachPlayer(player: Player?) {
+        if (playerRef !== player) {
+            playerRef?.removeListener(playerListener)
+            playerRef = player
+            player?.addListener(playerListener)
+        }
+        isPlaying = player?.isPlaying == true
+        repeatMode = player?.repeatMode ?: Player.REPEAT_MODE_OFF
+        durationMs = player?.duration?.takeIf { it > 0 } ?: durationMs
+    }
+
+    private fun ensureLegacy(): LegacyPlayer? {
+        legacy?.let { return it }
+        val created = ComposeDependencies.legacyPlayerFactory.create()
+        created.listener = legacyListener
+        legacy = created
+        return created
+    }
+
+    fun bindPlayerView(view: PlayerView) {
+        legacy?.bindPlayerView(view)
+    }
+
+    fun attachMpvSurface(surface: Surface?) {
+        legacy?.attachMpvSurface(surface)
+    }
+
+    fun isMpv(): Boolean = legacy?.isMpv() == true
+
+    fun setEngine(mpv: Boolean) {
+        legacy?.setEngine(mpv)
+        engineMpv = mpv
+        attachPlayer(legacy?.player)
+    }
+
+    fun toggleDecode() {
+        legacy?.toggleDecode()
+        softwareDecode = legacy?.decodeText()?.contains("软") == true
+    }
+
+    val decodeLabel: String get() = legacy?.decodeText() ?: if (softwareDecode) "软解" else "硬解"
+    val renderLabel: String get() = if (textureRender) "Texture" else "Surface"
+    val resizeLabel: String
+        get() = when (resizeMode) {
+            AspectRatioFrameLayout.RESIZE_MODE_ZOOM -> "裁剪"
+            AspectRatioFrameLayout.RESIZE_MODE_FILL -> "拉伸"
+            else -> "适应"
+        }
+
+    fun toggleRenderMode() {
+        textureRender = !textureRender
+        legacy?.setRender(if (textureRender) 1 else 0)
+    }
+
+    fun cycleResizeMode() {
+        resizeMode = when (resizeMode) {
+            AspectRatioFrameLayout.RESIZE_MODE_FIT -> AspectRatioFrameLayout.RESIZE_MODE_ZOOM
+            AspectRatioFrameLayout.RESIZE_MODE_ZOOM -> AspectRatioFrameLayout.RESIZE_MODE_FILL
+            else -> AspectRatioFrameLayout.RESIZE_MODE_FIT
+        }
+    }
+
+    fun cycleSubtitle() {
+        val tracks = legacy?.tracks()?.filter { it.type == C.TRACK_TYPE_TEXT }.orEmpty()
+        if (tracks.isEmpty()) {
+            subtitleLabel = "无字幕"
+            return
+        }
+        if (!subtitleOff) {
+            val selected = tracks.firstOrNull { it.selected }
+            if (selected != null) {
+                legacy?.selectTrack(selected.copy(selected = false))
+                subtitleOff = true
+                subtitleLabel = "关"
+                return
+            }
+        }
+        val next = tracks.firstOrNull { !it.selected } ?: tracks.first()
+        legacy?.selectTrack(next.copy(selected = true))
+        subtitleOff = false
+        subtitleLabel = next.name
+    }
+
+    fun cycleAudio() {
+        val tracks = legacy?.tracks()?.filter { it.type == C.TRACK_TYPE_AUDIO }.orEmpty()
+        if (tracks.isEmpty()) {
+            audioLabel = "无音轨"
+            return
+        }
+        audioIndex = (audioIndex + 1) % tracks.size
+        val next = tracks[audioIndex]
+        legacy?.selectTrack(next.copy(selected = true))
+        audioLabel = next.name
+    }
+
+    fun cycleVideo() {
+        val tracks = legacy?.tracks()?.filter { it.type == C.TRACK_TYPE_VIDEO }.orEmpty()
+        if (tracks.isEmpty()) {
+            videoLabel = "无视轨"
+            return
+        }
+        videoIndex = (videoIndex + 1) % tracks.size
+        val next = tracks[videoIndex]
+        legacy?.selectTrack(next.copy(selected = true))
+        videoLabel = next.name
+    }
+
+    fun shiftTextOffset(deltaMs: Long) {
+        textOffsetMs = (textOffsetMs + deltaMs).coerceIn(-10_000L, 10_000L)
+        legacy?.setTextOffset(textOffsetMs)
+    }
+
+    fun shiftAudioOffset(deltaMs: Long) {
+        audioOffsetMs = (audioOffsetMs + deltaMs).coerceIn(-10_000L, 10_000L)
+        legacy?.setAudioOffset(audioOffsetMs)
+    }
+
+    private fun refreshTrackLabels() {
+        val tracks = legacy?.tracks().orEmpty()
+        val selectedText = tracks.firstOrNull { it.type == C.TRACK_TYPE_TEXT && it.selected }
+        subtitleLabel = selectedText?.name ?: "关"
+        val selectedAudio = tracks.firstOrNull { it.type == C.TRACK_TYPE_AUDIO && it.selected }
+        audioLabel = selectedAudio?.name ?: "默认"
+        val selectedVideo = tracks.firstOrNull { it.type == C.TRACK_TYPE_VIDEO && it.selected }
+        videoLabel = selectedVideo?.name ?: "默认"
     }
 
     fun setQueue(
@@ -108,23 +296,20 @@ object PlaybackSession {
     }
 
     fun play(context: Context, url: String, startMs: Long = 0L) {
-        val appContext = context.applicationContext
-        val target = player ?: ExoPlayer.Builder(appContext).build().also {
-            it.addListener(listener)
-            it.playWhenReady = true
-            it.setPlaybackParameters(PlaybackParameters(speed))
-            player = it
-        }
+        appContext = context.applicationContext
+        val target = ensureLegacy() ?: return
         if (currentUrl != url) {
             currentUrl = url
             error = null
-            target.setMediaItem(MediaItem.fromUri(url))
-            target.prepare()
-            if (startMs > 0L) target.seekTo(startMs)
-        } else if (startMs > 0L && kotlin.math.abs(target.currentPosition - startMs) > 2_000L) {
-            target.seekTo(startMs)
+            openingApplied = false
+            endingApplied = false
+            subtitleOff = false
+            audioIndex = 0
         }
-        target.play()
+        target.start(url, siteKey, title, startMs)
+        engineMpv = target.isMpv()
+        attachPlayer(target.player)
+        target.player?.play()
     }
 
     fun playEpisode(context: Context, index: Int, resolver: PlaybackResolver) {
@@ -141,6 +326,11 @@ object PlaybackSession {
             currentIndex = index
             val history = historyStore?.find(key, vodId)
             val start = if (history?.episodeUrl == item.url) history.positionMs else 0L
+            if (history?.episodeUrl == item.url) {
+                setMarks(history.openingMs, history.endingMs)
+            } else {
+                setMarks(0L, 0L)
+            }
             play(context, resolved, start)
             if (history?.episodeUrl == item.url && history.speed > 0f) {
                 updateSpeed(history.speed)
@@ -150,7 +340,7 @@ object PlaybackSession {
     }
 
     fun toggle() {
-        val target = player ?: return
+        val target = playerRef ?: return
         if (target.isPlaying) {
             target.pause()
             saveHistory()
@@ -160,11 +350,11 @@ object PlaybackSession {
     }
 
     fun seekTo(positionMs: Long) {
-        player?.seekTo(positionMs.coerceAtLeast(0L))
+        playerRef?.seekTo(positionMs.coerceAtLeast(0L))
     }
 
     fun seekBy(deltaMs: Long) {
-        val target = player ?: return
+        val target = playerRef ?: return
         val duration = target.duration
         val max = if (duration > 0) duration else Long.MAX_VALUE
         target.seekTo((target.currentPosition + deltaMs).coerceIn(0L, max))
@@ -172,7 +362,7 @@ object PlaybackSession {
 
     fun updateSpeed(value: Float) {
         speed = value
-        player?.setPlaybackParameters(PlaybackParameters(value))
+        playerRef?.setPlaybackParameters(PlaybackParameters(value))
     }
 
     fun cycleSpeed() {
@@ -182,15 +372,18 @@ object PlaybackSession {
     }
 
     fun retry() {
-        val target = player ?: return
+        val target = legacy ?: return
+        val url = currentUrl ?: return
+        val position = positionMs()
         error = null
-        target.prepare()
-        target.play()
+        target.start(url, siteKey, title, position)
+        attachPlayer(target.player)
+        target.player?.play()
     }
 
     fun replay() {
         seekTo(0L)
-        player?.play()
+        playerRef?.play()
     }
 
     fun refresh() {
@@ -198,11 +391,8 @@ object PlaybackSession {
     }
 
     fun toggleRepeat() {
-        val target = player ?: return
-        target.repeatMode = when (target.repeatMode) {
-            Player.REPEAT_MODE_OFF -> Player.REPEAT_MODE_ONE
-            else -> Player.REPEAT_MODE_OFF
-        }
+        legacy?.toggleRepeat()
+        repeatMode = playerRef?.repeatMode ?: repeatMode
     }
 
     fun playPrevious(context: Context, resolver: PlaybackResolver) {
@@ -215,7 +405,38 @@ object PlaybackSession {
         if (index < queue.size) playEpisode(context, index, resolver)
     }
 
-    fun positionMs(): Long = player?.currentPosition?.coerceAtLeast(0L) ?: 0L
+    fun positionMs(): Long = playerRef?.currentPosition?.coerceAtLeast(0L) ?: 0L
+
+    fun setMarks(opening: Long, ending: Long) {
+        openingMs = opening.coerceAtLeast(0L)
+        endingMs = ending.coerceAtLeast(0L)
+        openingApplied = false
+        endingApplied = false
+    }
+
+    fun markOpening() {
+        openingMs = positionMs()
+        openingApplied = true
+        saveHistory()
+    }
+
+    fun markEnding() {
+        endingMs = positionMs()
+        endingApplied = true
+        saveHistory()
+    }
+
+    fun enforceMarkers() {
+        val target = playerRef ?: return
+        if (!openingApplied && openingMs > 1_000L && durationMs > 0L) {
+            if (target.currentPosition < openingMs - 1_500L) target.seekTo(openingMs)
+            openingApplied = true
+        }
+        if (!endingApplied && endingMs > 1_000L && target.currentPosition >= endingMs) {
+            target.pause()
+            endingApplied = true
+        }
+    }
 
     fun saveHistory() {
         val item = queue.getOrNull(currentIndex) ?: return
@@ -233,13 +454,15 @@ object PlaybackSession {
             positionMs = position,
             durationMs = duration,
             speed = speed,
+            openingMs = openingMs,
+            endingMs = endingMs,
         )
     }
 
     fun stop() {
         saveHistory()
-        player?.pause()
-        player?.clearMediaItems()
+        playerRef?.pause()
+        playerRef?.clearMediaItems()
         currentUrl = null
         isPlaying = false
         isBuffering = false
@@ -249,8 +472,11 @@ object PlaybackSession {
 
     fun release() {
         saveHistory()
-        player?.release()
-        player = null
+        playerRef?.removeListener(playerListener)
+        playerRef = null
+        legacy?.listener = null
+        legacy?.release()
+        legacy = null
         currentUrl = null
         isPlaying = false
         isBuffering = false

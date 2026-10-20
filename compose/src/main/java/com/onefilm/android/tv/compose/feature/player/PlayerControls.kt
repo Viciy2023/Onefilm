@@ -1,10 +1,19 @@
 package com.onefilm.android.tv.compose.feature.player
 
+import android.view.SurfaceHolder
+import android.view.SurfaceView
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.compose.foundation.Canvas
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -19,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
@@ -52,6 +64,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -64,6 +77,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.Player
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import androidx.media3.ui.danmaku.DanmakuView
+import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import kotlinx.coroutines.delay
 
 private val Ink = Color(0xFFF5F5F7)
@@ -78,29 +93,88 @@ private data class MenuEntry(
     val onClick: () -> Unit = {},
 )
 
-/** 视频画面：详情页小窗和全屏共用同一个 ExoPlayer。 */
+/** 视频画面：绑定旧 PlayerManager，Exo 用 PlayerView，MPV 额外挂 SurfaceView。 */
 @Composable
 fun VideoSurface(modifier: Modifier = Modifier) {
-    val player = PlaybackSession.exoPlayer
-    if (player == null) {
+    val context = LocalContext.current
+    val legacy = PlaybackSession.legacyPlayer
+    val player = PlaybackSession.player
+    val textureRender = PlaybackSession.textureRender
+    val resizeMode = PlaybackSession.resizeMode
+    val mpv = PlaybackSession.engineMpv
+    val episode = PlaybackSession.currentEpisode
+    val danmakuKey = "${PlaybackSession.siteKey}:${PlaybackSession.vodId}:${episode?.url.orEmpty()}"
+    LaunchedEffect(player) {
+        while (player != null) {
+            DanmakuController.setClock(player.currentPosition)
+            delay(50)
+        }
+    }
+    LaunchedEffect(danmakuKey, player) {
+        if (player != null) {
+            DanmakuController.ensureLoaded(context, danmakuKey, ComposeDependencies.danmakuDataSource)
+        }
+    }
+    if (legacy == null || player == null) {
         Box(modifier.background(Color.Black), contentAlignment = Alignment.Center) {
             Text("暂无播放内容", color = Ink)
         }
         return
     }
-    AndroidView(
-        modifier = modifier,
-        factory = { ctx ->
-            PlayerView(ctx).apply {
-                this.player = player
-                useController = false
-                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
-                setShutterBackgroundColor(android.graphics.Color.BLACK)
-                layoutParams = ViewGroup.LayoutParams(-1, -1)
-            }
-        },
-        update = { it.player = PlaybackSession.exoPlayer },
-    )
+    key(mpv, textureRender) {
+        AndroidView(
+            modifier = modifier,
+            factory = { ctx ->
+                val root = FrameLayout(ctx)
+                val video = PlayerView(ctx).apply {
+                    useController = false
+                    setRender(if (textureRender) 1 else 0)
+                    this.resizeMode = resizeMode
+                    setShutterBackgroundColor(android.graphics.Color.BLACK)
+                }
+                root.addView(video, FrameLayout.LayoutParams(-1, -1))
+                if (mpv) {
+                    val surfaceView = SurfaceView(ctx)
+                    surfaceView.holder.addCallback(object : SurfaceHolder.Callback {
+                        override fun surfaceCreated(holder: SurfaceHolder) {
+                            legacy.attachMpvSurface(holder.surface)
+                        }
+
+                        override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) = Unit
+
+                        override fun surfaceDestroyed(holder: SurfaceHolder) {
+                            legacy.attachMpvSurface(null)
+                        }
+                    })
+                    root.addView(surfaceView, FrameLayout.LayoutParams(-1, -1))
+                }
+                val danmaku = DanmakuView(ctx)
+                root.addView(danmaku, FrameLayout.LayoutParams(-1, -1))
+                legacy.bindPlayerView(video)
+                video.player = player
+                DanmakuController.attach(danmaku)
+                root.tag = Triple(video, danmaku, mpv)
+                root
+            },
+            update = { root ->
+                val triple = root.tag as? Triple<*, *, *>
+                val video = triple?.first as? PlayerView
+                val danmaku = triple?.second as? DanmakuView
+                video?.player = PlaybackSession.player
+                video?.resizeMode = PlaybackSession.resizeMode
+                video?.setRender(if (PlaybackSession.textureRender) 1 else 0)
+                if (danmaku != null && !DanmakuController.attachedTo(danmaku)) {
+                    DanmakuController.attach(danmaku)
+                }
+            },
+            onRelease = { root ->
+                val triple = root.tag as? Triple<*, *, *>
+                (triple?.first as? PlayerView)?.player = null
+                (triple?.second as? DanmakuView)?.let { DanmakuController.detach(it) }
+                legacy.attachMpvSurface(null)
+            },
+        )
+    }
 }
 
 /**
@@ -117,7 +191,9 @@ fun PlayerControls(
     onNext: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    val player = PlaybackSession.exoPlayer
+    val player = PlaybackSession.player
+    val context = LocalContext.current
+    val danmakuKey = "${PlaybackSession.siteKey}:${PlaybackSession.vodId}:${PlaybackSession.currentEpisode?.url.orEmpty()}"
     val configuration = LocalConfiguration.current
     val isTv = (configuration.uiMode and android.content.res.Configuration.UI_MODE_TYPE_MASK) ==
         android.content.res.Configuration.UI_MODE_TYPE_TELEVISION
@@ -143,21 +219,41 @@ fun PlayerControls(
                 if (PlaybackSession.repeatMode == Player.REPEAT_MODE_ONE) "循环 开" else "循环 关",
             ) { PlaybackSession.toggleRepeat() },
         )
-        add(MenuEntry(if (danmakuOn) "弹幕 开" else "弹幕 关") { danmakuOn = !danmakuOn })
-        add(MenuEntry("片头 00:00"))
-        add(MenuEntry("片尾 00:00"))
-        add(MenuEntry("画面 适应"))
-        add(MenuEntry("解码 硬解"))
-        add(MenuEntry("渲染 Surface"))
-        add(MenuEntry("字幕 默认"))
-        add(MenuEntry("音轨 默认"))
+        add(MenuEntry(if (danmakuOn) "弹幕 开" else "弹幕 关") {
+            danmakuOn = !danmakuOn
+            DanmakuController.updateEnabled(danmakuOn)
+            PlaybackSession.legacyPlayer?.setDanmakuEnabled(danmakuOn)
+            if (danmakuOn) {
+                DanmakuController.ensureLoaded(
+                    context,
+                    danmakuKey,
+                    ComposeDependencies.danmakuDataSource,
+                )
+            }
+        })
+        add(MenuEntry("片头 ${formatTime(PlaybackSession.openingMs)}") { PlaybackSession.markOpening() })
+        add(MenuEntry("片尾 ${formatTime(PlaybackSession.endingMs)}") { PlaybackSession.markEnding() })
+        add(MenuEntry("画面 ${PlaybackSession.resizeLabel}") { PlaybackSession.cycleResizeMode() })
+        add(MenuEntry("引擎 ${if (PlaybackSession.engineMpv) "MPV" else "Exo"}") {
+            PlaybackSession.setEngine(!PlaybackSession.engineMpv)
+        })
+        add(MenuEntry("解码 ${PlaybackSession.decodeLabel}") { PlaybackSession.toggleDecode() })
+        add(MenuEntry("渲染 ${PlaybackSession.renderLabel}") { PlaybackSession.toggleRenderMode() })
+        add(MenuEntry("字幕 ${PlaybackSession.subtitleLabel}") { PlaybackSession.cycleSubtitle() })
+        add(MenuEntry("音轨 ${PlaybackSession.audioLabel}") { PlaybackSession.cycleAudio() })
+        add(MenuEntry("视轨 ${PlaybackSession.videoLabel}") { PlaybackSession.cycleVideo() })
+        add(MenuEntry("字幕偏移 ${PlaybackSession.textOffsetMs}ms") { PlaybackSession.shiftTextOffset(100L) })
+        add(MenuEntry("音画偏移 ${PlaybackSession.audioOffsetMs}ms") { PlaybackSession.shiftAudioOffset(100L) })
     }
 
-    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore) {
-        if (controlsVisible && PlaybackSession.isPlaying && !showEpisodes && !showMore) {
+    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, isTv) {
+        if (!isTv && controlsVisible && PlaybackSession.isPlaying && !showEpisodes && !showMore) {
             delay(4000)
             controlsVisible = false
         }
+    }
+    LaunchedEffect(showMore, isTv) {
+        if (!showMore && isTv) runCatching { playFocus.requestFocus() }
     }
     LaunchedEffect(player, controlsVisible, isTv) {
         if (controlsVisible && isTv) runCatching { playFocus.requestFocus() }
@@ -165,6 +261,7 @@ fun PlayerControls(
     LaunchedEffect(player) {
         while (player != null) {
             if (!dragging) position = PlaybackSession.positionMs()
+            PlaybackSession.enforceMarkers()
             tick++
             if (tick % 10 == 0) PlaybackSession.saveHistory()
             delay(500)
@@ -353,8 +450,12 @@ fun PlayerControls(
             }
         }
 
-        if (showMore) {
-            MorePanel(
+        AnimatedVisibility(
+            visible = showMore,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+        ) {
+            MoreSheet(
                 entries = overflowEntries,
                 onDismiss = { showMore = false },
             )
@@ -459,7 +560,7 @@ private fun MenuRow(
         val measurer = rememberTextMeasurer()
         val textStyle = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium)
         val spacing = 4.dp
-        val fullscreenWidth = 40.dp
+        val fullscreenWidth = 52.dp
         val moreWidth = 58.dp
         val minWidth = if (inline) 54.dp else 58.dp
         val widths = entries.map { entry ->
@@ -495,7 +596,7 @@ private fun MenuRow(
             hasOverflow = visible < entries.size
         }
         Row(
-            Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth().focusGroup(),
             horizontalArrangement = Arrangement.spacedBy(spacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -523,6 +624,7 @@ private fun MenuText(entry: MenuEntry, width: Dp) {
         Modifier
             .width(width)
             .height(40.dp)
+            .scale(if (focused) 1.06f else 1f)
             .clip(RoundedCornerShape(8.dp))
             .background(if (focused) Press else Color.Transparent)
             .clickable(
@@ -545,27 +647,58 @@ private fun MenuText(entry: MenuEntry, width: Dp) {
 }
 
 @Composable
-private fun MorePanel(
+private fun MoreSheet(
     entries: List<MenuEntry>,
     onDismiss: () -> Unit,
 ) {
-    PanelScrim(onDismiss = onDismiss) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("更多", color = Ink, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-            Spacer(Modifier.weight(1f))
-            TextAction("关闭", onClick = onDismiss)
-        }
-        Spacer(Modifier.height(10.dp))
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(96.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.fillMaxWidth().heightIn(max = 380.dp),
+    val firstFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { firstFocus.requestFocus() } }
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color(0x99000000))
+                .clickable(onClick = onDismiss),
+        )
+        Column(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
+                .background(Panel)
+                .navigationBarsPadding()
+                .padding(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 18.dp),
         ) {
-            items(entries) { entry ->
-                FlatTile(entry.label, enabled = entry.enabled) {
-                    entry.onClick()
-                    onDismiss()
+            Box(
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .width(38.dp)
+                    .height(4.dp)
+                    .clip(CircleShape)
+                    .background(Ink.copy(alpha = 0.25f)),
+            )
+            Spacer(Modifier.height(14.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("更多", color = Ink, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.weight(1f))
+                TextAction("关闭", onClick = onDismiss)
+            }
+            Spacer(Modifier.height(10.dp))
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(110.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(max = 380.dp).focusGroup(),
+            ) {
+                itemsIndexed(entries) { index, entry ->
+                    FlatTile(
+                        text = entry.label,
+                        enabled = entry.enabled,
+                        modifier = if (index == 0) Modifier.focusRequester(firstFocus) else Modifier,
+                    ) {
+                        entry.onClick()
+                        onDismiss()
+                    }
                 }
             }
         }
@@ -604,6 +737,7 @@ private fun IconAction(
     Box(
         Modifier
             .size(size)
+            .scale(if (focused) 1.08f else 1f)
             .clip(CircleShape)
             .background(if (focused) Press else Color.Transparent)
             .clickable(

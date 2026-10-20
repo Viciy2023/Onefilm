@@ -12,4 +12,6 @@ object ComposeDependencies {
     lateinit var detailLauncher: DetailLauncher
     lateinit var playbackResolver: PlaybackResolver
     lateinit var playbackHistoryStore: PlaybackHistoryStore
+    lateinit var danmakuDataSource: DanmakuDataSource
+    lateinit var legacyPlayerFactory: LegacyPlayerFactory
 }

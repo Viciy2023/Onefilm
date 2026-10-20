@@ -6,6 +6,8 @@ data class PlaybackHistoryInfo(
     val durationMs: Long,
     val episodeUrl: String,
     val speed: Float,
+    val openingMs: Long = 0L,
+    val endingMs: Long = 0L,
 )
 
 /** 新播放器与旧版 History 表的桥接：按 siteKey+vodId 读写。 */
@@ -23,5 +25,7 @@ interface PlaybackHistoryStore {
         positionMs: Long,
         durationMs: Long,
         speed: Float,
+        openingMs: Long = 0L,
+        endingMs: Long = 0L,
     )
 }
