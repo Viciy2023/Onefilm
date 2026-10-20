@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -40,6 +41,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.unit.dp
 import com.onefilm.android.tv.compose.bridge.HomeCategory
 import com.onefilm.android.tv.compose.bridge.MediaCard
@@ -127,39 +130,30 @@ private fun TvHomeContent(
     state: HomeUiState.Content,
     onCardClick: (MediaCard) -> Unit,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        state.feed.sections.forEachIndexed { index, section ->
-            item(key = "tv-section:$index:${section.title}") {
-                TvPosterSection(section.title, section.items, onCardClick)
-            }
-        }
-    }
+    val section = state.feed.sections.firstOrNull { it.items.isNotEmpty() } ?: return
+    TvPosterSection(section.items, onCardClick)
 }
 
 @Composable
 private fun TvPosterSection(
-    title: String,
     items: List<MediaCard>,
     onCardClick: (MediaCard) -> Unit,
 ) {
-    if (items.isEmpty()) return
     val pages = items.chunked(10)
     val listState = rememberLazyListState()
-    Column {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 48.dp, vertical = 4.dp),
-        )
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val horizontalPadding = 48.dp
+        val gap = 14.dp
+        val dotsHeight = 26.dp
+        val rowHeight = (maxHeight - dotsHeight - gap) / 2
+        val imageHeight = (rowHeight - 26.dp).coerceAtLeast(80.dp)
+        val widthByHeight = imageHeight * 2f / 3f
+        val widthByWidth = (maxWidth - horizontalPadding * 2 - gap * 4) / 5
+        val cardWidth = minOf(widthByHeight, widthByWidth)
         LazyRow(
             state = listState,
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 48.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(32.dp),
         ) {
             items(pages.size) { pageIndex ->
@@ -167,15 +161,16 @@ private fun TvPosterSection(
                     val page = pages[pageIndex]
                     for (row in 0 until 2) {
                         Row(
-                            Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                            Modifier.fillMaxWidth().weight(1f, fill = false),
+                            horizontalArrangement = Arrangement.spacedBy(gap, Alignment.CenterHorizontally),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             for (col in 0 until 5) {
                                 val item = page.getOrNull(row * 5 + col)
                                 if (item != null) {
-                                    TvPosterCard(item) { onCardClick(item) }
+                                    TvPosterCard(item, cardWidth) { onCardClick(item) }
                                 } else {
-                                    Spacer(Modifier.width(112.dp))
+                                    Spacer(Modifier.width(cardWidth))
                                 }
                             }
                         }
@@ -185,15 +180,14 @@ private fun TvPosterSection(
         }
         if (pages.size > 1) {
             Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
+                Modifier.align(Alignment.BottomCenter).padding(bottom = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 val current = listState.firstVisibleItemIndex
                 repeat(pages.size) { index ->
                     Box(
                         Modifier
-                            .padding(horizontal = 4.dp)
-                            .width(if (index == current) 16.dp else 6.dp)
+                            .width(if (index == current) 18.dp else 6.dp)
                             .height(6.dp)
                             .clip(RoundedCornerShape(3.dp))
                             .background(
@@ -208,14 +202,14 @@ private fun TvPosterSection(
 }
 
 @Composable
-private fun TvPosterCard(card: MediaCard, onClick: () -> Unit) {
+private fun TvPosterCard(card: MediaCard, width: androidx.compose.ui.unit.Dp, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val scale by animateFloatAsState(if (focused) 1.05f else 1f, tween(120), label = "tv-poster")
     val shape = RoundedCornerShape(14.dp)
     Column(
         Modifier
-            .width(112.dp)
+            .width(width)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .shadow(if (focused) 16.dp else 0.dp, shape)
             .clip(shape)
@@ -241,7 +235,7 @@ private fun TvPosterCard(card: MediaCard, onClick: () -> Unit) {
                 )
             }
         }
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(4.dp))
         Text(
             text = card.title.ifBlank { "未命名" },
             color = MaterialTheme.colorScheme.onBackground,
@@ -251,7 +245,6 @@ private fun TvPosterCard(card: MediaCard, onClick: () -> Unit) {
         )
     }
 }
-
 @Composable
 private fun CategoryRail(
     categories: List<HomeCategory>,

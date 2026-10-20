@@ -116,7 +116,7 @@ fun TvHeader(
         )
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 48.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             entries.forEach { entry ->
@@ -126,7 +126,7 @@ fun TvHeader(
         if (categories.isNotEmpty()) {
             LazyRow(
                 Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
                 items(categories) { category ->
                     TvCategoryChip(category) { onCategory(category) }
