@@ -93,16 +93,10 @@ private fun CategoryContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 48.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = "‹ ${page.title.ifBlank { fallbackTitle }}",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable(onClick = onBack),
-            )
             if (page.filters.isNotEmpty()) {
                 Text(
                     text = if (showFilters) "收起筛选" else "筛选",

@@ -37,6 +37,12 @@ data class SettingsSnapshot(
     val themeMode: Int,
 )
 
+data class ConfigLine(
+    val name: String,
+    val url: String,
+    val current: Boolean,
+)
+
 /** Compose 设置页与旧 *Setting 类的桥接。 */
 interface SettingsDataSource {
     fun load(): SettingsSnapshot
@@ -71,7 +77,13 @@ interface SettingsDataSource {
 
     fun resetUa()
 
-    fun loadConfig(type: Int, url: String, onResult: (Boolean, String) -> Unit)
+    fun loadConfig(
+        type: Int,
+        url: String,
+        name: String = "",
+        onResult: (Boolean, String) -> Unit,
+    )
+    fun configLines(type: Int): List<ConfigLine>
     fun cycleDoh()
     fun setIncognito(enabled: Boolean)
     fun configPushUrl(): String

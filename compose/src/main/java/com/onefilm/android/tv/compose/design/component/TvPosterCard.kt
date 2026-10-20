@@ -49,7 +49,7 @@ fun TvPosterCard(
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val scale by animateFloatAsState(if (focused) 1.05f else 1f, tween(120), label = "tv-poster")
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(24.dp)
     val sizeModifier = if (width != null) Modifier.width(width) else Modifier.fillMaxWidth()
     Box(
         modifier
@@ -98,7 +98,7 @@ fun TvPosterCard(
                 Text(
                     text = title.ifBlank { "未命名" },
                     color = Color.White,
-                    fontSize = 18.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),

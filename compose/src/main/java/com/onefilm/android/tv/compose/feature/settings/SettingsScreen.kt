@@ -46,10 +46,14 @@ import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
 import com.onefilm.android.tv.compose.design.ThemeController
 
 @Composable
-fun SettingsScreen(dataSource: SettingsDataSource) {
+fun SettingsScreen(
+    dataSource: SettingsDataSource,
+    onConfigChanged: () -> Unit = {},
+) {
     var snapshot by remember { mutableStateOf(dataSource.load()) }
     var editType by remember { mutableStateOf<Int?>(null) }
     var editUrl by remember { mutableStateOf("") }
+    var editName by remember { mutableStateOf("") }
     var configLoading by remember { mutableStateOf(false) }
     var reloadingType by remember { mutableStateOf<Int?>(null) }
     var configError by remember { mutableStateOf<String?>(null) }
@@ -67,6 +71,7 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
     fun openConfig(type: Int, url: String) {
         editType = type
         editUrl = url
+        editName = dataSource.configLines(type).firstOrNull { it.current }?.name.orEmpty()
         configError = null
         qrUrl = dataSource.configPushUrl()
         qrBitmap = dataSource.qrBitmap(qrUrl, 720)
@@ -93,7 +98,10 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
                     reloadingType = 0
                     dataSource.loadConfig(0, url) { ok, _ ->
                         reloadingType = null
-                        if (ok) snapshot = dataSource.load()
+                        if (ok) {
+                            onConfigChanged()
+                            snapshot = dataSource.load()
+                        }
                     }
                 }
             })
@@ -103,7 +111,10 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
                     reloadingType = 1
                     dataSource.loadConfig(1, url) { ok, _ ->
                         reloadingType = null
-                        if (ok) snapshot = dataSource.load()
+                        if (ok) {
+                            onConfigChanged()
+                            snapshot = dataSource.load()
+                        }
                     }
                 }
             })
@@ -113,7 +124,10 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
                     reloadingType = 2
                     dataSource.loadConfig(2, url) { ok, _ ->
                         reloadingType = null
-                        if (ok) snapshot = dataSource.load()
+                        if (ok) {
+                            onConfigChanged()
+                            snapshot = dataSource.load()
+                        }
                     }
                 }
             })
@@ -387,6 +401,14 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
                     )
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
+                        value = editName,
+                        onValueChange = { editName = it },
+                        singleLine = true,
+                        label = { Text("线路名称") },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
                         value = editUrl,
                         onValueChange = { editUrl = it },
                         singleLine = true,
@@ -408,9 +430,10 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
                     enabled = !configLoading && editUrl.isNotBlank(),
                     onClick = {
                         configLoading = true
-                        dataSource.loadConfig(type, editUrl.trim()) { ok, message ->
+                        dataSource.loadConfig(type, editUrl.trim(), editName.trim()) { ok, message ->
                             configLoading = false
                             if (ok) {
+                                onConfigChanged()
                                 snapshot = dataSource.load()
                                 editType = null
                             } else {

@@ -11,6 +11,7 @@ import com.onefilm.android.tv.BuildConfig
 import com.onefilm.android.tv.api.config.VodConfig
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
+import com.onefilm.android.tv.compose.bridge.ConfigLine
 import com.onefilm.android.tv.setting.DanmakuSetting
 import com.onefilm.android.tv.setting.DecodeSetting
 import com.onefilm.android.tv.setting.PlayerSetting
@@ -172,8 +173,14 @@ class AppSettingsDataSource : SettingsDataSource {
         Setting.putUa("")
     }
 
-    override fun loadConfig(type: Int, url: String, onResult: (Boolean, String) -> Unit) {
+    override fun loadConfig(
+        type: Int,
+        url: String,
+        name: String,
+        onResult: (Boolean, String) -> Unit,
+    ) {
         val config = Config.find(url, type)
+        if (name.isNotBlank()) config.setName(name)
         val callback = object : Callback() {
             override fun success() {
                 config.update()
@@ -191,6 +198,21 @@ class AppSettingsDataSource : SettingsDataSource {
             0 -> VodConfig.load(config, callback)
             1 -> LiveConfig.load(config, callback)
             else -> WallConfig.load(config, callback)
+        }
+    }
+
+    override fun configLines(type: Int): List<ConfigLine> {
+        val currentUrl = when (type) {
+            0 -> VodConfig.getUrl()
+            1 -> LiveConfig.getUrl()
+            else -> WallConfig.getUrl()
+        }.orEmpty()
+        return Config.getAll(type).map { config ->
+            ConfigLine(
+                name = config.desc.orEmpty().ifBlank { config.url.orEmpty() },
+                url = config.url.orEmpty(),
+                current = config.url.orEmpty() == currentUrl,
+            )
         }
     }
 

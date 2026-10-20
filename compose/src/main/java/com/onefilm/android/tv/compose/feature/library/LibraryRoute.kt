@@ -14,8 +14,9 @@ import com.onefilm.android.tv.compose.bridge.MediaCard
 fun LibraryRoute(
     dataSource: LibraryDataSource,
     onCardClick: (MediaCard) -> Unit,
+    initialTab: Int = 0,
 ) {
     var data by remember { mutableStateOf<LibraryData?>(null) }
     LaunchedEffect(Unit) { data = runCatching { dataSource.load() }.getOrNull() ?: LibraryData(emptyList(), emptyList()) }
-    LibraryScreen(data = data, onCardClick = onCardClick)
+    LibraryScreen(data = data, onCardClick = onCardClick, initialTab = initialTab)
 }

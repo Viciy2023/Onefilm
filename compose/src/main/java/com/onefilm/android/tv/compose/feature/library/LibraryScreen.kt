@@ -31,8 +31,9 @@ import com.onefilm.android.tv.compose.design.component.TvPosterCard
 fun LibraryScreen(
     data: LibraryData?,
     onCardClick: (MediaCard) -> Unit,
+    initialTab: Int = 0,
 ) {
-    var selected by remember { mutableIntStateOf(0) }
+    var selected by remember(initialTab) { mutableIntStateOf(initialTab.coerceIn(0, 1)) }
     Column(Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 24.dp)) {
         Text("我的片库", style = MaterialTheme.typography.headlineMedium)
         TabRow(selectedTabIndex = selected) {

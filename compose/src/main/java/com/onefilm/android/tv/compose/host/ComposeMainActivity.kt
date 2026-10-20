@@ -112,8 +112,17 @@ class ComposeMainActivity : ComponentActivity() {
 
                 LaunchedEffect(Unit) { homeViewModel.retry() }
 
-                BackHandler(enabled = navController.previousBackStackEntry != null) {
-                    navController.popBackStack()
+                BackHandler(enabled = true) {
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    } else if (route?.startsWith(Routes.HOME) != true) {
+                        navController.navigate(Routes.HOME) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    } else {
+                        finish()
+                    }
                 }
                 AdaptiveNavigation(
                     isTv = isTv,
@@ -151,9 +160,9 @@ class ComposeMainActivity : ComponentActivity() {
                                     }
                                 },
                                 onLive = { ComposeDependencies.liveLauncher.open(this@ComposeMainActivity) },
-                                onConfig = { navController.navigate(Routes.SETTINGS) },
-                                onLine = { navController.navigate(Routes.SETTINGS) },
-                                onNetwork = { navController.navigate(Routes.SETTINGS) },
+                                onConfig = { navController.navigate(Routes.CONFIG) },
+                                onLine = { navController.navigate(Routes.LINES) },
+                                onNetwork = { ComposeDependencies.fileLauncher.open(this@ComposeMainActivity) },
                                 onCategory = { category ->
                                     navController.navigate(Routes.category(category.key, category.id, category.name))
                                 },
@@ -234,10 +243,16 @@ class ComposeMainActivity : ComponentActivity() {
                                 },
                             )
                         },
-                        libraryContent = {
-                            LibraryRoute(libraryDataSource) { card ->
-                                if (card.key.isNotBlank() && card.id.isNotBlank()) navController.navigate(Routes.detail(card.key, card.id, card.title, card.posterUrl))
-                            }
+                        libraryContent = { initialTab ->
+                            LibraryRoute(
+                                dataSource = libraryDataSource,
+                                initialTab = initialTab,
+                                onCardClick = { card ->
+                                    if (card.key.isNotBlank() && card.id.isNotBlank()) {
+                                        navController.navigate(Routes.detail(card.key, card.id, card.title, card.posterUrl))
+                                    }
+                                },
+                            )
                         },
                         playerContent = { PlayerRoute(onBack = { navController.popBackStack() }) },
                         detailContent = { key, id, title, poster ->
@@ -272,6 +287,7 @@ class ComposeMainActivity : ComponentActivity() {
                                 },
                             )
                         },
+                        onConfigChanged = homeViewModel::retry,
                     )
                 }
             }

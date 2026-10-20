@@ -7,7 +7,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
+import com.onefilm.android.tv.compose.feature.config.ConfigScreen
 import com.onefilm.android.tv.compose.feature.library.LibraryScreen
+import com.onefilm.android.tv.compose.feature.lines.LinesScreen
 import com.onefilm.android.tv.compose.feature.settings.SettingsScreen
 
 @Composable
@@ -15,12 +17,13 @@ fun OneFilmNavHost(
     navController: NavHostController,
     homeContent: @Composable () -> Unit,
     searchContent: @Composable (query: String?) -> Unit,
-    libraryContent: @Composable () -> Unit,
+    libraryContent: @Composable (initialTab: Int) -> Unit,
     playerContent: @Composable () -> Unit,
     sourceContent: @Composable (title: String) -> Unit,
     resolveContent: @Composable (title: String) -> Unit,
     detailContent: @Composable (key: String, id: String, title: String, poster: String?) -> Unit,
     categoryContent: @Composable (key: String, tid: String, name: String) -> Unit,
+    onConfigChanged: () -> Unit = {},
 ) {
     NavHost(navController = navController, startDestination = Routes.HOME) {
         composable(Routes.HOME) { homeContent() }
@@ -31,8 +34,37 @@ fun OneFilmNavHost(
         ) { entry ->
             searchContent(entry.arguments?.getString("q").orEmpty())
         }
-        composable(Routes.LIBRARY) { libraryContent() }
-        composable(Routes.SETTINGS) { SettingsScreen(ComposeDependencies.settingsDataSource) }
+        composable(Routes.LIBRARY) { libraryContent(0) }
+        composable(Routes.HISTORY) { libraryContent(1) }
+        composable(Routes.CONFIG) {
+            ConfigScreen(
+                dataSource = ComposeDependencies.settingsDataSource,
+                onBack = { navController.popBackStack() },
+                onDone = {
+                    onConfigChanged()
+                    if (!navController.popBackStack(Routes.HOME, false)) {
+                        navController.navigate(Routes.HOME) { launchSingleTop = true }
+                    }
+                },
+            )
+        }
+        composable(Routes.LINES) {
+            LinesScreen(
+                dataSource = ComposeDependencies.settingsDataSource,
+                onConfigChanged = onConfigChanged,
+                onDone = {
+                    if (!navController.popBackStack(Routes.HOME, false)) {
+                        navController.navigate(Routes.HOME) { launchSingleTop = true }
+                    }
+                },
+            )
+        }
+        composable(Routes.SETTINGS) {
+            SettingsScreen(
+                dataSource = ComposeDependencies.settingsDataSource,
+                onConfigChanged = onConfigChanged,
+            )
+        }
         composable(Routes.PLAYER) { playerContent() }
         composable(
             route = Routes.SOURCES,

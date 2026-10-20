@@ -139,7 +139,7 @@ fun TvHeader(
             TvNavEntry("首页", "⌂") { onNavigate(Routes.HOME) },
             TvNavEntry("搜索", "⌕") { onNavigate(Routes.SEARCH) },
             TvNavEntry("收藏", "★") { onNavigate(Routes.LIBRARY) },
-            TvNavEntry("历史", "↺") { onNavigate(Routes.LIBRARY) },
+            TvNavEntry("历史", "↺") { onNavigate(Routes.HISTORY) },
             TvNavEntry("直播", "▶", onLive),
             TvNavEntry("配置", "⚙", onConfig),
             TvNavEntry("线路", "⇄", onLine),
