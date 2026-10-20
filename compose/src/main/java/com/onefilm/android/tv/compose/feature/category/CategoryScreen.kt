@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -148,11 +151,9 @@ private fun CategoryContent(
                 filters = page.filters,
                 selectedFilters = selectedFilters,
                 onToggleFilter = onToggleFilter,
-                onDismiss = onDismissFilters,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .fillMaxHeight(0.56f),
+                    .fillMaxWidth(),
             )
         }
     }
@@ -163,46 +164,35 @@ private fun FilterBottomSheet(
     filters: List<CategoryFilterGroup>,
     selectedFilters: Map<String, String>,
     onToggleFilter: (filterKey: String, value: String, selected: Boolean) -> Unit,
-    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier
             .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
-            .background(MaterialTheme.colorScheme.surface)
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = {},
             )
-            .padding(horizontal = 32.dp, vertical = 22.dp),
+            .padding(horizontal = 30.dp, vertical = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("筛选", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.weight(1f))
-            Text(
-                "返回键或点击空白关闭",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 16.sp,
-            )
-        }
-        Spacer(Modifier.height(16.dp))
-        Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
-        ) {
-            filters.forEach { group ->
+        filters.forEach { group ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = group.name,
+                    text = group.name + "：",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.width(110.dp),
                 )
-                FlowRow(
+                LazyRow(
+                    modifier = Modifier.weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(end = 8.dp),
                 ) {
-                    group.options.forEach { option ->
+                    items(group.options) { option ->
                         val checked = selectedFilters[group.key] == option.value
                         FilterOption(
                             text = option.name.ifBlank { option.value },
@@ -215,7 +205,6 @@ private fun FilterBottomSheet(
         }
     }
 }
-
 @Composable
 private fun FilterOption(text: String, selected: Boolean, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
