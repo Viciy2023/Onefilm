@@ -49,9 +49,9 @@
 - [ ] 手机手势：双击播放、左右进度、上下亮度/音量
 - [x] 字幕轨道切换 + 字幕偏移（接入旧 PlayerManager）
 - [x] 音轨/视轨切换（接入旧 TrackUtil/PlayerManager）
-- [x] 弹幕开关 + DanmakuApi/DanmakuView 接入（样式面板待补）
+- [x] 弹幕开关、密度、透明度、字号 + DanmakuApi/DanmakuView
 - [x] 播放引擎切换（Exo / MPV，复用旧 PlayerManager）
-- [ ] PiP / 后台播放 / MediaSession 回归（当前为独立 PlayerManager，未接 PlaybackService）
+- [x] PiP / 后台播放 / MediaSession（已绑定 PlaybackService）
 - [x] 硬解/软解、Surface/Texture、画面适应、片头/片尾、字幕/音画偏移
 
 ## M4 设置页（功能接入）

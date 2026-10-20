@@ -5,6 +5,7 @@
             android:name="com.onefilm.android.tv.compose.host.ComposeMainActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"
             android:exported="true"
+            android:supportsPictureInPicture="true"
             android:windowSoftInputMode="adjustResize" />
     </application>
 </manifest>

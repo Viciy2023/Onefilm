@@ -46,6 +46,7 @@ interface LegacyPlayer {
     fun textOffset(): Long
     fun audioOffset(): Long
     fun setDanmakuEnabled(enabled: Boolean)
+    fun preload(url: String, key: String, title: String)
     fun release()
 }
 

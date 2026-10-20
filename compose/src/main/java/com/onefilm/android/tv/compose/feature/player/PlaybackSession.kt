@@ -33,7 +33,7 @@ data class PlaybackEpisode(val name: String, val url: String)
  */
 object PlaybackSession {
     private var legacy: LegacyPlayer? = null
-    private var playerRef: Player? = null
+    private var playerHolder by mutableStateOf<Player?>(null)
     private var currentUrl: String? = null
     private var appContext: Context? = null
     private var openingApplied = false
@@ -94,7 +94,7 @@ object PlaybackSession {
     var endingMs by mutableLongStateOf(0L)
         private set
 
-    val player: Player? get() = playerRef
+    val player: Player? get() = playerHolder
     val legacyPlayer: LegacyPlayer? get() = legacy
     val url: String? get() = currentUrl
     val currentEpisode: PlaybackEpisode? get() = queue.getOrNull(currentIndex)
@@ -107,7 +107,7 @@ object PlaybackSession {
         override fun onPlaybackStateChanged(state: Int) {
             isBuffering = state == Player.STATE_BUFFERING
             if (state == Player.STATE_READY) {
-                durationMs = playerRef?.duration?.coerceAtLeast(0L) ?: 0L
+                durationMs = playerHolder?.duration?.coerceAtLeast(0L) ?: 0L
                 refreshTrackLabels()
             }
             if (state == Player.STATE_ENDED) {
@@ -151,9 +151,9 @@ object PlaybackSession {
     }
 
     private fun attachPlayer(player: Player?) {
-        if (playerRef !== player) {
-            playerRef?.removeListener(playerListener)
-            playerRef = player
+        if (playerHolder !== player) {
+            playerHolder?.removeListener(playerListener)
+            playerHolder = player
             player?.addListener(playerListener)
         }
         isPlaying = player?.isPlaying == true
@@ -326,7 +326,8 @@ object PlaybackSession {
             currentIndex = index
             val history = historyStore?.find(key, vodId)
             val start = if (history?.episodeUrl == item.url) history.positionMs else 0L
-            if (history?.episodeUrl == item.url) {
+            // 片头/片尾属于整部剧，切换选集后继续沿用。
+            if (history != null) {
                 setMarks(history.openingMs, history.endingMs)
             } else {
                 setMarks(0L, 0L)
@@ -336,11 +337,23 @@ object PlaybackSession {
                 updateSpeed(history.speed)
             }
             saveHistory()
+            preloadNext(resolver)
+        }
+    }
+
+    /** 解析下一集地址并交给旧 PlayerManager 预加载。 */
+    fun preloadNext(resolver: PlaybackResolver) {
+        val next = queue.getOrNull(currentIndex + 1) ?: return
+        val key = siteKey
+        val flag = flagName
+        scope.launch {
+            val url = resolver.resolve(key, flag, next.url) ?: return@launch
+            legacy?.preload(url, key, title)
         }
     }
 
     fun toggle() {
-        val target = playerRef ?: return
+        val target = playerHolder ?: return
         if (target.isPlaying) {
             target.pause()
             saveHistory()
@@ -350,11 +363,11 @@ object PlaybackSession {
     }
 
     fun seekTo(positionMs: Long) {
-        playerRef?.seekTo(positionMs.coerceAtLeast(0L))
+        playerHolder?.seekTo(positionMs.coerceAtLeast(0L))
     }
 
     fun seekBy(deltaMs: Long) {
-        val target = playerRef ?: return
+        val target = playerHolder ?: return
         val duration = target.duration
         val max = if (duration > 0) duration else Long.MAX_VALUE
         target.seekTo((target.currentPosition + deltaMs).coerceIn(0L, max))
@@ -362,7 +375,7 @@ object PlaybackSession {
 
     fun updateSpeed(value: Float) {
         speed = value
-        playerRef?.setPlaybackParameters(PlaybackParameters(value))
+        playerHolder?.setPlaybackParameters(PlaybackParameters(value))
     }
 
     fun cycleSpeed() {
@@ -383,7 +396,7 @@ object PlaybackSession {
 
     fun replay() {
         seekTo(0L)
-        playerRef?.play()
+        playerHolder?.play()
     }
 
     fun refresh() {
@@ -392,7 +405,7 @@ object PlaybackSession {
 
     fun toggleRepeat() {
         legacy?.toggleRepeat()
-        repeatMode = playerRef?.repeatMode ?: repeatMode
+        repeatMode = playerHolder?.repeatMode ?: repeatMode
     }
 
     fun playPrevious(context: Context, resolver: PlaybackResolver) {
@@ -405,7 +418,7 @@ object PlaybackSession {
         if (index < queue.size) playEpisode(context, index, resolver)
     }
 
-    fun positionMs(): Long = playerRef?.currentPosition?.coerceAtLeast(0L) ?: 0L
+    fun positionMs(): Long = playerHolder?.currentPosition?.coerceAtLeast(0L) ?: 0L
 
     fun setMarks(opening: Long, ending: Long) {
         openingMs = opening.coerceAtLeast(0L)
@@ -427,14 +440,21 @@ object PlaybackSession {
     }
 
     fun enforceMarkers() {
-        val target = playerRef ?: return
+        val target = playerHolder ?: return
         if (!openingApplied && openingMs > 1_000L && durationMs > 0L) {
             if (target.currentPosition < openingMs - 1_500L) target.seekTo(openingMs)
             openingApplied = true
         }
         if (!endingApplied && endingMs > 1_000L && target.currentPosition >= endingMs) {
-            target.pause()
             endingApplied = true
+            val context = appContext
+            if (context != null && currentIndex + 1 < queue.size) {
+                scope.launch {
+                    playEpisode(context, currentIndex + 1, ComposeDependencies.playbackResolver)
+                }
+            } else {
+                target.pause()
+            }
         }
     }
 
@@ -461,8 +481,8 @@ object PlaybackSession {
 
     fun stop() {
         saveHistory()
-        playerRef?.pause()
-        playerRef?.clearMediaItems()
+        playerHolder?.pause()
+        playerHolder?.clearMediaItems()
         currentUrl = null
         isPlaying = false
         isBuffering = false
@@ -472,8 +492,8 @@ object PlaybackSession {
 
     fun release() {
         saveHistory()
-        playerRef?.removeListener(playerListener)
-        playerRef = null
+        playerHolder?.removeListener(playerListener)
+        playerHolder = null
         legacy?.listener = null
         legacy?.release()
         legacy = null

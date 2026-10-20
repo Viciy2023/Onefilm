@@ -89,12 +89,13 @@ fun DetailRoute(
                         index = index,
                     )
                     val start = if (history?.episodeUrl == sourceUrl) history.positionMs else 0L
-                    if (history?.episodeUrl == sourceUrl) {
+                    if (history != null) {
                         PlaybackSession.setMarks(history.openingMs, history.endingMs)
                     } else {
                         PlaybackSession.setMarks(0L, 0L)
                     }
                     PlaybackSession.play(context, url, start)
+                    PlaybackSession.preloadNext(playbackResolver)
                     if (history?.episodeUrl == sourceUrl) PlaybackSession.updateSpeed(history.speed)
                     playingUrl = url
                 }

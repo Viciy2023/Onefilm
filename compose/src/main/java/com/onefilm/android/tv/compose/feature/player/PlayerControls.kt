@@ -1,5 +1,11 @@
 package com.onefilm.android.tv.compose.feature.player
 
+import android.app.Activity
+import android.app.PictureInPictureParams
+import android.content.Context
+import android.content.ContextWrapper
+import android.os.Build
+import android.util.Rational
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.ViewGroup
@@ -32,6 +38,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -229,6 +236,23 @@ fun PlayerControls(
                     danmakuKey,
                     ComposeDependencies.danmakuDataSource,
                 )
+            }
+        })
+        add(MenuEntry("弹幕密度 ${DanmakuController.densityLines}") { DanmakuController.cycleDensity() })
+        add(MenuEntry("弹幕透明 ${(DanmakuController.transparency * 100).toInt()}%") {
+            DanmakuController.cycleTransparency()
+        })
+        add(MenuEntry("弹幕字号 ${DanmakuController.textScale}x") { DanmakuController.cycleScale() })
+        add(MenuEntry("画中画") {
+            val activity = context.findActivity()
+            if (activity != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                runCatching {
+                    activity.enterPictureInPictureMode(
+                        PictureInPictureParams.Builder()
+                            .setAspectRatio(Rational(16, 9))
+                            .build(),
+                    )
+                }
             }
         })
         add(MenuEntry("片头 ${formatTime(PlaybackSession.openingMs)}") { PlaybackSession.markOpening() })
@@ -452,11 +476,12 @@ fun PlayerControls(
 
         AnimatedVisibility(
             visible = showMore,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it / 2 }) + fadeOut(),
         ) {
-            MoreSheet(
+            OverflowPopup(
                 entries = overflowEntries,
+                inline = inline,
                 onDismiss = { showMore = false },
             )
         }
@@ -647,48 +672,37 @@ private fun MenuText(entry: MenuEntry, width: Dp) {
 }
 
 @Composable
-private fun MoreSheet(
+private fun OverflowPopup(
     entries: List<MenuEntry>,
+    inline: Boolean,
     onDismiss: () -> Unit,
 ) {
     val firstFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { firstFocus.requestFocus() } }
-    Box(Modifier.fillMaxSize()) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(Color(0x99000000))
-                .clickable(onClick = onDismiss),
-        )
+    Box(
+        Modifier
+            .fillMaxSize()
+            .padding(end = 14.dp, bottom = if (inline) 58.dp else 64.dp),
+        contentAlignment = Alignment.BottomEnd,
+    ) {
         Column(
             Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp))
+                .widthIn(max = 380.dp)
+                .clip(RoundedCornerShape(14.dp))
                 .background(Panel)
-                .navigationBarsPadding()
-                .padding(start = 18.dp, end = 18.dp, top = 10.dp, bottom = 18.dp),
+                .padding(8.dp),
         ) {
-            Box(
-                Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .width(38.dp)
-                    .height(4.dp)
-                    .clip(CircleShape)
-                    .background(Ink.copy(alpha = 0.25f)),
-            )
-            Spacer(Modifier.height(14.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("更多", color = Ink, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                Text("更多", color = Ink, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.weight(1f))
                 TextAction("关闭", onClick = onDismiss)
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(6.dp))
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(110.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth().heightIn(max = 380.dp).focusGroup(),
+                columns = GridCells.Fixed(2),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp).focusGroup(),
             ) {
                 itemsIndexed(entries) { index, entry ->
                     FlatTile(
@@ -827,4 +841,10 @@ private fun formatTime(ms: Long): String {
     } else {
         "%02d:%02d".format(minutes, seconds)
     }
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }

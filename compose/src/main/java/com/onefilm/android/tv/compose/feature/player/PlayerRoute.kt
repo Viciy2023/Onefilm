@@ -1,9 +1,12 @@
 package com.onefilm.android.tv.compose.feature.player
 
 import android.app.Activity
+import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
+import android.os.Build
+import android.util.Rational
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,6 +30,16 @@ fun PlayerRoute(onBack: () -> Unit) {
         val window = activity?.window
         val controller = window?.let { WindowInsetsControllerCompat(it, it.decorView) }
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            runCatching {
+                activity?.setPictureInPictureParams(
+                    PictureInPictureParams.Builder()
+                        .setAspectRatio(Rational(16, 9))
+                        .setAutoEnterEnabled(true)
+                        .build(),
+                )
+            }
+        }
         if (window != null) {
             WindowCompat.setDecorFitsSystemWindows(window, false)
             controller?.hide(WindowInsetsCompat.Type.systemBars())
@@ -39,6 +52,11 @@ fun PlayerRoute(onBack: () -> Unit) {
                 if (window != null) WindowCompat.setDecorFitsSystemWindows(window, true)
                 // 退出全屏固定回到竖屏，避免上一次全屏把 Activity 的方向残留为横屏。
                 activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    activity?.setPictureInPictureParams(
+                        PictureInPictureParams.Builder().setAutoEnterEnabled(false).build(),
+                    )
+                }
             }
         }
     }

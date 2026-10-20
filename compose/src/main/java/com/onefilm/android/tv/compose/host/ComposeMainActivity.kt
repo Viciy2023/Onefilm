@@ -1,8 +1,11 @@
 package com.onefilm.android.tv.compose.host
 
+import android.app.PictureInPictureParams
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
+import android.util.Rational
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -34,6 +37,26 @@ import com.onefilm.android.tv.compose.navigation.Routes
 
 class ComposeMainActivity : ComponentActivity() {
 
+    @Volatile
+    private var playerRouteActive = false
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        enterPipIfPossible()
+    }
+
+    private fun enterPipIfPossible() {
+        if (!playerRouteActive || isInPictureInPictureMode) return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        runCatching {
+            enterPictureInPictureMode(
+                PictureInPictureParams.Builder()
+                    .setAspectRatio(Rational(16, 9))
+                    .build(),
+            )
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val isTv = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
@@ -56,6 +79,7 @@ class ComposeMainActivity : ComponentActivity() {
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val route = backStackEntry?.destination?.route
                 LaunchedEffect(route) {
+                    playerRouteActive = route?.startsWith("player") == true
                     val keepPlaying = route?.startsWith("detail") == true ||
                         route?.startsWith("player") == true
                     if (!keepPlaying) PlaybackSession.release()

@@ -3,6 +3,8 @@ package com.onefilm.android.tv.compose.feature.player
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
 import androidx.media3.ui.danmaku.DanmakuConfig
 import androidx.media3.ui.danmaku.DanmakuParser
@@ -27,15 +29,55 @@ object DanmakuController {
         private set
     var status by mutableStateOf("默认")
         private set
+    var densityLines by mutableIntStateOf(8)
+        private set
+    var transparency by mutableFloatStateOf(0f)
+        private set
+    var textScale by mutableFloatStateOf(1f)
+        private set
+
+    private fun applyConfig() {
+        view?.setConfig(
+            DanmakuConfig.Builder()
+                .setTextScale(textScale)
+                .setTransparency(transparency)
+                .setMaxScrollLines(densityLines)
+                .build(),
+        )
+    }
+
+    fun cycleDensity() {
+        densityLines = when (densityLines) {
+            4 -> 8
+            8 -> 12
+            else -> 4
+        }
+        applyConfig()
+    }
+
+    fun cycleTransparency() {
+        transparency = when {
+            transparency < 0.1f -> 0.25f
+            transparency < 0.3f -> 0.5f
+            transparency < 0.6f -> 0.7f
+            else -> 0f
+        }
+        applyConfig()
+    }
+
+    fun cycleScale() {
+        textScale = when {
+            textScale < 0.9f -> 1.0f
+            textScale < 1.1f -> 1.2f
+            textScale < 1.3f -> 1.4f
+            else -> 0.8f
+        }
+        applyConfig()
+    }
 
     fun attach(target: DanmakuView) {
         view = target
-        target.setConfig(
-            DanmakuConfig.Builder()
-                .setTextScale(1f)
-                .setMaxScrollLines(8)
-                .build(),
-        )
+        applyConfig()
         xml?.let { runCatching { target.setItems(DanmakuParser.parseXml(it)) } }
         target.setEnabled(enabled)
         target.setClock(lastPosition)

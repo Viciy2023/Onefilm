@@ -81,6 +81,6 @@
 - [x] 字幕偏移 / 音画偏移（旧 `setTextOffsetMs` / `setAudioOffsetMs`）
 - [x] 片头 / 片尾标记与自动跳过
 - [x] 弹幕开关接入 `DanmakuApi` + `media3compat` 的 `DanmakuView`
-- [ ] PiP / 后台播放 / MediaSession：仍走独立 PlayerManager，未接 `PlaybackService`
-- [ ] 下一集预加载：PlayerManager 已具备，Compose 尚未调用
-- [ ] DLNA：未接
+- [x] PiP / 后台播放 / MediaSession：已绑定 `PlaybackService`，全屏按 Home 自动进入 PiP
+- [x] 下一集预加载：Compose 解析下一集地址并调用 `PlayerManager.preload`
+- [ ] DLNA：未接（需 mobile flavor 桥接 CastDialog/DLNACastManager）
