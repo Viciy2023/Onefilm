@@ -436,7 +436,7 @@ private fun SearchResults(
     Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
         Column(
             Modifier
-                .width(300.dp)
+                .width(340.dp)
                 .fillMaxHeight()
                 .clip(RoundedCornerShape(18.dp))
                 .background(MaterialTheme.colorScheme.surface)
@@ -503,6 +503,7 @@ private fun SearchResults(
                             posterUrl = card.posterUrl,
                             subtitle = card.subtitle,
                             modifier = Modifier.fillMaxWidth(),
+                            sourceLabel = card.siteName?.takeIf { it.isNotBlank() } ?: card.key,
                             onClick = { onCardClick(card) },
                         )
                     }
@@ -517,8 +518,9 @@ private fun SiteButton(text: String, selected: Boolean, onClick: () -> Unit) {
     Text(
         text = text,
         color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-        fontSize = 19.sp,
+        fontSize = 23.sp,
         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+        textAlign = TextAlign.Center,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier
@@ -527,6 +529,6 @@ private fun SiteButton(text: String, selected: Boolean, onClick: () -> Unit) {
             .clip(RoundedCornerShape(10.dp))
             .background(if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant)
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(horizontal = 12.dp, vertical = 14.dp),
     )
 }

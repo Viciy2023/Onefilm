@@ -45,6 +45,7 @@ fun TvPosterCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     width: Dp? = null,
+    sourceLabel: String? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
@@ -87,6 +88,22 @@ fun TvPosterCard(
                         ),
                     ),
             )
+            sourceLabel?.takeIf { it.isNotBlank() }?.let { label ->
+                Text(
+                    text = label,
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(10.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Black.copy(alpha = 0.58f))
+                        .padding(horizontal = 9.dp, vertical = 4.dp),
+                )
+            }
             Column(
                 Modifier
                     .align(Alignment.BottomCenter)
