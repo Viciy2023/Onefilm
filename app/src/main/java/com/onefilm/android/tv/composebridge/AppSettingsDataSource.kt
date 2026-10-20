@@ -191,6 +191,31 @@ class AppSettingsDataSource : SettingsDataSource {
         Setting.putIncognito(enabled)
     }
 
+    override fun configPushUrl(): String = runCatching {
+        com.onefilm.android.tv.server.Server.get().getAddress(4)
+    }.getOrDefault("")
+
+    override fun qrBitmap(content: String, size: Int): android.graphics.Bitmap? = runCatching {
+        val hints = hashMapOf<com.google.zxing.EncodeHintType, Any>(
+            com.google.zxing.EncodeHintType.CHARACTER_SET to "UTF-8",
+            com.google.zxing.EncodeHintType.MARGIN to 1,
+        )
+        val matrix = com.google.zxing.MultiFormatWriter().encode(
+            content,
+            com.google.zxing.BarcodeFormat.QR_CODE,
+            size,
+            size,
+            hints,
+        )
+        val bitmap = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+        for (x in 0 until size) {
+            for (y in 0 until size) {
+                bitmap.setPixel(x, y, if (matrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+            }
+        }
+        bitmap
+    }.getOrNull()
+
     private fun dolbyLabel(mode: Int): String = when (mode) {
         DolbyVisionOutputPolicy.ASSUME_SUPPORTED -> "强制支持"
         DolbyVisionOutputPolicy.ASSUME_UNSUPPORTED -> "强制不支持"

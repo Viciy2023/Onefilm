@@ -1,5 +1,6 @@
 package com.onefilm.android.tv.compose.feature.settings
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -32,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
@@ -44,6 +48,9 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
     var editUrl by remember { mutableStateOf("") }
     var configLoading by remember { mutableStateOf(false) }
     var configError by remember { mutableStateOf<String?>(null) }
+    var showQr by remember { mutableStateOf(false) }
+    var qrUrl by remember { mutableStateOf("") }
+    var qrBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
 
     fun refresh(change: SettingsDataSource.() -> Unit) {
         dataSource.change()
@@ -81,6 +88,11 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
                 configError = null
             }
             ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
+            ActionRow("扫码推送", "手机扫码打开配置页") {
+                qrUrl = dataSource.configPushUrl()
+                qrBitmap = dataSource.qrBitmap(qrUrl, 720)
+                showQr = true
+            }
             SwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
                 refresh { setIncognito(it) }
             }
@@ -233,6 +245,35 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
         Spacer(Modifier.height(24.dp))
     }
 
+    if (showQr) {
+        AlertDialog(
+            onDismissRequest = { showQr = false },
+            title = { Text("扫码推送配置") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    qrBitmap?.let { bitmap ->
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "配置二维码",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.size(260.dp),
+                        )
+                    } ?: Text("二维码生成失败")
+                    Spacer(Modifier.height(10.dp))
+                    Text(qrUrl, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        "手机扫码后可在网页端推送点播/直播/壁纸配置",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showQr = false }) { Text("关闭") }
+            },
+        )
+    }
+
     val type = editType
     if (type != null) {
         AlertDialog(
@@ -298,21 +339,37 @@ private fun ConfigRow(title: String, value: String, onClick: () -> Unit) {
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 4.dp),
-        )
-        Column(
+        Row(
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp))
-                .background(MaterialTheme.colorScheme.surface),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+                .clickable { expanded = !expanded }
+                .padding(horizontal = 4.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            content()
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = if (expanded) "−" else "+",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (expanded) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(MaterialTheme.colorScheme.surface),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                content()
+            }
         }
     }
 }

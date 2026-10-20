@@ -1,5 +1,7 @@
 package com.onefilm.android.tv.compose.bridge
 
+import android.graphics.Bitmap
+
 data class SettingsSnapshot(
     val engineMpv: Boolean,
     val background: Int,
@@ -67,4 +69,6 @@ interface SettingsDataSource {
     fun loadConfig(type: Int, url: String, onResult: (Boolean, String) -> Unit)
     fun cycleDoh()
     fun setIncognito(enabled: Boolean)
+    fun configPushUrl(): String
+    fun qrBitmap(content: String, size: Int): Bitmap?
 }
