@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:indeterminate="true"
-        app:indicatorColor="@color/white" />
+        app:indicatorColor="@color/live_text" />
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/traffic"
@@ -18,7 +18,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_marginTop="40dp"
-        android:textColor="@color/white"
+        android:textColor="@color/live_text"
         android:textSize="12sp"
         android:visibility="gone"
         tools:text="120 KB/s"
