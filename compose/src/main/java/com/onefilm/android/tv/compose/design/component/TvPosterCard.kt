@@ -92,16 +92,16 @@ fun TvPosterCard(
                 Text(
                     text = label,
                     color = Color.White,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(10.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.Black.copy(alpha = 0.58f))
-                        .padding(horizontal = 9.dp, vertical = 4.dp),
+                        .align(Alignment.TopCenter)
+                        .padding(top = 10.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color.Black.copy(alpha = 0.65f))
+                        .padding(horizontal = 12.dp, vertical = 5.dp),
                 )
             }
             Column(
@@ -115,7 +115,7 @@ fun TvPosterCard(
                 Text(
                     text = title.ifBlank { "未命名" },
                     color = Color.White,
-                    fontSize = 22.sp,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
@@ -126,7 +126,7 @@ fun TvPosterCard(
                     Text(
                         text = it,
                         color = Color.White.copy(alpha = 0.75f),
-                        fontSize = 13.sp,
+                        fontSize = 16.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 1,

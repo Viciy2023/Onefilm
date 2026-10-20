@@ -442,18 +442,22 @@ private fun SearchResults(
                 .background(MaterialTheme.colorScheme.surface)
                 .padding(vertical = 16.dp),
         ) {
-            Text(
-                text = "搜索",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 18.dp),
-            )
-            Text(
-                text = content?.let { "(${it.completed}/${it.total})" } ?: "",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 15.sp,
-                modifier = Modifier.padding(horizontal = 18.dp, vertical = 2.dp),
-            )
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 18.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "搜索",
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = content?.let { "(${it.completed}/${it.total})" } ?: "",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 18.sp,
+                )
+            }
             Spacer(Modifier.height(12.dp))
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
