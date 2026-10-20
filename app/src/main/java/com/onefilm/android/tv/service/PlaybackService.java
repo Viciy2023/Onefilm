@@ -1,6 +1,9 @@
 package com.onefilm.android.tv.service;
 
+import android.app.Notification;
 import android.app.PendingIntent;
+import android.content.pm.ServiceInfo;
+import androidx.core.app.NotificationCompat;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Binder;
@@ -110,6 +113,25 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
         EventBus.getDefault().register(this);
         Server.get().setService(this);
         setupNotification();
+        startForegroundSafely();
+    }
+
+    private void startForegroundSafely() {
+        com.onefilm.android.tv.utils.Notify.createChannel();
+        Intent intent = getPackageManager().getLaunchIntentForPackage(getPackageName());
+        PendingIntent pending = PendingIntent.getActivity(this, 0, intent == null ? new Intent() : intent, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        Notification notification = new NotificationCompat.Builder(this, com.onefilm.android.tv.utils.Notify.DEFAULT)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle("OneFilm")
+                .setContentText("正在准备播放")
+                .setContentIntent(pending)
+                .setOngoing(true)
+                .build();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            startForeground(com.onefilm.android.tv.utils.Notify.ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK);
+        } else {
+            startForeground(com.onefilm.android.tv.utils.Notify.ID, notification);
+        }
     }
 
     private PendingIntent buildDefaultIntent() {
