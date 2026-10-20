@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,6 +36,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,6 +51,7 @@ private val TvSurface = Color(0xFFF2F2F7)
 
 data class TvNavEntry(
     val label: String,
+    val icon: String,
     val selected: Boolean,
     val onClick: () -> Unit,
 )
@@ -57,6 +61,7 @@ fun TvHeader(
     currentRoute: String?,
     categories: List<HomeCategory>,
     notice: String?,
+    siteName: String? = null,
     onNavigate: (String) -> Unit,
     onLive: () -> Unit,
     onConfig: () -> Unit,
@@ -73,64 +78,101 @@ fun TvHeader(
     }
     val date = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
     val time = now.format(DateTimeFormatter.ofPattern("HH:mm"))
+    val centerText = notice?.takeIf { it.isNotBlank() }
+        ?: siteName?.takeIf { it.isNotBlank() }
+        ?: "ONEFILM 影视"
 
     Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+        // 第一行：品牌 / 当前接口 / 时间。三栏等宽，避免内容挤压品牌与时间。
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = 14.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = "ONEFILM",
-                color = TvInk,
-                fontSize = 34.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 3.sp,
-            )
-            Spacer(Modifier.weight(1f))
-            Text(
-                text = notice?.takeIf { it.isNotBlank() } ?: "",
-                color = TvMuted,
-                fontSize = 13.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.width(520.dp),
-            )
-            Spacer(Modifier.weight(1f))
-            Text(
-                text = "$date   $time",
-                color = TvInk,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-            )
+            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                Text(
+                    text = "ONEFILM",
+                    color = TvInk,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp,
+                )
+            }
+            Box(Modifier.weight(1.4f), contentAlignment = Alignment.Center) {
+                Text(
+                    text = centerText,
+                    color = TvInk,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                Text(
+                    text = "$date   $time",
+                    color = TvInk,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
         }
+
+        // 第二行：分类标签。数量不多时等权铺满整行，数量过多时横向滚动。
+        val allCategories = listOf(HomeCategory("", "", "主页")) + categories
+        if (allCategories.size <= 10) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                allCategories.forEachIndexed { index, category ->
+                    TvCategoryChip(
+                        category = category,
+                        selected = index == 0 && currentRoute?.startsWith(Routes.HOME) == true,
+                        onClick = {
+                            if (index == 0) onNavigate(Routes.HOME) else onCategory(category)
+                        },
+                    )
+                }
+            }
+        } else {
+            LazyRow(
+                Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                items(allCategories) { category ->
+                    val home = category.key.isBlank()
+                    TvCategoryChip(
+                        category = category,
+                        selected = home && currentRoute?.startsWith(Routes.HOME) == true,
+                        onClick = {
+                            if (home) onNavigate(Routes.HOME) else onCategory(category)
+                        },
+                    )
+                }
+            }
+        }
+
+        // 第三行：功能导航。九项等权铺满，图标 + 文字，和分类标签形成明确的层级差。
         val entries = listOf(
-            TvNavEntry("首页", currentRoute?.startsWith("home") == true) { onNavigate(Routes.HOME) },
-            TvNavEntry("搜索", currentRoute?.startsWith("search") == true) { onNavigate(Routes.SEARCH) },
-            TvNavEntry("收藏", currentRoute?.startsWith("library") == true) { onNavigate(Routes.LIBRARY) },
-            TvNavEntry("历史", false) { onNavigate(Routes.LIBRARY) },
-            TvNavEntry("直播", false, onLive),
-            TvNavEntry("配置", false, onConfig),
-            TvNavEntry("线路", false, onLine),
-            TvNavEntry("网盘", false, onNetwork),
-            TvNavEntry("设置", currentRoute?.startsWith("settings") == true) { onNavigate(Routes.SETTINGS) },
+            TvNavEntry("首页", "⌂", currentRoute?.startsWith("home") == true) { onNavigate(Routes.HOME) },
+            TvNavEntry("搜索", "⌕", currentRoute?.startsWith("search") == true) { onNavigate(Routes.SEARCH) },
+            TvNavEntry("收藏", "★", currentRoute?.startsWith("library") == true) { onNavigate(Routes.LIBRARY) },
+            TvNavEntry("历史", "↺", false) { onNavigate(Routes.LIBRARY) },
+            TvNavEntry("直播", "▶", false, onLive),
+            TvNavEntry("配置", "⚙", false, onConfig),
+            TvNavEntry("线路", "⇄", false, onLine),
+            TvNavEntry("网盘", "☁", false, onNetwork),
+            TvNavEntry("设置", "☰", currentRoute?.startsWith("settings") == true) { onNavigate(Routes.SETTINGS) },
         )
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 48.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             entries.forEach { entry ->
-                TvNavTab(entry)
-            }
-        }
-        if (categories.isNotEmpty()) {
-            LazyRow(
-                Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
-                items(categories) { category ->
-                    TvCategoryChip(category) { onCategory(category) }
-                }
+                TvNavTab(entry, Modifier.weight(1f))
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)))
@@ -138,42 +180,91 @@ fun TvHeader(
 }
 
 @Composable
-private fun TvNavTab(entry: TvNavEntry) {
+private fun TvNavTab(entry: TvNavEntry, modifier: Modifier = Modifier) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val scale by animateFloatAsState(if (focused) 1.05f else 1f, tween(120), label = "tv-nav")
-    val shape = RoundedCornerShape(18.dp)
-    Text(
-        text = entry.label,
-        color = if (entry.selected) MaterialTheme.colorScheme.background else TvInk,
-        fontSize = 15.sp,
-        fontWeight = if (entry.selected) FontWeight.SemiBold else FontWeight.Normal,
-        modifier = Modifier
+    val shape = RoundedCornerShape(16.dp)
+    val background = if (entry.selected) TvInk else MaterialTheme.colorScheme.surface
+    val contentColor = if (entry.selected) MaterialTheme.colorScheme.background else TvInk
+    Row(
+        modifier
+            .height(50.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .shadow(if (focused) 10.dp else 0.dp, shape)
+            .shadow(if (focused) 12.dp else 2.dp, shape)
             .clip(shape)
-            .background(if (entry.selected) TvInk else Color.Transparent)
-            .border(if (focused) 2.dp else 0.dp, Color.White.copy(alpha = 0.35f), shape)
+            .background(background)
+            .border(
+                width = if (focused) 2.dp else 1.dp,
+                color = if (focused) Color.White.copy(alpha = 0.65f) else Color.Black.copy(alpha = 0.06f),
+                shape = shape,
+            )
             .clickable(interactionSource = interaction, indication = null, onClick = entry.onClick)
-            .padding(horizontal = 22.dp, vertical = 11.dp),
-    )
+            .padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(22.dp)
+                .clip(CircleShape)
+                .background(if (entry.selected) Color.White.copy(alpha = 0.16f) else TvSurface),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = entry.icon,
+                color = contentColor,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+        Spacer(Modifier.width(4.dp))
+        Text(
+            text = entry.label,
+            color = contentColor,
+            fontSize = 16.sp,
+            fontWeight = if (entry.selected) FontWeight.SemiBold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
 
 @Composable
-private fun TvCategoryChip(category: HomeCategory, onClick: () -> Unit) {
+private fun TvCategoryChip(
+    category: HomeCategory,
+    selected: Boolean = false,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
-    val shape = RoundedCornerShape(16.dp)
-    Text(
-        text = category.name.ifBlank { "未命名" },
-        color = TvInk,
-        fontSize = 13.sp,
-        modifier = Modifier
+    val shape = RoundedCornerShape(14.dp)
+    val background = if (selected) TvInk else TvSurface
+    val contentColor = if (selected) MaterialTheme.colorScheme.background else TvInk
+    Box(
+        modifier
+            .height(34.dp)
             .shadow(if (focused) 8.dp else 0.dp, shape)
             .clip(shape)
-            .background(if (focused) Color.White else TvSurface)
-            .border(if (focused) 2.dp else 0.dp, Color.White.copy(alpha = 0.4f), shape)
+            .background(background)
+            .border(
+                width = if (focused) 2.dp else 1.dp,
+                color = if (focused) Color.White.copy(alpha = 0.55f) else Color.Black.copy(alpha = 0.04f),
+                shape = shape,
+            )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 9.dp),
-    )
+            .padding(horizontal = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = category.name.ifBlank { "未命名" },
+            color = contentColor,
+            fontSize = 16.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }

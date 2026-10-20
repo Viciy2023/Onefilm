@@ -5,6 +5,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -37,8 +39,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
@@ -144,27 +148,26 @@ private fun TvPosterSection(
     val listState = rememberLazyListState()
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val horizontalPadding = 48.dp
-        val gap = 14.dp
-        val dotsHeight = 26.dp
-        val rowHeight = (maxHeight - dotsHeight - gap) / 2
-        val imageHeight = (rowHeight - 26.dp).coerceAtLeast(80.dp)
-        val widthByHeight = imageHeight * 2f / 3f
-        val widthByWidth = (maxWidth - horizontalPadding * 2 - gap * 4) / 5
-        val cardWidth = minOf(widthByHeight, widthByWidth)
+        val gap = 16.dp
+        // 5 列必须铺满屏宽；高度不足时允许纵向滚动，而不是把卡片缩到屏幕中间。
+        val cardWidth = ((maxWidth - horizontalPadding * 2 - gap * 4) / 5).coerceAtLeast(120.dp)
         LazyRow(
             state = listState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 4.dp),
+            contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(32.dp),
         ) {
             items(pages.size) { pageIndex ->
-                Column(Modifier.fillParentMaxWidth()) {
+                Column(
+                    Modifier
+                        .fillParentMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                ) {
                     val page = pages[pageIndex]
                     for (row in 0 until 2) {
                         Row(
-                            Modifier.fillMaxWidth().weight(1f, fill = false),
-                            horizontalArrangement = Arrangement.spacedBy(gap, Alignment.CenterHorizontally),
-                            verticalAlignment = Alignment.CenterVertically,
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(gap),
                         ) {
                             for (col in 0 until 5) {
                                 val item = page.getOrNull(row * 5 + col)
@@ -175,7 +178,9 @@ private fun TvPosterSection(
                                 }
                             }
                         }
+                        if (row == 0) Spacer(Modifier.height(gap))
                     }
+                    Spacer(Modifier.height(40.dp))
                 }
             }
         }
@@ -208,21 +213,19 @@ private fun TvPosterCard(card: MediaCard, width: androidx.compose.ui.unit.Dp, on
     val focused by interaction.collectIsFocusedAsState()
     val scale by animateFloatAsState(if (focused) 1.05f else 1f, tween(120), label = "tv-poster")
     val shape = RoundedCornerShape(14.dp)
-    Column(
+    Box(
         Modifier
             .width(width)
             .graphicsLayer { scaleX = scale; scaleY = scale }
             .shadow(if (focused) 16.dp else 0.dp, shape)
             .clip(shape)
             .border(if (focused) 2.dp else 0.dp, Color.White.copy(alpha = 0.35f), shape)
-            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(4.dp),
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
     ) {
         Box(
             Modifier
                 .fillMaxWidth()
                 .aspectRatio(2f / 3f)
-                .clip(RoundedCornerShape(10.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
             if (!card.posterUrl.isNullOrBlank()) {
@@ -235,17 +238,44 @@ private fun TvPosterCard(card: MediaCard, width: androidx.compose.ui.unit.Dp, on
                     modifier = Modifier.fillMaxSize(),
                 )
             }
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, Color(0x33000000), Color(0xE6000000)),
+                        ),
+                    ),
+            )
+            Column(
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = card.title.ifBlank { "未命名" },
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                card.subtitle?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        text = it,
+                        color = Color.White.copy(alpha = 0.75f),
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = card.title.ifBlank { "未命名" },
-            color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 13.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 @Composable

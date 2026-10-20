@@ -37,6 +37,11 @@ class AppHomeDataSource : HomeDataSource {
             }
             if (vods.isNotEmpty()) add(HomeSection("推荐", vods))
         }
-        HomeFeed(hero = hero, sections = sections, categories = categories)
+        HomeFeed(
+            hero = hero,
+            sections = sections,
+            categories = categories,
+            siteName = site.name.orEmpty(),
+        )
     }
 }

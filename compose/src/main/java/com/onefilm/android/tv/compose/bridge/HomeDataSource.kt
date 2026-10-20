@@ -19,6 +19,7 @@ data class HomeFeed(
     val hero: List<MediaCard>,
     val sections: List<HomeSection>,
     val categories: List<HomeCategory> = emptyList(),
+    val siteName: String = "",
 )
 
 interface HomeDataSource {

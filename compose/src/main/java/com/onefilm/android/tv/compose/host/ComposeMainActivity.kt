@@ -135,6 +135,7 @@ class ComposeMainActivity : ComponentActivity() {
                             currentRoute = route,
                             categories = feed?.categories.orEmpty(),
                             notice = null,
+                            siteName = feed?.siteName,
                             onNavigate = { target ->
                                 navController.navigate(target) {
                                     launchSingleTop = true
