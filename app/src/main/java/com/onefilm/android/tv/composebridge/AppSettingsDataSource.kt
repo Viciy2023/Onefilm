@@ -43,6 +43,8 @@ class AppSettingsDataSource : SettingsDataSource {
         subtitleColorLabel = subtitleColors.firstOrNull {
             it.second == SubtitleSetting.getTextBaseColor()
         }?.first ?: "自定义",
+        subtitleEdgeWidth = SubtitleSetting.getEdgeWidth(),
+        danmakuBlockWords = com.github.catvod.utils.Prefers.getString("compose_danmaku_block_words"),
         danmakuShow = DanmakuSetting.isShow(),
         danmakuScale = DanmakuSetting.getTextScale(),
         danmakuTransparency = DanmakuSetting.getTransparency(),
@@ -113,6 +115,14 @@ class AppSettingsDataSource : SettingsDataSource {
 
     override fun setSubtitlePosition(position: Float) {
         SubtitleSetting.putPosition(position)
+    }
+
+    override fun setSubtitleEdgeWidth(width: Float) {
+        SubtitleSetting.putEdgeWidth(width)
+    }
+
+    override fun setDanmakuBlockWords(words: String) {
+        com.github.catvod.utils.Prefers.put("compose_danmaku_block_words", words)
     }
 
     override fun cycleSubtitleColor() {

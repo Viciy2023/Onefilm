@@ -38,6 +38,7 @@ object DanmakuController {
     var textScale by mutableFloatStateOf(1f)
         private set
     private var durationMs by mutableLongStateOf(8000L)
+    private var blockWords: List<String> = emptyList()
 
     private fun syncSettings() {
         val config = ComposeDependencies.danmakuDataSource.displayConfig()
@@ -46,6 +47,7 @@ object DanmakuController {
         transparency = config.transparency
         densityLines = config.lines
         durationMs = config.durationMs
+        blockWords = config.blockWords
         applyConfig()
     }
 
@@ -92,9 +94,15 @@ object DanmakuController {
     fun attach(target: DanmakuView) {
         view = target
         syncSettings()
-        xml?.let { runCatching { target.setItems(DanmakuParser.parseXml(it)) } }
+        xml?.let { runCatching { target.setItems(parseFiltered(it)) } }
         target.setEnabled(enabled)
         target.setClock(lastPosition)
+    }
+
+    private fun parseFiltered(content: String): List<androidx.media3.ui.danmaku.DanmakuItem> {
+        val items = DanmakuParser.parseXml(content)
+        if (blockWords.isEmpty()) return items
+        return items.filter { item -> blockWords.none { word -> item.text.contains(word) } }
     }
 
     fun detach(target: DanmakuView) {
@@ -156,7 +164,7 @@ object DanmakuController {
             loadedKey = key
             status = "开"
             view?.let { target ->
-                runCatching { target.setItems(DanmakuParser.parseXml(content)) }
+                runCatching { target.setItems(parseFiltered(content)) }
                 target.setEnabled(true)
                 target.setClock(lastPosition)
             }

@@ -56,6 +56,8 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
     var showQr by remember { mutableStateOf(false) }
     var qrUrl by remember { mutableStateOf("") }
     var qrBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var editBlockWords by remember { mutableStateOf(false) }
+    var blockWordsDraft by remember { mutableStateOf("") }
 
     fun refresh(change: SettingsDataSource.() -> Unit) {
         dataSource.change()
@@ -218,6 +220,12 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
                 },
             ) { index -> refresh { setSubtitlePosition(listOf(-5f, 0f, 5f, 10f, 20f)[index]) } }
             ActionRow("字幕颜色", snapshot.subtitleColorLabel) { refresh { cycleSubtitleColor() } }
+            ChoiceRow(
+                title = "字幕描边",
+                options = listOf(0f, 1f, 2f, 4f).map {
+                    "%.0f".format(it) to (snapshot.subtitleEdgeWidth == it)
+                },
+            ) { index -> refresh { setSubtitleEdgeWidth(listOf(0f, 1f, 2f, 4f)[index]) } }
         }
 
         Section("弹幕设置") {
@@ -246,6 +254,10 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
                 title = "滚动行数",
                 options = listOf(4, 8, 12).map { "$it 行" to (snapshot.danmakuLines == it) },
             ) { index -> refresh { setDanmakuLines(listOf(4, 8, 12)[index]) } }
+            ActionRow("弹幕屏蔽词", snapshot.danmakuBlockWords.ifBlank { "未设置" }) {
+                blockWordsDraft = snapshot.danmakuBlockWords
+                editBlockWords = true
+            }
         }
 
         Section("预加载设置") {
@@ -286,6 +298,34 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
         }
 
         Spacer(Modifier.height(24.dp))
+    }
+
+    if (editBlockWords) {
+        AlertDialog(
+            onDismissRequest = { editBlockWords = false },
+            title = { Text("弹幕屏蔽词") },
+            text = {
+                OutlinedTextField(
+                    value = blockWordsDraft,
+                    onValueChange = { blockWordsDraft = it },
+                    singleLine = false,
+                    label = { Text("多个关键词用逗号分隔") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        dataSource.setDanmakuBlockWords(blockWordsDraft.trim())
+                        snapshot = dataSource.load()
+                        editBlockWords = false
+                    },
+                ) { Text("保存") }
+            },
+            dismissButton = {
+                TextButton(onClick = { editBlockWords = false }) { Text("取消") }
+            },
+        )
     }
 
     if (showQr) {

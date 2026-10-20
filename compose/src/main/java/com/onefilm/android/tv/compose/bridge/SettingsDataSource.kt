@@ -16,6 +16,8 @@ data class SettingsSnapshot(
     val subtitleScale: Float,
     val subtitlePosition: Float,
     val subtitleColorLabel: String,
+    val subtitleEdgeWidth: Float,
+    val danmakuBlockWords: String,
     val danmakuShow: Boolean,
     val danmakuScale: Float,
     val danmakuTransparency: Float,
@@ -52,6 +54,8 @@ interface SettingsDataSource {
     fun setSubtitleStyle(style: Int)
     fun setSubtitleScale(scale: Float)
     fun setSubtitlePosition(position: Float)
+    fun setSubtitleEdgeWidth(width: Float)
+    fun setDanmakuBlockWords(words: String)
     fun cycleSubtitleColor()
 
     fun setDanmakuShow(show: Boolean)

@@ -38,5 +38,9 @@ class AppDanmakuDataSource : DanmakuDataSource {
         transparency = DanmakuSetting.getTransparency(),
         durationMs = DanmakuSetting.getDurationMs(),
         lines = DanmakuSetting.getMaxScrollLines(),
+        blockWords = (com.github.catvod.utils.Prefers.getString("compose_danmaku_block_words") ?: "")
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() },
     )
 }

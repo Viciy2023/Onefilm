@@ -8,6 +8,7 @@ data class DanmakuDisplayConfig(
     val transparency: Float,
     val durationMs: Long,
     val lines: Int,
+    val blockWords: List<String>,
 )
 
 /** 旧版弹幕接口桥接：搜索弹幕源并下载弹幕文件内容。 */
