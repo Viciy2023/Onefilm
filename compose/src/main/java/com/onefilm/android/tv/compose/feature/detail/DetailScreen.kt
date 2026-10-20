@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -48,6 +49,7 @@ fun DetailScreen(
     onExpandPlayer: () -> Unit = {},
     previewTitle: String? = null,
     previewPoster: String? = null,
+    playingEpisodeUrl: String? = null,
 ) {
     when (state) {
         DetailUiState.Loading -> {
@@ -82,6 +84,7 @@ fun DetailScreen(
             onToggleFavorite,
             playingUrl,
             onExpandPlayer,
+            playingEpisodeUrl,
         )
     }
 }
@@ -163,6 +166,7 @@ private fun DetailContent(
     onToggleFavorite: () -> Unit,
     playingUrl: String?,
     onExpandPlayer: () -> Unit,
+    playingEpisodeUrl: String?,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -260,12 +264,19 @@ private fun DetailContent(
                         contentPadding = PaddingValues(horizontal = 16.dp),
                     ) {
                         items(flag.episodes) { episode ->
+                            val playing = playingEpisodeUrl != null && episode.url == playingEpisodeUrl
                             Text(
                                 text = episode.name.ifBlank { "未命名" },
                                 style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (playing) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (playing) MaterialTheme.colorScheme.background
+                                else MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(16.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .background(
+                                        if (playing) MaterialTheme.colorScheme.onSurface
+                                        else MaterialTheme.colorScheme.surfaceVariant,
+                                    )
                                     .clickable { onPlay(flag.name, episode.url) }
                                     .padding(horizontal = 14.dp, vertical = 8.dp),
                             )

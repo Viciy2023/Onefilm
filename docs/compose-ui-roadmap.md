@@ -28,6 +28,7 @@
 - [x] 分类筛选真实条件与分页
 - [ ] 来源页换源与旧播放器兜底策略对齐
 - [x] 详情页播放改为进入 Compose 播放器（取消旧 Activity 兜底）
+- [x] 剧集当前播放高亮（手动选集/自动下一集同步）
 - [x] 榜单/推荐卡片空 ID、`msearch:` ID 点击转为同款并行流式搜索
 - [x] 搜索会话跨详情保留；离开搜索相关页面才取消
 - [x] 海报 `@Referer` / `@User-Agent` 头解析与加载
@@ -49,7 +50,7 @@
 - [ ] 手机手势：双击播放、左右进度、上下亮度/音量
 - [x] 字幕轨道切换 + 字幕偏移（接入旧 PlayerManager）
 - [x] 音轨/视轨切换（接入旧 TrackUtil/PlayerManager）
-- [x] 弹幕开关、密度、透明度、字号 + DanmakuApi/DanmakuView
+- [x] 弹幕开关、密度、透明度、字号统一收入「弹幕设置」上拉菜单
 - [x] 播放引擎切换（Exo / MPV，复用旧 PlayerManager）
 - [x] PiP / 后台播放 / MediaSession（已绑定 PlaybackService）
 - [x] 硬解/软解、Surface/Texture、画面适应、片头/片尾、字幕/音画偏移

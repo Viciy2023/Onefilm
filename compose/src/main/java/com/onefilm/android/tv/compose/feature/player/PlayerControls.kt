@@ -213,6 +213,7 @@ fun PlayerControls(
     var showEpisodes by remember { mutableStateOf(false) }
     var showMore by remember { mutableStateOf(false) }
     var showDlna by remember { mutableStateOf(false) }
+    var showDanmakuPanel by remember { mutableStateOf(false) }
     var dlnaDevices by remember { mutableStateOf<List<DlnaDevice>>(emptyList()) }
     var dlnaLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -233,23 +234,7 @@ fun PlayerControls(
                 if (PlaybackSession.repeatMode == Player.REPEAT_MODE_ONE) "循环 开" else "循环 关",
             ) { PlaybackSession.toggleRepeat() },
         )
-        add(MenuEntry(if (danmakuOn) "弹幕 开" else "弹幕 关") {
-            danmakuOn = !danmakuOn
-            DanmakuController.updateEnabled(danmakuOn)
-            PlaybackSession.legacyPlayer?.setDanmakuEnabled(danmakuOn)
-            if (danmakuOn) {
-                DanmakuController.ensureLoaded(
-                    context,
-                    danmakuKey,
-                    ComposeDependencies.danmakuDataSource,
-                )
-            }
-        })
-        add(MenuEntry("弹幕密度 ${DanmakuController.densityLines}") { DanmakuController.cycleDensity() })
-        add(MenuEntry("弹幕透明 ${(DanmakuController.transparency * 100).toInt()}%") {
-            DanmakuController.cycleTransparency()
-        })
-        add(MenuEntry("弹幕字号 ${DanmakuController.textScale}x") { DanmakuController.cycleScale() })
+        add(MenuEntry("弹幕设置") { showDanmakuPanel = true })
         add(MenuEntry("画中画") {
             val activity = context.findActivity()
             if (activity != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -321,6 +306,7 @@ fun PlayerControls(
                 detectTapGestures(
                     onTap = {
                         when {
+                            showDanmakuPanel -> showDanmakuPanel = false
                             showEpisodes -> showEpisodes = false
                             showMore -> showMore = false
                             else -> controlsVisible = !controlsVisible
@@ -531,6 +517,29 @@ fun PlayerControls(
                 },
             )
         }
+
+        AnimatedVisibility(
+            visible = showDanmakuPanel,
+            enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it / 2 }) + fadeOut(),
+        ) {
+            DanmakuSettingsPopup(
+                danmakuOn = danmakuOn,
+                onToggle = {
+                    danmakuOn = !danmakuOn
+                    DanmakuController.updateEnabled(danmakuOn)
+                    PlaybackSession.legacyPlayer?.setDanmakuEnabled(danmakuOn)
+                    if (danmakuOn) {
+                        DanmakuController.ensureLoaded(
+                            context,
+                            danmakuKey,
+                            ComposeDependencies.danmakuDataSource,
+                        )
+                    }
+                },
+                onDismiss = { showDanmakuPanel = false },
+            )
+        }
     }
 }
 
@@ -714,6 +723,56 @@ private fun MenuText(entry: MenuEntry, width: Dp) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+@Composable
+private fun DanmakuSettingsPopup(
+    danmakuOn: Boolean,
+    onToggle: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Box(
+        Modifier.fillMaxSize().padding(end = 14.dp, bottom = 64.dp),
+        contentAlignment = Alignment.BottomEnd,
+    ) {
+        Column(
+            Modifier
+                .widthIn(max = 300.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(Panel)
+                .padding(10.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("弹幕设置", color = Ink, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.weight(1f))
+                TextAction("关闭", onClick = onDismiss)
+            }
+            Spacer(Modifier.height(6.dp))
+            FlatTile(
+                text = if (danmakuOn) "弹幕 开" else "弹幕 关",
+                emphasis = danmakuOn,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                onClick = onToggle,
+            )
+            FlatTile(
+                text = "密度 ${DanmakuController.densityLines} 行",
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            ) { DanmakuController.cycleDensity() }
+            FlatTile(
+                text = "透明度 ${(DanmakuController.transparency * 100).toInt()}%",
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            ) { DanmakuController.cycleTransparency() }
+            FlatTile(
+                text = "字号 ${DanmakuController.textScale}x",
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            ) { DanmakuController.cycleScale() }
+            FlatTile(
+                text = "屏蔽词 未设置",
+                enabled = false,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+            ) {}
+        }
     }
 }
 

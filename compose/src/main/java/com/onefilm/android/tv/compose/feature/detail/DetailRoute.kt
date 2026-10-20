@@ -105,6 +105,11 @@ fun DetailRoute(
         onExpandPlayer = onEnterFullscreen,
         previewTitle = previewTitle,
         previewPoster = previewPoster,
+        playingEpisodeUrl = if (PlaybackSession.siteKey == key && PlaybackSession.vodId == id) {
+            PlaybackSession.currentEpisode?.url
+        } else {
+            null
+        },
         favorite = favorite,
         onToggleFavorite = {
             val info = (state as? DetailUiState.Content)?.info
