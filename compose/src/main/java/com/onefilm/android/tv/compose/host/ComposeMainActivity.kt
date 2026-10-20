@@ -31,8 +31,10 @@ import com.onefilm.android.tv.compose.feature.search.SearchSession
 import com.onefilm.android.tv.compose.feature.source.SourceRoute
 import com.onefilm.android.tv.compose.feature.source.ResolveRoute
 import com.onefilm.android.tv.compose.feature.home.HomeScreen
+import com.onefilm.android.tv.compose.feature.home.HomeUiState
 import com.onefilm.android.tv.compose.feature.home.HomeViewModel
 import com.onefilm.android.tv.compose.navigation.AdaptiveNavigation
+import com.onefilm.android.tv.compose.navigation.TvHeader
 import com.onefilm.android.tv.compose.navigation.OneFilmNavHost
 import com.onefilm.android.tv.compose.navigation.Routes
 
@@ -127,12 +129,34 @@ class ComposeMainActivity : ComponentActivity() {
                             }
                         }
                     },
+                    tvHeader = {
+                        val feed = (homeState as? HomeUiState.Content)?.feed
+                        TvHeader(
+                            currentRoute = route,
+                            categories = feed?.categories.orEmpty(),
+                            notice = null,
+                            onNavigate = { target ->
+                                navController.navigate(target) {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            },
+                            onLive = { ComposeDependencies.liveLauncher.open(this@ComposeMainActivity) },
+                            onConfig = { navController.navigate(Routes.SETTINGS) },
+                            onLine = { navController.navigate(Routes.SETTINGS) },
+                            onNetwork = { navController.navigate(Routes.SETTINGS) },
+                            onCategory = { category ->
+                                navController.navigate(Routes.category(category.key, category.id, category.name))
+                            },
+                        )
+                    },
                 ) {
                     OneFilmNavHost(
                         navController = navController,
                         homeContent = {
                             HomeScreen(
                                 state = homeState,
+                                isTv = isTv,
                                 onRetry = homeViewModel::retry,
                                 onCardClick = { card ->
                                     if (card.key.isNotBlank() && card.id.isNotBlank() &&

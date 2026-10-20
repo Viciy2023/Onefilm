@@ -1,28 +1,45 @@
 package com.onefilm.android.tv.compose.feature.home
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.onefilm.android.tv.compose.bridge.HomeCategory
 import com.onefilm.android.tv.compose.bridge.MediaCard
@@ -36,12 +53,14 @@ fun HomeScreen(
     onRetry: () -> Unit,
     onCardClick: (MediaCard) -> Unit,
     onCategoryClick: (HomeCategory) -> Unit = {},
+    isTv: Boolean = false,
 ) {
     when (state) {
         HomeUiState.Loading -> CenterMessage("正在加载") { CircularProgressIndicator() }
         HomeUiState.Empty -> StatusMessage("暂无内容", onRetry)
         is HomeUiState.Error -> StatusMessage(state.message, onRetry)
-        is HomeUiState.Content -> HomeContent(state, onCardClick, onCategoryClick)
+        is HomeUiState.Content ->
+            if (isTv) TvHomeContent(state, onCardClick) else HomeContent(state, onCardClick, onCategoryClick)
     }
 }
 
@@ -102,6 +121,136 @@ private fun MediaCard.toPosterItem() = PosterItem(
     posterUrl = posterUrl,
     subtitle = subtitle,
 )
+
+@Composable
+private fun TvHomeContent(
+    state: HomeUiState.Content,
+    onCardClick: (MediaCard) -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        state.feed.sections.forEachIndexed { index, section ->
+            item(key = "tv-section:$index:${section.title}") {
+                TvPosterSection(section.title, section.items, onCardClick)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TvPosterSection(
+    title: String,
+    items: List<MediaCard>,
+    onCardClick: (MediaCard) -> Unit,
+) {
+    if (items.isEmpty()) return
+    val pages = items.chunked(10)
+    val listState = rememberLazyListState()
+    Column {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(horizontal = 48.dp, vertical = 4.dp),
+        )
+        LazyRow(
+            state = listState,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 48.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.spacedBy(32.dp),
+        ) {
+            items(pages.size) { pageIndex ->
+                Column(Modifier.fillParentMaxWidth()) {
+                    val page = pages[pageIndex]
+                    for (row in 0 until 2) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        ) {
+                            for (col in 0 until 5) {
+                                val item = page.getOrNull(row * 5 + col)
+                                if (item != null) {
+                                    TvPosterCard(item) { onCardClick(item) }
+                                } else {
+                                    Spacer(Modifier.width(112.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (pages.size > 1) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                val current = listState.firstVisibleItemIndex
+                repeat(pages.size) { index ->
+                    Box(
+                        Modifier
+                            .padding(horizontal = 4.dp)
+                            .width(if (index == current) 16.dp else 6.dp)
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(3.dp))
+                            .background(
+                                if (index == current) MaterialTheme.colorScheme.onBackground
+                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
+                            ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TvPosterCard(card: MediaCard, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val scale by animateFloatAsState(if (focused) 1.05f else 1f, tween(120), label = "tv-poster")
+    val shape = RoundedCornerShape(14.dp)
+    Column(
+        Modifier
+            .width(112.dp)
+            .graphicsLayer { scaleX = scale; scaleY = scale }
+            .shadow(if (focused) 16.dp else 0.dp, shape)
+            .clip(shape)
+            .border(if (focused) 2.dp else 0.dp, Color.White.copy(alpha = 0.35f), shape)
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .padding(4.dp),
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .aspectRatio(2f / 3f)
+                .clip(RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+        ) {
+            if (!card.posterUrl.isNullOrBlank()) {
+                androidx.compose.foundation.Image(
+                    painter = coil.compose.rememberAsyncImagePainter(
+                        com.onefilm.android.tv.compose.design.parseImageSource(card.posterUrl)?.url,
+                    ),
+                    contentDescription = card.title,
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = card.title.ifBlank { "未命名" },
+            color = MaterialTheme.colorScheme.onBackground,
+            fontSize = 12.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
 
 @Composable
 private fun CategoryRail(

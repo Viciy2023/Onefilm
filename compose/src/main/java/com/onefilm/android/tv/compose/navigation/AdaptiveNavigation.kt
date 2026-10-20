@@ -27,6 +27,7 @@ fun AdaptiveNavigation(
     currentRoute: String?,
     onNavigate: (String) -> Unit,
     showTabs: Boolean = true,
+    tvHeader: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val items = listOf(
@@ -43,7 +44,9 @@ fun AdaptiveNavigation(
     ) {
         if (isTv) {
             Column(Modifier.fillMaxSize()) {
-                if (showTabs) {
+                if (tvHeader != null) {
+                    tvHeader()
+                } else if (showTabs) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
