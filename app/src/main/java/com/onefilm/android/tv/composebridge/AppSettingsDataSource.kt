@@ -212,8 +212,16 @@ class AppSettingsDataSource : SettingsDataSource {
                 name = config.desc.orEmpty().ifBlank { config.url.orEmpty() },
                 url = config.url.orEmpty(),
                 current = config.url.orEmpty() == currentUrl,
+                type = type,
             )
         }
+    }
+
+    override fun allConfigLines(): List<ConfigLine> =
+        listOf(0, 1).flatMap { configLines(it) }
+
+    override fun deleteConfigLine(type: Int, url: String) {
+        Config.delete(url, type)
     }
 
     override fun cycleDoh() {

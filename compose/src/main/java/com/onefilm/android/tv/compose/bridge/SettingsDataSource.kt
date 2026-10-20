@@ -41,6 +41,7 @@ data class ConfigLine(
     val name: String,
     val url: String,
     val current: Boolean,
+    val type: Int = 0,
 )
 
 /** Compose 设置页与旧 *Setting 类的桥接。 */
@@ -84,6 +85,8 @@ interface SettingsDataSource {
         onResult: (Boolean, String) -> Unit,
     )
     fun configLines(type: Int): List<ConfigLine>
+    fun allConfigLines(): List<ConfigLine>
+    fun deleteConfigLine(type: Int, url: String)
     fun cycleDoh()
     fun setIncognito(enabled: Boolean)
     fun configPushUrl(): String
