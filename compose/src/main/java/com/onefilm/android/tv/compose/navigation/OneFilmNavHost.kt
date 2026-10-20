@@ -6,6 +6,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import com.onefilm.android.tv.compose.feature.library.LibraryScreen
 import com.onefilm.android.tv.compose.feature.settings.SettingsScreen
 
@@ -31,7 +32,7 @@ fun OneFilmNavHost(
             searchContent(entry.arguments?.getString("q").orEmpty())
         }
         composable(Routes.LIBRARY) { libraryContent() }
-        composable(Routes.SETTINGS) { SettingsScreen() }
+        composable(Routes.SETTINGS) { SettingsScreen(ComposeDependencies.settingsDataSource) }
         composable(Routes.PLAYER) { playerContent() }
         composable(
             route = Routes.SOURCES,

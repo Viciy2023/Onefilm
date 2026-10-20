@@ -1,0 +1,159 @@
+package com.onefilm.android.tv.composebridge
+
+import androidx.media3.common.DolbyVisionOutputPolicy
+import com.onefilm.android.tv.BuildConfig
+import com.onefilm.android.tv.api.config.VodConfig
+import com.onefilm.android.tv.compose.bridge.SettingsDataSource
+import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
+import com.onefilm.android.tv.setting.DanmakuSetting
+import com.onefilm.android.tv.setting.DecodeSetting
+import com.onefilm.android.tv.setting.PlayerSetting
+import com.onefilm.android.tv.setting.PreloadSetting
+import com.onefilm.android.tv.setting.Setting
+import com.onefilm.android.tv.setting.SubtitleSetting
+
+class AppSettingsDataSource : SettingsDataSource {
+
+    private val subtitleColors = listOf(
+        "白" to SubtitleSetting.SUBTITLE_COLOR_WHITE,
+        "黄" to SubtitleSetting.SUBTITLE_COLOR_YELLOW,
+        "青" to SubtitleSetting.SUBTITLE_COLOR_CYAN,
+        "绿" to SubtitleSetting.SUBTITLE_COLOR_GREEN,
+    )
+
+    override fun load(): SettingsSnapshot = SettingsSnapshot(
+        engineMpv = PlayerSetting.isMpv(),
+        background = PlayerSetting.getBackground(),
+        bufferSeconds = PlayerSetting.getBuffer(),
+        renderTexture = PlayerSetting.getRender() == PlayerSetting.RENDER_TEXTURE,
+        tunnel = DecodeSetting.isTunnel(),
+        audioPassThrough = DecodeSetting.isAudioPassThrough(),
+        audioPrefer = DecodeSetting.isAudioPrefer(),
+        videoPrefer = DecodeSetting.isVideoPrefer(),
+        dvPolicyLabel = dolbyLabel(DecodeSetting.getDolbyVisionOutputPolicy()),
+        subtitleStyle = SubtitleSetting.getStyleMode(),
+        subtitleScale = SubtitleSetting.getScale(),
+        subtitlePosition = SubtitleSetting.getPosition(),
+        subtitleColorLabel = subtitleColors.firstOrNull {
+            it.second == SubtitleSetting.getTextBaseColor()
+        }?.first ?: "自定义",
+        danmakuShow = DanmakuSetting.isShow(),
+        danmakuScale = DanmakuSetting.getTextScale(),
+        danmakuTransparency = DanmakuSetting.getTransparency(),
+        danmakuDurationMs = DanmakuSetting.getDurationMs(),
+        danmakuLines = DanmakuSetting.getMaxScrollLines(),
+        preloadEnabled = PreloadSetting.isEnabled(),
+        preloadNext = PreloadSetting.isNextEpisodeEnabled(),
+        preloadThreads = PreloadSetting.getThreads(),
+        preloadSizeMb = PreloadSetting.getSizeMb(),
+        ua = Setting.getUa(),
+        version = BuildConfig.VERSION_NAME,
+        configUrl = VodConfig.getUrl().orEmpty(),
+    )
+
+    override fun setEngine(mpv: Boolean) {
+        PlayerSetting.putEngine(if (mpv) PlayerSetting.ENGINE_MPV else PlayerSetting.ENGINE_EXO)
+    }
+
+    override fun setBackground(mode: Int) {
+        PlayerSetting.putBackground(mode)
+    }
+
+    override fun setBufferSeconds(seconds: Int) {
+        PlayerSetting.putBuffer(seconds)
+    }
+
+    override fun setRenderTexture(texture: Boolean) {
+        PlayerSetting.putRender(if (texture) PlayerSetting.RENDER_TEXTURE else PlayerSetting.RENDER_SURFACE)
+    }
+
+    override fun setTunnel(enabled: Boolean) {
+        DecodeSetting.putTunnel(enabled)
+    }
+
+    override fun setAudioPassThrough(enabled: Boolean) {
+        DecodeSetting.putAudioPassThrough(enabled)
+    }
+
+    override fun setAudioPrefer(enabled: Boolean) {
+        DecodeSetting.putAudioPrefer(enabled)
+    }
+
+    override fun setVideoPrefer(enabled: Boolean) {
+        DecodeSetting.putVideoPrefer(enabled)
+    }
+
+    override fun cycleDolbyVisionPolicy() {
+        val next = when (DecodeSetting.getDolbyVisionOutputPolicy()) {
+            DolbyVisionOutputPolicy.AUTO -> DolbyVisionOutputPolicy.ASSUME_SUPPORTED
+            DolbyVisionOutputPolicy.ASSUME_SUPPORTED -> DolbyVisionOutputPolicy.ASSUME_UNSUPPORTED
+            else -> DolbyVisionOutputPolicy.AUTO
+        }
+        DecodeSetting.putDolbyVisionOutputPolicy(next)
+    }
+
+    override fun setSubtitleStyle(style: Int) {
+        SubtitleSetting.putStyleMode(style)
+    }
+
+    override fun setSubtitleScale(scale: Float) {
+        SubtitleSetting.putScale(scale)
+    }
+
+    override fun setSubtitlePosition(position: Float) {
+        SubtitleSetting.putPosition(position)
+    }
+
+    override fun cycleSubtitleColor() {
+        val current = SubtitleSetting.getTextBaseColor()
+        val index = subtitleColors.indexOfFirst { it.second == current }
+        val next = subtitleColors[(index + 1).takeIf { it >= 0 }?.mod(subtitleColors.size) ?: 0]
+        SubtitleSetting.putTextColor(next.second)
+    }
+
+    override fun setDanmakuShow(show: Boolean) {
+        DanmakuSetting.putShow(show)
+    }
+
+    override fun setDanmakuScale(scale: Float) {
+        DanmakuSetting.putTextScale(scale)
+    }
+
+    override fun setDanmakuTransparency(value: Float) {
+        DanmakuSetting.putTransparency(value)
+    }
+
+    override fun setDanmakuDuration(ms: Long) {
+        DanmakuSetting.putDurationMs(ms)
+    }
+
+    override fun setDanmakuLines(lines: Int) {
+        DanmakuSetting.putMaxScrollLines(lines)
+    }
+
+    override fun setPreloadEnabled(enabled: Boolean) {
+        PreloadSetting.putEnabled(enabled)
+    }
+
+    override fun setPreloadNext(enabled: Boolean) {
+        PreloadSetting.putNextEpisodeEnabled(enabled)
+    }
+
+    override fun setPreloadThreads(threads: Int) {
+        PreloadSetting.putThreads(threads)
+    }
+
+    override fun setPreloadSizeMb(sizeMb: Int) {
+        PreloadSetting.putSizeMb(sizeMb)
+    }
+
+    override fun resetUa() {
+        Setting.putUa("")
+    }
+
+    private fun dolbyLabel(mode: Int): String = when (mode) {
+        DolbyVisionOutputPolicy.ASSUME_SUPPORTED -> "强制支持"
+        DolbyVisionOutputPolicy.ASSUME_UNSUPPORTED -> "强制不支持"
+        else -> "自动"
+    }
+}
