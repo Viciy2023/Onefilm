@@ -2,8 +2,11 @@ package com.onefilm.android.tv.compose.feature.config
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +18,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -78,7 +83,7 @@ fun ConfigScreen(
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 6.dp,
         ) {
-            Column(Modifier.padding(horizontal = 14.dp, vertical = 8.dp)) {
+            Column(Modifier.padding(horizontal = 8.dp, vertical = 8.dp)) {
                 Text(
                     text = "壹影提示：第1次使用点配置点储存权限再点确定，或者手机浏览器直接访问 ${pushUrl.ifBlank { "（推送服务未启动）" }}",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -98,7 +103,7 @@ fun ConfigScreen(
                                 bitmap = it.asImageBitmap(),
                                 contentDescription = "配置二维码",
                                 contentScale = ContentScale.Fit,
-                                modifier = Modifier.size(100.dp),
+                                modifier = Modifier.fillMaxWidth().aspectRatio(1f),
                             )
                         } ?: Text("二维码生成失败", fontSize = 14.sp)
                     }
@@ -131,20 +136,22 @@ fun ConfigScreen(
                     }
                 }
                 Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    CompactInput(
                         value = name,
+                        hint = "线路名称",
                         onValueChange = { name = it },
-                        singleLine = true,
-                        placeholder = { Text("线路名称", fontSize = 14.sp) },
-                        modifier = Modifier.weight(0.34f).height(52.dp),
+                        modifier = Modifier.weight(0.34f),
                     )
-                    OutlinedTextField(
+                    CompactInput(
                         value = url,
+                        hint = "接口 URL",
                         onValueChange = { url = it },
-                        singleLine = true,
-                        placeholder = { Text("接口 URL", fontSize = 14.sp) },
-                        modifier = Modifier.weight(0.44f).height(52.dp),
+                        modifier = Modifier.weight(0.44f),
                     )
                     Button(
                         onClick = {
@@ -160,12 +167,13 @@ fun ConfigScreen(
                             }
                         },
                         enabled = !loading,
-                        modifier = Modifier.height(52.dp).width(132.dp),
+                        modifier = Modifier.height(38.dp).width(106.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                     ) {
                         if (loading) {
-                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                            CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
                         } else {
-                            Text("保存并加载", fontSize = 14.sp)
+                            Text("保存并加载", fontSize = 12.sp)
                         }
                     }
                 }
@@ -180,6 +188,34 @@ fun ConfigScreen(
             }
         }
     }
+}
+
+@Composable
+private fun CompactInput(
+    value: String,
+    hint: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        textStyle = TextStyle(fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface),
+        modifier = modifier
+            .height(38.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.45f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 9.dp),
+        decorationBox = { inner ->
+            androidx.compose.foundation.layout.Box(contentAlignment = Alignment.CenterStart) {
+                if (value.isBlank()) {
+                    Text(hint, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                inner()
+            }
+        },
+    )
 }
 
 @Composable
