@@ -167,6 +167,9 @@ class AppSettingsDataSource : SettingsDataSource {
         val callback = object : Callback() {
             override fun success() {
                 config.update()
+                if (type == 1) {
+                    com.github.catvod.utils.Prefers.put("compose_live_url", url)
+                }
                 App.post { onResult(true, "") }
             }
 

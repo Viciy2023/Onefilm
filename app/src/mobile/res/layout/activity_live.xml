@@ -19,7 +19,9 @@
             style="@style/Player.Live"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:surface_type="surface_view" />
+            android:background="@color/live_background"
+            app:shutter_background_color="@color/live_background"
+            app:surface_type="texture_view" />
 
         <include
             android:id="@+id/widget"

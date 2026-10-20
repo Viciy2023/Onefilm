@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
@@ -403,27 +404,34 @@ private fun ConfigRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, style = MaterialTheme.typography.bodyLarge)
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.width(8.dp))
         Text(
             value.ifBlank { "未配置" },
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = 240.dp),
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1f),
         )
-        Spacer(Modifier.width(10.dp))
-        Text(
-            text = "加载",
-            style = MaterialTheme.typography.labelLarge,
-            color = if (value.isNotBlank()) MaterialTheme.colorScheme.onSurface
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
+        Spacer(Modifier.width(8.dp))
+        Box(
+            Modifier
+                .width(56.dp)
+                .height(34.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                .clickable(enabled = value.isNotBlank(), onClick = onReload)
-                .padding(horizontal = 10.dp, vertical = 6.dp),
-        )
+                .clickable(enabled = value.isNotBlank(), onClick = onReload),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "加载",
+                style = MaterialTheme.typography.labelLarge,
+                color = if (value.isNotBlank()) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
     }
 }
 
