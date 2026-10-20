@@ -82,7 +82,7 @@ fun TvHeader(
             Text(
                 text = "ONEFILM",
                 color = TvInk,
-                fontSize = 28.sp,
+                fontSize = 34.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 3.sp,
             )
@@ -155,7 +155,7 @@ private fun TvNavTab(entry: TvNavEntry) {
             .background(if (entry.selected) TvInk else Color.Transparent)
             .border(if (focused) 2.dp else 0.dp, Color.White.copy(alpha = 0.35f), shape)
             .clickable(interactionSource = interaction, indication = null, onClick = entry.onClick)
-            .padding(horizontal = 18.dp, vertical = 9.dp),
+            .padding(horizontal = 22.dp, vertical = 11.dp),
     )
 }
 
@@ -174,6 +174,6 @@ private fun TvCategoryChip(category: HomeCategory, onClick: () -> Unit) {
             .background(if (focused) Color.White else TvSurface)
             .border(if (focused) 2.dp else 0.dp, Color.White.copy(alpha = 0.4f), shape)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 7.dp),
+            .padding(horizontal = 20.dp, vertical = 9.dp),
     )
 }

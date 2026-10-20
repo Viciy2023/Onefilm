@@ -39,6 +39,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -239,7 +240,9 @@ private fun TvPosterCard(card: MediaCard, width: androidx.compose.ui.unit.Dp, on
         Text(
             text = card.title.ifBlank { "未命名" },
             color = MaterialTheme.colorScheme.onBackground,
-            fontSize = 12.sp,
+            fontSize = 13.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
