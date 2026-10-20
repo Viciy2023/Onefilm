@@ -15,5 +15,6 @@ object ComposeDependencies {
     lateinit var danmakuDataSource: DanmakuDataSource
     lateinit var legacyPlayerFactory: LegacyPlayerFactory
     lateinit var settingsDataSource: SettingsDataSource
+    lateinit var liveLauncher: LiveLauncher
     var dlnaDataSource: DlnaDataSource? = null
 }

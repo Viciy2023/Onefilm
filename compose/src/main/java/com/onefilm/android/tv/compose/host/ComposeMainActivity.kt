@@ -116,9 +116,13 @@ class ComposeMainActivity : ComponentActivity() {
                     showTabs = route?.startsWith("detail") != true && route?.startsWith("sources") != true &&
                         route?.startsWith("resolve") != true && route?.startsWith("player") != true,
                     onNavigate = { target ->
-                        navController.navigate(target) {
-                            launchSingleTop = true
-                            restoreState = true
+                        if (target == Routes.LIVE) {
+                            ComposeDependencies.liveLauncher.open(this@ComposeMainActivity)
+                        } else {
+                            navController.navigate(target) {
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
                     },
                 ) {

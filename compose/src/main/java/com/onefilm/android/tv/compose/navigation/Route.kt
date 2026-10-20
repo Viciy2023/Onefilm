@@ -7,6 +7,7 @@ object Routes {
     const val SEARCH = "search"
     const val SEARCH_QUERY = "search?q={q}"
     const val LIBRARY = "library"
+    const val LIVE = "live"
     const val SETTINGS = "settings"
     const val DETAIL = "detail/{key}/{id}/{title}?poster={poster}"
     const val CATEGORY = "category/{key}/{tid}/{name}"

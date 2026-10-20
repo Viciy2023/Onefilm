@@ -11,6 +11,7 @@
 - [x] Bridge 体系（Home/Detail/Category/Search/Source/ComposeDependencies）
 - [x] Compose 宿主机 + Navigation Compose
 - [x] 手机底部 Tab / TV 顶部导航
+- [x] 直播入口：底部「直播」直接打开旧 LiveActivity，复用原版直播逻辑
 - [x] EntryActivity 启动路由与旧 UI 回退开关
 - [x] 首页（Hero + 分类横滑 + 继续观看 + 推荐）
 - [x] 分类页 + 筛选 + 分页

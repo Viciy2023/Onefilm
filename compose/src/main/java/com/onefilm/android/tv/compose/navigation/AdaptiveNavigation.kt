@@ -33,6 +33,7 @@ fun AdaptiveNavigation(
         Routes.HOME to "首页",
         Routes.SEARCH to "搜索",
         Routes.LIBRARY to "收藏",
+        Routes.LIVE to "直播",
         Routes.SETTINGS to "设置",
     )
     Surface(
