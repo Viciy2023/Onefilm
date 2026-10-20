@@ -163,9 +163,10 @@ class AppSettingsDataSource : SettingsDataSource {
     }
 
     override fun loadConfig(type: Int, url: String, onResult: (Boolean, String) -> Unit) {
-        val config = Config.create(type, url)
+        val config = Config.find(url, type)
         val callback = object : Callback() {
             override fun success() {
+                config.update()
                 App.post { onResult(true, "") }
             }
 
