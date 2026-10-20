@@ -10,6 +10,7 @@ object Routes {
     const val HISTORY = "history"
     const val CONFIG = "config"
     const val LINES = "lines"
+    const val NETDISK = "netdisk"
     const val LIVE = "live"
     const val SETTINGS = "settings"
     const val DETAIL = "detail/{key}/{id}/{title}?poster={poster}"

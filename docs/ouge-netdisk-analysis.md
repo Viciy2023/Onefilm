@@ -127,35 +127,44 @@ Authorization: Basic <base64(username:password)>
 - WebDAV 额外带 Basic Authorization
 - Alist 使用 `TVBOX_DRIVE` source key
 
-## 对 OneFilm 的结论
+## 改造前状态
 
-OneFilm 当前没有：
+改造前 OneFilm 没有：
 
 - `StorageDrive` 数据表
-- `DriveActivity`
-- Sardine/WebDAV 客户端
+- WebDAV 客户端
 - Alist `api/public/path` 客户端
-- `tvbox-drive://` 播放适配
+- 网盘播放适配
 
-因此当前导航里的「网盘」只能临时打开旧 `FileActivity`，这是本地文件选择器，不是网盘实现，必须替换。
+因此当时导航里的「网盘」临时打开了旧 `FileActivity`。本轮已替换为独立的 `Routes.NETDISK` 网盘页。
 
-## 建议接入顺序
+## OneFilm 已实现部分
 
-1. 新建 `NetdiskDrive` 数据模型与本地存储（Room 或 SharedPreferences JSON），保存 `type/name/configJson`。
-2. 实现 WebDAV 目录客户端：
-   - 优先复用 Sardine；若不想加依赖，用 OkHttp 发 `PROPFIND`，解析 `multistatus`。
-   - 支持 `url/initPath/username/password`。
-3. 实现 Alist 目录客户端：
-   - POST `{url}api/public/path`，请求体与欧歌一致。
-   - 支持 `url/initPath/password`。
-4. TV 端新增 `NetdiskScreen`：
-   - 存储空间列表
-   - 添加/编辑/删除 WebDAV、Alist
-   - 文件夹浏览与返回
-5. 文件点击接入现有播放链路：
-   - WebDAV 需要把 Basic Authorization 传给播放器
-   - Alist 需要保留 driveUrl 与路径，交给播放器解析
-6. 移除 `AppFileLauncher` 对 `FileActivity` 的绑定，改为 `Routes.NETDISK`。
+- `StorageDrive` Room 实体与 `StorageDriveDao`，数据库版本 35 → 36，新增 `StorageDrive` 表。
+- `AppNetdiskDataSource`：
+  - WebDAV：OkHttp `PROPFIND` + XML 解析 + Basic Auth
+  - Alist：`api/public/path` 列表，`api/fs/get` 解析 `raw_url`
+- `NetdiskScreen`：
+  - 网盘列表、添加/编辑/删除
+  - WebDAV / Alist 类型切换
+  - 文件夹进入与返回
+  - 文件点击后解析并进入播放器
+- 播放：WebDAV 直接播放 URL，并带 Basic Authorization header；Alist 使用 `raw_url` 直接播放。
+
+## 当前限制
+
+- 尚未做分页加载，Alist 一次取 100 条。
+- WebDAV PROPFIND 的根路径解析以常见服务器为准，特殊路径需要真机回归。
+- 还没有本地目录类型；当前只开放 WebDAV 与 Alist。
+- 真实 WebDAV/Alist 服务器未在本轮环境提供，网络层只做了编译与基础 UI 验证。
+
+## 后续优化
+
+1. Alist 目录分页，当前一次取 100 条。
+2. 本地目录类型，当前只开放 WebDAV 与 Alist。
+3. WebDAV 特殊根路径、反向代理、302 跳转的真机回归。
+4. 网盘播放历史、断点续播与封面。
+5. 删除已废弃的 `FileLauncher` 残留代码。
 
 ## 证据
 

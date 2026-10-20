@@ -24,6 +24,7 @@ import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.feature.category.CategoryRoute
 import com.onefilm.android.tv.compose.feature.detail.DetailRoute
 import com.onefilm.android.tv.compose.feature.library.LibraryRoute
+import com.onefilm.android.tv.compose.feature.player.PlaybackEpisode
 import com.onefilm.android.tv.compose.feature.player.PlaybackSession
 import com.onefilm.android.tv.compose.feature.player.PlayerRoute
 import com.onefilm.android.tv.compose.feature.search.SearchRoute
@@ -162,7 +163,7 @@ class ComposeMainActivity : ComponentActivity() {
                                 onLive = { ComposeDependencies.liveLauncher.open(this@ComposeMainActivity) },
                                 onConfig = { navController.navigate(Routes.CONFIG) },
                                 onLine = { navController.navigate(Routes.LINES) },
-                                onNetwork = { ComposeDependencies.fileLauncher.open(this@ComposeMainActivity) },
+                                onNetwork = { navController.navigate(Routes.NETDISK) },
                                 onCategory = { category ->
                                     navController.navigate(Routes.category(category.key, category.id, category.name))
                                 },
@@ -286,6 +287,28 @@ class ComposeMainActivity : ComponentActivity() {
                                     }
                                 },
                             )
+                        },
+                        netdiskContent = {
+                            com.onefilm.android.tv.compose.feature.netdisk.NetdiskScreen(
+                                dataSource = ComposeDependencies.netdiskDataSource,
+                            ) { playback, entry ->
+                                val name = entry.name.ifBlank { "网盘视频" }
+                                PlaybackSession.setQueue(
+                                    key = "_netdisk",
+                                    id = entry.path,
+                                    vodTitle = name,
+                                    vodPoster = null,
+                                    flag = "netdisk",
+                                    episodes = listOf(PlaybackEpisode(name, playback.url)),
+                                    index = 0,
+                                )
+                                PlaybackSession.play(
+                                    this@ComposeMainActivity,
+                                    playback.url,
+                                    headers = playback.headers,
+                                )
+                                navController.navigate(Routes.PLAYER)
+                            }
                         },
                         onConfigChanged = homeViewModel::retry,
                     )

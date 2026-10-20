@@ -13,6 +13,7 @@ import com.onefilm.android.tv.bean.History;
 import com.onefilm.android.tv.bean.Keep;
 import com.onefilm.android.tv.bean.Live;
 import com.onefilm.android.tv.bean.Site;
+import com.onefilm.android.tv.bean.StorageDrive;
 import com.onefilm.android.tv.bean.Track;
 import com.onefilm.android.tv.db.dao.ConfigDao;
 import com.onefilm.android.tv.db.dao.DeviceDao;
@@ -20,12 +21,13 @@ import com.onefilm.android.tv.db.dao.HistoryDao;
 import com.onefilm.android.tv.db.dao.KeepDao;
 import com.onefilm.android.tv.db.dao.LiveDao;
 import com.onefilm.android.tv.db.dao.SiteDao;
+import com.onefilm.android.tv.db.dao.StorageDriveDao;
 import com.onefilm.android.tv.db.dao.TrackDao;
 
-@Database(entities = {Keep.class, Site.class, Live.class, Track.class, Config.class, Device.class, History.class}, version = AppDatabase.VERSION)
+@Database(entities = {Keep.class, Site.class, Live.class, Track.class, Config.class, Device.class, History.class, StorageDrive.class}, version = AppDatabase.VERSION)
 public abstract class AppDatabase extends RoomDatabase {
 
-    public static final int VERSION = 35;
+    public static final int VERSION = 36;
     public static final String NAME = "tv";
     public static final String SYMBOL = "@@@";
 
@@ -43,6 +45,7 @@ public abstract class AppDatabase extends RoomDatabase {
                 .addMigrations(Migrations.MIGRATION_32_33)
                 .addMigrations(Migrations.MIGRATION_33_34)
                 .addMigrations(Migrations.MIGRATION_34_35)
+                .addMigrations(Migrations.MIGRATION_35_36)
                 .fallbackToDestructiveMigration(true)
                 .allowMainThreadQueries().build();
     }
@@ -60,4 +63,6 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract DeviceDao getDeviceDao();
 
     public abstract HistoryDao getHistoryDao();
+
+    public abstract StorageDriveDao getStorageDriveDao();
 }

@@ -10,6 +10,7 @@ import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import com.onefilm.android.tv.compose.feature.config.ConfigScreen
 import com.onefilm.android.tv.compose.feature.library.LibraryScreen
 import com.onefilm.android.tv.compose.feature.lines.LinesScreen
+import com.onefilm.android.tv.compose.feature.netdisk.NetdiskScreen
 import com.onefilm.android.tv.compose.feature.settings.SettingsScreen
 
 @Composable
@@ -23,6 +24,7 @@ fun OneFilmNavHost(
     resolveContent: @Composable (title: String) -> Unit,
     detailContent: @Composable (key: String, id: String, title: String, poster: String?) -> Unit,
     categoryContent: @Composable (key: String, tid: String, name: String) -> Unit,
+    netdiskContent: @Composable () -> Unit = {},
     onConfigChanged: () -> Unit = {},
 ) {
     NavHost(navController = navController, startDestination = Routes.HOME) {
@@ -59,6 +61,7 @@ fun OneFilmNavHost(
                 },
             )
         }
+        composable(Routes.NETDISK) { netdiskContent() }
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 dataSource = ComposeDependencies.settingsDataSource,

@@ -16,6 +16,6 @@ object ComposeDependencies {
     lateinit var legacyPlayerFactory: LegacyPlayerFactory
     lateinit var settingsDataSource: SettingsDataSource
     lateinit var liveLauncher: LiveLauncher
-    lateinit var fileLauncher: FileLauncher
+    lateinit var netdiskDataSource: NetdiskDataSource
     var dlnaDataSource: DlnaDataSource? = null
 }

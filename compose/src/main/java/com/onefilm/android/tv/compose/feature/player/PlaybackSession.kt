@@ -302,7 +302,12 @@ object PlaybackSession {
         currentIndex = index.coerceIn(0, (episodes.size - 1).coerceAtLeast(0))
     }
 
-    fun play(context: Context, url: String, startMs: Long = 0L) {
+    fun play(
+        context: Context,
+        url: String,
+        startMs: Long = 0L,
+        headers: Map<String, String> = emptyMap(),
+    ) {
         appContext = context.applicationContext
         val target = ensureLegacy() ?: return
         if (currentUrl != url) {
@@ -313,7 +318,7 @@ object PlaybackSession {
             subtitleOff = false
             audioIndex = 0
         }
-        target.start(url, siteKey, title, startMs)
+        target.start(url, siteKey, title, startMs, headers)
         engineMpv = target.isMpv()
         attachPlayer(target.player)
         target.player?.play()
