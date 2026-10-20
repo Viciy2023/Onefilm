@@ -40,6 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
+import com.onefilm.android.tv.compose.design.ThemeController
 
 @Composable
 fun SettingsScreen(dataSource: SettingsDataSource) {
@@ -57,6 +58,14 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
         snapshot = dataSource.load()
     }
 
+    fun openConfig(type: Int, url: String) {
+        editType = type
+        editUrl = url
+        configError = null
+        qrUrl = dataSource.configPushUrl()
+        qrBitmap = dataSource.qrBitmap(qrUrl, 720)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -72,21 +81,9 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
         )
 
         Section("接口配置") {
-            ConfigRow("点播接口", snapshot.configUrl) {
-                editType = 0
-                editUrl = snapshot.configUrl
-                configError = null
-            }
-            ConfigRow("直播接口", snapshot.liveConfigUrl) {
-                editType = 1
-                editUrl = snapshot.liveConfigUrl
-                configError = null
-            }
-            ConfigRow("壁纸接口", snapshot.wallConfigUrl) {
-                editType = 2
-                editUrl = snapshot.wallConfigUrl
-                configError = null
-            }
+            ConfigRow("点播接口", snapshot.configUrl) { openConfig(0, snapshot.configUrl) }
+            ConfigRow("直播接口", snapshot.liveConfigUrl) { openConfig(1, snapshot.liveConfigUrl) }
+            ConfigRow("壁纸接口", snapshot.wallConfigUrl) { openConfig(2, snapshot.wallConfigUrl) }
             ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
             ActionRow("扫码推送", "手机扫码打开配置页") {
                 qrUrl = dataSource.configPushUrl()
@@ -95,6 +92,21 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
             }
             SwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
                 refresh { setIncognito(it) }
+            }
+        }
+
+        Section("主题设置") {
+            ChoiceRow(
+                title = "外观主题",
+                subtitle = "默认简约明亮主题",
+                options = listOf(
+                    "简约" to (snapshot.themeMode == 0),
+                    "暗黑" to (snapshot.themeMode == 1),
+                    "跟随系统" to (snapshot.themeMode == 2),
+                ),
+            ) { index ->
+                refresh { setThemeMode(index) }
+                ThemeController.apply(index)
             }
         }
 
@@ -288,7 +300,21 @@ fun SettingsScreen(dataSource: SettingsDataSource) {
                 )
             },
             text = {
-                Column {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    qrBitmap?.let { bitmap ->
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "配置二维码",
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.size(160.dp),
+                        )
+                    }
+                    Text(
+                        "扫码打开网页配置页",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         value = editUrl,
                         onValueChange = { editUrl = it },

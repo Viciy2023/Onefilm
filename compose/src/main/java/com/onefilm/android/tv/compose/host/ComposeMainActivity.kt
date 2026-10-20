@@ -19,6 +19,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import com.onefilm.android.tv.compose.design.OneFilmTheme
+import com.onefilm.android.tv.compose.design.ThemeController
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.feature.category.CategoryRoute
 import com.onefilm.android.tv.compose.feature.detail.DetailRoute
@@ -74,7 +75,14 @@ class ComposeMainActivity : ComponentActivity() {
 
         setContent {
             PlaybackSession.historyStore = ComposeDependencies.playbackHistoryStore
-            OneFilmTheme {
+            ThemeController.apply(ComposeDependencies.settingsDataSource.load().themeMode)
+            OneFilmTheme(
+                darkTheme = when (ThemeController.mode) {
+                    0 -> false
+                    1 -> true
+                    else -> androidx.compose.foundation.isSystemInDarkTheme()
+                },
+            ) {
                 val navController = rememberNavController()
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val route = backStackEntry?.destination?.route

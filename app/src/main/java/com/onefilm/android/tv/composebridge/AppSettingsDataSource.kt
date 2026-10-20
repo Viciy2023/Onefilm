@@ -59,6 +59,7 @@ class AppSettingsDataSource : SettingsDataSource {
         wallConfigUrl = WallConfig.getUrl().orEmpty(),
         incognito = Setting.isIncognito(),
         dohLabel = runCatching { Doh.objectFrom(Setting.getDoh()).getName() }.getOrNull().orEmpty(),
+        themeMode = com.github.catvod.utils.Prefers.getInt("compose_theme_mode", 0),
     )
 
     override fun setEngine(mpv: Boolean) {
@@ -189,6 +190,10 @@ class AppSettingsDataSource : SettingsDataSource {
 
     override fun setIncognito(enabled: Boolean) {
         Setting.putIncognito(enabled)
+    }
+
+    override fun setThemeMode(mode: Int) {
+        com.github.catvod.utils.Prefers.put("compose_theme_mode", mode.coerceIn(0, 2))
     }
 
     override fun configPushUrl(): String = runCatching {

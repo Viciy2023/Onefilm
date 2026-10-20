@@ -32,6 +32,7 @@ data class SettingsSnapshot(
     val wallConfigUrl: String,
     val incognito: Boolean,
     val dohLabel: String,
+    val themeMode: Int,
 )
 
 /** Compose 设置页与旧 *Setting 类的桥接。 */
@@ -71,4 +72,5 @@ interface SettingsDataSource {
     fun setIncognito(enabled: Boolean)
     fun configPushUrl(): String
     fun qrBitmap(content: String, size: Int): Bitmap?
+    fun setThemeMode(mode: Int)
 }
