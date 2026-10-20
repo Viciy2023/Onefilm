@@ -15,6 +15,8 @@ import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.bridge.SearchDataSource
 import com.onefilm.android.tv.compose.bridge.SearchMetaDataSource
 import com.onefilm.android.tv.compose.bridge.SearchRank
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -32,6 +34,7 @@ fun SearchRoute(
     var hot by remember { mutableStateOf(metaDataSource.hot()) }
     var history by remember { mutableStateOf(metaDataSource.history()) }
     var rankings by remember { mutableStateOf<List<SearchRank>>(emptyList()) }
+    var suggestJob by remember { mutableStateOf<Job?>(null) }
     LaunchedEffect(Unit) {
         hot = metaDataSource.refreshHot()
         rankings = metaDataSource.refreshRankings()
@@ -58,7 +61,17 @@ fun SearchRoute(
         rankings = rankings,
         suggestions = suggestions,
         initialQuery = initialQuery,
-        onQueryChange = { q -> scope.launch { suggestions = metaDataSource.suggest(q) } },
+        onQueryChange = { q ->
+            suggestJob?.cancel()
+            if (q.isBlank()) {
+                suggestions = emptyList()
+            } else {
+                suggestJob = scope.launch {
+                    delay(250)
+                    suggestions = metaDataSource.suggest(q)
+                }
+            }
+        },
         onClearHistory = {
             metaDataSource.clearHistory()
             history = emptyList()
