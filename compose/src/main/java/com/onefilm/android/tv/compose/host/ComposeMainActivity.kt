@@ -107,6 +107,9 @@ class ComposeMainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val route = backStackEntry?.destination?.route
+                val categoryArgs = backStackEntry?.arguments
+                val selectedCategoryKey = categoryArgs?.getString("key")
+                val selectedCategoryId = categoryArgs?.getString("tid")
                 LaunchedEffect(route) {
                     playerRouteActive = route?.startsWith("player") == true
                     val keepPlaying = route?.startsWith("detail") == true ||
@@ -180,6 +183,13 @@ class ComposeMainActivity : ComponentActivity() {
                                 notice = feed?.notice,
                                 siteName = feed?.siteName,
                                 variant = variant,
+                                selectedCategoryKey = selectedCategoryKey,
+                                selectedCategoryId = selectedCategoryId,
+                                activeActionLabel = when {
+                                    showConfigDialog -> "配置"
+                                    showLinesDialog -> "线路"
+                                    else -> null
+                                },
                                 onNavigate = { target ->
                                     navController.navigate(target) {
                                         launchSingleTop = true

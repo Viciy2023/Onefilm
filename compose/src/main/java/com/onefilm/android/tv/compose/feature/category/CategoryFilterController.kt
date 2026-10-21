@@ -1,5 +1,6 @@
 package com.onefilm.android.tv.compose.feature.category
 
+import androidx.compose.ui.focus.FocusRequester
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 
@@ -8,6 +9,8 @@ import kotlinx.coroutines.flow.SharedFlow
  * 只保存当前页面 key/tid，不参与数据加载。
  */
 object CategoryFilterController {
+
+    val categoryFocusRequester = FocusRequester()
 
     private var currentKey: String? = null
     private var currentTid: String? = null

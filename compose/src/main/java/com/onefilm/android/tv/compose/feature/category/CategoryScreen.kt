@@ -110,9 +110,11 @@ private fun CategoryContent(
 ) {
     val firstFilterFocus = remember { FocusRequester() }
     LaunchedEffect(showFilters) {
+        delay(120)
         if (showFilters) {
-            delay(120)
             runCatching { firstFilterFocus.requestFocus() }
+        } else {
+            runCatching { CategoryFilterController.categoryFocusRequester.requestFocus() }
         }
     }
     Box(Modifier.fillMaxSize()) {
@@ -161,6 +163,7 @@ private fun CategoryContent(
                 filters = page.filters,
                 selectedFilters = selectedFilters,
                 onToggleFilter = onToggleFilter,
+                onDismiss = onDismissFilters,
                 firstOptionFocus = firstFilterFocus,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -175,9 +178,11 @@ private fun FilterBottomSheet(
     filters: List<CategoryFilterGroup>,
     selectedFilters: Map<String, String>,
     onToggleFilter: (filterKey: String, value: String, selected: Boolean) -> Unit,
+    onDismiss: () -> Unit,
     firstOptionFocus: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
+    BackHandler { onDismiss() }
     val firstGroupIndex = filters.indexOfFirst { it.options.isNotEmpty() }
     Column(
         modifier

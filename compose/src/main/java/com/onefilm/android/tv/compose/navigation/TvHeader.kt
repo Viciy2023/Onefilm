@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.bridge.HomeCategory
+import com.onefilm.android.tv.compose.feature.category.CategoryFilterController
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.delay
@@ -71,6 +72,9 @@ fun TvHeader(
     notice: String?,
     siteName: String? = null,
     variant: TvHeaderVariant = TvHeaderVariant.Full,
+    selectedCategoryKey: String? = null,
+    selectedCategoryId: String? = null,
+    activeActionLabel: String? = null,
     onNavigate: (String) -> Unit,
     onLive: () -> Unit,
     onConfig: () -> Unit,
@@ -93,11 +97,17 @@ fun TvHeader(
         val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
         val initialNavFocus = remember { androidx.compose.ui.focus.FocusRequester() }
         val initialCategoryFocus = remember { androidx.compose.ui.focus.FocusRequester() }
-        LaunchedEffect(variant) {
+        LaunchedEffect(variant, currentRoute, selectedCategoryKey, selectedCategoryId) {
             delay(600)
             when (variant) {
                 TvHeaderVariant.Full -> initialNavFocus.requestFocus()
-                TvHeaderVariant.CategoryOnly -> initialCategoryFocus.requestFocus()
+                TvHeaderVariant.CategoryOnly -> {
+                    if (selectedCategoryKey != null && selectedCategoryId != null) {
+                        runCatching { CategoryFilterController.categoryFocusRequester.requestFocus() }
+                    } else {
+                        initialCategoryFocus.requestFocus()
+                    }
+                }
             }
         }
         Column(Modifier.fillMaxWidth()) {
@@ -141,7 +151,8 @@ fun TvHeader(
                     entry = entry,
                     modifier = Modifier.weight(1f),
                     uiScale = scale,
-                    selected = entry.route != null && entry.route == currentRoute,
+                    selected = (entry.route != null && entry.route == currentRoute) ||
+                        entry.label == activeActionLabel,
                     focusRequester = if (index == 0) initialNavFocus else null,
                 )
             }
@@ -165,14 +176,23 @@ fun TvHeader(
         ) {
             allCategories.forEachIndexed { index, category ->
                 val home = category.key.isBlank()
+                val selected = if (home) {
+                    currentRoute == Routes.HOME
+                } else {
+                    category.key == selectedCategoryKey && category.id == selectedCategoryId
+                }
                 TvCategoryChip(
                     category = category,
                     onClick = {
                         if (home) onNavigate(Routes.HOME) else onCategory(category)
                     },
                     scale = scale,
-                    selected = home && currentRoute == Routes.HOME,
-                    focusRequester = if (index == 0) initialCategoryFocus else null,
+                    selected = selected,
+                    focusRequester = when {
+                        selected -> CategoryFilterController.categoryFocusRequester
+                        index == 0 && selectedCategoryKey == null -> initialCategoryFocus
+                        else -> null
+                    },
                 )
             }
         }
@@ -255,7 +275,8 @@ private fun TvNavTab(
     val localFocus = remember { androidx.compose.ui.focus.FocusRequester() }
     val targetFocus = focusRequester ?: localFocus
     val shape = RoundedCornerShape(16.dp)
-    val contentColor = if (selected) {
+    val highlighted = selected || focused
+    val contentColor = if (highlighted) {
         MaterialTheme.colorScheme.background
     } else {
         MaterialTheme.colorScheme.onSurface
@@ -270,7 +291,7 @@ private fun TvNavTab(
                 .focusRequester(targetFocus)
                 .clip(shape)
                 .background(
-                    if (selected) {
+                    if (highlighted) {
                         Brush.horizontalGradient(
                             listOf(
                                 MaterialTheme.colorScheme.onSurface,
