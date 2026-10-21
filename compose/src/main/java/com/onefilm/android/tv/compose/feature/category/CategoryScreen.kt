@@ -41,6 +41,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -105,6 +108,13 @@ private fun CategoryContent(
     onLoadMore: () -> Unit,
     endReached: Boolean,
 ) {
+    val firstFilterFocus = remember { FocusRequester() }
+    LaunchedEffect(showFilters) {
+        if (showFilters) {
+            delay(120)
+            runCatching { firstFilterFocus.requestFocus() }
+        }
+    }
     Box(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
             columns = GridCells.Fixed(6),
@@ -151,6 +161,7 @@ private fun CategoryContent(
                 filters = page.filters,
                 selectedFilters = selectedFilters,
                 onToggleFilter = onToggleFilter,
+                firstOptionFocus = firstFilterFocus,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth(),
@@ -164,8 +175,10 @@ private fun FilterBottomSheet(
     filters: List<CategoryFilterGroup>,
     selectedFilters: Map<String, String>,
     onToggleFilter: (filterKey: String, value: String, selected: Boolean) -> Unit,
+    firstOptionFocus: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
+    val firstGroupIndex = filters.indexOfFirst { it.options.isNotEmpty() }
     Column(
         modifier
             .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
@@ -178,7 +191,7 @@ private fun FilterBottomSheet(
             .padding(horizontal = 30.dp, vertical = 18.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        filters.forEach { group ->
+        filters.forEachIndexed { groupIndex, group ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = group.name + "：",
@@ -192,11 +205,15 @@ private fun FilterBottomSheet(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(end = 8.dp),
                 ) {
-                    items(group.options) { option ->
+                    items(group.options.size) { optionIndex ->
+                        val option = group.options[optionIndex]
                         val checked = selectedFilters[group.key] == option.value
                         FilterOption(
                             text = option.name.ifBlank { option.value },
                             selected = checked,
+                            focusRequester = if (groupIndex == firstGroupIndex && optionIndex == 0) {
+                                firstOptionFocus
+                            } else null,
                             onClick = { onToggleFilter(group.key, option.value, !checked) },
                         )
                     }
@@ -206,7 +223,12 @@ private fun FilterBottomSheet(
     }
 }
 @Composable
-private fun FilterOption(text: String, selected: Boolean, onClick: () -> Unit) {
+private fun FilterOption(
+    text: String,
+    selected: Boolean,
+    focusRequester: FocusRequester? = null,
+    onClick: () -> Unit,
+) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     Text(
@@ -218,6 +240,10 @@ private fun FilterOption(text: String, selected: Boolean, onClick: () -> Unit) {
         fontSize = 18.sp,
         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         modifier = Modifier
+            .then(
+                if (focusRequester != null) Modifier.focusRequester(focusRequester)
+                else Modifier,
+            )
             .border(
                 if (focused) 2.dp else 0.dp,
                 if (focused) MaterialTheme.colorScheme.onSurface else Color.Transparent,
