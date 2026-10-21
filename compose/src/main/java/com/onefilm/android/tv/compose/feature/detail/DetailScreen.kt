@@ -2,6 +2,11 @@ package com.onefilm.android.tv.compose.feature.detail
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -195,6 +200,11 @@ private fun DetailContent(
     var manualFlagSelection by remember(info.title) { mutableStateOf(false) }
     var reversed by remember(info.title) { mutableStateOf(false) }
     var inlineReady by remember(info.title) { mutableStateOf(false) }
+    val firstActionFocus = remember { FocusRequester() }
+    LaunchedEffect(info.title) {
+        delay(120)
+        runCatching { firstActionFocus.requestFocus() }
+    }
     LaunchedEffect(playingUrl, info.title) {
         inlineReady = false
         if (playingUrl != null) {
@@ -213,21 +223,15 @@ private fun DetailContent(
         }
     }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 40.dp, vertical = 24.dp)) {
+    Column(Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp)) {
         Row(
             Modifier.fillMaxWidth().weight(1.15f),
-            horizontalArrangement = Arrangement.spacedBy(28.dp),
+            horizontalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            Column(
-                Modifier
-                    .weight(0.60f)
-                    .fillMaxHeight()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
+            Column(Modifier.weight(0.60f).fillMaxHeight()) {
                 Text(
                     text = info.title.ifBlank { "未命名" },
-                    fontSize = 22.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -241,51 +245,53 @@ private fun DetailContent(
                         info.remarks?.let { append("    $it") }
                     },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 18.sp,
+                    fontSize = 14.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                info.actor?.let {
-                    Text(
-                        text = "演员：$it",
-                        fontSize = 18.sp,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                info.director?.let {
-                    Text(
-                        text = "导演：$it",
-                        fontSize = 18.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                val address = selectedFlag?.episodes?.firstOrNull()?.url ?: info.playUrl
-                if (!address.isNullOrBlank()) {
-                    Text(
-                        text = "播放地址：$address",
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                info.description?.let {
-                    Text(
-                        text = "内容简介：$it",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 4,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedButton(onClick = { reversed = !reversed }) {
-                        Text(if (reversed) "正序" else "倒序", fontSize = 18.sp)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    DetailAction(
+                        label = if (reversed) "正序" else "倒序",
+                        modifier = Modifier.focusRequester(firstActionFocus),
+                    ) {
+                        reversed = !reversed
                     }
-                    Button(onClick = onToggleFavorite) {
-                        Text(if (favorite) "已收藏" else "加入收藏", fontSize = 18.sp)
+                    DetailAction(
+                        label = if (favorite) "已收藏" else "加入收藏",
+                        active = favorite,
+                        onClick = onToggleFavorite,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                Column(
+                    Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    info.actor?.let {
+                        Text("演员：$it", fontSize = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
+                    info.director?.let {
+                        Text("导演：$it", fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    val address = selectedFlag?.episodes?.firstOrNull()?.url ?: info.playUrl
+                    if (!address.isNullOrBlank()) {
+                        Text(
+                            "播放地址：$address",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    info.description?.let {
+                        Text(
+                            "内容简介：$it",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 6,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
             }
@@ -294,7 +300,7 @@ private fun DetailContent(
                     .weight(0.40f)
                     .fillMaxWidth()
                     .aspectRatio(16f / 9f)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(Color.Black),
             ) {
                 if (playingUrl != null) {
@@ -302,7 +308,7 @@ private fun DetailContent(
                         InlinePlayer(onExpand = onExpandPlayer, modifier = Modifier.fillMaxSize())
                     } else {
                         Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
-                            AppLogoLoading(size = 76.dp)
+                            AppLogoLoading(size = 64.dp)
                         }
                     }
                 } else {
@@ -322,7 +328,7 @@ private fun DetailContent(
                     Text(
                         text = "点击播放",
                         color = Color.White,
-                        fontSize = 18.sp,
+                        fontSize = 16.sp,
                         modifier = Modifier
                             .align(Alignment.Center)
                             .clickable {
@@ -333,67 +339,153 @@ private fun DetailContent(
             }
         }
 
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("线路", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(88.dp))
+            Text("线路", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(52.dp))
             LazyRow(
                 modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 itemsIndexed(info.flags) { index, flag ->
-                    val selected = index == selectedFlagIndex
-                    Text(
-                        text = flag.name.ifBlank { "默认线路" },
-                        color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 16.sp,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(percent = 50))
-                            .background(
-                                if (selected) MaterialTheme.colorScheme.onSurface
-                                else MaterialTheme.colorScheme.surfaceVariant,
-                            )
-                            .clickable {
-                                selectedFlagIndex = index
-                                manualFlagSelection = true
-                                reversed = false
-                            }
-                            .padding(horizontal = 18.dp, vertical = 9.dp),
+                    DetailLineChip(
+                        label = flag.name.ifBlank { "默认线路" },
+                        selected = index == selectedFlagIndex,
+                        onClick = {
+                            selectedFlagIndex = index
+                            manualFlagSelection = true
+                            reversed = false
+                        },
                     )
                 }
             }
         }
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(10.dp))
         LazyVerticalGrid(
             columns = GridCells.Fixed(6),
             modifier = Modifier.fillMaxWidth().weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             itemsIndexed(visibleEpisodes) { _, episode ->
-                val playing = playingEpisodeUrl != null && episode.url == playingEpisodeUrl
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(58.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(
-                            if (playing) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.surfaceVariant,
-                        )
-                        .clickable { onPlay(selectedFlag?.name, episode.url) },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = episode.name.ifBlank { "未命名" },
-                        color = if (playing) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 16.sp,
-                        fontWeight = if (playing) FontWeight.SemiBold else FontWeight.Normal,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+                EpisodeButton(
+                    label = episode.name.ifBlank { "未命名" },
+                    playing = playingEpisodeUrl != null && episode.url == playingEpisodeUrl,
+                    onClick = { onPlay(selectedFlag?.name, episode.url) },
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun DetailAction(
+    label: String,
+    modifier: Modifier = Modifier,
+    active: Boolean = false,
+    onClick: () -> Unit,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val shape = RoundedCornerShape(10.dp)
+    Box(
+        modifier
+            .clip(shape)
+            .background(
+                if (focused) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.surfaceVariant,
+            )
+            .border(
+                if (focused) 2.dp else 1.dp,
+                if (focused) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+                shape,
+            )
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (focused) MaterialTheme.colorScheme.background
+            else MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+@Composable
+private fun DetailLineChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val shape = RoundedCornerShape(12.dp)
+    Text(
+        text = label,
+        color = if (focused) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
+        fontSize = 14.sp,
+        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
+            .clip(shape)
+            .background(
+                if (focused) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.surfaceVariant,
+            )
+            .border(
+                if (focused) 2.dp else 1.dp,
+                if (focused) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+                shape,
+            )
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+    )
+}
+
+@Composable
+private fun EpisodeButton(
+    label: String,
+    playing: Boolean,
+    onClick: () -> Unit,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val shape = RoundedCornerShape(9.dp)
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(42.dp)
+            .clip(shape)
+            .background(
+                if (focused) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.surfaceVariant,
+            )
+            .border(
+                when {
+                    focused -> 2.dp
+                    playing -> 1.dp
+                    else -> 0.dp
+                },
+                if (focused) MaterialTheme.colorScheme.primary
+                else if (playing) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                else Color.Transparent,
+                shape,
+            )
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            color = if (focused) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
+            fontSize = 13.sp,
+            fontWeight = if (playing) FontWeight.SemiBold else FontWeight.Normal,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
