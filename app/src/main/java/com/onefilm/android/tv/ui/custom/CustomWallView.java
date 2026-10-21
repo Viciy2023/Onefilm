@@ -3,6 +3,7 @@ package com.onefilm.android.tv.ui.custom;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.util.AttributeSet;
@@ -39,7 +40,7 @@ import pl.droidsonroids.gif.GifDrawable;
 public class CustomWallView extends FrameLayout implements DefaultLifecycleObserver {
 
     private static final int[] WALL_PAPERS = {0, R.drawable.wallpaper_1, R.drawable.wallpaper_2, R.drawable.wallpaper_3, R.drawable.wallpaper_4};
-    private static final int[] WALL_COLORS = {0, 0xFF40C090, 0xFF4870E0, 0xFF48B0C0, 0xFF404040};
+    private static final int[] WALL_COLORS = {0, 0xFFE7F1EC, 0xFFE7EEF9, 0xFFF4EDE7, 0xFFEFEFEF};
     private static final int TYPE_RES = 0;
     private static final int TYPE_GIF = 1;
     private static final int TYPE_VIDEO = 2;
@@ -91,7 +92,10 @@ public class CustomWallView extends FrameLayout implements DefaultLifecycleObser
     private void load() {
         int wall = Setting.getWall();
         int type = Setting.getWallType();
-        if (isBuiltIn(wall, type)) loadRes(WALL_PAPERS[wall]);
+        if (wall == 0) {
+            binding.image.setImageDrawable(null);
+            binding.image.setBackgroundColor(Color.TRANSPARENT);
+        } else if (isBuiltIn(wall, type)) loadRes(WALL_PAPERS[wall]);
         else if (type == TYPE_VIDEO) loadVideo(Path.wall(wall));
         else if (type == TYPE_GIF) loadGif(Path.wall(wall));
         else loadImage();
@@ -165,6 +169,7 @@ public class CustomWallView extends FrameLayout implements DefaultLifecycleObser
     private int getWallColor() {
         int wall = Setting.getWall();
         int type = Setting.getWallType();
+        if (wall == 0) return 0;
         if (isBuiltIn(wall, type)) return WALL_COLORS[wall];
         File file = Path.wallCache();
         return file.exists() ? paletteColor(file) : WALL_COLORS[1];
