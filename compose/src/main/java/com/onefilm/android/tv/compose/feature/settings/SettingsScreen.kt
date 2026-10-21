@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -88,216 +87,399 @@ fun SettingsScreen(
     ) {
         Text("设置", fontSize = 34.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
         Spacer(Modifier.height(10.dp))
-        Section("接口配置") {
-            ConfigRow("点播接口", snapshot.configUrl, onEdit = { openConfig(0, snapshot.configUrl) }, onReload = {
-                val url = snapshot.configUrl
-                if (url.isNotBlank()) {
-                    reloadingType = 0
-                    dataSource.loadConfig(0, url) { ok, _ ->
-                        reloadingType = null
-                        if (ok) {
-                            onConfigChanged()
-                            snapshot = dataSource.load()
+        Column(
+            Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ConfigRow("点播接口", snapshot.configUrl, onEdit = { openConfig(0, snapshot.configUrl) }, onReload = {
+                        val url = snapshot.configUrl
+                        if (url.isNotBlank()) {
+                            reloadingType = 0
+                            dataSource.loadConfig(0, url) { ok, _ ->
+                                reloadingType = null
+                                if (ok) {
+                                    onConfigChanged()
+                                    snapshot = dataSource.load()
+                                }
+                            }
                         }
-                    }
+                    })
+
+
+
                 }
-            })
-            ConfigRow("直播接口", snapshot.liveConfigUrl, onEdit = { openConfig(1, snapshot.liveConfigUrl) }, onReload = {
-                val url = snapshot.liveConfigUrl
-                if (url.isNotBlank()) {
-                    reloadingType = 1
-                    dataSource.loadConfig(1, url) { ok, _ ->
-                        reloadingType = null
-                        if (ok) {
-                            onConfigChanged()
-                            snapshot = dataSource.load()
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ConfigRow("直播接口", snapshot.liveConfigUrl, onEdit = { openConfig(1, snapshot.liveConfigUrl) }, onReload = {
+                        val url = snapshot.liveConfigUrl
+                        if (url.isNotBlank()) {
+                            reloadingType = 1
+                            dataSource.loadConfig(1, url) { ok, _ ->
+                                reloadingType = null
+                                if (ok) {
+                                    onConfigChanged()
+                                    snapshot = dataSource.load()
+                                }
+                            }
                         }
-                    }
+                    })
+
+
+
                 }
-            })
-            ConfigRow("壁纸接口", snapshot.wallConfigUrl, onEdit = { openConfig(2, snapshot.wallConfigUrl) }, onReload = {
-                val url = snapshot.wallConfigUrl
-                if (url.isNotBlank()) {
-                    reloadingType = 2
-                    dataSource.loadConfig(2, url) { ok, _ ->
-                        reloadingType = null
-                        if (ok) {
-                            onConfigChanged()
-                            snapshot = dataSource.load()
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ConfigRow("壁纸接口", snapshot.wallConfigUrl, onEdit = { openConfig(2, snapshot.wallConfigUrl) }, onReload = {
+                        val url = snapshot.wallConfigUrl
+                        if (url.isNotBlank()) {
+                            reloadingType = 2
+                            dataSource.loadConfig(2, url) { ok, _ ->
+                                reloadingType = null
+                                if (ok) {
+                                    onConfigChanged()
+                                    snapshot = dataSource.load()
+                                }
+                            }
                         }
-                    }
+                    })
+
+
+
                 }
-            })
-            ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
-            ActionRow("扫码推送", "手机扫码打开配置页") {
-                qrUrl = dataSource.configPushUrl()
-                qrBitmap = dataSource.qrBitmap(qrUrl, 720)
-                showQr = true
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ActionRow("扫码推送", "手机扫码打开配置页") {
+                        qrUrl = dataSource.configPushUrl()
+                        qrBitmap = dataSource.qrBitmap(qrUrl, 720)
+                        showQr = true
+                    }
+
+
+
+                }
             }
-            SwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
-                refresh { setIncognito(it) }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
+                        refresh { setIncognito(it) }
+                    }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "外观主题",
+                        subtitle = "默认简约明亮主题",
+                        options = listOf(
+                            "简约" to (snapshot.themeMode == 0),
+                            "暗黑" to (snapshot.themeMode == 1),
+                            "跟随系统" to (snapshot.themeMode == 2),
+                        ),
+                    ) { index ->
+                        refresh { setThemeMode(index) }
+                        ThemeController.apply(index)
+                    }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "播放引擎",
+                        subtitle = "MPV 与 Exo 共用旧 PlayerManager",
+                        options = listOf("Exo" to !snapshot.engineMpv, "MPV" to snapshot.engineMpv),
+                    ) { index -> refresh { setEngine(index == 1) } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "后台播放",
+                        subtitle = "按 Home 后的行为",
+                        options = listOf(
+                            "关闭" to (snapshot.background == 0),
+                            "后台" to (snapshot.background == 1),
+                            "PiP" to (snapshot.background == 2),
+                        ),
+                    ) { index -> refresh { setBackground(index) } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "缓冲区",
+                        subtitle = "${snapshot.bufferSeconds} 秒",
+                        options = listOf(1, 2, 5, 10).map {
+                            "${it}s" to (snapshot.bufferSeconds == it)
+                        },
+                    ) { index -> refresh { setBufferSeconds(listOf(1, 2, 5, 10)[index]) } }
+
+
+
+                }
             }
-        }
-        Section("主题设置") {
-            ChoiceRow(
-                title = "外观主题",
-                subtitle = "默认简约明亮主题",
-                options = listOf(
-                    "简约" to (snapshot.themeMode == 0),
-                    "暗黑" to (snapshot.themeMode == 1),
-                    "跟随系统" to (snapshot.themeMode == 2),
-                ),
-            ) { index ->
-                refresh { setThemeMode(index) }
-                ThemeController.apply(index)
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "渲染方式",
+                        subtitle = "Surface / TextureView",
+                        options = listOf("Surface" to !snapshot.renderTexture, "Texture" to snapshot.renderTexture),
+                    ) { index -> refresh { setRenderTexture(index == 1) } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("隧道解码", "需要 Surface 渲染", snapshot.tunnel) { refresh { setTunnel(it) } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("音频直通", "HDMI / 功放透传", snapshot.audioPassThrough) {
+                        refresh { setAudioPassThrough(it) }
+                    }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("音频偏软解", "软解优先使用 Audio 解码器", snapshot.audioPrefer) {
+                        refresh { setAudioPrefer(it) }
+                    }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("视频偏软解", "软解优先使用 Video 解码器", snapshot.videoPrefer) {
+                        refresh { setVideoPrefer(it) }
+                    }
+
+
+
+                }
             }
-        }
-        Section("播放设置") {
-            ChoiceRow(
-                title = "播放引擎",
-                subtitle = "MPV 与 Exo 共用旧 PlayerManager",
-                options = listOf("Exo" to !snapshot.engineMpv, "MPV" to snapshot.engineMpv),
-            ) { index -> refresh { setEngine(index == 1) } }
-            ChoiceRow(
-                title = "后台播放",
-                subtitle = "按 Home 后的行为",
-                options = listOf(
-                    "关闭" to (snapshot.background == 0),
-                    "后台" to (snapshot.background == 1),
-                    "PiP" to (snapshot.background == 2),
-                ),
-            ) { index -> refresh { setBackground(index) } }
-            ChoiceRow(
-                title = "缓冲区",
-                subtitle = "${snapshot.bufferSeconds} 秒",
-                options = listOf(1, 2, 5, 10).map {
-                    "${it}s" to (snapshot.bufferSeconds == it)
-                },
-            ) { index -> refresh { setBufferSeconds(listOf(1, 2, 5, 10)[index]) } }
-            ChoiceRow(
-                title = "渲染方式",
-                subtitle = "Surface / TextureView",
-                options = listOf("Surface" to !snapshot.renderTexture, "Texture" to snapshot.renderTexture),
-            ) { index -> refresh { setRenderTexture(index == 1) } }
-            SwitchRow("隧道解码", "需要 Surface 渲染", snapshot.tunnel) { refresh { setTunnel(it) } }
-        }
-        Section("解码设置") {
-            SwitchRow("音频直通", "HDMI / 功放透传", snapshot.audioPassThrough) {
-                refresh { setAudioPassThrough(it) }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ActionRow(
+                        title = "Dolby Vision 输出",
+                        value = snapshot.dvPolicyLabel,
+                    ) { refresh { cycleDolbyVisionPolicy() } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "字幕样式",
+                        subtitle = "原始 / 系统 / 自定义",
+                        options = listOf(
+                            "原始" to (snapshot.subtitleStyle == 0),
+                            "系统" to (snapshot.subtitleStyle == 1),
+                            "自定义" to (snapshot.subtitleStyle == 2),
+                        ),
+                    ) { index -> refresh { setSubtitleStyle(index) } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "字幕大小",
+                        subtitle = "%.1fx".format(snapshot.subtitleScale),
+                        options = listOf(0.8f, 1.0f, 1.2f, 1.5f).map {
+                            "%.1fx".format(it) to (snapshot.subtitleScale == it)
+                        },
+                    ) { index -> refresh { setSubtitleScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "字幕位置",
+                        subtitle = snapshot.subtitlePosition.toInt().toString(),
+                        options = listOf(-5f, 0f, 5f, 10f, 20f).map {
+                            it.toInt().toString() to (snapshot.subtitlePosition == it)
+                        },
+                    ) { index -> refresh { setSubtitlePosition(listOf(-5f, 0f, 5f, 10f, 20f)[index]) } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ActionRow("字幕颜色", snapshot.subtitleColorLabel) { refresh { cycleSubtitleColor() } }
+
+
+
+                }
             }
-            SwitchRow("音频偏软解", "软解优先使用 Audio 解码器", snapshot.audioPrefer) {
-                refresh { setAudioPrefer(it) }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "字幕描边",
+                        options = listOf(0f, 1f, 2f, 4f).map {
+                            "%.0f".format(it) to (snapshot.subtitleEdgeWidth == it)
+                        },
+                    ) { index -> refresh { setSubtitleEdgeWidth(listOf(0f, 1f, 2f, 4f)[index]) } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("显示弹幕", "加载并渲染弹幕", snapshot.danmakuShow) {
+                        refresh { setDanmakuShow(it) }
+                    }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "弹幕字号",
+                        options = listOf(0.8f, 1.0f, 1.2f, 1.5f).map {
+                            "%.1fx".format(it) to (snapshot.danmakuScale == it)
+                        },
+                    ) { index -> refresh { setDanmakuScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "弹幕透明度",
+                        options = listOf(0f, 0.25f, 0.5f, 0.7f).map {
+                            "${(it * 100).toInt()}%" to (snapshot.danmakuTransparency == it)
+                        },
+                    ) { index -> refresh { setDanmakuTransparency(listOf(0f, 0.25f, 0.5f, 0.7f)[index]) } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "弹幕速度",
+                        options = listOf(6000L, 8000L, 10000L).map {
+                            "${it / 1000}s" to (snapshot.danmakuDurationMs == it)
+                        },
+                    ) { index -> refresh { setDanmakuDuration(listOf(6000L, 8000L, 10000L)[index]) } }
+
+
+
+                }
             }
-            SwitchRow("视频偏软解", "软解优先使用 Video 解码器", snapshot.videoPrefer) {
-                refresh { setVideoPrefer(it) }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "滚动行数",
+                        options = listOf(4, 8, 12).map { "$it 行" to (snapshot.danmakuLines == it) },
+                    ) { index -> refresh { setDanmakuLines(listOf(4, 8, 12)[index]) } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ActionRow("弹幕屏蔽词", snapshot.danmakuBlockWords.ifBlank { "未设置" }) {
+                        blockWordsDraft = snapshot.danmakuBlockWords
+                        editBlockWords = true
+                    }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("开启预加载", "使用旧 PlayerManager 预加载", snapshot.preloadEnabled) {
+                        refresh { setPreloadEnabled(it) }
+                    }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("预加载下一集", "仅 Exo 路径生效", snapshot.preloadNext) {
+                        refresh { setPreloadNext(it) }
+                    }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "预加载线程",
+                        options = (1..4).map { "$it" to (snapshot.preloadThreads == it) },
+                    ) { index -> refresh { setPreloadThreads(index + 1) } }
+
+
+
+                }
             }
-            ActionRow(
-                title = "Dolby Vision 输出",
-                value = snapshot.dvPolicyLabel,
-            ) { refresh { cycleDolbyVisionPolicy() } }
-            Text(
-                "运行时硬解/软解切换仍在播放器「更多」菜单中即时生效。",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
-        }
-        Section("字幕设置") {
-            ChoiceRow(
-                title = "字幕样式",
-                subtitle = "原始 / 系统 / 自定义",
-                options = listOf(
-                    "原始" to (snapshot.subtitleStyle == 0),
-                    "系统" to (snapshot.subtitleStyle == 1),
-                    "自定义" to (snapshot.subtitleStyle == 2),
-                ),
-            ) { index -> refresh { setSubtitleStyle(index) } }
-            ChoiceRow(
-                title = "字幕大小",
-                subtitle = "%.1fx".format(snapshot.subtitleScale),
-                options = listOf(0.8f, 1.0f, 1.2f, 1.5f).map {
-                    "%.1fx".format(it) to (snapshot.subtitleScale == it)
-                },
-            ) { index -> refresh { setSubtitleScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
-            ChoiceRow(
-                title = "字幕位置",
-                subtitle = snapshot.subtitlePosition.toInt().toString(),
-                options = listOf(-5f, 0f, 5f, 10f, 20f).map {
-                    it.toInt().toString() to (snapshot.subtitlePosition == it)
-                },
-            ) { index -> refresh { setSubtitlePosition(listOf(-5f, 0f, 5f, 10f, 20f)[index]) } }
-            ActionRow("字幕颜色", snapshot.subtitleColorLabel) { refresh { cycleSubtitleColor() } }
-            ChoiceRow(
-                title = "字幕描边",
-                options = listOf(0f, 1f, 2f, 4f).map {
-                    "%.0f".format(it) to (snapshot.subtitleEdgeWidth == it)
-                },
-            ) { index -> refresh { setSubtitleEdgeWidth(listOf(0f, 1f, 2f, 4f)[index]) } }
-        }
-        Section("弹幕设置") {
-            SwitchRow("显示弹幕", "加载并渲染弹幕", snapshot.danmakuShow) {
-                refresh { setDanmakuShow(it) }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "缓存大小",
+                        options = listOf(50, 100, 200, 500).map {
+                            "$it MB" to (snapshot.preloadSizeMb == it)
+                        },
+                    ) { index -> refresh { setPreloadSizeMb(listOf(50, 100, 200, 500)[index]) } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    ActionRow("恢复默认 UA", "清空自定义 UA") { refresh { resetUa() } }
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    InfoRow("版本", snapshot.version)
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    InfoRow("配置地址", snapshot.configUrl.ifBlank { "未配置" })
+
+
+
+                }
+                SettingTile(Modifier.weight(1f).fillMaxHeight()) {
+                    InfoRow("开源许可", "GPL-3.0 · 基于 FongMi/TV")
+
+
+
+                }
             }
-            ChoiceRow(
-                title = "弹幕字号",
-                options = listOf(0.8f, 1.0f, 1.2f, 1.5f).map {
-                    "%.1fx".format(it) to (snapshot.danmakuScale == it)
-                },
-            ) { index -> refresh { setDanmakuScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
-            ChoiceRow(
-                title = "弹幕透明度",
-                options = listOf(0f, 0.25f, 0.5f, 0.7f).map {
-                    "${(it * 100).toInt()}%" to (snapshot.danmakuTransparency == it)
-                },
-            ) { index -> refresh { setDanmakuTransparency(listOf(0f, 0.25f, 0.5f, 0.7f)[index]) } }
-            ChoiceRow(
-                title = "弹幕速度",
-                options = listOf(6000L, 8000L, 10000L).map {
-                    "${it / 1000}s" to (snapshot.danmakuDurationMs == it)
-                },
-            ) { index -> refresh { setDanmakuDuration(listOf(6000L, 8000L, 10000L)[index]) } }
-            ChoiceRow(
-                title = "滚动行数",
-                options = listOf(4, 8, 12).map { "$it 行" to (snapshot.danmakuLines == it) },
-            ) { index -> refresh { setDanmakuLines(listOf(4, 8, 12)[index]) } }
-            ActionRow("弹幕屏蔽词", snapshot.danmakuBlockWords.ifBlank { "未设置" }) {
-                blockWordsDraft = snapshot.danmakuBlockWords
-                editBlockWords = true
-            }
-        }
-        Section("预加载设置") {
-            SwitchRow("开启预加载", "使用旧 PlayerManager 预加载", snapshot.preloadEnabled) {
-                refresh { setPreloadEnabled(it) }
-            }
-            SwitchRow("预加载下一集", "仅 Exo 路径生效", snapshot.preloadNext) {
-                refresh { setPreloadNext(it) }
-            }
-            ChoiceRow(
-                title = "预加载线程",
-                options = (1..4).map { "$it" to (snapshot.preloadThreads == it) },
-            ) { index -> refresh { setPreloadThreads(index + 1) } }
-            ChoiceRow(
-                title = "缓存大小",
-                options = listOf(50, 100, 200, 500).map {
-                    "$it MB" to (snapshot.preloadSizeMb == it)
-                },
-            ) { index -> refresh { setPreloadSizeMb(listOf(50, 100, 200, 500)[index]) } }
-        }
-        Section("网络与 UA") {
-            Text(
-                text = snapshot.ua.ifBlank { "默认 User-Agent" },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-            )
-            ActionRow("恢复默认 UA", "清空自定义 UA") { refresh { resetUa() } }
-        }
-        Section("关于 OneFilm") {
-            InfoRow("版本", snapshot.version)
-            InfoRow("配置地址", snapshot.configUrl.ifBlank { "未配置" })
-            InfoRow("开源许可", "GPL-3.0 · 基于 FongMi/TV")
         }
     }
 
@@ -448,12 +630,12 @@ private fun ConfigRow(
 ) {
     Row(
         Modifier
-            .fillMaxWidth(0.195f)
+            .fillMaxSize()
             .clickable(onClick = onEdit)
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, fontSize = 14.sp)
+        Text(title, fontSize = 22.sp)
         Spacer(Modifier.width(8.dp))
         Text(
             value.ifBlank { "未配置" },
@@ -476,7 +658,7 @@ private fun ConfigRow(
         ) {
             Text(
                 text = "加载",
-                fontSize = 12.sp,
+                fontSize = 15.sp,
                 color = if (value.isNotBlank()) MaterialTheme.colorScheme.onSurface
                 else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -486,27 +668,14 @@ private fun ConfigRow(
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(
-            text = title,
-            fontSize = 18.sp,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(horizontal = 4.dp),
-        )
-        FlowRow(
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(2.dp),
-            maxItemsInEachRow = 5,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            content()
-        }
+private fun SettingTile(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Box(
+        modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(2.dp),
+    ) {
+        content()
     }
 }
 
@@ -519,16 +688,16 @@ private fun SwitchRow(
 ) {
     Row(
         Modifier
-            .fillMaxWidth(0.195f)
+            .fillMaxSize()
             .clickable { onChange(!checked) }
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 14.sp)
+            Text(title, fontSize = 22.sp)
             Text(
                 subtitle,
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = 15.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -543,12 +712,12 @@ private fun ChoiceRow(
     options: List<Pair<String, Boolean>>,
     onSelect: (Int) -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth(0.195f).padding(horizontal = 8.dp, vertical = 2.dp)) {
-        Text(title, fontSize = 14.sp)
+    Column(Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 6.dp), verticalArrangement = Arrangement.Center) {
+        Text(title, fontSize = 22.sp)
         if (!subtitle.isNullOrBlank()) {
             Text(
                 subtitle,
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = 15.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -579,11 +748,11 @@ private fun SettingChip(label: String, selected: Boolean, onClick: () -> Unit) {
                 },
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 3.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {
         Text(
             text = label,
-            fontSize = 12.sp,
+            fontSize = 15.sp,
             color = if (selected) MaterialTheme.colorScheme.background
             else MaterialTheme.colorScheme.onSurface,
         )
@@ -594,26 +763,26 @@ private fun SettingChip(label: String, selected: Boolean, onClick: () -> Unit) {
 private fun ActionRow(title: String, value: String, onClick: () -> Unit) {
     Row(
         Modifier
-            .fillMaxWidth(0.195f)
+            .fillMaxSize()
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, fontSize = 14.sp, modifier = Modifier.weight(1f))
-        Text(value, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(title, fontSize = 22.sp, modifier = Modifier.weight(1f))
+        Text(value, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun InfoRow(title: String, value: String) {
     Row(
-        Modifier.fillMaxWidth(0.195f).padding(horizontal = 8.dp, vertical = 2.dp),
+        Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, fontSize = 12.sp, modifier = Modifier.weight(1f))
+        Text(title, fontSize = 18.sp, modifier = Modifier.weight(1f))
         Text(
             value,
-            style = MaterialTheme.typography.bodySmall,
+            fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
