@@ -73,15 +73,6 @@ fun TvHeader(
     onNetwork: () -> Unit,
     onCategory: (HomeCategory) -> Unit,
 ) {
-    var now by remember { mutableStateOf(LocalDateTime.now()) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            now = LocalDateTime.now()
-            delay(1_000)
-        }
-    }
-    val date = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-    val time = now.format(DateTimeFormatter.ofPattern("HH:mm"))
     val centerText = notice?.takeIf { it.isNotBlank() }
         ?: siteName?.takeIf { it.isNotBlank() }
         ?: "ONEFILM 影视"
@@ -95,49 +86,15 @@ fun TvHeader(
         val initialCategoryFocus = remember { androidx.compose.ui.focus.FocusRequester() }
         LaunchedEffect(variant) {
             delay(600)
-            if (variant == TvHeaderVariant.Full) {
-                initialNavFocus.requestFocus()
-            } else {
-                initialCategoryFocus.requestFocus()
+            when (variant) {
+                TvHeaderVariant.Full -> initialNavFocus.requestFocus()
+                TvHeaderVariant.CategoryOnly -> initialCategoryFocus.requestFocus()
             }
         }
         Column(Modifier.fillMaxWidth()) {
-        if (variant == TvHeaderVariant.Full) {
-        // 第一行：品牌 / 当前接口 / 时间。三栏等宽，避免内容挤压品牌与时间。
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = (6 * scale).dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-                Text(
-                    text = "ONEFILM",
-                    color = TvInk,
-                    fontSize = (28 * scale).sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp,
-                )
-            }
-            Box(Modifier.weight(1.4f), contentAlignment = Alignment.Center) {
-                Text(
-                    text = centerText,
-                    color = TvInk,
-                    fontSize = (18 * scale).sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-                Text(
-                    text = "$date   $time",
-                    color = TvInk,
-                    fontSize = (16 * scale).sp,
-                    fontWeight = FontWeight.Medium,
-                )
-            }
-        }
+        TvBrandRow(centerText = centerText)
 
+        if (variant == TvHeaderVariant.Full) {
         // 第二行：功能导航。九项等权铺满，图标 + 文字。
         val entries = listOf(
             TvNavEntry("首页", "⌂", route = Routes.HOME) { onNavigate(Routes.HOME) },
@@ -208,6 +165,58 @@ fun TvHeader(
             }
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)))
+        }
+    }
+}
+
+@Composable
+fun TvBrandRow(
+    centerText: String,
+    modifier: Modifier = Modifier,
+) {
+    var now by remember { mutableStateOf(LocalDateTime.now()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = LocalDateTime.now()
+            delay(1_000)
+        }
+    }
+    val date = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+    val time = now.format(DateTimeFormatter.ofPattern("HH:mm"))
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val scale = (maxWidth.value / 1000f).coerceIn(1f, 2.4f)
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = (6 * scale).dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                Text(
+                    text = "ONEFILM",
+                    color = TvInk,
+                    fontSize = (28 * scale).sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp,
+                )
+            }
+            Box(Modifier.weight(1.4f), contentAlignment = Alignment.Center) {
+                Text(
+                    text = centerText,
+                    color = TvInk,
+                    fontSize = (18 * scale).sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                Text(
+                    text = "$date   $time",
+                    color = TvInk,
+                    fontSize = (16 * scale).sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
         }
     }
 }

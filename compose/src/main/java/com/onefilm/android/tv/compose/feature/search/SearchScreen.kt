@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.bridge.SearchRank
 import com.onefilm.android.tv.compose.design.component.TvPosterCard
+import com.onefilm.android.tv.compose.navigation.TvBrandRow
 
 @Composable
 fun SearchScreen(
@@ -82,7 +83,16 @@ fun SearchScreen(
     val keyboard = LocalSoftwareKeyboardController.current
     val landing = state is SearchUiState.Idle
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 34.dp, vertical = 20.dp)) {
+    Column(Modifier.fillMaxSize()) {
+        if (!landing) {
+            TvBrandRow(centerText = "ONEFILM 影视")
+        }
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .padding(horizontal = 34.dp, vertical = 20.dp),
+        ) {
         if (landing) {
             SearchLanding(
                 query = query,
@@ -119,6 +129,7 @@ fun SearchScreen(
                 state = state,
                 onCardClick = onCardClick,
             )
+        }
         }
     }
 }
