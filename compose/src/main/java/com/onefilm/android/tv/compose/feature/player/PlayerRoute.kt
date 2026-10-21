@@ -25,6 +25,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 fun PlayerRoute(onBack: () -> Unit) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
+    val previousOrientation = remember(activity) { activity?.requestedOrientation }
 
     DisposableEffect(activity) {
         val window = activity?.window
@@ -50,8 +51,9 @@ fun PlayerRoute(onBack: () -> Unit) {
             if (activity?.isChangingConfigurations != true) {
                 controller?.show(WindowInsetsCompat.Type.systemBars())
                 if (window != null) WindowCompat.setDecorFitsSystemWindows(window, true)
-                // 退出全屏固定回到竖屏，避免上一次全屏把 Activity 的方向残留为横屏。
-                activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                // 恢复进入全屏前由宿主设置的方向，TV 必须回到横屏详情，手机才回到竖屏。
+                activity?.requestedOrientation = previousOrientation
+                    ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     activity?.setPictureInPictureParams(
                         PictureInPictureParams.Builder().setAutoEnterEnabled(false).build(),
