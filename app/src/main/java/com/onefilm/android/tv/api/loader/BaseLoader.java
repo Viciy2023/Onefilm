@@ -27,8 +27,17 @@ public class BaseLoader {
 
     private BaseLoader() {
         jarLoader = new JarLoader();
-        pyLoader = new PyLoader();
+        pyLoader = createPyLoader();
         jsLoader = new JsLoader();
+    }
+
+    private static PyLoader createPyLoader() {
+        try {
+            return new PyLoader();
+        } catch (Throwable e) {
+            // x86 模拟器等缺少 Chaquopy 原生库的环境仍允许加载 JSON/JS 接口。
+            return null;
+        }
     }
 
     public static BaseLoader get() {
@@ -50,13 +59,13 @@ public class BaseLoader {
     public void clear() {
         Task.execute(() -> {
             jarLoader.clear();
-            pyLoader.clear();
+            if (pyLoader != null) pyLoader.clear();
             jsLoader.clear();
         });
     }
 
     public Spider getSpider(String key, String api, String ext, String jar) {
-        if (isPy(api)) return pyLoader.getSpider(key, api, ext);
+        if (isPy(api)) return pyLoader == null ? new SpiderNull() : pyLoader.getSpider(key, api, ext);
         else if (isJs(api)) return jsLoader.getSpider(key, api, ext, jar);
         else if (isCsp(api)) return jarLoader.getSpider(key, api, ext, jar);
         else return new SpiderNull();
@@ -72,14 +81,15 @@ public class BaseLoader {
 
     public void setRecent(String key, String api, String jar) {
         if (isJs(api)) jsLoader.setRecent(key);
-        else if (isPy(api)) pyLoader.setRecent(key);
-        else if (isCsp(api)) jarLoader.setRecent(Crypto.md5(jar));
+        else if (isPy(api)) {
+            if (pyLoader != null) pyLoader.setRecent(key);
+        } else if (isCsp(api)) jarLoader.setRecent(Crypto.md5(jar));
     }
 
     public Object[] proxy(Map<String, String> params) throws Exception {
         if (params.containsKey("siteKey")) return getSpider(params.get("siteKey")).proxy(params);
         if ("js".equals(params.get("do"))) return jsLoader.proxy(params);
-        if ("py".equals(params.get("do"))) return pyLoader.proxy(params);
+        if ("py".equals(params.get("do"))) return pyLoader == null ? new Object[0] : pyLoader.proxy(params);
         return jarLoader.proxy(params);
     }
 
