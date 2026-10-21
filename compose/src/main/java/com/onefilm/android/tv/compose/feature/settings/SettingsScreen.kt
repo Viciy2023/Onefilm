@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,10 +26,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -43,8 +44,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -103,19 +106,15 @@ fun SettingsScreen(
     ) {
         Text("设置", fontSize = 36.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
         Spacer(Modifier.height(10.dp))
-        Row(
+        Column(
             Modifier.fillMaxSize(),
-            horizontalArrangement = Arrangement.spacedBy(24.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Column(
-                Modifier.weight(1f).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ConfigRow("点播接口", snapshot.configUrl, onEdit = { openConfig(0, snapshot.configUrl) }, onReload = {
                         val url = snapshot.configUrl
                         if (url.isNotBlank()) {
@@ -133,8 +132,9 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ConfigRow("直播接口", snapshot.liveConfigUrl, onEdit = { openConfig(1, snapshot.liveConfigUrl) }, onReload = {
                         val url = snapshot.liveConfigUrl
                         if (url.isNotBlank()) {
@@ -152,13 +152,9 @@ fun SettingsScreen(
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ConfigRow("壁纸接口", snapshot.wallConfigUrl, onEdit = { openConfig(2, snapshot.wallConfigUrl) }, onReload = {
                         val url = snapshot.wallConfigUrl
                         if (url.isNotBlank()) {
@@ -176,20 +172,30 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth().weight(8f),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
+            Column(
+                Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
 
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ActionRow("扫码推送", "手机扫码打开配置页") {
                         qrUrl = dataSource.configPushUrl()
                         qrBitmap = dataSource.qrBitmap(qrUrl, 720)
@@ -199,8 +205,14 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                }
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
                         refresh { setIncognito(it) }
                     }
@@ -208,13 +220,9 @@ fun SettingsScreen(
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "外观主题",
                         subtitle = "默认简约明亮主题",
@@ -231,8 +239,14 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                }
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "播放引擎",
                         subtitle = "MPV 与 Exo 共用旧 PlayerManager",
@@ -242,13 +256,9 @@ fun SettingsScreen(
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "后台播放",
                         subtitle = "按 Home 后的行为",
@@ -262,8 +272,14 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                }
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "缓冲区",
                         subtitle = "${snapshot.bufferSeconds} 秒",
@@ -275,13 +291,9 @@ fun SettingsScreen(
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "渲染方式",
                         subtitle = "Surface / TextureView",
@@ -291,20 +303,22 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("隧道解码", "需要 Surface 渲染", snapshot.tunnel) { refresh { setTunnel(it) } }
 
-
-
-
-                    }
+                }
                 }
                 Row(
                     Modifier.fillMaxWidth().weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("隧道解码", "需要 Surface 渲染", snapshot.tunnel) { refresh { setTunnel(it) } }
+
+
+
+
+
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("音频直通", "HDMI / 功放透传", snapshot.audioPassThrough) {
                         refresh { setAudioPassThrough(it) }
                     }
@@ -312,8 +326,14 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                }
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("音频偏软解", "软解优先使用 Audio 解码器", snapshot.audioPrefer) {
                         refresh { setAudioPrefer(it) }
                     }
@@ -321,13 +341,9 @@ fun SettingsScreen(
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("视频偏软解", "软解优先使用 Video 解码器", snapshot.videoPrefer) {
                         refresh { setVideoPrefer(it) }
                     }
@@ -335,8 +351,14 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                }
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ActionRow(
                         title = "Dolby Vision 输出",
                         value = snapshot.dvPolicyLabel,
@@ -345,13 +367,9 @@ fun SettingsScreen(
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "字幕样式",
                         subtitle = "原始 / 系统 / 自定义",
@@ -365,8 +383,14 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                }
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "字幕大小",
                         subtitle = "%.1fx".format(snapshot.subtitleScale),
@@ -378,18 +402,9 @@ fun SettingsScreen(
 
 
 
-                    }
+
                 }
-            }
-            Column(
-                Modifier.weight(1f).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "字幕位置",
                         subtitle = snapshot.subtitlePosition.toInt().toString(),
@@ -401,20 +416,27 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                }
+            }
+            Column(
+                Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ActionRow("字幕颜色", snapshot.subtitleColorLabel) { refresh { cycleSubtitleColor() } }
 
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "字幕描边",
                         options = listOf(0f, 1f, 2f, 4f).map {
@@ -425,8 +447,14 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                }
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("显示弹幕", "加载并渲染弹幕", snapshot.danmakuShow) {
                         refresh { setDanmakuShow(it) }
                     }
@@ -434,13 +462,9 @@ fun SettingsScreen(
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "弹幕字号",
                         options = listOf(0.8f, 1.0f, 1.2f, 1.5f).map {
@@ -451,8 +475,14 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                }
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "弹幕透明度",
                         options = listOf(0f, 0.25f, 0.5f, 0.7f).map {
@@ -463,13 +493,9 @@ fun SettingsScreen(
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "弹幕速度",
                         options = listOf(6000L, 8000L, 10000L).map {
@@ -480,8 +506,14 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                }
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "滚动行数",
                         options = listOf(4, 8, 12).map { "$it 行" to (snapshot.danmakuLines == it) },
@@ -490,13 +522,9 @@ fun SettingsScreen(
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ActionRow("弹幕屏蔽词", snapshot.danmakuBlockWords.ifBlank { "未设置" }) {
                         blockWordsDraft = snapshot.danmakuBlockWords
                         editBlockWords = true
@@ -505,8 +533,14 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                }
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("开启预加载", "使用旧 PlayerManager 预加载", snapshot.preloadEnabled) {
                         refresh { setPreloadEnabled(it) }
                     }
@@ -514,13 +548,9 @@ fun SettingsScreen(
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("预加载下一集", "仅 Exo 路径生效", snapshot.preloadNext) {
                         refresh { setPreloadNext(it) }
                     }
@@ -528,8 +558,14 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                }
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "预加载线程",
                         options = (1..4).map { "$it" to (snapshot.preloadThreads == it) },
@@ -538,13 +574,9 @@ fun SettingsScreen(
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "缓存大小",
                         options = listOf(50, 100, 200, 500).map {
@@ -555,46 +587,44 @@ fun SettingsScreen(
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+
+                }
+                }
+                Row(
+                    Modifier.fillMaxWidth().weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ActionRow("恢复默认 UA", "清空自定义 UA") { refresh { resetUa() } }
 
 
 
 
-                    }
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     InfoRow("版本", snapshot.version)
 
 
 
 
-                    }
-                    SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    InfoRow("配置地址", snapshot.configUrl.ifBlank { "未配置" })
 
-
-
-
-                    }
+                }
                 }
                 Row(
                     Modifier.fillMaxWidth().weight(1f),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    SettingBar(Modifier.fillMaxWidth().fillMaxHeight()) {
+                SettingBar(Modifier.fillMaxWidth().fillMaxHeight()) {
                     InfoRow("开源许可", "GPL-3.0 · 基于 FongMi/TV")
 
 
 
 
-                    }
+
                 }
+                }
+            }
             }
         }
     }
@@ -602,30 +632,30 @@ fun SettingsScreen(
     if (editBlockWords) {
         SettingsDialog(
             onDismiss = { editBlockWords = false },
-            width = 640.dp,
+            width = 480.dp,
+            padding = 8.dp,
         ) {
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedTextField(
+                CompactTextField(
                     value = blockWordsDraft,
                     onValueChange = { blockWordsDraft = it },
-                    singleLine = false,
-                    minLines = 2,
-                    maxLines = 4,
-                    label = { Text("多个关键词用逗号分隔") },
+                    placeholder = "多个关键词用逗号分隔",
+                    compact = true,
                     modifier = Modifier.weight(1f),
                 )
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(8.dp))
                 Button(
                     onClick = {
                         dataSource.setDanmakuBlockWords(blockWordsDraft.trim())
                         snapshot = dataSource.load()
                         editBlockWords = false
                     },
-                    modifier = Modifier.width(104.dp).height(56.dp),
-                ) { Text("保存") }
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    modifier = Modifier.width(80.dp).height(42.dp),
+                ) { Text("保存", fontSize = 14.sp) }
             }
         }
     }
@@ -658,13 +688,14 @@ fun SettingsScreen(
         SettingsDialog(
             onDismiss = { if (!configLoading) editType = null },
             width = 600.dp,
+            padding = 20.dp,
         ) {
             qrBitmap?.let { bitmap ->
                 Image(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = "配置二维码",
                     contentScale = ContentScale.Fit,
-                    modifier = Modifier.size(160.dp),
+                    modifier = Modifier.size(140.dp),
                 )
             }
             Text(
@@ -673,26 +704,24 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = editName,
-                onValueChange = { editName = it },
-                singleLine = true,
-                label = { Text("线路名称") },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(8.dp))
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OutlinedTextField(
+                CompactTextField(
+                    value = editName,
+                    onValueChange = { editName = it },
+                    placeholder = "线路名称",
+                    modifier = Modifier.weight(0.8f),
+                )
+                Spacer(Modifier.width(8.dp))
+                CompactTextField(
                     value = editUrl,
                     onValueChange = { editUrl = it },
-                    singleLine = true,
-                    label = { Text("配置 URL") },
-                    modifier = Modifier.weight(1f),
+                    placeholder = "配置 URL",
+                    modifier = Modifier.weight(1.7f),
                 )
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(8.dp))
                 Button(
                     enabled = !configLoading && editUrl.isNotBlank(),
                     onClick = {
@@ -708,8 +737,9 @@ fun SettingsScreen(
                             }
                         }
                     },
-                    modifier = Modifier.width(104.dp).height(56.dp),
-                ) { Text(if (configLoading) "保存中…" else "保存") }
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                    modifier = Modifier.width(104.dp).height(46.dp),
+                ) { Text(if (configLoading) "保存中…" else "保存", fontSize = 15.sp) }
             }
             configError?.let {
                 Spacer(Modifier.height(8.dp))
@@ -779,9 +809,56 @@ private fun ConfigRow(
 }
 
 @Composable
+private fun CompactTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        textStyle = TextStyle(
+            fontSize = if (compact) 16.sp else 18.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+        ),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.9f))
+            .border(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                RoundedCornerShape(10.dp),
+            )
+            .padding(
+                horizontal = 12.dp,
+                vertical = if (compact) 8.dp else 12.dp,
+            ),
+        decorationBox = { inner ->
+            Box(contentAlignment = Alignment.CenterStart) {
+                if (value.isBlank()) {
+                    Text(
+                        placeholder,
+                        fontSize = if (compact) 14.sp else 15.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                inner()
+            }
+        },
+    )
+}
+
+@Composable
 private fun SettingsDialog(
     onDismiss: () -> Unit,
     width: Dp,
+    padding: Dp = 24.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Dialog(
@@ -799,7 +876,7 @@ private fun SettingsDialog(
             modifier = Modifier.width(width),
         ) {
             Column(
-                Modifier.padding(24.dp),
+                Modifier.padding(padding),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 content = content,
             )
