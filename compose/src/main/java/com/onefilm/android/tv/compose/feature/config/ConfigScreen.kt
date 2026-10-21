@@ -224,8 +224,23 @@ private fun ConfigLineRow(
     onPick: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    val shape = RoundedCornerShape(10.dp)
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp)
+            .clip(shape)
+            .background(
+                if (line.current) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+            )
+            .border(
+                1.dp,
+                if (line.current) MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                shape,
+            )
+            .padding(horizontal = 8.dp, vertical = 1.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(

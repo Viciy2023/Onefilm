@@ -107,7 +107,7 @@ private fun CategoryContent(
 ) {
     Box(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
-            columns = GridCells.Fixed(5),
+            columns = GridCells.Fixed(6),
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 48.dp, vertical = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),

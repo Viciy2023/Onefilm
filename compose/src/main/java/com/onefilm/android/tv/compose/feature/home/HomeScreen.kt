@@ -137,13 +137,13 @@ private fun TvPosterSection(
     items: List<MediaCard>,
     onCardClick: (MediaCard) -> Unit,
 ) {
-    val pages = items.chunked(10)
+    val pages = items.chunked(12)
     val listState = rememberLazyListState()
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        // 保持 5 列和 2:3 比例，通过增加左右留白把整组卡片等比例缩小。
-        val horizontalPadding = (maxWidth * 0.12f).coerceAtLeast(48.dp)
-        val gap = 20.dp
-        val cardWidth = ((maxWidth - horizontalPadding * 2 - gap * 4) / 5).coerceAtLeast(120.dp)
+        // 6 列 × 2 行，保持 2:3 海报比例。
+        val horizontalPadding = 48.dp
+        val gap = 16.dp
+        val cardWidth = ((maxWidth - horizontalPadding * 2 - gap * 5) / 6).coerceAtLeast(110.dp)
         LazyRow(
             state = listState,
             modifier = Modifier.fillMaxSize(),
@@ -167,8 +167,8 @@ private fun TvPosterSection(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(gap),
                         ) {
-                            for (col in 0 until 5) {
-                                val item = page.getOrNull(row * 5 + col)
+                            for (col in 0 until 6) {
+                                val item = page.getOrNull(row * 6 + col)
                                 if (item != null) {
                                     TvPosterCard(
                                         title = item.title,

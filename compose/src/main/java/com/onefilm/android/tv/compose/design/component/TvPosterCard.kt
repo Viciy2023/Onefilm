@@ -67,18 +67,12 @@ fun TvPosterCard(
                 .aspectRatio(2f / 3f)
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
-            if (posterUrl.isNullOrBlank()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("无海报", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            } else {
-                RemoteImage(
-                    rawUrl = posterUrl,
-                    contentDescription = title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
+            RemoteImage(
+                rawUrl = posterUrl,
+                contentDescription = title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
             Box(
                 Modifier
                     .fillMaxSize()
