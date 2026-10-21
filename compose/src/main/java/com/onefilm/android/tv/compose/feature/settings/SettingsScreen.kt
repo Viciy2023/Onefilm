@@ -153,6 +153,7 @@ fun SettingsScreen(
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ConfigRow(
@@ -177,6 +178,7 @@ fun SettingsScreen(
                             }
                         },
                     )
+
 
 
 
@@ -207,6 +209,7 @@ fun SettingsScreen(
 
 
 
+
                 }
             }
             Row(
@@ -229,12 +232,15 @@ fun SettingsScreen(
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
 ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() } }
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
+
 
 
 
@@ -243,6 +249,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                     SwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
                         refresh { setIncognito(it) }
                     }
+
 
 
 
@@ -263,9 +270,11 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ActionRow("字幕颜色", snapshot.subtitleColorLabel) { refresh { cycleSubtitleColor() } }
+
 
 
 
@@ -280,6 +289,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
@@ -289,6 +299,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                             "%.1fx".format(it) to (snapshot.subtitleScale == it)
                         },
                     ) { index -> refresh { setSubtitleScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
+
 
 
 
@@ -311,11 +322,13 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("显示弹幕", "加载并渲染弹幕", snapshot.danmakuShow) {
                         refresh { setDanmakuShow(it) }
                     }
+
 
 
 
@@ -330,6 +343,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
@@ -338,6 +352,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                             "${(it * 100).toInt()}%" to (snapshot.danmakuTransparency == it)
                         },
                     ) { index -> refresh { setDanmakuTransparency(listOf(0f, 0.25f, 0.5f, 0.7f)[index]) } }
+
 
 
 
@@ -357,12 +372,14 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "滚动行数",
                         options = listOf(4, 8, 12).map { "$it 行" to (snapshot.danmakuLines == it) },
                     ) { index -> refresh { setDanmakuLines(listOf(4, 8, 12)[index]) } }
+
 
 
 
@@ -375,6 +392,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
@@ -382,6 +400,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                         subtitle = "MPV 与 Exo 共用旧 PlayerManager",
                         options = listOf("Exo" to !snapshot.engineMpv, "MPV" to snapshot.engineMpv),
                     ) { index -> refresh { setEngine(index == 1) } }
+
 
 
 
@@ -404,6 +423,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
@@ -413,6 +433,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                             "${it}s" to (snapshot.bufferSeconds == it)
                         },
                     ) { index -> refresh { setBufferSeconds(listOf(1, 2, 5, 10)[index]) } }
+
 
 
 
@@ -426,9 +447,11 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("隧道解码", "需要 Surface 渲染", snapshot.tunnel) { refresh { setTunnel(it) } }
+
 
 
 
@@ -445,11 +468,13 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("音频偏软解", "软解优先使用 Audio 解码器", snapshot.audioPrefer) {
                         refresh { setAudioPrefer(it) }
                     }
+
 
 
 
@@ -461,12 +486,14 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ActionRow(
                         title = "Dolby Vision 输出",
                         value = snapshot.dvPolicyLabel,
                     ) { refresh { cycleDolbyVisionPolicy() } }
+
 
 
 
@@ -483,11 +510,13 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("预加载下一集", "仅 Exo 路径生效", snapshot.preloadNext) {
                         refresh { setPreloadNext(it) }
                     }
+
 
 
 
@@ -500,14 +529,11 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "缓存大小",
-                        options = listOf(50, 100, 200, 500).map {
-                            "$it MB" to (snapshot.preloadSizeMb == it)
-                        },
-                    ) { index -> refresh { setPreloadSizeMb(listOf(50, 100, 200, 500)[index]) } }
+                    ActionRow("恢复默认 UA", "清空自定义 UA") { refresh { resetUa() } }
+
 
 
 
@@ -518,7 +544,13 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ActionRow("恢复默认 UA", "清空自定义 UA") { refresh { resetUa() } }
+                    ChoiceRow(
+                        title = "缓存大小",
+                        options = listOf(128, 256, 512, 1024).map {
+                            "$it MB" to (snapshot.preloadSizeMb == it)
+                        },
+                    ) { index -> refresh { setPreloadSizeMb(listOf(128, 256, 512, 1024)[index]) } }
+
 
 
 
@@ -532,11 +564,13 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                     ) { index -> refresh { setCacheDays(listOf(7, 30, 60, 90)[index]) } }
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ActionRow("清除缓存", snapshot.cacheSizeLabel) {
                         showClearCacheConfirm = true
                     }
+
 
 
                 }
@@ -545,9 +579,11 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     InfoRow("开源许可", "GPL-3.0 · 基于 FongMi/TV")
+
 
 
 
