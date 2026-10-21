@@ -65,11 +65,18 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
@@ -583,13 +590,37 @@ private fun SeekBar(
     var width by remember { mutableLongStateOf(1L) }
     var preview by remember { mutableLongStateOf(position) }
     var dragging by remember { mutableStateOf(false) }
+    var focused by remember { mutableStateOf(false) }
     fun valueAt(x: Float): Long =
         ((x / width.toFloat().coerceAtLeast(1f)).coerceIn(0f, 1f) * safeDuration).toLong()
+    fun seekBy(deltaMs: Long) {
+        val next = ((if (dragging) preview else position) + deltaMs)
+            .coerceIn(0L, safeDuration)
+        preview = next
+        onPreview(next)
+        onCommit(next)
+    }
 
     Canvas(
         Modifier
             .fillMaxWidth()
             .height(26.dp)
+            .focusable()
+            .onFocusChanged { focused = it.isFocused }
+            .onKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
+                when (event.key) {
+                    Key.DirectionLeft -> {
+                        seekBy(-5_000L)
+                        true
+                    }
+                    Key.DirectionRight -> {
+                        seekBy(5_000L)
+                        true
+                    }
+                    else -> false
+                }
+            }
             .onSizeChanged { width = it.width.toLong().coerceAtLeast(1L) }
             .pointerInput(safeDuration) {
                 detectTapGestures { offset ->
@@ -640,6 +671,15 @@ private fun SeekBar(
             radius = if (dragging) 7.dp.toPx() else 5.dp.toPx(),
             center = Offset(size.width * fraction, centerY),
         )
+        if (focused) {
+            drawRoundRect(
+                color = Ink.copy(alpha = 0.9f),
+                topLeft = Offset(0f, 0f),
+                size = size,
+                cornerRadius = CornerRadius(6.dp.toPx()),
+                style = Stroke(2.dp.toPx()),
+            )
+        }
     }
 }
 

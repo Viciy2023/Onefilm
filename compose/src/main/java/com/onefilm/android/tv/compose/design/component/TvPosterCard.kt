@@ -50,7 +50,7 @@ fun TvPosterCard(
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val scale by animateFloatAsState(if (focused) 1.05f else 1f, tween(120), label = "tv-poster")
-    val shape = RoundedCornerShape(24.dp)
+    val shape = RoundedCornerShape(12.dp)
     val sizeModifier = if (width != null) Modifier.width(width) else Modifier.fillMaxWidth()
     Box(
         modifier
@@ -86,7 +86,7 @@ fun TvPosterCard(
                 Text(
                     text = label,
                     color = Color.White,
-                    fontSize = 14.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -109,7 +109,7 @@ fun TvPosterCard(
                 Text(
                     text = title.ifBlank { "未命名" },
                     color = Color.White,
-                    fontSize = 22.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
@@ -120,7 +120,7 @@ fun TvPosterCard(
                     Text(
                         text = it,
                         color = Color.White.copy(alpha = 0.75f),
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),
                         maxLines = 1,

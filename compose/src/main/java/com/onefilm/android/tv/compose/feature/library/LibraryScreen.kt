@@ -61,7 +61,7 @@ fun LibraryScreen(
         ) {
             Text(
                 text = if (historyMode) "历史" else "收藏",
-                fontSize = 30.sp,
+                fontSize = 20.sp,
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.weight(1f),
             )
@@ -70,21 +70,21 @@ fun LibraryScreen(
                     onClick = { deleteMode = !deleteMode },
                     enabled = items.isNotEmpty(),
                 ) {
-                    Text(if (deleteMode) "退出删除" else "删除记录", fontSize = 16.sp)
+                    Text(if (deleteMode) "退出删除" else "删除记录", fontSize = 13.sp)
                 }
                 Spacer(Modifier.width(10.dp))
                 OutlinedButton(
                     onClick = { pendingClear = true },
                     enabled = items.isNotEmpty(),
                 ) {
-                    Text("一键删除", fontSize = 16.sp)
+                    Text("一键删除", fontSize = 13.sp)
                 }
             } else {
                 Button(
                     onClick = { deleteMode = !deleteMode },
                     enabled = items.isNotEmpty(),
                 ) {
-                    Text(if (deleteMode) "退出删除" else "删除收藏", fontSize = 16.sp)
+                    Text(if (deleteMode) "退出删除" else "删除收藏", fontSize = 13.sp)
                 }
             }
         }
@@ -92,7 +92,7 @@ fun LibraryScreen(
             Text(
                 text = if (historyMode) "按确定键删除当前选中记录" else "按确定键删除当前选中收藏",
                 color = MaterialTheme.colorScheme.primary,
-                fontSize = 16.sp,
+                fontSize = 13.sp,
                 modifier = Modifier.padding(top = 8.dp),
             )
         }
@@ -100,14 +100,14 @@ fun LibraryScreen(
             data == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     AppLogoLoading(size = 84.dp)
-                    Text("哎呀！正在加载中呢，你等等呀！", fontSize = 18.sp)
+                    Text("哎呀！正在加载中呢，你等等呀！", fontSize = 13.sp)
                 }
             }
             items.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
                     if (historyMode) "暂无观看记录" else "暂无收藏内容",
                     style = MaterialTheme.typography.bodyLarge,
-                    fontSize = 18.sp,
+                    fontSize = 13.sp,
                 )
             }
             else -> LazyVerticalGrid(

@@ -227,7 +227,7 @@ private fun DetailContent(
             ) {
                 Text(
                     text = info.title.ifBlank { "未命名" },
-                    fontSize = 40.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -241,14 +241,14 @@ private fun DetailContent(
                         info.remarks?.let { append("    $it") }
                     },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 24.sp,
+                    fontSize = 18.sp,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 info.actor?.let {
                     Text(
                         text = "演员：$it",
-                        fontSize = 24.sp,
+                        fontSize = 18.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -256,7 +256,7 @@ private fun DetailContent(
                 info.director?.let {
                     Text(
                         text = "导演：$it",
-                        fontSize = 24.sp,
+                        fontSize = 18.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -265,7 +265,7 @@ private fun DetailContent(
                 if (!address.isNullOrBlank()) {
                     Text(
                         text = "播放地址：$address",
-                        fontSize = 21.sp,
+                        fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
@@ -274,7 +274,7 @@ private fun DetailContent(
                 info.description?.let {
                     Text(
                         text = "内容简介：$it",
-                        fontSize = 19.sp,
+                        fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 4,
                         overflow = TextOverflow.Ellipsis,
@@ -282,10 +282,10 @@ private fun DetailContent(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     OutlinedButton(onClick = { reversed = !reversed }) {
-                        Text(if (reversed) "正序" else "倒序", fontSize = 24.sp)
+                        Text(if (reversed) "正序" else "倒序", fontSize = 18.sp)
                     }
                     Button(onClick = onToggleFavorite) {
-                        Text(if (favorite) "已收藏" else "加入收藏", fontSize = 24.sp)
+                        Text(if (favorite) "已收藏" else "加入收藏", fontSize = 18.sp)
                     }
                 }
             }
@@ -322,7 +322,7 @@ private fun DetailContent(
                     Text(
                         text = "点击播放",
                         color = Color.White,
-                        fontSize = 24.sp,
+                        fontSize = 18.sp,
                         modifier = Modifier
                             .align(Alignment.Center)
                             .clickable {
@@ -335,7 +335,7 @@ private fun DetailContent(
 
         Spacer(Modifier.height(18.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("线路", fontSize = 24.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(88.dp))
+            Text("线路", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(88.dp))
             LazyRow(
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -345,7 +345,7 @@ private fun DetailContent(
                     Text(
                         text = flag.name.ifBlank { "默认线路" },
                         color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 21.sp,
+                        fontSize = 16.sp,
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                         modifier = Modifier
                             .clip(RoundedCornerShape(percent = 50))
@@ -387,7 +387,7 @@ private fun DetailContent(
                     Text(
                         text = episode.name.ifBlank { "未命名" },
                         color = if (playing) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-                        fontSize = 21.sp,
+                        fontSize = 16.sp,
                         fontWeight = if (playing) FontWeight.SemiBold else FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

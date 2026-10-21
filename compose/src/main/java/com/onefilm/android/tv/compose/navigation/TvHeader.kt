@@ -105,9 +105,8 @@ fun TvHeader(
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.background.copy(alpha = 0.8f)),
     ) {
-        // TV 盒子在不同设备上可能上报 1.0 或 2.5 的 density。
-        // 用可用宽度做一次自适应，避免 2400px 屏上导航和分类缩成一小条。
-        val scale = (maxWidth.value / 1000f).coerceIn(1f, 2.4f)
+        // TV 与手机使用同一套 sp/dp 基准，不再按屏宽二次放大字体，避免 4K 电视溢出。
+        val scale = 1f
         val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
         val navFocusRequesters = remember { mutableMapOf<String, androidx.compose.ui.focus.FocusRequester>() }
         val initialCategoryFocus = remember { androidx.compose.ui.focus.FocusRequester() }
@@ -243,7 +242,7 @@ fun TvBrandRow(
                 Text(
                     text = "ONEFILM",
                     color = TvInk,
-                    fontSize = ((if (compact) 18 else 28) * scale).sp,
+                    fontSize = ((if (compact) 16 else 22) * scale).sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = if (compact) 1.sp else 2.sp,
                 )
@@ -252,7 +251,7 @@ fun TvBrandRow(
                 Text(
                     text = resolvedCenter,
                     color = TvInk,
-                    fontSize = (18 * scale).sp,
+                    fontSize = (14 * scale).sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
                     maxLines = 1,
@@ -263,7 +262,7 @@ fun TvBrandRow(
                 Text(
                     text = "$date   $time",
                     color = TvInk,
-                    fontSize = ((if (compact) 18 else 16) * scale).sp,
+                    fontSize = ((if (compact) 14 else 14) * scale).sp,
                     fontWeight = FontWeight.Medium,
                 )
             }
@@ -334,14 +333,14 @@ private fun TvNavTab(
             Text(
                 text = entry.icon,
                 color = contentColor,
-                fontSize = (14 * uiScale).sp,
+                fontSize = (12 * uiScale).sp,
                 fontWeight = FontWeight.Medium,
             )
             Spacer(Modifier.width((5 * uiScale).dp))
             Text(
                 text = entry.label,
                 color = contentColor,
-                fontSize = (16 * uiScale).sp,
+                fontSize = (14 * uiScale).sp,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
             )
@@ -367,7 +366,7 @@ private fun TvCategoryChip(
     Text(
         text = category.name.ifBlank { "未命名" },
         color = if (highlighted) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-        fontSize = (16 * scale).sp,
+        fontSize = (14 * scale).sp,
         fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Normal,
         textAlign = TextAlign.Center,
         maxLines = 1,

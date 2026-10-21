@@ -68,7 +68,7 @@ fun LinesScreen(
                     Text(
                         text = "暂无线路，请先在配置弹窗中添加。",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 16.sp,
+                        fontSize = 14.sp,
                         modifier = Modifier.padding(vertical = 16.dp),
                     )
                 } else {
@@ -145,7 +145,7 @@ private fun LineRow(
     ) {
         Text(
             text = line.name.ifBlank { line.url },
-            fontSize = 19.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

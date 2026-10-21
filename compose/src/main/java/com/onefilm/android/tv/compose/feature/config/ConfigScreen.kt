@@ -49,6 +49,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.onefilm.android.tv.compose.bridge.ConfigLine
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
+import com.onefilm.android.tv.compose.bridge.ServerEventBridge
 
 @Composable
 fun ConfigScreen(
@@ -72,7 +73,14 @@ fun ConfigScreen(
         lines = dataSource.allConfigLines()
     }
 
-    LaunchedEffect(Unit) { refreshLines() }
+    LaunchedEffect(Unit) {
+        refreshLines()
+        ServerEventBridge.settings.collect { pushed ->
+            name = pushed.name
+            url = pushed.text
+            error = null
+        }
+    }
 
     Dialog(
         onDismissRequest = { if (!loading) onBack() },
@@ -116,7 +124,7 @@ fun ConfigScreen(
                             .verticalScroll(rememberScrollState()),
                     ) {
                         if (lines.isEmpty()) {
-                            Text("暂无已配置线路", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
+                            Text("暂无已配置线路", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                         } else {
                             lines.forEach { line ->
                                 ConfigLineRow(
@@ -247,7 +255,7 @@ private fun ConfigLineRow(
     ) {
         Text(
             text = line.name.ifBlank { line.url },
-            fontSize = 16.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

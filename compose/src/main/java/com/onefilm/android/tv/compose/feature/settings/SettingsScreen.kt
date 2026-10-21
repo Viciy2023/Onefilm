@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.FlowRowScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,13 +37,17 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -58,8 +64,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
+import com.onefilm.android.tv.compose.bridge.ServerEventBridge
 import com.onefilm.android.tv.compose.design.ThemeController
 import com.onefilm.android.tv.compose.navigation.TvBrandRow
+import kotlinx.coroutines.delay
 
 @Composable
 fun SettingsScreen(
@@ -79,6 +87,13 @@ fun SettingsScreen(
     var showClearCacheConfirm by remember { mutableStateOf(false) }
     var configMessage by remember { mutableStateOf<String?>(null) }
     var configMessageSuccess by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        ServerEventBridge.settings.collect { pushed ->
+            editName = pushed.name
+            editUrl = pushed.text
+            configError = null
+        }
+    }
 
     fun refresh(change: SettingsDataSource.() -> Unit) {
         dataSource.change()
@@ -113,7 +128,7 @@ fun SettingsScreen(
                     ),
                 ),
             )
-            .padding(horizontal = 40.dp, vertical = 20.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         TvBrandRow(
             compact = true,
@@ -121,7 +136,7 @@ fun SettingsScreen(
         )
         Column(
             Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Row(
                 Modifier.fillMaxWidth().weight(1f),
@@ -618,7 +633,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                     },
                     contentPadding = PaddingValues(horizontal = 8.dp),
                     modifier = Modifier.width(80.dp).height(42.dp),
-                ) { Text("保存", fontSize = 14.sp) }
+                ) { Text("保存", fontSize = 13.sp) }
             }
         }
     }
@@ -629,11 +644,11 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
             width = 520.dp,
             padding = 16.dp,
         ) {
-            Text("确定清除缓存？", fontSize = 22.sp)
+            Text("确定清除缓存？", fontSize = 15.sp)
             Spacer(Modifier.height(10.dp))
             Text(
                 "将删除图片缓存和临时文件，不会删除收藏和观看记录。",
-                fontSize = 16.sp,
+                fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(16.dp))
@@ -642,7 +657,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
             ) {
                 OutlinedButton(onClick = { showClearCacheConfirm = false }) {
-                    Text("取消", fontSize = 16.sp)
+                    Text("取消", fontSize = 13.sp)
                 }
                 Button(
                     onClick = {
@@ -651,7 +666,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                         showClearCacheConfirm = false
                     },
                 ) {
-                    Text("清除", fontSize = 16.sp)
+                    Text("清除", fontSize = 13.sp)
                 }
             }
         }
@@ -665,12 +680,12 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
         ) {
             Text(
                 text = if (configMessageSuccess) "加载成功" else "加载失败",
-                fontSize = 22.sp,
+                fontSize = 15.sp,
             )
             Spacer(Modifier.height(10.dp))
             Text(
                 text = message,
-                fontSize = 16.sp,
+                fontSize = 13.sp,
                 color = if (configMessageSuccess) MaterialTheme.colorScheme.onSurface
                 else MaterialTheme.colorScheme.error,
             )
@@ -679,7 +694,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                 onClick = { configMessage = null },
                 modifier = Modifier.align(Alignment.End),
             ) {
-                Text("知道了", fontSize = 16.sp)
+                Text("知道了", fontSize = 13.sp)
             }
         }
     }
@@ -740,7 +755,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                     },
                     contentPadding = PaddingValues(horizontal = 8.dp),
                     modifier = Modifier.width(104.dp).height(46.dp),
-                ) { Text(if (configLoading) "保存中…" else "保存", fontSize = 15.sp) }
+                ) { Text(if (configLoading) "保存中…" else "保存", fontSize = 13.sp) }
             }
             configError?.let {
                 Spacer(Modifier.height(8.dp))
@@ -776,11 +791,11 @@ private fun ConfigRow(
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, fontSize = 21.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(title, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.width(10.dp))
         Text(
             value.ifBlank { "未配置" },
-            fontSize = 15.sp,
+            fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -799,14 +814,14 @@ private fun ConfigRow(
         ) {
             Text(
                 text = if (loading) "加载中" else "加载",
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 color = if (!loading && value.isNotBlank()) MaterialTheme.colorScheme.onSurface
                 else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
             )
         }
         Spacer(Modifier.width(4.dp))
-        Text("›", fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("›", fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -823,7 +838,7 @@ private fun CompactTextField(
         onValueChange = onValueChange,
         singleLine = true,
         textStyle = TextStyle(
-            fontSize = if (compact) 16.sp else 18.sp,
+            fontSize = 15.sp,
             color = MaterialTheme.colorScheme.onSurface,
         ),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
@@ -844,7 +859,7 @@ private fun CompactTextField(
                 if (value.isBlank()) {
                     Text(
                         placeholder,
-                        fontSize = if (compact) 14.sp else 15.sp,
+                        fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -931,10 +946,10 @@ private fun SwitchRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 21.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
                 subtitle,
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -952,29 +967,105 @@ private fun ChoiceRow(
     options: List<Pair<String, Boolean>>,
     onSelect: (Int) -> Unit,
 ) {
+    var focused by remember { mutableStateOf(false) }
+    var dialogVisible by remember { mutableStateOf(false) }
+    var draftIndex by remember { mutableIntStateOf(options.indexOfFirst { it.second }) }
+    val firstOptionFocus = remember { FocusRequester() }
+    val selectedLabel = options.firstOrNull { it.second }?.first ?: "未选择"
+    LaunchedEffect(dialogVisible) {
+        if (dialogVisible) {
+            delay(80)
+            runCatching { firstOptionFocus.requestFocus() }
+        }
+    }
     Row(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 10.dp),
+        Modifier
+            .fillMaxSize()
+            .onFocusChanged { focused = it.isFocused }
+            .border(
+                2.dp,
+                if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
+                RoundedCornerShape(16.dp),
+            )
+            .clickable {
+                draftIndex = options.indexOfFirst { it.second }
+                dialogVisible = true
+            }
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 21.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (!subtitle.isNullOrBlank()) {
                 Text(
                     subtitle,
-                    fontSize = 14.sp,
+                    fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
         }
-        Spacer(Modifier.width(10.dp))
-        Row(
-            Modifier.weight(1.2f).horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Spacer(Modifier.width(8.dp))
+        Text(
+            selectedLabel,
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 120.dp),
+        )
+        Spacer(Modifier.width(4.dp))
+        Text("›", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+
+    if (dialogVisible) {
+        SettingsDialog(
+            onDismiss = { dialogVisible = false },
+            width = if (options.size <= 3) 420.dp else 560.dp,
+            padding = 10.dp,
         ) {
-            options.forEachIndexed { index, (label, selected) ->
-                SettingChip(label, selected) { onSelect(index) }
+            FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                options.forEachIndexed { index, (label, _) ->
+                    val selected = draftIndex == index
+                    var optionFocused by remember { mutableStateOf(false) }
+                    Box(
+                        Modifier
+                            .onFocusChanged { optionFocused = it.isFocused }
+                            .border(
+                                2.dp,
+                                if (optionFocused) MaterialTheme.colorScheme.primary
+                                else Color.Transparent,
+                                RoundedCornerShape(10.dp),
+                            )
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(
+                                if (selected) MaterialTheme.colorScheme.onSurface
+                                else MaterialTheme.colorScheme.surfaceVariant,
+                            )
+                            .then(
+                                if (index == 0) {
+                                    Modifier.focusRequester(firstOptionFocus)
+                                } else Modifier,
+                            )
+                            .clickable {
+                                onSelect(index)
+                                dialogVisible = false
+                            }
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                    ) {
+                        Text(
+                            text = label,
+                            fontSize = 15.sp,
+                            color = if (selected) MaterialTheme.colorScheme.background
+                            else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
             }
         }
     }
@@ -999,7 +1090,7 @@ private fun SettingChip(label: String, selected: Boolean, onClick: () -> Unit) {
     ) {
         Text(
             text = label,
-            fontSize = 15.sp,
+            fontSize = 13.sp,
             color = if (selected) MaterialTheme.colorScheme.background
             else MaterialTheme.colorScheme.onSurface,
         )
@@ -1024,21 +1115,21 @@ private fun ActionRow(title: String, value: String, onClick: () -> Unit) {
     ) {
         Text(
             title,
-            fontSize = 21.sp,
+            fontSize = 15.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
         Text(
             value,
-            fontSize = 16.sp,
+            fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.widthIn(max = 180.dp),
         )
         Spacer(Modifier.width(6.dp))
-        Text("›", fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("›", fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -1050,7 +1141,7 @@ private fun InfoRow(title: String, value: String) {
     ) {
         Text(
             title,
-            fontSize = 21.sp,
+            fontSize = 15.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
@@ -1058,7 +1149,7 @@ private fun InfoRow(title: String, value: String) {
         Spacer(Modifier.width(10.dp))
         Text(
             value,
-            fontSize = 15.sp,
+            fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

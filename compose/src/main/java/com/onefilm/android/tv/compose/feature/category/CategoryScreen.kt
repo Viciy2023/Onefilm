@@ -200,7 +200,7 @@ private fun FilterBottomSheet(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = group.name + "：",
-                    fontSize = 20.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.width(110.dp),
@@ -242,7 +242,7 @@ private fun FilterOption(
             selected -> MaterialTheme.colorScheme.background
             else -> MaterialTheme.colorScheme.onSurface
         },
-        fontSize = 18.sp,
+        fontSize = 14.sp,
         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         modifier = Modifier
             .then(

@@ -92,7 +92,7 @@ fun NetdiskScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = if (drive == null) "网盘" else drive.name,
-                fontSize = 30.sp,
+                fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.weight(1f))
@@ -110,12 +110,12 @@ fun NetdiskScreen(
             text = if (drive == null) "添加 WebDAV 或 Alist 网页，浏览网盘中的影片。"
             else currentPath.ifBlank { "/" },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 14.sp,
+            fontSize = 13.sp,
         )
         Spacer(Modifier.height(16.dp))
 
         error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, fontSize = 14.sp)
+            Text(it, color = MaterialTheme.colorScheme.error, fontSize = 13.sp)
             Spacer(Modifier.height(8.dp))
         }
 
@@ -245,7 +245,7 @@ private fun DriveList(
                 ) { Text(if (drive.type == 1) "DAV" else "AL", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
                 Spacer(Modifier.size(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(drive.name.ifBlank { "未命名网盘" }, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+                    Text(drive.name.ifBlank { "未命名网盘" }, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     Text(
                         if (drive.type == 1) "WebDAV" else "Alist 网页",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -284,7 +284,7 @@ private fun NetdiskEntryCard(entry: NetdiskEntry, onClick: () -> Unit) {
         Spacer(Modifier.height(8.dp))
         Text(
             text = entry.name,
-            fontSize = 16.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
             maxLines = 2,
@@ -358,7 +358,7 @@ private fun DriveDialog(
                         Text(
                             text = label,
                             color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(percent = 50))
                                 .background(if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant)
@@ -454,7 +454,7 @@ private fun FieldRow(label: String, content: @Composable () -> Unit) {
     ) {
         Text(
             text = label,
-            fontSize = 14.sp,
+            fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(width = 120.dp, height = 40.dp),
         )
@@ -473,7 +473,7 @@ private fun CompactField(
         onValueChange = onValueChange,
         singleLine = true,
         textStyle = androidx.compose.ui.text.TextStyle(
-            fontSize = 15.sp,
+            fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurface,
         ),
         modifier = Modifier

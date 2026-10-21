@@ -90,10 +90,10 @@ fun SearchScreen(
                 .fillMaxWidth()
                 .weight(1f)
                 .padding(
-                    start = 34.dp,
-                    top = if (landing) 20.dp else 8.dp,
-                    end = 34.dp,
-                    bottom = 20.dp,
+                    start = 12.dp,
+                    top = if (landing) 12.dp else 6.dp,
+                    end = 12.dp,
+                    bottom = 10.dp,
                 ),
         ) {
         if (landing) {
@@ -153,16 +153,16 @@ private fun SearchLanding(
 ) {
     Row(
         Modifier.fillMaxSize(),
-        horizontalArrangement = Arrangement.spacedBy(20.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         HistoryPanel(
-            modifier = Modifier.weight(0.20f).fillMaxHeight(),
+            modifier = Modifier.weight(0.22f).fillMaxHeight(),
             history = history,
             onSearch = onSearch,
             onClearHistory = onClearHistory,
         )
         SearchCenterPanel(
-            modifier = Modifier.weight(0.36f).fillMaxHeight(),
+            modifier = Modifier.weight(0.42f).fillMaxHeight(),
             query = query,
             firstLetterFocus = firstLetterFocus,
             onQueryChange = onQueryChange,
@@ -171,7 +171,7 @@ private fun SearchLanding(
             onDelete = onDelete,
         )
         DynamicRightPanel(
-            modifier = Modifier.weight(0.44f).fillMaxHeight(),
+            modifier = Modifier.weight(0.36f).fillMaxHeight(),
             query = query,
             hot = hot,
             rankings = rankings,
@@ -185,9 +185,9 @@ private fun SearchLanding(
 private fun Panel(modifier: Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(MaterialTheme.colorScheme.surface)
-            .padding(20.dp),
+            .padding(6.dp),
     ) { content() }
 }
 
@@ -200,26 +200,26 @@ private fun HistoryPanel(
 ) {
     Panel(modifier) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("搜索历史", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Text("搜索历史", fontSize = 14.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.weight(1f))
             if (history.isNotEmpty()) {
                 Text(
                     "清空",
                     color = MaterialTheme.colorScheme.primary,
-                    fontSize = 18.sp,
+                    fontSize = 14.sp,
                     modifier = Modifier.clickable(onClick = onClearHistory).padding(8.dp),
                 )
             }
         }
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(8.dp))
         if (history.isEmpty()) {
-            Text("暂无搜索历史", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 18.sp)
+            Text("暂无搜索历史", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
         } else {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
             ) {
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     history.forEach { word ->
@@ -248,27 +248,43 @@ private fun SearchCenterPanel(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             textStyle = MaterialTheme.typography.titleMedium,
-            placeholder = { Text("输入要搜索的影片、剧集、演员", fontSize = 18.sp) },
+            placeholder = { Text("输入要搜索的影片、剧集、演员", fontSize = 14.sp) },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
         )
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { onSearch(query) }, modifier = Modifier.weight(1f)) {
-                Text("搜索", fontSize = 17.sp)
+            Button(
+                onClick = { onSearch(query) },
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+                modifier = Modifier.width(84.dp),
+            ) {
+                Text("搜索", fontSize = 14.sp)
             }
-            OutlinedButton(onClick = { onSearch(query) }, modifier = Modifier.weight(1f)) {
-                Text("远程搜索", fontSize = 17.sp)
+            OutlinedButton(
+                onClick = { onSearch(query) },
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+                modifier = Modifier.width(84.dp),
+            ) {
+                Text("远程搜索", fontSize = 14.sp)
             }
-            OutlinedButton(onClick = onClear, modifier = Modifier.weight(1f)) {
-                Text("清空", fontSize = 17.sp)
+            OutlinedButton(
+                onClick = onClear,
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+                modifier = Modifier.width(84.dp),
+            ) {
+                Text("清空", fontSize = 14.sp)
             }
-            OutlinedButton(onClick = onDelete, modifier = Modifier.weight(1f)) {
-                Text("删除", fontSize = 17.sp)
+            OutlinedButton(
+                onClick = onDelete,
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+                modifier = Modifier.width(84.dp),
+            ) {
+                Text("删除", fontSize = 14.sp)
             }
         }
-        Spacer(Modifier.height(14.dp))
-        Text("字母索引", fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.height(8.dp))
+        Text("字母索引", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(8.dp))
         AlphabetGrid(
             modifier = Modifier.weight(1f),
@@ -279,7 +295,7 @@ private fun SearchCenterPanel(
         Text(
             text = "字母只填入搜索框；输入完整关键字后点「搜索」。",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 15.sp,
+            fontSize = 13.sp,
         )
     }
 }
@@ -340,7 +356,7 @@ private fun AlphabetKey(
     ) {
         Text(
             text = key,
-            fontSize = 26.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = if (focused) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
         )
@@ -359,10 +375,10 @@ private fun DynamicRightPanel(
     Panel(modifier) {
         Text(
             text = if (query.isBlank()) "热门搜索" else "匹配结果",
-            fontSize = 26.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(8.dp))
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -372,11 +388,11 @@ private fun DynamicRightPanel(
                     Text(
                         "正在匹配，输入完整片名后可点「搜索」。",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 18.sp,
+                        fontSize = 14.sp,
                     )
                 } else {
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         suggestions.take(40).forEach { word ->
@@ -390,7 +406,7 @@ private fun DynamicRightPanel(
                 rankings.forEach { rank ->
                     Text(
                         text = rank.title,
-                        fontSize = 21.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                     )
@@ -405,7 +421,7 @@ private fun DynamicRightPanel(
 @Composable
 private fun WordColumns(words: List<String>, onSearch: (String) -> Unit) {
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalArrangement = Arrangement.spacedBy(9.dp),
     ) {
         words.forEach { word ->
@@ -418,7 +434,7 @@ private fun WordColumns(words: List<String>, onSearch: (String) -> Unit) {
 private fun KeywordChip(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Text(
         text = text,
-        fontSize = 21.sp,
+        fontSize = 16.sp,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         textAlign = TextAlign.Center,
@@ -426,7 +442,7 @@ private fun KeywordChip(text: String, modifier: Modifier = Modifier, onClick: ()
             .clip(RoundedCornerShape(10.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 10.dp, vertical = 6.dp),
     )
 }
 
@@ -447,35 +463,35 @@ private fun SearchResults(
         (it.siteName?.takeIf { name -> name.isNotBlank() } ?: it.key) == selectedSite
     }
 
-    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+    Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(
             Modifier
-                .width(340.dp)
+                .width(160.dp)
                 .fillMaxHeight()
-                .clip(RoundedCornerShape(18.dp))
+                .clip(RoundedCornerShape(14.dp))
                 .background(MaterialTheme.colorScheme.surface)
-                .padding(vertical = 16.dp),
+                .padding(vertical = 8.dp),
         ) {
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 18.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "搜索",
-                    fontSize = 26.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
                     text = content?.let { "(${it.completed}/${it.total})" } ?: "",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 18.sp,
+                    fontSize = 14.sp,
                 )
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(6.dp))
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 SiteButton(
                     text = "全部显示",
@@ -500,11 +516,11 @@ private fun SearchResults(
                 is SearchUiState.Empty -> Box(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
-                ) { Text("没有找到“${state.keyword}”相关结果", fontSize = 18.sp) }
+                ) { Text("没有找到“${state.keyword}”相关结果", fontSize = 14.sp) }
                 is SearchUiState.Error -> Box(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
-                ) { Text(state.message, fontSize = 18.sp, color = MaterialTheme.colorScheme.error) }
+                ) { Text(state.message, fontSize = 14.sp, color = MaterialTheme.colorScheme.error) }
                 is SearchUiState.Content -> LazyVerticalGrid(
                     columns = GridCells.Fixed(5),
                     modifier = Modifier.fillMaxSize(),
@@ -536,17 +552,17 @@ private fun SiteButton(text: String, selected: Boolean, onClick: () -> Unit) {
     Text(
         text = text,
         color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-        fontSize = 23.sp,
+        fontSize = 14.sp,
         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
         textAlign = TextAlign.Center,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 10.dp)
-            .clip(RoundedCornerShape(10.dp))
+            .padding(horizontal = 6.dp)
+            .clip(RoundedCornerShape(8.dp))
             .background(if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant)
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 14.dp),
+            .padding(horizontal = 8.dp, vertical = 7.dp),
     )
 }

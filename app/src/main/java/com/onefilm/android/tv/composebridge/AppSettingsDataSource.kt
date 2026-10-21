@@ -8,9 +8,11 @@ import com.onefilm.android.tv.bean.Config
 import com.onefilm.android.tv.impl.Callback
 import com.github.catvod.bean.Doh
 import com.onefilm.android.tv.BuildConfig
+import com.onefilm.android.tv.event.ServerEvent
 import com.onefilm.android.tv.api.config.VodConfig
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
+import com.onefilm.android.tv.compose.bridge.ServerEventBridge
 import com.onefilm.android.tv.compose.bridge.ConfigLine
 import com.onefilm.android.tv.setting.DanmakuSetting
 import com.onefilm.android.tv.setting.DecodeSetting
@@ -20,8 +22,22 @@ import com.onefilm.android.tv.setting.Setting
 import com.onefilm.android.tv.setting.SubtitleSetting
 import com.onefilm.android.tv.utils.FileUtil
 import com.github.catvod.utils.Path
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 
 class AppSettingsDataSource : SettingsDataSource {
+
+    init {
+        EventBus.getDefault().register(this)
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onServerEvent(event: ServerEvent) {
+        if (event.type() == ServerEvent.Type.SETTING) {
+            ServerEventBridge.pushSetting(event.text(), event.name())
+        }
+    }
 
     private var wallLoading = false
 
