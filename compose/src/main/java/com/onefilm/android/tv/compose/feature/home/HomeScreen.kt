@@ -140,9 +140,9 @@ private fun TvPosterSection(
     val pages = items.chunked(10)
     val listState = rememberLazyListState()
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val horizontalPadding = 48.dp
-        val gap = 16.dp
-        // 5 列必须铺满屏宽；高度不足时允许纵向滚动，而不是把卡片缩到屏幕中间。
+        // 保持 5 列和 2:3 比例，通过增加左右留白把整组卡片等比例缩小。
+        val horizontalPadding = (maxWidth * 0.12f).coerceAtLeast(48.dp)
+        val gap = 20.dp
         val cardWidth = ((maxWidth - horizontalPadding * 2 - gap * 4) / 5).coerceAtLeast(120.dp)
         LazyRow(
             state = listState,

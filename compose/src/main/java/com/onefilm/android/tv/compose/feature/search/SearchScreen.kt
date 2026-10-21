@@ -85,13 +85,18 @@ fun SearchScreen(
 
     Column(Modifier.fillMaxSize()) {
         if (!landing) {
-            TvBrandRow(centerText = "ONEFILM 影视")
+            TvBrandRow(centerText = "ONEFILM 影视", compact = true)
         }
         Column(
             Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .padding(horizontal = 34.dp, vertical = 20.dp),
+                .padding(
+                    start = 34.dp,
+                    top = if (landing) 20.dp else 8.dp,
+                    end = 34.dp,
+                    bottom = 20.dp,
+                ),
         ) {
         if (landing) {
             SearchLanding(

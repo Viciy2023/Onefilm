@@ -210,11 +210,7 @@ class ComposeMainActivity : ComponentActivity() {
                                 isTv = isTv,
                                 onRetry = homeViewModel::retry,
                                 onCardClick = { card ->
-                                    if (card.key.isNotBlank() && card.id.isNotBlank() &&
-                                        !card.id.startsWith("msearch:")
-                                    ) {
-                                        navController.navigate(Routes.detail(card.key, card.id, card.title, card.posterUrl))
-                                    } else if (card.title.isNotBlank()) {
+                                    if (card.title.isNotBlank()) {
                                         navController.navigate(Routes.search(card.title))
                                     }
                                 },
@@ -309,11 +305,7 @@ class ComposeMainActivity : ComponentActivity() {
                                 dataSource = categoryDataSource,
                                 onBack = { navController.popBackStack() },
                                 onCardClick = { card ->
-                                    if (card.key.isNotBlank() && card.id.isNotBlank() &&
-                                        !card.id.startsWith("msearch:")
-                                    ) {
-                                        navController.navigate(Routes.detail(card.key, card.id, card.title, card.posterUrl))
-                                    } else if (card.title.isNotBlank()) {
+                                    if (card.title.isNotBlank()) {
                                         navController.navigate(Routes.search(card.title))
                                     }
                                 },

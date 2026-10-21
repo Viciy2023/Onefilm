@@ -92,7 +92,10 @@ fun TvHeader(
             }
         }
         Column(Modifier.fillMaxWidth()) {
-        TvBrandRow(centerText = centerText)
+        TvBrandRow(
+            centerText = centerText,
+            compact = variant == TvHeaderVariant.CategoryOnly,
+        )
 
         if (variant == TvHeaderVariant.Full) {
         // 第二行：功能导航。九项等权铺满，图标 + 文字。
@@ -144,7 +147,7 @@ fun TvHeader(
                 .horizontalScroll(rememberScrollState())
                 .padding(
                     start = 48.dp,
-                    top = if (variant == TvHeaderVariant.CategoryOnly) (14 * scale).dp else (2 * scale).dp,
+                    top = if (variant == TvHeaderVariant.CategoryOnly) (4 * scale).dp else (2 * scale).dp,
                     end = 48.dp,
                     bottom = (2 * scale).dp,
                 ),
@@ -173,6 +176,7 @@ fun TvHeader(
 fun TvBrandRow(
     centerText: String,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) {
@@ -186,16 +190,19 @@ fun TvBrandRow(
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val scale = (maxWidth.value / 1000f).coerceIn(1f, 2.4f)
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = (6 * scale).dp),
+            Modifier.fillMaxWidth().padding(
+                horizontal = 48.dp,
+                vertical = ((if (compact) 2 else 6) * scale).dp,
+            ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                 Text(
                     text = "ONEFILM",
                     color = TvInk,
-                    fontSize = (28 * scale).sp,
+                    fontSize = ((if (compact) 18 else 28) * scale).sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp,
+                    letterSpacing = if (compact) 1.sp else 2.sp,
                 )
             }
             Box(Modifier.weight(1.4f), contentAlignment = Alignment.Center) {
@@ -213,7 +220,7 @@ fun TvBrandRow(
                 Text(
                     text = "$date   $time",
                     color = TvInk,
-                    fontSize = (16 * scale).sp,
+                    fontSize = ((if (compact) 18 else 16) * scale).sp,
                     fontWeight = FontWeight.Medium,
                 )
             }
@@ -240,7 +247,7 @@ private fun TvNavTab(
         MaterialTheme.colorScheme.onSurface
     }
     Box(
-        modifier.height((42 * uiScale).dp),
+        modifier.height((34 * uiScale).dp),
         contentAlignment = Alignment.Center,
     ) {
         Row(
