@@ -1,8 +1,7 @@
 package com.onefilm.android.tv.compose.navigation
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,8 +31,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,6 +48,7 @@ private val TvInk = Color(0xFF1C1C1E)
 data class TvNavEntry(
     val label: String,
     val icon: String,
+    val route: String? = null,
     val onClick: () -> Unit,
 )
 
@@ -136,15 +137,15 @@ fun TvHeader(
 
         // 第二行：功能导航。九项等权铺满，图标 + 文字。
         val entries = listOf(
-            TvNavEntry("首页", "⌂") { onNavigate(Routes.HOME) },
-            TvNavEntry("历史", "↺") { onNavigate(Routes.HISTORY) },
-            TvNavEntry("收藏", "★") { onNavigate(Routes.LIBRARY) },
-            TvNavEntry("搜索", "⌕") { onNavigate(Routes.SEARCH) },
-            TvNavEntry("直播", "▶", onLive),
-            TvNavEntry("配置", "⚙", onConfig),
-            TvNavEntry("线路", "⇄", onLine),
-            TvNavEntry("网盘", "☁", onNetwork),
-            TvNavEntry("设置", "☰") { onNavigate(Routes.SETTINGS) },
+            TvNavEntry("首页", "⌂", route = Routes.HOME) { onNavigate(Routes.HOME) },
+            TvNavEntry("历史", "↺", route = Routes.HISTORY) { onNavigate(Routes.HISTORY) },
+            TvNavEntry("收藏", "★", route = Routes.LIBRARY) { onNavigate(Routes.LIBRARY) },
+            TvNavEntry("搜索", "⌕", route = Routes.SEARCH) { onNavigate(Routes.SEARCH) },
+            TvNavEntry("直播", "▶") { onLive() },
+            TvNavEntry("配置", "⚙") { onConfig() },
+            TvNavEntry("线路", "⇄") { onLine() },
+            TvNavEntry("网盘", "☁") { onNetwork() },
+            TvNavEntry("设置", "☰", route = Routes.SETTINGS) { onNavigate(Routes.SETTINGS) },
         )
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = (4 * scale).dp),
@@ -156,6 +157,7 @@ fun TvHeader(
                     entry = entry,
                     modifier = Modifier.weight(1f),
                     uiScale = scale,
+                    selected = entry.route != null && entry.route == currentRoute,
                     focusRequester = if (index == 0) initialNavFocus else null,
                 )
             }
@@ -185,6 +187,7 @@ fun TvHeader(
                         if (home) onNavigate(Routes.HOME) else onCategory(category)
                     },
                     scale = scale,
+                    selected = home && currentRoute == Routes.HOME,
                     focusRequester = if (index == 0) initialCategoryFocus else null,
                 )
             }
@@ -199,27 +202,57 @@ private fun TvNavTab(
     entry: TvNavEntry,
     modifier: Modifier = Modifier,
     uiScale: Float = 1f,
+    selected: Boolean = false,
     focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val localFocus = remember { androidx.compose.ui.focus.FocusRequester() }
     val targetFocus = focusRequester ?: localFocus
-    val focusScale by animateFloatAsState(if (focused) 1.03f else 1f, tween(120), label = "tv-nav")
-    val shape = RoundedCornerShape(percent = 50)
-    val contentColor = if (focused) MaterialTheme.colorScheme.background else TvInk
-    Box(modifier, contentAlignment = Alignment.Center) {
+    val shape = RoundedCornerShape(16.dp)
+    val contentColor = if (selected) {
+        MaterialTheme.colorScheme.background
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    Box(
+        modifier.height((42 * uiScale).dp),
+        contentAlignment = Alignment.Center,
+    ) {
         Row(
             Modifier
+                .fillMaxSize()
                 .focusRequester(targetFocus)
-                .graphicsLayer { scaleX = focusScale; scaleY = focusScale }
                 .clip(shape)
-                .background(if (focused) TvInk else Color.Transparent)
+                .background(
+                    if (selected) {
+                        Brush.horizontalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.onSurface,
+                                MaterialTheme.colorScheme.onSurface,
+                            ),
+                        )
+                    } else {
+                        Brush.horizontalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.surface,
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                            ),
+                        )
+                    },
+                )
+                .border(
+                    if (focused) 2.dp else 1.dp,
+                    if (focused) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                    shape,
+                )
                 .clickable(interactionSource = interaction, indication = null) {
                     targetFocus.requestFocus()
                     entry.onClick()
                 }
-                .padding(horizontal = (10 * uiScale).dp, vertical = (5 * uiScale).dp),
+                .padding(horizontal = (8 * uiScale).dp),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -232,7 +265,7 @@ private fun TvNavTab(
             Text(
                 text = entry.label,
                 color = contentColor,
-                fontSize = (15 * uiScale).sp,
+                fontSize = (16 * uiScale).sp,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
             )
@@ -245,6 +278,7 @@ private fun TvCategoryChip(
     category: HomeCategory,
     onClick: () -> Unit,
     scale: Float = 1f,
+    selected: Boolean = false,
     focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -252,22 +286,44 @@ private fun TvCategoryChip(
     val focused by interaction.collectIsFocusedAsState()
     val localFocus = remember { androidx.compose.ui.focus.FocusRequester() }
     val targetFocus = focusRequester ?: localFocus
-    val shape = RoundedCornerShape(percent = 50)
+    val shape = RoundedCornerShape(12.dp)
     Text(
         text = category.name.ifBlank { "未命名" },
-        color = if (focused) MaterialTheme.colorScheme.background else TvInk,
-        fontSize = (14 * scale).sp,
-        fontWeight = FontWeight.Normal,
+        color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
+        fontSize = (16 * scale).sp,
+        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         textAlign = TextAlign.Center,
         maxLines = 1,
         modifier = modifier
             .focusRequester(targetFocus)
             .clip(shape)
-            .background(if (focused) TvInk else Color.Transparent)
+            .background(
+                if (selected) {
+                    Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.onSurface,
+                            MaterialTheme.colorScheme.onSurface,
+                        ),
+                    )
+                } else {
+                    Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                        ),
+                    )
+                },
+            )
+            .border(
+                if (focused) 2.dp else 1.dp,
+                if (focused) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                shape,
+            )
             .clickable(interactionSource = interaction, indication = null) {
                 targetFocus.requestFocus()
                 onClick()
             }
-            .padding(horizontal = (10 * scale).dp, vertical = (4 * scale).dp),
+            .padding(horizontal = (14 * scale).dp, vertical = (6 * scale).dp),
     )
 }
