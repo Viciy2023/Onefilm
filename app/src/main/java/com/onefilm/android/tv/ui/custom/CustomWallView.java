@@ -115,8 +115,12 @@ public class CustomWallView extends FrameLayout implements DefaultLifecycleObser
 
     private void loadImage() {
         Drawable cache = cache();
-        if (cache != null) binding.image.setImageDrawable(cache);
-        else binding.image.setImageResource(R.drawable.wallpaper_1);
+        if (cache != null) {
+            binding.image.setImageDrawable(cache);
+        } else {
+            binding.image.setImageDrawable(null);
+            binding.image.setBackgroundColor(Color.TRANSPARENT);
+        }
     }
 
     private void loadVideo(File file) {

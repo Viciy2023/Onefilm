@@ -67,7 +67,11 @@ class AppSettingsDataSource : SettingsDataSource {
         themeMode = com.github.catvod.utils.Prefers.getInt("compose_theme_mode", 0),
         cacheDays = Setting.getHistoryDays(),
         cacheSizeLabel = FileUtil.byteCountToDisplaySize(Path.size(Path.cache())),
-        wallpaperLabel = if (Setting.getWall() == 0) "无" else "纯色 ${Setting.getWall()}",
+        wallpaperLabel = when (Setting.getWall()) {
+            0 -> "无"
+            5 -> "网络壁纸"
+            else -> "纯色 ${Setting.getWall()}"
+        },
     )
 
     override fun setEngine(mpv: Boolean) {
@@ -192,6 +196,10 @@ class AppSettingsDataSource : SettingsDataSource {
                 if (type == 1) {
                     com.github.catvod.utils.Prefers.put("compose_live_url", url)
                 }
+                if (type == 2) {
+                    Setting.putWall(5)
+                    Setting.putWallType(Setting.getExternalWallType())
+                }
                 App.post { onResult(true, "") }
             }
 
@@ -302,8 +310,11 @@ class AppSettingsDataSource : SettingsDataSource {
     }
 
     override fun cycleWallpaper() {
-        Setting.putWall((Setting.getWall() + 1) % 5)
-        Setting.putWallType(0)
+        val next = (Setting.getWall() + 1) % 6
+        Setting.putWall(next)
+        Setting.putWallType(
+            if (next == 5) Setting.getExternalWallType() else 0,
+        )
         com.onefilm.android.tv.event.ConfigEvent.wall()
     }
 

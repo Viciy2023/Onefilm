@@ -93,9 +93,11 @@ public class WallConfig extends BaseConfig {
     }
 
     private void setWallType(File file) {
-        Setting.putWallType(0);
-        if (isGif(file)) Setting.putWallType(1);
-        else if (isVideo(file)) Setting.putWallType(2);
+        int type = 0;
+        if (isGif(file)) type = 1;
+        else if (isVideo(file)) type = 2;
+        Setting.putWallType(type);
+        Setting.putExternalWallType(type);
     }
 
     private void setSnapshot(File file) throws Throwable {

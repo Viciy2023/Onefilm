@@ -7,7 +7,7 @@ import com.github.catvod.utils.Prefers;
 public class Setting {
 
     private static final int MIN_WALL = 0;
-    private static final int MAX_WALL = 4;
+    private static final int MAX_WALL = 5;
     private static final int MIN_WALL_TYPE = 0;
     private static final int MAX_WALL_TYPE = 2;
     private static final int MIN_SITE_MODE = 0;
@@ -65,6 +65,14 @@ public class Setting {
 
     public static void putWallType(int type) {
         Prefers.put("wall_type", Math.clamp(type, MIN_WALL_TYPE, MAX_WALL_TYPE));
+    }
+
+    public static int getExternalWallType() {
+        return Math.clamp(Prefers.getInt("wall_external_type", 0), MIN_WALL_TYPE, MAX_WALL_TYPE);
+    }
+
+    public static void putExternalWallType(int type) {
+        Prefers.put("wall_external_type", Math.clamp(type, MIN_WALL_TYPE, MAX_WALL_TYPE));
     }
 
     public static int getThemeColor() {
