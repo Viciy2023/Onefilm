@@ -23,6 +23,8 @@ import com.github.catvod.utils.Path
 
 class AppSettingsDataSource : SettingsDataSource {
 
+    private var wallLoading = false
+
     private val subtitleColors = listOf(
         "白" to SubtitleSetting.SUBTITLE_COLOR_WHITE,
         "黄" to SubtitleSetting.SUBTITLE_COLOR_YELLOW,
@@ -30,7 +32,9 @@ class AppSettingsDataSource : SettingsDataSource {
         "绿" to SubtitleSetting.SUBTITLE_COLOR_GREEN,
     )
 
-    override fun load(): SettingsSnapshot = SettingsSnapshot(
+    override fun load(): SettingsSnapshot {
+        ensureWallpaperLoadedIfNeeded()
+        return SettingsSnapshot(
         engineMpv = PlayerSetting.isMpv(),
         background = PlayerSetting.getBackground(),
         bufferSeconds = PlayerSetting.getBuffer(),
@@ -72,7 +76,8 @@ class AppSettingsDataSource : SettingsDataSource {
             5 -> "网络壁纸"
             else -> "纯色 ${Setting.getWall()}"
         },
-    )
+        )
+    }
 
     override fun setEngine(mpv: Boolean) {
         PlayerSetting.putEngine(if (mpv) PlayerSetting.ENGINE_MPV else PlayerSetting.ENGINE_EXO)
@@ -309,12 +314,37 @@ class AppSettingsDataSource : SettingsDataSource {
         Path.clear(Path.cache())
     }
 
+    private fun ensureWallpaperLoadedIfNeeded() {
+        if (Setting.getWall() != 5) return
+        ensureWallpaperLoaded()
+    }
+
+    private fun ensureWallpaperLoaded() {
+        if (wallLoading || Path.wall(0).exists()) return
+        wallLoading = true
+        WallConfig.load(
+            Config.create(2).url(WallConfig.getUrl()),
+            object : Callback() {
+                override fun success() {
+                    wallLoading = false
+                    Setting.putWallType(Setting.getExternalWallType())
+                    com.onefilm.android.tv.event.ConfigEvent.wall()
+                }
+
+                override fun error(msg: String) {
+                    wallLoading = false
+                }
+            },
+        )
+    }
+
     override fun cycleWallpaper() {
         val next = (Setting.getWall() + 1) % 6
         Setting.putWall(next)
         Setting.putWallType(
             if (next == 5) Setting.getExternalWallType() else 0,
         )
+        if (next == 5) ensureWallpaperLoaded()
         com.onefilm.android.tv.event.ConfigEvent.wall()
     }
 

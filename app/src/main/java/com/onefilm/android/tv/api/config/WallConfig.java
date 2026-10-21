@@ -24,13 +24,15 @@ import java.io.FileOutputStream;
 public class WallConfig extends BaseConfig {
 
     private static final String TAG = WallConfig.class.getSimpleName();
+    public static final String DEFAULT_WALL_URL = "https://t.alcy.cc/pic/pc/480.webp";
 
     public static WallConfig get() {
         return Loader.INSTANCE;
     }
 
     public static String getUrl() {
-        return get().getConfig().getUrl();
+        String url = get().getConfig().getUrl();
+        return url == null || url.isEmpty() ? DEFAULT_WALL_URL : url;
     }
 
     public static String getDesc() {
