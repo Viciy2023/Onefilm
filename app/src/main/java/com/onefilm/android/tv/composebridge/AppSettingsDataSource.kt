@@ -67,6 +67,7 @@ class AppSettingsDataSource : SettingsDataSource {
         themeMode = com.github.catvod.utils.Prefers.getInt("compose_theme_mode", 0),
         cacheDays = Setting.getHistoryDays(),
         cacheSizeLabel = FileUtil.byteCountToDisplaySize(Path.size(Path.cache())),
+        wallpaperLabel = "壁纸 ${Setting.getWall()}",
     )
 
     override fun setEngine(mpv: Boolean) {
@@ -298,6 +299,12 @@ class AppSettingsDataSource : SettingsDataSource {
 
     override fun clearCache() {
         Path.clear(Path.cache())
+    }
+
+    override fun cycleWallpaper() {
+        Setting.putWall(if (Setting.getWall() == 4) 1 else Setting.getWall() + 1)
+        Setting.putWallType(0)
+        com.onefilm.android.tv.event.ConfigEvent.wall()
     }
 
     private fun dolbyLabel(mode: Int): String = when (mode) {

@@ -86,7 +86,6 @@ fun NetdiskScreen(
 
     Column(Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 24.dp)) {
         TvBrandRow(
-            centerText = "ONEFILM 影视",
             compact = true,
             horizontalPadding = 0.dp,
         )

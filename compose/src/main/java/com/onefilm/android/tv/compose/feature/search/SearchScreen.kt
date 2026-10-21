@@ -84,7 +84,7 @@ fun SearchScreen(
     val landing = state is SearchUiState.Idle
 
     Column(Modifier.fillMaxSize()) {
-        TvBrandRow(centerText = "ONEFILM 影视", compact = true)
+        TvBrandRow(compact = true)
         Column(
             Modifier
                 .fillMaxWidth()

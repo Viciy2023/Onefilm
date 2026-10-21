@@ -28,6 +28,8 @@ fun AdaptiveNavigation(
     onNavigate: (String) -> Unit,
     showTabs: Boolean = true,
     tvHeader: (@Composable () -> Unit)? = null,
+    transparentBackground: Boolean = false,
+    wallpaper: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val items = listOf(
@@ -39,9 +41,11 @@ fun AdaptiveNavigation(
     )
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
+        color = if (transparentBackground) Color.Transparent else MaterialTheme.colorScheme.background,
         contentColor = MaterialTheme.colorScheme.onBackground,
     ) {
+        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        wallpaper?.invoke()
         if (isTv) {
             Column(Modifier.fillMaxSize()) {
                 if (tvHeader != null) {
@@ -77,6 +81,7 @@ fun AdaptiveNavigation(
                     }
                 }
             }
+        }
         }
     }
 }

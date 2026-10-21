@@ -1,11 +1,14 @@
 package com.onefilm.android.tv.compose.host
 
 import android.app.PictureInPictureParams
+import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.util.AttributeSet
 import android.util.Rational
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -15,6 +18,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -38,6 +46,7 @@ import com.onefilm.android.tv.compose.feature.home.HomeScreen
 import com.onefilm.android.tv.compose.feature.home.HomeUiState
 import com.onefilm.android.tv.compose.feature.home.HomeViewModel
 import com.onefilm.android.tv.compose.navigation.AdaptiveNavigation
+import com.onefilm.android.tv.compose.navigation.TvBrandState
 import com.onefilm.android.tv.compose.navigation.TvHeader
 import com.onefilm.android.tv.compose.navigation.TvHeaderVariant
 import com.onefilm.android.tv.compose.feature.category.CategoryFilterController
@@ -116,6 +125,11 @@ class ComposeMainActivity : ComponentActivity() {
                     },
                 )
                 val homeState by homeViewModel.state.collectAsState()
+                val brandFeed = (homeState as? HomeUiState.Content)?.feed
+                LaunchedEffect(brandFeed?.notice, brandFeed?.siteName) {
+                    TvBrandState.notice = brandFeed?.notice.orEmpty()
+                    TvBrandState.siteName = brandFeed?.siteName.orEmpty()
+                }
                 var showConfigDialog by remember { mutableStateOf(false) }
                 var showLinesDialog by remember { mutableStateOf(false) }
 
@@ -138,6 +152,10 @@ class ComposeMainActivity : ComponentActivity() {
                     currentRoute = route,
                     showTabs = route?.startsWith("detail") != true && route?.startsWith("sources") != true &&
                         route?.startsWith("resolve") != true && route?.startsWith("player") != true,
+                    transparentBackground = isTv,
+                    wallpaper = if (isTv) {
+                        { LegacyWallpaper() }
+                    } else null,
                     onNavigate = { target ->
                         if (target == Routes.LIVE) {
                             ComposeDependencies.liveLauncher.open(this@ComposeMainActivity)
@@ -159,7 +177,7 @@ class ComposeMainActivity : ComponentActivity() {
                             TvHeader(
                                 currentRoute = route,
                                 categories = feed?.categories.orEmpty(),
-                                notice = null,
+                                notice = feed?.notice,
                                 siteName = feed?.siteName,
                                 variant = variant,
                                 onNavigate = { target ->
@@ -340,4 +358,19 @@ class ComposeMainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+@Composable
+private fun LegacyWallpaper() {
+    val context = LocalContext.current
+    AndroidView(
+        modifier = Modifier.fillMaxSize(),
+        factory = { ctx ->
+            runCatching {
+                val type = Class.forName("com.onefilm.android.tv.ui.custom.CustomWallView")
+                type.getConstructor(Context::class.java, AttributeSet::class.java)
+                    .newInstance(ctx, null) as View
+            }.getOrNull() ?: View(ctx)
+        },
+    )
 }

@@ -47,6 +47,11 @@ import kotlinx.coroutines.delay
 
 private val TvInk = Color(0xFF1C1C1E)
 
+object TvBrandState {
+    var notice by mutableStateOf("")
+    var siteName by mutableStateOf("")
+}
+
 data class TvNavEntry(
     val label: String,
     val icon: String,
@@ -174,11 +179,15 @@ fun TvHeader(
 
 @Composable
 fun TvBrandRow(
-    centerText: String,
+    centerText: String = "",
     modifier: Modifier = Modifier,
     compact: Boolean = false,
     horizontalPadding: androidx.compose.ui.unit.Dp = 48.dp,
 ) {
+    val resolvedCenter = centerText.takeIf { it.isNotBlank() }
+        ?: TvBrandState.notice.takeIf { it.isNotBlank() }
+        ?: TvBrandState.siteName.takeIf { it.isNotBlank() }
+        ?: "ONEFILM 影视"
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -208,7 +217,7 @@ fun TvBrandRow(
             }
             Box(Modifier.weight(1.4f), contentAlignment = Alignment.Center) {
                 Text(
-                    text = centerText,
+                    text = resolvedCenter,
                     color = TvInk,
                     fontSize = (18 * scale).sp,
                     fontWeight = FontWeight.SemiBold,

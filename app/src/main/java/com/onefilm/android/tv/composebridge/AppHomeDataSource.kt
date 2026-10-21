@@ -42,6 +42,7 @@ class AppHomeDataSource : HomeDataSource {
             sections = sections,
             categories = categories,
             siteName = site.name.orEmpty(),
+            notice = result.msg.orEmpty(),
         )
     }
 }

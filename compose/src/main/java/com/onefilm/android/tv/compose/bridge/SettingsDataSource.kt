@@ -37,6 +37,7 @@ data class SettingsSnapshot(
     val themeMode: Int,
     val cacheDays: Int,
     val cacheSizeLabel: String,
+    val wallpaperLabel: String,
 )
 
 data class ConfigLine(
@@ -96,4 +97,5 @@ interface SettingsDataSource {
     fun setThemeMode(mode: Int)
     fun setCacheDays(days: Int)
     fun clearCache()
+    fun cycleWallpaper()
 }

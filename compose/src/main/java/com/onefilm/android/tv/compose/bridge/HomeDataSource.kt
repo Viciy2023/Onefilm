@@ -21,6 +21,7 @@ data class HomeFeed(
     val sections: List<HomeSection>,
     val categories: List<HomeCategory> = emptyList(),
     val siteName: String = "",
+    val notice: String = "",
 )
 
 interface HomeDataSource {

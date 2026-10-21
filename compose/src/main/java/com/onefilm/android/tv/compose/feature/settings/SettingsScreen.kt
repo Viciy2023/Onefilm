@@ -116,7 +116,6 @@ fun SettingsScreen(
             .padding(horizontal = 40.dp, vertical = 20.dp),
     ) {
         TvBrandRow(
-            centerText = "ONEFILM 影视",
             compact = true,
             horizontalPadding = 0.dp,
         )
@@ -126,7 +125,7 @@ fun SettingsScreen(
         ) {
             Row(
                 Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ConfigRow(
@@ -151,6 +150,8 @@ fun SettingsScreen(
                             }
                         },
                     )
+
+
 
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
@@ -177,6 +178,8 @@ fun SettingsScreen(
                         },
                     )
 
+
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ConfigRow(
@@ -202,35 +205,14 @@ fun SettingsScreen(
                         },
                     )
 
+
+
                 }
             }
             Row(
-                Modifier.fillMaxWidth().weight(7f),
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-            Column(
-                Modifier.weight(1f).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
-                        refresh { setIncognito(it) }
-                    }
-
-                }
-                }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "外观主题",
@@ -245,109 +227,58 @@ fun SettingsScreen(
                         ThemeController.apply(index)
                     }
 
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "播放引擎",
-                        subtitle = "MPV 与 Exo 共用旧 PlayerManager",
-                        options = listOf("Exo" to !snapshot.engineMpv, "MPV" to snapshot.engineMpv),
-                    ) { index -> refresh { setEngine(index == 1) } }
 
-                }
-                }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "后台播放",
-                        subtitle = "按 Home 后的行为",
-                        options = listOf(
-                            "关闭" to (snapshot.background == 0),
-                            "后台" to (snapshot.background == 1),
-                            "PiP" to (snapshot.background == 2),
-                        ),
-                    ) { index -> refresh { setBackground(index) } }
 
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() } }
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
+
+
+
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
+                        refresh { setIncognito(it) }
+                    }
+
+
+
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
-                        title = "缓冲区",
-                        subtitle = "${snapshot.bufferSeconds} 秒",
-                        options = listOf(1, 2, 5, 10).map {
-                            "${it}s" to (snapshot.bufferSeconds == it)
+                        title = "字幕位置",
+                        subtitle = snapshot.subtitlePosition.toInt().toString(),
+                        options = listOf(-5f, 0f, 5f, 10f, 20f).map {
+                            it.toInt().toString() to (snapshot.subtitlePosition == it)
                         },
-                    ) { index -> refresh { setBufferSeconds(listOf(1, 2, 5, 10)[index]) } }
+                    ) { index -> refresh { setSubtitlePosition(listOf(-5f, 0f, 5f, 10f, 20f)[index]) } }
+
+
 
                 }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ActionRow("字幕颜色", snapshot.subtitleColorLabel) { refresh { cycleSubtitleColor() } }
+
+
+
                 }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
-                        title = "渲染方式",
-                        subtitle = "Surface / TextureView",
-                        options = listOf("Surface" to !snapshot.renderTexture, "Texture" to snapshot.renderTexture),
-                    ) { index -> refresh { setRenderTexture(index == 1) } }
+                        title = "字幕描边",
+                        options = listOf(0f, 1f, 2f, 4f).map {
+                            "%.0f".format(it) to (snapshot.subtitleEdgeWidth == it)
+                        },
+                    ) { index -> refresh { setSubtitleEdgeWidth(listOf(0f, 1f, 2f, 4f)[index]) } }
 
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("隧道解码", "需要 Surface 渲染", snapshot.tunnel) { refresh { setTunnel(it) } }
 
-                }
-                }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("音频直通", "HDMI / 功放透传", snapshot.audioPassThrough) {
-                        refresh { setAudioPassThrough(it) }
-                    }
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("音频偏软解", "软解优先使用 Audio 解码器", snapshot.audioPrefer) {
-                        refresh { setAudioPrefer(it) }
-                    }
-
-                }
-                }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("视频偏软解", "软解优先使用 Video 解码器", snapshot.videoPrefer) {
-                        refresh { setVideoPrefer(it) }
-                    }
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ActionRow(
-                        title = "Dolby Vision 输出",
-                        value = snapshot.dvPolicyLabel,
-                    ) { refresh { cycleDolbyVisionPolicy() } }
-
-                }
-                }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "字幕样式",
-                        subtitle = "原始 / 系统 / 自定义",
-                        options = listOf(
-                            "原始" to (snapshot.subtitleStyle == 0),
-                            "系统" to (snapshot.subtitleStyle == 1),
-                            "自定义" to (snapshot.subtitleStyle == 2),
-                        ),
-                    ) { index -> refresh { setSubtitleStyle(index) } }
 
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
@@ -359,43 +290,26 @@ fun SettingsScreen(
                         },
                     ) { index -> refresh { setSubtitleScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
 
-                }
+
+
                 }
             }
-            Column(
-                Modifier.weight(1f).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
-                        title = "字幕位置",
-                        subtitle = snapshot.subtitlePosition.toInt().toString(),
-                        options = listOf(-5f, 0f, 5f, 10f, 20f).map {
-                            it.toInt().toString() to (snapshot.subtitlePosition == it)
-                        },
-                    ) { index -> refresh { setSubtitlePosition(listOf(-5f, 0f, 5f, 10f, 20f)[index]) } }
+                        title = "字幕样式",
+                        subtitle = "原始 / 系统 / 自定义",
+                        options = listOf(
+                            "原始" to (snapshot.subtitleStyle == 0),
+                            "系统" to (snapshot.subtitleStyle == 1),
+                            "自定义" to (snapshot.subtitleStyle == 2),
+                        ),
+                    ) { index -> refresh { setSubtitleStyle(index) } }
 
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ActionRow("字幕颜色", snapshot.subtitleColorLabel) { refresh { cycleSubtitleColor() } }
 
-                }
-                }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "字幕描边",
-                        options = listOf(0f, 1f, 2f, 4f).map {
-                            "%.0f".format(it) to (snapshot.subtitleEdgeWidth == it)
-                        },
-                    ) { index -> refresh { setSubtitleEdgeWidth(listOf(0f, 1f, 2f, 4f)[index]) } }
 
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
@@ -403,12 +317,9 @@ fun SettingsScreen(
                         refresh { setDanmakuShow(it) }
                     }
 
+
+
                 }
-                }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "弹幕字号",
@@ -416,6 +327,8 @@ fun SettingsScreen(
                             "%.1fx".format(it) to (snapshot.danmakuScale == it)
                         },
                     ) { index -> refresh { setDanmakuScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
+
+
 
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
@@ -426,12 +339,14 @@ fun SettingsScreen(
                         },
                     ) { index -> refresh { setDanmakuTransparency(listOf(0f, 0.25f, 0.5f, 0.7f)[index]) } }
 
+
+
                 }
-                }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
+            }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "弹幕速度",
@@ -440,6 +355,8 @@ fun SettingsScreen(
                         },
                     ) { index -> refresh { setDanmakuDuration(listOf(6000L, 8000L, 10000L)[index]) } }
 
+
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
@@ -447,34 +364,132 @@ fun SettingsScreen(
                         options = listOf(4, 8, 12).map { "$it 行" to (snapshot.danmakuLines == it) },
                     ) { index -> refresh { setDanmakuLines(listOf(4, 8, 12)[index]) } }
 
+
+
                 }
-                }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ActionRow("弹幕屏蔽词", snapshot.danmakuBlockWords.ifBlank { "未设置" }) {
                         blockWordsDraft = snapshot.danmakuBlockWords
                         editBlockWords = true
                     }
 
+
+
                 }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "播放引擎",
+                        subtitle = "MPV 与 Exo 共用旧 PlayerManager",
+                        options = listOf("Exo" to !snapshot.engineMpv, "MPV" to snapshot.engineMpv),
+                    ) { index -> refresh { setEngine(index == 1) } }
+
+
+
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "后台播放",
+                        subtitle = "按 Home 后的行为",
+                        options = listOf(
+                            "关闭" to (snapshot.background == 0),
+                            "后台" to (snapshot.background == 1),
+                            "PiP" to (snapshot.background == 2),
+                        ),
+                    ) { index -> refresh { setBackground(index) } }
+
+
+
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "缓冲区",
+                        subtitle = "${snapshot.bufferSeconds} 秒",
+                        options = listOf(1, 2, 5, 10).map {
+                            "${it}s" to (snapshot.bufferSeconds == it)
+                        },
+                    ) { index -> refresh { setBufferSeconds(listOf(1, 2, 5, 10)[index]) } }
+
+
+
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "渲染方式",
+                        subtitle = "Surface / TextureView",
+                        options = listOf("Surface" to !snapshot.renderTexture, "Texture" to snapshot.renderTexture),
+                    ) { index -> refresh { setRenderTexture(index == 1) } }
+
+
+
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("隧道解码", "需要 Surface 渲染", snapshot.tunnel) { refresh { setTunnel(it) } }
+
+
+
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("音频直通", "HDMI / 功放透传", snapshot.audioPassThrough) {
+                        refresh { setAudioPassThrough(it) }
+                    }
+
+
+
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("音频偏软解", "软解优先使用 Audio 解码器", snapshot.audioPrefer) {
+                        refresh { setAudioPrefer(it) }
+                    }
+
+
+
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow("视频偏软解", "软解优先使用 Video 解码器", snapshot.videoPrefer) {
+                        refresh { setVideoPrefer(it) }
+                    }
+
+
+
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ActionRow(
+                        title = "Dolby Vision 输出",
+                        value = snapshot.dvPolicyLabel,
+                    ) { refresh { cycleDolbyVisionPolicy() } }
+
+
+
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("开启预加载", "使用旧 PlayerManager 预加载", snapshot.preloadEnabled) {
                         refresh { setPreloadEnabled(it) }
                     }
 
+
+
                 }
-                }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("预加载下一集", "仅 Exo 路径生效", snapshot.preloadNext) {
                         refresh { setPreloadNext(it) }
                     }
+
+
 
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
@@ -483,12 +498,9 @@ fun SettingsScreen(
                         options = (1..4).map { "$it" to (snapshot.preloadThreads == it) },
                     ) { index -> refresh { setPreloadThreads(index + 1) } }
 
+
+
                 }
-                }
-                Row(
-                    Modifier.fillMaxWidth().weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "缓存大小",
@@ -497,18 +509,20 @@ fun SettingsScreen(
                         },
                     ) { index -> refresh { setPreloadSizeMb(listOf(50, 100, 200, 500)[index]) } }
 
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ActionRow("恢复默认 UA", "清空自定义 UA") { refresh { resetUa() } }
+
 
                 }
-                }
-            }
             }
             Row(
                 Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ActionRow("恢复默认 UA", "清空自定义 UA") { refresh { resetUa() } }
+
+
+
+                }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
                         title = "缓存天数",
@@ -516,18 +530,26 @@ fun SettingsScreen(
                             "${it}天" to (snapshot.cacheDays == it)
                         },
                     ) { index -> refresh { setCacheDays(listOf(7, 30, 60, 90)[index]) } }
+
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ActionRow("清除缓存", snapshot.cacheSizeLabel) {
                         showClearCacheConfirm = true
                     }
+
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     InfoRow("版本", snapshot.version)
 
+
+
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     InfoRow("开源许可", "GPL-3.0 · 基于 FongMi/TV")
+
+
 
                 }
             }
