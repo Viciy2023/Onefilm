@@ -191,6 +191,7 @@ class ComposeMainActivity : ComponentActivity() {
                                     showConfigDialog = false
                                     homeViewModel.retry()
                                 },
+                                onConfigChanged = homeViewModel::retry,
                             )
                         }
                         if (showLinesDialog) {

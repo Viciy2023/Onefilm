@@ -10,8 +10,8 @@ import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
 import com.onefilm.android.tv.App;
-import com.onefilm.android.tv.Constant;
 import com.onefilm.android.tv.R;
+import com.onefilm.android.tv.setting.Setting;
 import com.onefilm.android.tv.api.config.VodConfig;
 import com.onefilm.android.tv.db.AppDatabase;
 import com.onefilm.android.tv.impl.Diffable;
@@ -89,7 +89,10 @@ public class History implements Diffable<History> {
     }
 
     public static List<History> get(int cid) {
-        return AppDatabase.get().getHistoryDao().find(cid, System.currentTimeMillis() - Constant.HISTORY_TIME);
+        return AppDatabase.get().getHistoryDao().find(
+            cid,
+            System.currentTimeMillis() - java.util.concurrent.TimeUnit.DAYS.toMillis(Setting.getHistoryDays())
+        );
     }
 
     public static History find(String key) {

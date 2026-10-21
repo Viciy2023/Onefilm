@@ -98,6 +98,7 @@ fun LinesScreen(
                                 onDelete = {
                                     dataSource.deleteConfigLine(line.type, line.url)
                                     refresh()
+                                    onConfigChanged()
                                 },
                             )
                         }

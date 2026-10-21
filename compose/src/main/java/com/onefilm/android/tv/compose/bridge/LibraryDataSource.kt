@@ -7,4 +7,8 @@ data class LibraryData(
 
 interface LibraryDataSource {
     suspend fun load(): LibraryData
+    suspend fun deleteFavorite(card: MediaCard)
+    suspend fun clearFavorites()
+    suspend fun deleteHistory(card: MediaCard)
+    suspend fun clearHistory()
 }

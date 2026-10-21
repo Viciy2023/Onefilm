@@ -35,6 +35,8 @@ data class SettingsSnapshot(
     val incognito: Boolean,
     val dohLabel: String,
     val themeMode: Int,
+    val cacheDays: Int,
+    val cacheSizeLabel: String,
 )
 
 data class ConfigLine(
@@ -92,4 +94,6 @@ interface SettingsDataSource {
     fun configPushUrl(): String
     fun qrBitmap(content: String, size: Int): Bitmap?
     fun setThemeMode(mode: Int)
+    fun setCacheDays(days: Int)
+    fun clearCache()
 }

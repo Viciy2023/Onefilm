@@ -55,6 +55,7 @@ fun ConfigScreen(
     dataSource: SettingsDataSource,
     onBack: () -> Unit,
     onDone: () -> Unit,
+    onConfigChanged: () -> Unit = {},
 ) {
     var type by remember { mutableIntStateOf(0) }
     var name by remember { mutableStateOf("") }
@@ -129,6 +130,7 @@ fun ConfigScreen(
                                     onDelete = {
                                         dataSource.deleteConfigLine(line.type, line.url)
                                         refreshLines()
+                                        onConfigChanged()
                                     },
                                 )
                             }

@@ -30,6 +30,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -74,6 +75,7 @@ fun SettingsScreen(
     var qrBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var editBlockWords by remember { mutableStateOf(false) }
     var blockWordsDraft by remember { mutableStateOf("") }
+    var showClearCacheConfirm by remember { mutableStateOf(false) }
 
     fun refresh(change: SettingsDataSource.() -> Unit) {
         dataSource.change()
@@ -463,8 +465,21 @@ fun SettingsScreen(
             }
             Row(
                 Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "缓存天数",
+                        options = listOf(7, 30, 60, 90).map {
+                            "${it}天" to (snapshot.cacheDays == it)
+                        },
+                    ) { index -> refresh { setCacheDays(listOf(7, 30, 60, 90)[index]) } }
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ActionRow("清除缓存", snapshot.cacheSizeLabel) {
+                        showClearCacheConfirm = true
+                    }
+                }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     InfoRow("版本", snapshot.version)
 
@@ -504,6 +519,40 @@ fun SettingsScreen(
                     contentPadding = PaddingValues(horizontal = 8.dp),
                     modifier = Modifier.width(80.dp).height(42.dp),
                 ) { Text("保存", fontSize = 14.sp) }
+            }
+        }
+    }
+
+    if (showClearCacheConfirm) {
+        SettingsDialog(
+            onDismiss = { showClearCacheConfirm = false },
+            width = 520.dp,
+            padding = 16.dp,
+        ) {
+            Text("确定清除缓存？", fontSize = 22.sp)
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "将删除图片缓存和临时文件，不会删除收藏和观看记录。",
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(16.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
+            ) {
+                OutlinedButton(onClick = { showClearCacheConfirm = false }) {
+                    Text("取消", fontSize = 16.sp)
+                }
+                Button(
+                    onClick = {
+                        dataSource.clearCache()
+                        snapshot = dataSource.load()
+                        showClearCacheConfirm = false
+                    },
+                ) {
+                    Text("清除", fontSize = 16.sp)
+                }
             }
         }
     }

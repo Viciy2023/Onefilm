@@ -136,4 +136,12 @@ public class Setting {
     public static void putZhuyin(boolean zhuyin) {
         Prefers.put("zhuyin", zhuyin);
     }
+
+    public static int getHistoryDays() {
+        return Math.clamp(Prefers.getInt("history_days", 60), 1, 365);
+    }
+
+    public static void putHistoryDays(int days) {
+        Prefers.put("history_days", Math.clamp(days, 1, 365));
+    }
 }

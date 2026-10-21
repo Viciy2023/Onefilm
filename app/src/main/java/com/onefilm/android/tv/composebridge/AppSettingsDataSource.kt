@@ -18,6 +18,8 @@ import com.onefilm.android.tv.setting.PlayerSetting
 import com.onefilm.android.tv.setting.PreloadSetting
 import com.onefilm.android.tv.setting.Setting
 import com.onefilm.android.tv.setting.SubtitleSetting
+import com.onefilm.android.tv.utils.FileUtil
+import com.github.catvod.utils.Path
 
 class AppSettingsDataSource : SettingsDataSource {
 
@@ -63,6 +65,8 @@ class AppSettingsDataSource : SettingsDataSource {
         incognito = Setting.isIncognito(),
         dohLabel = runCatching { Doh.objectFrom(Setting.getDoh()).getName() }.getOrNull().orEmpty(),
         themeMode = com.github.catvod.utils.Prefers.getInt("compose_theme_mode", 0),
+        cacheDays = Setting.getHistoryDays(),
+        cacheSizeLabel = FileUtil.byteCountToDisplaySize(Path.size(Path.cache())),
     )
 
     override fun setEngine(mpv: Boolean) {
@@ -221,7 +225,30 @@ class AppSettingsDataSource : SettingsDataSource {
         listOf(0, 1).flatMap { configLines(it) }
 
     override fun deleteConfigLine(type: Int, url: String) {
+        val activeUrl = when (type) {
+            0 -> VodConfig.getUrl()
+            1 -> LiveConfig.getUrl()
+            else -> WallConfig.getUrl()
+        }.orEmpty()
         Config.delete(url, type)
+        if (activeUrl == url || Config.getAll(type).isEmpty()) clearActiveConfig(type)
+    }
+
+    private fun clearActiveConfig(type: Int) {
+        when (type) {
+            0 -> {
+                VodConfig.get().clear().config(Config.create(0))
+                com.github.catvod.utils.Prefers.put("config_0", "")
+            }
+            1 -> {
+                LiveConfig.get().clear().config(Config.create(1))
+                com.github.catvod.utils.Prefers.put("config_1", "")
+            }
+            else -> {
+                WallConfig.get().config(Config.create(2))
+                com.github.catvod.utils.Prefers.put("config_2", "")
+            }
+        }
     }
 
     override fun cycleDoh() {
@@ -264,6 +291,14 @@ class AppSettingsDataSource : SettingsDataSource {
         }
         bitmap
     }.getOrNull()
+
+    override fun setCacheDays(days: Int) {
+        Setting.putHistoryDays(days)
+    }
+
+    override fun clearCache() {
+        Path.clear(Path.cache())
+    }
 
     private fun dolbyLabel(mode: Int): String = when (mode) {
         DolbyVisionOutputPolicy.ASSUME_SUPPORTED -> "强制支持"
