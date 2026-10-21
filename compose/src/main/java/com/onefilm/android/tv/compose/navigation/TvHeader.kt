@@ -82,7 +82,11 @@ fun TvHeader(
         ?: siteName?.takeIf { it.isNotBlank() }
         ?: "ONEFILM 影视"
 
-    BoxWithConstraints(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+    BoxWithConstraints(
+        Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.8f)),
+    ) {
         // TV 盒子在不同设备上可能上报 1.0 或 2.5 的 density。
         // 用可用宽度做一次自适应，避免 2400px 屏上导航和分类缩成一小条。
         val scale = (maxWidth.value / 1000f).coerceIn(1f, 2.4f)
