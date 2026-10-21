@@ -30,7 +30,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -88,6 +90,7 @@ fun TvHeader(
         // TV 盒子在不同设备上可能上报 1.0 或 2.5 的 density。
         // 用可用宽度做一次自适应，避免 2400px 屏上导航和分类缩成一小条。
         val scale = (maxWidth.value / 1000f).coerceIn(1f, 2.4f)
+        val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
         val initialNavFocus = remember { androidx.compose.ui.focus.FocusRequester() }
         val initialCategoryFocus = remember { androidx.compose.ui.focus.FocusRequester() }
         LaunchedEffect(variant) {
@@ -148,7 +151,19 @@ fun TvHeader(
             TvNavEntry("设置", "☰", route = Routes.SETTINGS) { onNavigate(Routes.SETTINGS) },
         )
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 48.dp, vertical = (4 * scale).dp),
+            Modifier
+                .fillMaxWidth()
+                .drawBehind {
+                    val stroke = 1.dp.toPx()
+                    val y = stroke / 2f
+                    drawLine(
+                        color = dividerColor,
+                        start = Offset(0f, y),
+                        end = Offset(size.width, y),
+                        strokeWidth = stroke,
+                    )
+                }
+                .padding(horizontal = 48.dp, vertical = (4 * scale).dp),
             horizontalArrangement = Arrangement.spacedBy((12 * scale).dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
