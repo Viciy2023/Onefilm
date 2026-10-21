@@ -250,20 +250,6 @@ private fun DetailContent(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DetailAction(
-                        label = if (reversed) "正序" else "倒序",
-                        modifier = Modifier.focusRequester(firstActionFocus),
-                    ) {
-                        reversed = !reversed
-                    }
-                    DetailAction(
-                        label = if (favorite) "已收藏" else "加入收藏",
-                        active = favorite,
-                        onClick = onToggleFavorite,
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
                 Column(
                     Modifier.weight(1f).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -293,6 +279,20 @@ private fun DetailContent(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    DetailAction(
+                        label = if (reversed) "正序" else "倒序",
+                        modifier = Modifier.focusRequester(firstActionFocus),
+                    ) {
+                        reversed = !reversed
+                    }
+                    DetailAction(
+                        label = if (favorite) "已收藏" else "加入收藏",
+                        active = favorite,
+                        onClick = onToggleFavorite,
+                    )
                 }
             }
             Box(

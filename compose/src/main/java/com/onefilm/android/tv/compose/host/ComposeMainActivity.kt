@@ -268,6 +268,15 @@ class ComposeMainActivity : ComponentActivity() {
                                 onBack = { navController.popBackStack() },
                                 onSelect = { item ->
                                     if (item.key.isNotBlank() && item.id.isNotBlank()) {
+                                        navController.navigate(
+                                            Routes.detail(
+                                                item.key,
+                                                item.id,
+                                                item.title,
+                                                item.posterUrl,
+                                            ),
+                                        )
+                                    } else {
                                         launcher.open(
                                             this,
                                             MediaCard(item.key, item.id, item.title, item.subtitle, item.posterUrl),
