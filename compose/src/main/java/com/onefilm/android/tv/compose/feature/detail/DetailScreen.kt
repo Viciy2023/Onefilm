@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -126,58 +127,59 @@ private fun DetailPlaceholder(
     message: String? = null,
     onRetry: () -> Unit = {},
 ) {
-    Column(Modifier.fillMaxSize()) {
-        Box(
+    Box(Modifier.fillMaxSize().padding(24.dp)) {
+        Text(
+            text = "‹ 返回",
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 14.sp,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .clip(RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable(onClick = onBack)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        )
+        Row(
             Modifier
-                .fillMaxWidth()
-                .aspectRatio(16f / 9f)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .align(Alignment.Center)
+                .widthIn(max = 720.dp)
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(28.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            RemoteImage(
-                rawUrl = posterUrl,
-                contentDescription = title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-            )
             Box(
                 Modifier
-                    .fillMaxSize()
-                    .background(Brush.verticalGradient(listOf(Color(0x44000000), Color(0xCC000000)))),
-            )
-            Text(
-                text = "‹",
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color(0x66000000))
-                    .padding(horizontal = 14.dp, vertical = 4.dp)
-                    .clickable(onClick = onBack),
-            )
-            Text(
-                text = title,
-                style = MaterialTheme.typography.displayLarge,
-                color = Color.White,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(20.dp),
-            )
-        }
-        Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-            if (loading) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    AppLogoLoading(size = 84.dp)
-                    Spacer(Modifier.height(12.dp))
-                    Text("正在加载剧集…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    .width(160.dp)
+                    .aspectRatio(2f / 3f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            ) {
+                if (!posterUrl.isNullOrBlank()) {
+                    RemoteImage(
+                        rawUrl = posterUrl,
+                        contentDescription = title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
-            } else {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(message.orEmpty(), style = MaterialTheme.typography.bodyLarge)
-                    Spacer(Modifier.height(12.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = title.ifBlank { "影片详情" },
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                if (loading) {
+                    AppLogoLoading(size = 48.dp)
+                    Text("正在加载详情…", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                } else {
+                    Text(
+                        text = message.orEmpty().ifBlank { "详情加载失败" },
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp,
+                    )
                     Button(onClick = onRetry) { Text("重试") }
                 }
             }
@@ -213,6 +215,7 @@ private fun DetailContent(
         }
     }
     val selectedFlag = info.flags.getOrNull(selectedFlagIndex) ?: info.flags.firstOrNull()
+    val playingFlagIndex = info.flags.indexOfFirst { flag -> flag.episodes.any { it.url == playingEpisodeUrl } }
     val episodes = selectedFlag?.episodes.orEmpty()
     val visibleEpisodes = if (reversed) episodes.reversed() else episodes
 
@@ -349,7 +352,8 @@ private fun DetailContent(
                 itemsIndexed(info.flags) { index, flag ->
                     DetailLineChip(
                         label = flag.name.ifBlank { "默认线路" },
-                        selected = index == selectedFlagIndex,
+                        selected = index == selectedFlagIndex ||
+                            (!manualFlagSelection && index == playingFlagIndex),
                         onClick = {
                             selectedFlagIndex = index
                             manualFlagSelection = true
@@ -425,7 +429,11 @@ private fun DetailLineChip(
     val shape = RoundedCornerShape(12.dp)
     Text(
         text = label,
-        color = if (focused) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
+        color = when {
+            focused -> MaterialTheme.colorScheme.background
+            selected -> MaterialTheme.colorScheme.primary
+            else -> MaterialTheme.colorScheme.onSurface
+        },
         fontSize = 14.sp,
         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         maxLines = 1,
@@ -433,13 +441,19 @@ private fun DetailLineChip(
         modifier = Modifier
             .clip(shape)
             .background(
-                if (focused) MaterialTheme.colorScheme.onSurface
-                else MaterialTheme.colorScheme.surfaceVariant,
+                when {
+                    focused -> MaterialTheme.colorScheme.onSurface
+                    selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                    else -> MaterialTheme.colorScheme.surfaceVariant
+                },
             )
             .border(
-                if (focused) 2.dp else 1.dp,
-                if (focused) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+                if (focused || selected) 2.dp else 1.dp,
+                when {
+                    focused -> MaterialTheme.colorScheme.primary
+                    selected -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                },
                 shape,
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)

@@ -311,17 +311,15 @@ fun PlayerControls(
         }
     }
     LaunchedEffect(showMore, isTv, inline) {
-        if (!showMore && isTv) {
-            runCatching {
-                if (inline) fullscreenFocus.requestFocus() else playFocus.requestFocus()
-            }
+        // The inline player must not steal focus from the detail actions.
+        // Only the dedicated full-screen route owns the initial player focus.
+        if (!inline && !showMore && isTv) {
+            runCatching { playFocus.requestFocus() }
         }
     }
     LaunchedEffect(player, controlsVisible, isTv, inline) {
-        if (controlsVisible && isTv) {
-            runCatching {
-                if (inline) fullscreenFocus.requestFocus() else playFocus.requestFocus()
-            }
+        if (!inline && controlsVisible && isTv) {
+            runCatching { playFocus.requestFocus() }
         }
     }
     LaunchedEffect(player) {

@@ -16,9 +16,21 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.LiveTv
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,6 +47,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -59,7 +72,7 @@ object TvNavState {
 
 data class TvNavEntry(
     val label: String,
-    val icon: String,
+    val icon: ImageVector,
     val route: String? = null,
     val onClick: () -> Unit,
 )
@@ -89,15 +102,15 @@ fun TvHeader(
         ?: siteName?.takeIf { it.isNotBlank() }
         ?: "ONEFILM 影视"
     val entries = listOf(
-        TvNavEntry("首页", "⌂", route = Routes.HOME) { onNavigate(Routes.HOME) },
-        TvNavEntry("历史", "↺", route = Routes.HISTORY) { onNavigate(Routes.HISTORY) },
-        TvNavEntry("收藏", "★", route = Routes.LIBRARY) { onNavigate(Routes.LIBRARY) },
-        TvNavEntry("搜索", "⌕", route = Routes.SEARCH) { onNavigate(Routes.SEARCH) },
-        TvNavEntry("直播", "▶") { onLive() },
-        TvNavEntry("配置", "⚙") { onConfig() },
-        TvNavEntry("线路", "⇄") { onLine() },
-        TvNavEntry("网盘", "☁") { onNetwork() },
-        TvNavEntry("设置", "☰", route = Routes.SETTINGS) { onNavigate(Routes.SETTINGS) },
+        TvNavEntry("首页", Icons.Outlined.Home, route = Routes.HOME) { onNavigate(Routes.HOME) },
+        TvNavEntry("历史", Icons.Outlined.History, route = Routes.HISTORY) { onNavigate(Routes.HISTORY) },
+        TvNavEntry("收藏", Icons.Outlined.Star, route = Routes.LIBRARY) { onNavigate(Routes.LIBRARY) },
+        TvNavEntry("搜索", Icons.Outlined.Search, route = Routes.SEARCH) { onNavigate(Routes.SEARCH) },
+        TvNavEntry("直播", Icons.Outlined.LiveTv) { onLive() },
+        TvNavEntry("配置", Icons.Outlined.Tune) { onConfig() },
+        TvNavEntry("线路", Icons.Outlined.SwapHoriz) { onLine() },
+        TvNavEntry("网盘", Icons.Outlined.Cloud) { onNetwork() },
+        TvNavEntry("设置", Icons.Outlined.Settings, route = Routes.SETTINGS) { onNavigate(Routes.SETTINGS) },
     )
 
     BoxWithConstraints(
@@ -330,11 +343,11 @@ private fun TvNavTab(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = entry.icon,
-                color = contentColor,
-                fontSize = (12 * uiScale).sp,
-                fontWeight = FontWeight.Medium,
+            Icon(
+                imageVector = entry.icon,
+                contentDescription = entry.label,
+                tint = contentColor,
+                modifier = Modifier.size((16 * uiScale).dp),
             )
             Spacer(Modifier.width((5 * uiScale).dp))
             Text(
