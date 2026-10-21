@@ -1022,7 +1022,12 @@ private fun ChoiceRow(
     if (dialogVisible) {
         SettingsDialog(
             onDismiss = { dialogVisible = false },
-            width = if (options.size <= 3) 420.dp else 560.dp,
+            width = when {
+                options.size <= 2 -> 260.dp
+                options.size == 3 -> 300.dp
+                options.size == 4 -> 340.dp
+                else -> 380.dp
+            },
             padding = 10.dp,
         ) {
             FlowRow(
