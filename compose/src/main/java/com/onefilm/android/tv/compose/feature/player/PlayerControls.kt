@@ -222,6 +222,7 @@ fun PlayerControls(
     var danmakuOn by remember { mutableStateOf(true) }
     var tick by remember { mutableIntStateOf(0) }
     val playFocus = remember { FocusRequester() }
+    val fullscreenFocus = remember { FocusRequester() }
 
     val menuEntries = buildList {
         add(MenuEntry("上集", onPrevious != null) { onPrevious?.invoke() })
@@ -302,11 +303,19 @@ fun PlayerControls(
             controlsVisible = false
         }
     }
-    LaunchedEffect(showMore, isTv) {
-        if (!showMore && isTv) runCatching { playFocus.requestFocus() }
+    LaunchedEffect(showMore, isTv, inline) {
+        if (!showMore && isTv) {
+            runCatching {
+                if (inline) fullscreenFocus.requestFocus() else playFocus.requestFocus()
+            }
+        }
     }
-    LaunchedEffect(player, controlsVisible, isTv) {
-        if (controlsVisible && isTv) runCatching { playFocus.requestFocus() }
+    LaunchedEffect(player, controlsVisible, isTv, inline) {
+        if (controlsVisible && isTv) {
+            runCatching {
+                if (inline) fullscreenFocus.requestFocus() else playFocus.requestFocus()
+            }
+        }
     }
     LaunchedEffect(player) {
         while (player != null) {
@@ -469,6 +478,7 @@ fun PlayerControls(
                         showMore = true
                     },
                     onFullscreen = onToggleFullscreen,
+                    fullscreenFocusRequester = if (inline) fullscreenFocus else null,
                 )
             }
         }
@@ -639,6 +649,7 @@ private fun MenuRow(
     inline: Boolean,
     onMore: (List<MenuEntry>) -> Unit,
     onFullscreen: () -> Unit,
+    fullscreenFocusRequester: FocusRequester? = null,
 ) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val density = LocalDensity.current
@@ -695,6 +706,9 @@ private fun MenuRow(
             IconAction(
                 glyph = if (inline) PlayerGlyph.Fullscreen else PlayerGlyph.ExitFullscreen,
                 size = fullscreenWidth,
+                modifier = if (fullscreenFocusRequester != null) {
+                    Modifier.focusRequester(fullscreenFocusRequester)
+                } else Modifier,
             ) { onFullscreen() }
         }
     }
@@ -842,12 +856,13 @@ private fun IconAction(
     glyph: PlayerGlyph,
     size: androidx.compose.ui.unit.Dp,
     enabled: Boolean = true,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     Box(
-        Modifier
+        modifier
             .size(size)
             .scale(if (focused) 1.08f else 1f)
             .clip(CircleShape)

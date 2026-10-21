@@ -185,11 +185,6 @@ class ComposeMainActivity : ComponentActivity() {
                                 variant = variant,
                                 selectedCategoryKey = selectedCategoryKey,
                                 selectedCategoryId = selectedCategoryId,
-                                activeActionLabel = when {
-                                    showConfigDialog -> "配置"
-                                    showLinesDialog -> "线路"
-                                    else -> null
-                                },
                                 onNavigate = { target ->
                                     navController.navigate(target) {
                                         launchSingleTop = true

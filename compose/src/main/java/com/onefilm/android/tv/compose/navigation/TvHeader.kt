@@ -53,6 +53,10 @@ object TvBrandState {
     var siteName by mutableStateOf("")
 }
 
+object TvNavState {
+    var lastLabel by mutableStateOf("首页")
+}
+
 data class TvNavEntry(
     val label: String,
     val icon: String,
@@ -74,7 +78,6 @@ fun TvHeader(
     variant: TvHeaderVariant = TvHeaderVariant.Full,
     selectedCategoryKey: String? = null,
     selectedCategoryId: String? = null,
-    activeActionLabel: String? = null,
     onNavigate: (String) -> Unit,
     onLive: () -> Unit,
     onConfig: () -> Unit,
@@ -85,6 +88,17 @@ fun TvHeader(
     val centerText = notice?.takeIf { it.isNotBlank() }
         ?: siteName?.takeIf { it.isNotBlank() }
         ?: "ONEFILM 影视"
+    val entries = listOf(
+        TvNavEntry("首页", "⌂", route = Routes.HOME) { onNavigate(Routes.HOME) },
+        TvNavEntry("历史", "↺", route = Routes.HISTORY) { onNavigate(Routes.HISTORY) },
+        TvNavEntry("收藏", "★", route = Routes.LIBRARY) { onNavigate(Routes.LIBRARY) },
+        TvNavEntry("搜索", "⌕", route = Routes.SEARCH) { onNavigate(Routes.SEARCH) },
+        TvNavEntry("直播", "▶") { onLive() },
+        TvNavEntry("配置", "⚙") { onConfig() },
+        TvNavEntry("线路", "⇄") { onLine() },
+        TvNavEntry("网盘", "☁") { onNetwork() },
+        TvNavEntry("设置", "☰", route = Routes.SETTINGS) { onNavigate(Routes.SETTINGS) },
+    )
 
     BoxWithConstraints(
         Modifier
@@ -95,12 +109,16 @@ fun TvHeader(
         // 用可用宽度做一次自适应，避免 2400px 屏上导航和分类缩成一小条。
         val scale = (maxWidth.value / 1000f).coerceIn(1f, 2.4f)
         val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
-        val initialNavFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+        val navFocusRequesters = remember { mutableMapOf<String, androidx.compose.ui.focus.FocusRequester>() }
         val initialCategoryFocus = remember { androidx.compose.ui.focus.FocusRequester() }
         LaunchedEffect(variant, currentRoute, selectedCategoryKey, selectedCategoryId) {
             delay(600)
             when (variant) {
-                TvHeaderVariant.Full -> initialNavFocus.requestFocus()
+                TvHeaderVariant.Full -> {
+                    val target = navFocusRequesters[TvNavState.lastLabel]
+                        ?: navFocusRequesters["首页"]
+                    target?.requestFocus()
+                }
                 TvHeaderVariant.CategoryOnly -> {
                     if (selectedCategoryKey != null && selectedCategoryId != null) {
                         runCatching { CategoryFilterController.categoryFocusRequester.requestFocus() }
@@ -118,17 +136,6 @@ fun TvHeader(
 
         if (variant == TvHeaderVariant.Full) {
         // 第二行：功能导航。九项等权铺满，图标 + 文字。
-        val entries = listOf(
-            TvNavEntry("首页", "⌂", route = Routes.HOME) { onNavigate(Routes.HOME) },
-            TvNavEntry("历史", "↺", route = Routes.HISTORY) { onNavigate(Routes.HISTORY) },
-            TvNavEntry("收藏", "★", route = Routes.LIBRARY) { onNavigate(Routes.LIBRARY) },
-            TvNavEntry("搜索", "⌕", route = Routes.SEARCH) { onNavigate(Routes.SEARCH) },
-            TvNavEntry("直播", "▶") { onLive() },
-            TvNavEntry("配置", "⚙") { onConfig() },
-            TvNavEntry("线路", "⇄") { onLine() },
-            TvNavEntry("网盘", "☁") { onNetwork() },
-            TvNavEntry("设置", "☰", route = Routes.SETTINGS) { onNavigate(Routes.SETTINGS) },
-        )
         Row(
             Modifier
                 .fillMaxWidth()
@@ -146,14 +153,16 @@ fun TvHeader(
             horizontalArrangement = Arrangement.spacedBy((12 * scale).dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            entries.forEachIndexed { index, entry ->
+            entries.forEach { entry ->
+                val focusRequester = navFocusRequesters.getOrPut(entry.label) {
+                    androidx.compose.ui.focus.FocusRequester()
+                }
                 TvNavTab(
                     entry = entry,
                     modifier = Modifier.weight(1f),
                     uiScale = scale,
-                    selected = (entry.route != null && entry.route == currentRoute) ||
-                        entry.label == activeActionLabel,
-                    focusRequester = if (index == 0) initialNavFocus else null,
+                    selected = false,
+                    focusRequester = focusRequester,
                 )
             }
         }
@@ -176,7 +185,7 @@ fun TvHeader(
         ) {
             allCategories.forEachIndexed { index, category ->
                 val home = category.key.isBlank()
-                val selected = if (home) {
+                val current = if (home) {
                     currentRoute == Routes.HOME
                 } else {
                     category.key == selectedCategoryKey && category.id == selectedCategoryId
@@ -187,9 +196,9 @@ fun TvHeader(
                         if (home) onNavigate(Routes.HOME) else onCategory(category)
                     },
                     scale = scale,
-                    selected = selected,
+                    selected = false,
                     focusRequester = when {
-                        selected -> CategoryFilterController.categoryFocusRequester
+                        current -> CategoryFilterController.categoryFocusRequester
                         index == 0 && selectedCategoryKey == null -> initialCategoryFocus
                         else -> null
                     },
@@ -314,6 +323,7 @@ private fun TvNavTab(
                     shape,
                 )
                 .clickable(interactionSource = interaction, indication = null) {
+                    TvNavState.lastLabel = entry.label
                     targetFocus.requestFocus()
                     entry.onClick()
                 }
@@ -353,18 +363,19 @@ private fun TvCategoryChip(
     val localFocus = remember { androidx.compose.ui.focus.FocusRequester() }
     val targetFocus = focusRequester ?: localFocus
     val shape = RoundedCornerShape(12.dp)
+    val highlighted = selected || focused
     Text(
         text = category.name.ifBlank { "未命名" },
-        color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
+        color = if (highlighted) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
         fontSize = (16 * scale).sp,
-        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+        fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Normal,
         textAlign = TextAlign.Center,
         maxLines = 1,
         modifier = modifier
             .focusRequester(targetFocus)
             .clip(shape)
             .background(
-                if (selected) {
+                if (highlighted) {
                     Brush.horizontalGradient(
                         listOf(
                             MaterialTheme.colorScheme.onSurface,
