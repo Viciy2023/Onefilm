@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.onefilm.android.tv.compose.feature.settings
 
 import androidx.compose.foundation.Image
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -94,7 +96,6 @@ fun SettingsScreen(
                 Modifier.weight(1f).fillMaxHeight(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-
         Section("接口配置") {
             ConfigRow("点播接口", snapshot.configUrl, onEdit = { openConfig(0, snapshot.configUrl) }, onReload = {
                 val url = snapshot.configUrl
@@ -145,27 +146,6 @@ fun SettingsScreen(
                 refresh { setIncognito(it) }
             }
         }
-
-        Section("主题设置") {
-            ChoiceRow(
-                title = "外观主题",
-                subtitle = "默认简约明亮主题",
-                options = listOf(
-                    "简约" to (snapshot.themeMode == 0),
-                    "暗黑" to (snapshot.themeMode == 1),
-                    "跟随系统" to (snapshot.themeMode == 2),
-                ),
-            ) { index ->
-                refresh { setThemeMode(index) }
-                ThemeController.apply(index)
-            }
-        }
-
-            }
-            Column(
-                Modifier.weight(1f).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
         Section("播放设置") {
             ChoiceRow(
                 title = "播放引擎",
@@ -195,34 +175,6 @@ fun SettingsScreen(
             ) { index -> refresh { setRenderTexture(index == 1) } }
             SwitchRow("隧道解码", "需要 Surface 渲染", snapshot.tunnel) { refresh { setTunnel(it) } }
         }
-
-        Section("解码设置") {
-            SwitchRow("音频直通", "HDMI / 功放透传", snapshot.audioPassThrough) {
-                refresh { setAudioPassThrough(it) }
-            }
-            SwitchRow("音频偏软解", "软解优先使用 Audio 解码器", snapshot.audioPrefer) {
-                refresh { setAudioPrefer(it) }
-            }
-            SwitchRow("视频偏软解", "软解优先使用 Video 解码器", snapshot.videoPrefer) {
-                refresh { setVideoPrefer(it) }
-            }
-            ActionRow(
-                title = "Dolby Vision 输出",
-                value = snapshot.dvPolicyLabel,
-            ) { refresh { cycleDolbyVisionPolicy() } }
-            Text(
-                "运行时硬解/软解切换仍在播放器「更多」菜单中即时生效。",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
-        }
-
-            }
-            Column(
-                Modifier.weight(1f).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
         Section("字幕设置") {
             ChoiceRow(
                 title = "字幕样式",
@@ -255,7 +207,63 @@ fun SettingsScreen(
                 },
             ) { index -> refresh { setSubtitleEdgeWidth(listOf(0f, 1f, 2f, 4f)[index]) } }
         }
-
+        Section("预加载设置") {
+            SwitchRow("开启预加载", "使用旧 PlayerManager 预加载", snapshot.preloadEnabled) {
+                refresh { setPreloadEnabled(it) }
+            }
+            SwitchRow("预加载下一集", "仅 Exo 路径生效", snapshot.preloadNext) {
+                refresh { setPreloadNext(it) }
+            }
+            ChoiceRow(
+                title = "预加载线程",
+                options = (1..4).map { "$it" to (snapshot.preloadThreads == it) },
+            ) { index -> refresh { setPreloadThreads(index + 1) } }
+            ChoiceRow(
+                title = "缓存大小",
+                options = listOf(50, 100, 200, 500).map {
+                    "$it MB" to (snapshot.preloadSizeMb == it)
+                },
+            ) { index -> refresh { setPreloadSizeMb(listOf(50, 100, 200, 500)[index]) } }
+        }            }
+            Column(
+                Modifier.weight(1f).fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+        Section("主题设置") {
+            ChoiceRow(
+                title = "外观主题",
+                subtitle = "默认简约明亮主题",
+                options = listOf(
+                    "简约" to (snapshot.themeMode == 0),
+                    "暗黑" to (snapshot.themeMode == 1),
+                    "跟随系统" to (snapshot.themeMode == 2),
+                ),
+            ) { index ->
+                refresh { setThemeMode(index) }
+                ThemeController.apply(index)
+            }
+        }
+        Section("解码设置") {
+            SwitchRow("音频直通", "HDMI / 功放透传", snapshot.audioPassThrough) {
+                refresh { setAudioPassThrough(it) }
+            }
+            SwitchRow("音频偏软解", "软解优先使用 Audio 解码器", snapshot.audioPrefer) {
+                refresh { setAudioPrefer(it) }
+            }
+            SwitchRow("视频偏软解", "软解优先使用 Video 解码器", snapshot.videoPrefer) {
+                refresh { setVideoPrefer(it) }
+            }
+            ActionRow(
+                title = "Dolby Vision 输出",
+                value = snapshot.dvPolicyLabel,
+            ) { refresh { cycleDolbyVisionPolicy() } }
+            Text(
+                "运行时硬解/软解切换仍在播放器「更多」菜单中即时生效。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+        }
         Section("弹幕设置") {
             SwitchRow("显示弹幕", "加载并渲染弹幕", snapshot.danmakuShow) {
                 refresh { setDanmakuShow(it) }
@@ -287,31 +295,6 @@ fun SettingsScreen(
                 editBlockWords = true
             }
         }
-
-            }
-            Column(
-                Modifier.weight(1f).fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-        Section("预加载设置") {
-            SwitchRow("开启预加载", "使用旧 PlayerManager 预加载", snapshot.preloadEnabled) {
-                refresh { setPreloadEnabled(it) }
-            }
-            SwitchRow("预加载下一集", "仅 Exo 路径生效", snapshot.preloadNext) {
-                refresh { setPreloadNext(it) }
-            }
-            ChoiceRow(
-                title = "预加载线程",
-                options = (1..4).map { "$it" to (snapshot.preloadThreads == it) },
-            ) { index -> refresh { setPreloadThreads(index + 1) } }
-            ChoiceRow(
-                title = "缓存大小",
-                options = listOf(50, 100, 200, 500).map {
-                    "$it MB" to (snapshot.preloadSizeMb == it)
-                },
-            ) { index -> refresh { setPreloadSizeMb(listOf(50, 100, 200, 500)[index]) } }
-        }
-
         Section("网络与 UA") {
             Text(
                 text = snapshot.ua.ifBlank { "默认 User-Agent" },
@@ -323,13 +306,11 @@ fun SettingsScreen(
             )
             ActionRow("恢复默认 UA", "清空自定义 UA") { refresh { resetUa() } }
         }
-
         Section("关于 OneFilm") {
             InfoRow("版本", snapshot.version)
             InfoRow("配置地址", snapshot.configUrl.ifBlank { "未配置" })
             InfoRow("开源许可", "GPL-3.0 · 基于 FongMi/TV")
-        }
-            }
+        }            }
         }
     }
 
@@ -480,7 +461,7 @@ private fun ConfigRow(
 ) {
     Row(
         Modifier
-            .fillMaxWidth()
+            .fillMaxWidth(0.49f)
             .clickable(onClick = onEdit)
             .padding(horizontal = 8.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -527,12 +508,15 @@ private fun Section(title: String, content: @Composable () -> Unit) {
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
         )
-        Column(
+        FlowRow(
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.surface),
-            verticalArrangement = Arrangement.spacedBy(1.dp),
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(2.dp),
+            maxItemsInEachRow = 2,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             content()
         }
@@ -548,7 +532,7 @@ private fun SwitchRow(
 ) {
     Row(
         Modifier
-            .fillMaxWidth()
+            .fillMaxWidth(0.49f)
             .clickable { onChange(!checked) }
             .padding(horizontal = 8.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -572,7 +556,7 @@ private fun ChoiceRow(
     options: List<Pair<String, Boolean>>,
     onSelect: (Int) -> Unit,
 ) {
-    Column(Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
+    Column(Modifier.fillMaxWidth(0.49f).padding(horizontal = 8.dp, vertical = 4.dp)) {
         Text(title, fontSize = 14.sp)
         if (!subtitle.isNullOrBlank()) {
             Text(
@@ -623,7 +607,7 @@ private fun SettingChip(label: String, selected: Boolean, onClick: () -> Unit) {
 private fun ActionRow(title: String, value: String, onClick: () -> Unit) {
     Row(
         Modifier
-            .fillMaxWidth()
+            .fillMaxWidth(0.49f)
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -636,7 +620,7 @@ private fun ActionRow(title: String, value: String, onClick: () -> Unit) {
 @Composable
 private fun InfoRow(title: String, value: String) {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+        Modifier.fillMaxWidth(0.49f).padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, fontSize = 12.sp, modifier = Modifier.weight(1f))
