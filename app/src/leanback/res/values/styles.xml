@@ -11,7 +11,7 @@
     <style name="Theme.Splash" parent="Theme.SplashScreen">
         <item name="postSplashScreenTheme">@style/Theme.App</item>
         <item name="windowSplashScreenBackground">#141218</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
     </style>
 
     <style name="Theme.App" parent="Theme.Base" />

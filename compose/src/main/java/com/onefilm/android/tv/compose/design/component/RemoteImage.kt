@@ -35,8 +35,7 @@ fun RemoteImage(
         ImageRequest.Builder(context)
             .data(source.url)
             .apply {
-                source.referer?.let { addHeader("Referer", it) }
-                source.userAgent?.let { addHeader("User-Agent", it) }
+                source.headers.forEach { (name, value) -> addHeader(name, value) }
             }
             .crossfade(true)
             .build()
@@ -48,6 +47,13 @@ fun RemoteImage(
         modifier = modifier,
         loading = { PosterLogoFallback(Modifier.fillMaxSize()) },
         error = { PosterLogoFallback(Modifier.fillMaxSize()) },
+        onError = { state ->
+            android.util.Log.e(
+                "RemoteImage",
+                "poster failed: ${source.url}",
+                state.result.throwable,
+            )
+        },
     )
 }
 

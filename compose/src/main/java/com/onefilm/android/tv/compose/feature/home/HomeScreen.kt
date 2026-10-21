@@ -20,6 +20,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -128,7 +131,9 @@ private fun TvHomeContent(
     state: HomeUiState.Content,
     onCardClick: (MediaCard) -> Unit,
 ) {
-    val section = state.feed.sections.firstOrNull { it.items.isNotEmpty() } ?: return
+    val section = state.feed.sections.firstOrNull { it.title == "推荐" && it.items.isNotEmpty() }
+        ?: state.feed.sections.firstOrNull { it.items.isNotEmpty() }
+        ?: return
     TvPosterSection(section.items, onCardClick)
 }
 
@@ -137,76 +142,24 @@ private fun TvPosterSection(
     items: List<MediaCard>,
     onCardClick: (MediaCard) -> Unit,
 ) {
-    val pages = items.chunked(12)
-    val listState = rememberLazyListState()
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        // 6 列 × 2 行，保持 2:3 海报比例。
-        val horizontalPadding = 48.dp
-        val gap = 16.dp
-        val cardWidth = ((maxWidth - horizontalPadding * 2 - gap * 5) / 6).coerceAtLeast(110.dp)
-        LazyRow(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = horizontalPadding,
-                top = 36.dp,
-                end = horizontalPadding,
-                bottom = 8.dp,
-            ),
-            horizontalArrangement = Arrangement.spacedBy(32.dp),
-        ) {
-            items(pages.size) { pageIndex ->
-                Column(
-                    Modifier
-                        .fillParentMaxWidth()
-                        .verticalScroll(rememberScrollState()),
-                ) {
-                    val page = pages[pageIndex]
-                    for (row in 0 until 2) {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(gap),
-                        ) {
-                            for (col in 0 until 6) {
-                                val item = page.getOrNull(row * 6 + col)
-                                if (item != null) {
-                                    TvPosterCard(
-                                        title = item.title,
-                                        posterUrl = item.posterUrl,
-                                        subtitle = item.subtitle,
-                                        width = cardWidth,
-                                        onClick = { onCardClick(item) },
-                                    )
-                                } else {
-                                    Spacer(Modifier.width(cardWidth))
-                                }
-                            }
-                        }
-                        if (row == 0) Spacer(Modifier.height(gap))
-                    }
-                    Spacer(Modifier.height(40.dp))
-                }
-            }
-        }
-        if (pages.size > 1) {
-            Row(
-                Modifier.align(Alignment.BottomCenter).padding(bottom = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                val current = listState.firstVisibleItemIndex
-                repeat(pages.size) { index ->
-                    Box(
-                        Modifier
-                            .width(if (index == current) 18.dp else 6.dp)
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(
-                                if (index == current) MaterialTheme.colorScheme.onBackground
-                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f),
-                            ),
-                    )
-                }
-            }
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(6),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 48.dp, vertical = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        gridItemsIndexed(
+            items = items,
+            key = { index, card -> "${card.key}:${card.id}:$index" },
+        ) { _, item ->
+            TvPosterCard(
+                title = item.title,
+                posterUrl = item.posterUrl,
+                subtitle = item.subtitle,
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { onCardClick(item) },
+            )
         }
     }
 }
