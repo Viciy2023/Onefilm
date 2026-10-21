@@ -59,6 +59,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
 import com.onefilm.android.tv.compose.design.ThemeController
+import com.onefilm.android.tv.compose.navigation.TvBrandRow
 
 @Composable
 fun SettingsScreen(
@@ -76,6 +77,8 @@ fun SettingsScreen(
     var editBlockWords by remember { mutableStateOf(false) }
     var blockWordsDraft by remember { mutableStateOf("") }
     var showClearCacheConfirm by remember { mutableStateOf(false) }
+    var configMessage by remember { mutableStateOf<String?>(null) }
+    var configMessageSuccess by remember { mutableStateOf(true) }
 
     fun refresh(change: SettingsDataSource.() -> Unit) {
         dataSource.change()
@@ -88,6 +91,15 @@ fun SettingsScreen(
         editName = dataSource.configLines(type).firstOrNull { it.current }?.name.orEmpty()
         configError = null
         qrBitmap = dataSource.qrBitmap(dataSource.configPushUrl(), 720)
+    }
+
+    fun reportConfig(label: String, ok: Boolean, message: String) {
+        configMessageSuccess = ok
+        configMessage = if (ok) {
+            "${label}加载成功"
+        } else {
+            "${label}加载失败：${message.ifBlank { "请检查地址和网络" }}"
+        }
     }
 
     Column(
@@ -103,8 +115,11 @@ fun SettingsScreen(
             )
             .padding(horizontal = 40.dp, vertical = 20.dp),
     ) {
-        Text("设置", fontSize = 36.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
-        Spacer(Modifier.height(10.dp))
+        TvBrandRow(
+            centerText = "ONEFILM 影视",
+            compact = true,
+            horizontalPadding = 0.dp,
+        )
         Column(
             Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -114,51 +129,78 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ConfigRow("点播接口", snapshot.configUrl, onEdit = { openConfig(0, snapshot.configUrl) }, onReload = {
-                        val url = snapshot.configUrl
-                        if (url.isNotBlank()) {
-                            reloadingType = 0
-                            dataSource.loadConfig(0, url) { ok, _ ->
-                                reloadingType = null
-                                if (ok) {
-                                    onConfigChanged()
-                                    snapshot = dataSource.load()
+                    ConfigRow(
+                        title = "点播接口",
+                        value = snapshot.configUrl,
+                        loading = reloadingType == 0,
+                        onEdit = { openConfig(0, snapshot.configUrl) },
+                        onReload = {
+                            val url = snapshot.configUrl
+                            if (url.isNotBlank()) {
+                                reloadingType = 0
+                                dataSource.loadConfig(0, url) { ok, message ->
+                                    reloadingType = null
+                                    if (ok) {
+                                        onConfigChanged()
+                                        snapshot = dataSource.load()
+                                    }
+                                    reportConfig("点播接口", ok, message)
                                 }
+                            } else {
+                                reportConfig("点播接口", false, "未配置接口地址")
                             }
-                        }
-                    })
+                        },
+                    )
 
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ConfigRow("直播接口", snapshot.liveConfigUrl, onEdit = { openConfig(1, snapshot.liveConfigUrl) }, onReload = {
-                        val url = snapshot.liveConfigUrl
-                        if (url.isNotBlank()) {
-                            reloadingType = 1
-                            dataSource.loadConfig(1, url) { ok, _ ->
-                                reloadingType = null
-                                if (ok) {
-                                    onConfigChanged()
-                                    snapshot = dataSource.load()
+                    ConfigRow(
+                        title = "直播接口",
+                        value = snapshot.liveConfigUrl,
+                        loading = reloadingType == 1,
+                        onEdit = { openConfig(1, snapshot.liveConfigUrl) },
+                        onReload = {
+                            val url = snapshot.liveConfigUrl
+                            if (url.isNotBlank()) {
+                                reloadingType = 1
+                                dataSource.loadConfig(1, url) { ok, message ->
+                                    reloadingType = null
+                                    if (ok) {
+                                        onConfigChanged()
+                                        snapshot = dataSource.load()
+                                    }
+                                    reportConfig("直播接口", ok, message)
                                 }
+                            } else {
+                                reportConfig("直播接口", false, "未配置接口地址")
                             }
-                        }
-                    })
+                        },
+                    )
 
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ConfigRow("壁纸接口", snapshot.wallConfigUrl, onEdit = { openConfig(2, snapshot.wallConfigUrl) }, onReload = {
-                        val url = snapshot.wallConfigUrl
-                        if (url.isNotBlank()) {
-                            reloadingType = 2
-                            dataSource.loadConfig(2, url) { ok, _ ->
-                                reloadingType = null
-                                if (ok) {
-                                    onConfigChanged()
-                                    snapshot = dataSource.load()
+                    ConfigRow(
+                        title = "壁纸接口",
+                        value = snapshot.wallConfigUrl,
+                        loading = reloadingType == 2,
+                        onEdit = { openConfig(2, snapshot.wallConfigUrl) },
+                        onReload = {
+                            val url = snapshot.wallConfigUrl
+                            if (url.isNotBlank()) {
+                                reloadingType = 2
+                                dataSource.loadConfig(2, url) { ok, message ->
+                                    reloadingType = null
+                                    if (ok) {
+                                        onConfigChanged()
+                                        snapshot = dataSource.load()
+                                    }
+                                    reportConfig("壁纸接口", ok, message)
                                 }
+                            } else {
+                                reportConfig("壁纸接口", false, "未配置接口地址")
                             }
-                        }
-                    })
+                        },
+                    )
 
                 }
             }
@@ -557,6 +599,33 @@ fun SettingsScreen(
         }
     }
 
+    configMessage?.let { message ->
+        SettingsDialog(
+            onDismiss = { configMessage = null },
+            width = 560.dp,
+            padding = 20.dp,
+        ) {
+            Text(
+                text = if (configMessageSuccess) "加载成功" else "加载失败",
+                fontSize = 22.sp,
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = message,
+                fontSize = 16.sp,
+                color = if (configMessageSuccess) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.error,
+            )
+            Spacer(Modifier.height(16.dp))
+            Button(
+                onClick = { configMessage = null },
+                modifier = Modifier.align(Alignment.End),
+            ) {
+                Text("知道了", fontSize = 16.sp)
+            }
+        }
+    }
+
     val type = editType
     if (type != null) {
         SettingsDialog(
@@ -631,6 +700,7 @@ fun SettingsScreen(
 private fun ConfigRow(
     title: String,
     value: String,
+    loading: Boolean,
     onEdit: () -> Unit,
     onReload: () -> Unit,
 ) {
@@ -662,17 +732,17 @@ private fun ConfigRow(
         Spacer(Modifier.width(8.dp))
         Box(
             Modifier
-                .width(52.dp)
+                .width(64.dp)
                 .height(36.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant)
-                .clickable(enabled = value.isNotBlank(), onClick = onReload),
+                .clickable(enabled = !loading && value.isNotBlank(), onClick = onReload),
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "加载",
+                text = if (loading) "加载中" else "加载",
                 fontSize = 14.sp,
-                color = if (value.isNotBlank()) MaterialTheme.colorScheme.onSurface
+                color = if (!loading && value.isNotBlank()) MaterialTheme.colorScheme.onSurface
                 else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
             )

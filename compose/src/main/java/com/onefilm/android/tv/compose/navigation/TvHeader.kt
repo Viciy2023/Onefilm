@@ -177,6 +177,7 @@ fun TvBrandRow(
     centerText: String,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
+    horizontalPadding: androidx.compose.ui.unit.Dp = 48.dp,
 ) {
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) {
@@ -191,7 +192,7 @@ fun TvBrandRow(
         val scale = (maxWidth.value / 1000f).coerceIn(1f, 2.4f)
         Row(
             Modifier.fillMaxWidth().padding(
-                horizontal = 48.dp,
+                horizontal = horizontalPadding,
                 vertical = ((if (compact) 2 else 6) * scale).dp,
             ),
             verticalAlignment = Alignment.CenterVertically,

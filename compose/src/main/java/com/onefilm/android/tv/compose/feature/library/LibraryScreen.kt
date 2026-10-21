@@ -32,6 +32,7 @@ import com.onefilm.android.tv.compose.bridge.LibraryData
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.design.component.AppLogoLoading
 import com.onefilm.android.tv.compose.design.component.TvPosterCard
+import com.onefilm.android.tv.compose.navigation.TvBrandRow
 
 @Composable
 fun LibraryScreen(
@@ -50,6 +51,11 @@ fun LibraryScreen(
     var pendingClear by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 24.dp)) {
+        TvBrandRow(
+            centerText = "ONEFILM 影视",
+            compact = true,
+            horizontalPadding = 0.dp,
+        )
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,

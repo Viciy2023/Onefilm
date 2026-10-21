@@ -51,6 +51,7 @@ import com.onefilm.android.tv.compose.bridge.NetdiskDataSource
 import com.onefilm.android.tv.compose.bridge.NetdiskDrive
 import com.onefilm.android.tv.compose.bridge.NetdiskEntry
 import com.onefilm.android.tv.compose.bridge.NetdiskPlayback
+import com.onefilm.android.tv.compose.navigation.TvBrandRow
 import org.json.JSONObject
 import kotlinx.coroutines.launch
 
@@ -84,6 +85,11 @@ fun NetdiskScreen(
     }
 
     Column(Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 24.dp)) {
+        TvBrandRow(
+            centerText = "ONEFILM 影视",
+            compact = true,
+            horizontalPadding = 0.dp,
+        )
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = if (drive == null) "网盘" else drive.name,
