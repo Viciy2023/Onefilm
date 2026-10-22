@@ -12,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import coil.compose.SubcomposeAsyncImage
+import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.onefilm.android.tv.compose.R
 import com.onefilm.android.tv.compose.design.parseImageSource
@@ -37,24 +37,25 @@ fun RemoteImage(
             .apply {
                 source.headers.forEach { (name, value) -> addHeader(name, value) }
             }
-            .crossfade(true)
+            .crossfade(false)
             .build()
     }
-    SubcomposeAsyncImage(
-        model = request,
-        contentDescription = contentDescription,
-        contentScale = contentScale,
-        modifier = modifier,
-        loading = { PosterLogoFallback(Modifier.fillMaxSize()) },
-        error = { PosterLogoFallback(Modifier.fillMaxSize()) },
-        onError = { state ->
-            android.util.Log.e(
-                "RemoteImage",
-                "poster failed: ${source.url}",
-                state.result.throwable,
-            )
-        },
-    )
+    Box(modifier) {
+        PosterLogoFallback(Modifier.fillMaxSize())
+        AsyncImage(
+            model = request,
+            contentDescription = contentDescription,
+            contentScale = contentScale,
+            modifier = Modifier.fillMaxSize(),
+            onError = { state ->
+                android.util.Log.e(
+                    "RemoteImage",
+                    "poster failed: ${source.url}",
+                    state.result.throwable,
+                )
+            },
+        )
+    }
 }
 
 @Composable

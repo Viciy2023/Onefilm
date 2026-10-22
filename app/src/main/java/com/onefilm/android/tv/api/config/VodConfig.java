@@ -18,8 +18,11 @@ import com.github.catvod.bean.Doh;
 import com.github.catvod.bean.Header;
 import com.github.catvod.bean.Proxy;
 import com.github.catvod.utils.Json;
+import com.github.catvod.utils.Path;
 import com.google.gson.JsonObject;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -40,6 +43,7 @@ public class VodConfig extends BaseConfig {
     private List<String> ads;
     private List<String> flags;
     private List<Parse> parses;
+    private boolean forceRefresh;
 
     public static VodConfig get() {
         return Loader.INSTANCE;
@@ -66,6 +70,7 @@ public class VodConfig extends BaseConfig {
     }
 
     public static void load(Config config, Callback callback) {
+        get().forceRefresh = true;
         get().clear().config(config).load(callback);
     }
 
@@ -111,7 +116,25 @@ public class VodConfig extends BaseConfig {
 
     @Override
     protected void load(Config config) throws Throwable {
-        String json = Decoder.getJson(UrlUtil.convert(config.getUrl()), TAG);
+        String url = UrlUtil.convert(config.getUrl());
+        File cache = Path.files("vod_config_" + Integer.toHexString(url.hashCode()) + ".json");
+        boolean force = forceRefresh;
+        forceRefresh = false;
+        String json = null;
+        if (!force && cache.exists() && System.currentTimeMillis() - cache.lastModified() < 10 * 60_000L) {
+            try {
+                json = Path.read(cache);
+            } catch (Throwable ignored) {
+                json = null;
+            }
+        }
+        if (json == null || json.isEmpty()) {
+            json = Decoder.getJson(url, TAG);
+            try {
+                Path.write(cache, json.getBytes(StandardCharsets.UTF_8));
+            } catch (Throwable ignored) {
+            }
+        }
         checkJson(config, Json.parse(json).getAsJsonObject());
     }
 

@@ -154,6 +154,9 @@ fun TvHeader(
                 TvHeaderVariant.CategoryOnly -> {
                     if (selectedCategoryKey != null && selectedCategoryId != null) {
                         runCatching { CategoryFilterController.categoryFocusRequester.requestFocus() }
+                        // The grid can take default focus while its first page loads.
+                        delay(300)
+                        runCatching { CategoryFilterController.categoryFocusRequester.requestFocus() }
                     } else {
                         runCatching { initialCategoryFocus.requestFocus() }
                     }
