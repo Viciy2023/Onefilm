@@ -80,3 +80,10 @@
 -keep class com.google.zxing.qrcode.QRCodeReader { *; }
 -keep class com.google.zxing.qrcode.QRCodeWriter { *; }
 -keep class com.google.zxing.qrcode.decoder.ErrorCorrectionLevel { *; }
+
+
+# Compose bridge models used by the serializable disk cache
+-keep class com.onefilm.android.tv.compose.bridge.** { *; }
+-keepclassmembers class com.onefilm.android.tv.compose.bridge.** implements java.io.Serializable {
+    *;
+}

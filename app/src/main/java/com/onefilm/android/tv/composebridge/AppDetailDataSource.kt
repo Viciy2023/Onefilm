@@ -14,6 +14,11 @@ class AppDetailDataSource : DetailDataSource {
 
     override suspend fun load(key: String, id: String): DetailInfo = withContext(Dispatchers.IO) {
         DetailCache.get(key, id)?.let { return@withContext it }
+        val cacheKey = "detail_${key}_${id}"
+        DiskCache.read<DetailInfo>(cacheKey, 24 * 60 * 60_000L)?.let {
+            DetailCache.put(it)
+            return@withContext it
+        }
         try {
             VodConfig.get().ensureLoaded()
             val vod = SiteApi.detailContent(key, id).vod.setFlags()
@@ -41,6 +46,7 @@ class AppDetailDataSource : DetailDataSource {
                     .takeIf { it.isNotBlank() },
             )
             DetailCache.put(info)
+            DiskCache.write(cacheKey, info)
             info
         } catch (e: Exception) {
             android.util.Log.e("ComposeDetail", "load failed key=$key id=$id", e)

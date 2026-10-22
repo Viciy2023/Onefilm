@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -88,9 +89,12 @@ fun SettingsScreen(
     var configMessage by remember { mutableStateOf<String?>(null) }
     var configMessageSuccess by remember { mutableStateOf(true) }
     val firstSettingFocus = remember { FocusRequester() }
+    var firstSettingRequested by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        delay(120)
-        runCatching { firstSettingFocus.requestFocus() }
+        repeat(8) {
+            delay(100)
+            runCatching { firstSettingFocus.requestFocus() }
+        }
     }
     LaunchedEffect(Unit) {
         ServerEventBridge.settings.collect { pushed ->
@@ -150,7 +154,14 @@ fun SettingsScreen(
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ConfigRow(
                         title = "点播接口",
-                        modifier = Modifier.focusRequester(firstSettingFocus),
+                        modifier = Modifier
+                            .focusRequester(firstSettingFocus)
+                            .onGloballyPositioned {
+                                if (!firstSettingRequested) {
+                                    firstSettingRequested = true
+                                    runCatching { firstSettingFocus.requestFocus() }
+                                }
+                            },
                         value = snapshot.configUrl,
                         loading = reloadingType == 0,
                         onEdit = { openConfig(0, snapshot.configUrl) },

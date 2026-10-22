@@ -15,6 +15,10 @@ import kotlinx.coroutines.withContext
 
 class AppHomeDataSource : HomeDataSource {
 
+    init {
+        HomeFeedCache.feed = DiskCache.read<HomeFeed>("home", 24 * 60 * 60_000L)
+    }
+
     override suspend fun load(): HomeFeed = withContext(Dispatchers.IO) {
         VodConfig.get().ensureLoaded()
         val site = VodConfig.get().getHome()
@@ -45,6 +49,9 @@ class AppHomeDataSource : HomeDataSource {
             categories = categories,
             siteName = site.name.orEmpty(),
             notice = result.msg.orEmpty(),
-        ).also { HomeFeedCache.feed = it }
+        ).also {
+            HomeFeedCache.feed = it
+            DiskCache.write("home", it)
+        }
     }
 }

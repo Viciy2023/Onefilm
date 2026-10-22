@@ -1,6 +1,7 @@
 package com.onefilm.android.tv.compose.bridge
 
 import android.content.Context
+import java.io.Serializable
 
 data class MediaCard(
     val key: String,
@@ -10,11 +11,11 @@ data class MediaCard(
     val posterUrl: String?,
     val progress: Float? = null,
     val siteName: String? = null,
-)
+) : Serializable
 
-data class HomeSection(val title: String, val items: List<MediaCard>)
+data class HomeSection(val title: String, val items: List<MediaCard>) : Serializable
 
-data class HomeCategory(val key: String, val id: String, val name: String)
+data class HomeCategory(val key: String, val id: String, val name: String) : Serializable
 
 data class HomeFeed(
     val hero: List<MediaCard>,
@@ -22,7 +23,7 @@ data class HomeFeed(
     val categories: List<HomeCategory> = emptyList(),
     val siteName: String = "",
     val notice: String = "",
-)
+) : Serializable
 
 object HomeFeedCache {
     @Volatile

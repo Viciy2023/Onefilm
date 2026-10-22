@@ -29,7 +29,14 @@ class AppSearchDataSource : SearchDataSource {
             send(SearchProgress(emptyList(), true))
             return@channelFlow
         }
-        if (page == 1) cache[key]?.let { send(SearchProgress(it, true)); return@channelFlow }
+        if (page == 1) {
+            cache[key]?.let { send(SearchProgress(it, true)); return@channelFlow }
+            DiskCache.read<List<MediaCard>>("search_${key.hashCode()}", 10 * 60_000L)?.let {
+                cache[key] = it
+                send(SearchProgress(it, true))
+                return@channelFlow
+            }
+        }
 
         // quickSearch 源优先，其余源继续并行；并发 32，返回一个追加一个。
         val sites = VodConfig.get().getSites().filter { it.isSearchable }
@@ -75,6 +82,7 @@ class AppSearchDataSource : SearchDataSource {
         if (page == 1) {
             cache[key] = sorted
             SearchResultCache.items = sorted
+            DiskCache.write("search_${key.hashCode()}", sorted)
         }
         send(SearchProgress(sorted, true, sites.size, sites.size))
     }

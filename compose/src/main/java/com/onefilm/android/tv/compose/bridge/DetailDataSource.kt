@@ -1,8 +1,10 @@
 package com.onefilm.android.tv.compose.bridge
 
-data class DetailEpisode(val name: String, val url: String)
+import java.io.Serializable
 
-data class DetailFlag(val name: String, val episodes: List<DetailEpisode>)
+data class DetailEpisode(val name: String, val url: String) : Serializable
+
+data class DetailFlag(val name: String, val episodes: List<DetailEpisode>) : Serializable
 
 data class DetailInfo(
     val key: String,
@@ -18,7 +20,7 @@ data class DetailInfo(
     val actor: String? = null,
     val director: String? = null,
     val playUrl: String? = null,
-)
+) : Serializable
 
 interface DetailDataSource {
     suspend fun load(key: String, id: String): DetailInfo

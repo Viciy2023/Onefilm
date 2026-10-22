@@ -17,6 +17,8 @@ class AppCategoryDataSource : CategoryDataSource {
         page: Int,
         selected: Map<String, String>,
     ): CategoryPage = withContext(Dispatchers.IO) {
+        val cacheKey = "category_${key}_${tid}_${page}_${selected.hashCode()}"
+        DiskCache.read<CategoryPage>(cacheKey)?.let { return@withContext it }
         VodConfig.get().ensureLoaded()
         val extend = HashMap(selected)
         val result = SiteApi.categoryContent(key, tid, page.toString(), true, extend)
@@ -31,6 +33,6 @@ class AppCategoryDataSource : CategoryDataSource {
             title = type?.typeName.orEmpty(),
             items = HomeFeedMapper.fromVods(result.list, key),
             filters = filterGroups,
-        )
+        ).also { DiskCache.write(cacheKey, it) }
     }
 }

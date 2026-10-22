@@ -13,6 +13,8 @@ import com.onefilm.android.tv.api.config.VodConfig
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
 import com.onefilm.android.tv.compose.bridge.ServerEventBridge
+import com.onefilm.android.tv.compose.bridge.HomeFeedCache
+import com.onefilm.android.tv.compose.bridge.DetailCache
 import com.onefilm.android.tv.compose.bridge.ConfigLine
 import com.onefilm.android.tv.setting.DanmakuSetting
 import com.onefilm.android.tv.setting.DecodeSetting
@@ -328,6 +330,9 @@ class AppSettingsDataSource : SettingsDataSource {
 
     override fun clearCache() {
         Path.clear(Path.cache())
+        HomeFeedCache.feed = null
+        DetailCache.clear()
+        SearchResultCache.items = emptyList()
         runCatching {
             Path.files().listFiles { _, name -> name.startsWith("vod_config_") }
                 ?.forEach { it.delete() }

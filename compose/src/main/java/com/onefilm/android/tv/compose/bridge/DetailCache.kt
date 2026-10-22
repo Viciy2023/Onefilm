@@ -8,6 +8,8 @@ object DetailCache {
 
     fun get(key: String, id: String): DetailInfo? = cache["$key:$id"]
 
+    fun clear() = cache.clear()
+
     fun put(info: DetailInfo) {
         cache["${info.key}:${info.id}"] = info
     }
