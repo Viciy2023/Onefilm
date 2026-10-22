@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.ui.zIndex
 
 /** TV 端统一海报卡片：2:3 海报 + 底部标题/评分 + 焦点放大与白色细环。 */
 @Composable
@@ -56,12 +57,20 @@ fun TvPosterCard(
     Box(
         modifier
             .then(sizeModifier)
-            .graphicsLayer { scaleX = scale; scaleY = scale }
             .focusProperties { canFocus = focusEnabled }
-            .clip(shape)
-            .border(if (focused) 2.dp else 0.dp, Color.White.copy(alpha = 0.8f), shape)
+            // zIndex 只影响绘制顺序，不参与测量，不会触发布局位移。
+            .zIndex(if (focused) 1f else 0f)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick),
     ) {
+        // 缩放只作用于内部绘制层：外部焦点边界和 grid 占位始终固定，
+        // 因此选中卡片放大时整页不会发生 focus-scroll 位移。
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .graphicsLayer { scaleX = scale; scaleY = scale }
+                .clip(shape)
+                .border(if (focused) 2.dp else 0.dp, Color.White.copy(alpha = 0.8f), shape),
+        ) {
         Box(
             Modifier
                 .fillMaxWidth()
@@ -131,6 +140,7 @@ fun TvPosterCard(
                     )
                 }
             }
+        }
         }
     }
 }

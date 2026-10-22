@@ -42,6 +42,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import com.onefilm.android.tv.compose.navigation.TvHeaderFocusState
 import com.onefilm.android.tv.compose.design.OneFilmTheme
+import com.onefilm.android.tv.compose.design.component.TvFocusScrolling
 import com.onefilm.android.tv.compose.design.ThemeController
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.feature.category.CategoryRoute
@@ -73,15 +74,6 @@ class ComposeMainActivity : ComponentActivity() {
     private var playerRouteActive = false
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.action == KeyEvent.ACTION_DOWN &&
-            event.keyCode == KeyEvent.KEYCODE_DPAD_DOWN &&
-            TvHeaderFocusState.homeRoute &&
-            !TvHeaderFocusState.navFocusedOnce
-        ) {
-            TvHeaderFocusState.homeCategoryFocused = false
-            runCatching { TvHeaderFocusState.firstNavRequester?.requestFocus() }
-            return true
-        }
         return super.dispatchKeyEvent(event)
     }
 
@@ -202,19 +194,8 @@ class ComposeMainActivity : ComponentActivity() {
                         },
                     )
                 }
-                Box(
-                    Modifier.fillMaxSize().onPreviewKeyEvent { event ->
-                        if (route?.startsWith(Routes.HOME) == true &&
-                            TvHeaderFocusState.homeCategoryFocused &&
-                            event.type == KeyEventType.KeyDown &&
-                            event.key == Key.DirectionDown
-                        ) {
-                            TvHeaderFocusState.homeCategoryFocused = false
-                            runCatching { TvHeaderFocusState.firstNavRequester?.requestFocus() }
-                            true
-                        } else false
-                    },
-                ) {
+                Box(Modifier.fillMaxSize()) {
+                TvFocusScrolling {
                 AdaptiveNavigation(
                     isTv = isTv,
                     currentRoute = route,
@@ -439,6 +420,7 @@ class ComposeMainActivity : ComponentActivity() {
                         },
                         onConfigChanged = homeViewModel::retry,
                     )
+                }
                 }
                 }
             }

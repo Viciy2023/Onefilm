@@ -3,6 +3,7 @@ package com.onefilm.android.tv.compose.navigation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -65,7 +66,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.bridge.HomeCategory
-import com.onefilm.android.tv.compose.feature.category.CategoryFilterController
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.delay
@@ -76,7 +76,6 @@ object TvHeaderFocusState {
     var homeCategoryFocused by mutableStateOf(false)
     var navFocusedOnce by mutableStateOf(false)
     var homeRoute by mutableStateOf(false)
-    var firstNavRequester: androidx.compose.ui.focus.FocusRequester? = null
 }
 
 object TvBrandState {
@@ -140,13 +139,15 @@ fun TvHeader(
         val focusManager = LocalFocusManager.current
         val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
         val navFocusRequesters = remember { mutableMapOf<String, androidx.compose.ui.focus.FocusRequester>() }
+        val categoryFocusRequesters = remember { mutableMapOf<String, androidx.compose.ui.focus.FocusRequester>() }
         val initialCategoryFocus = remember { androidx.compose.ui.focus.FocusRequester() }
         val firstNavFocus = remember { androidx.compose.ui.focus.FocusRequester() }
-        LaunchedEffect(firstNavFocus) { TvHeaderFocusState.firstNavRequester = firstNavFocus }
         var navFocusEnabled by remember { mutableStateOf(variant != TvHeaderVariant.Full) }
         var categoryFocusSeen by remember { mutableStateOf(false) }
         var homeCategoryFocused by remember { mutableStateOf(false) }
-        LaunchedEffect(variant, currentRoute, selectedCategoryKey, selectedCategoryId, categories) {
+        // 不能在 categories 刷新时重新抢焦点：首页数据晚到会把焦点从
+        // 导航“历史”拽回“主页”，表现为向下永远无法离开分类行。
+        LaunchedEffect(variant, currentRoute) {
             if (variant == TvHeaderVariant.Full) {
                 navFocusEnabled = false
                 categoryFocusSeen = false
@@ -154,25 +155,11 @@ fun TvHeader(
             delay(100)
             when (variant) {
                 TvHeaderVariant.Full -> {
-                    if (selectedCategoryKey != null && selectedCategoryId != null) {
-                        runCatching { CategoryFilterController.categoryFocusRequester.requestFocus() }
-                    } else {
-                        // Home navigation was removed: the API category "主页" is the
-                        // single home entry. Focus it directly on launch/back.
-                        runCatching { initialCategoryFocus.requestFocus() }
-                        delay(80)
-                        if (!navFocusEnabled) {
-                            runCatching { focusManager.moveFocus(FocusDirection.Down) }
-                        }
-                    }
+                    // Home navigation was removed: the API category "主页" is the
+                    // single home entry. Focus it directly on launch/back.
+                    runCatching { initialCategoryFocus.requestFocus() }
                 }
-                TvHeaderVariant.CategoryOnly -> {
-                    if (selectedCategoryKey != null && selectedCategoryId != null) {
-                        runCatching { CategoryFilterController.categoryFocusRequester.requestFocus() }
-                    } else {
-                        runCatching { initialCategoryFocus.requestFocus() }
-                    }
-                }
+                TvHeaderVariant.CategoryOnly -> Unit
             }
         }
         Column(
@@ -183,9 +170,12 @@ fun TvHeader(
                         event.type == KeyEventType.KeyDown &&
                         event.key == Key.DirectionDown
                     ) {
+                        // 在 Compose 自己的焦点树里移动，避免 Activity 提前消费按键后
+                        // FocusRequester 请求失败又把焦点留回“主页”。
                         homeCategoryFocused = false
                         navFocusEnabled = true
-                        runCatching { firstNavFocus.requestFocus() }
+                        TvHeaderFocusState.navFocusedOnce = true
+                        runCatching { focusManager.moveFocus(FocusDirection.Down) }
                         true
                     } else false
                 },
@@ -200,7 +190,6 @@ fun TvHeader(
         Row(
             Modifier
                 .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
                 .padding(
                     start = 48.dp,
                     top = if (variant == TvHeaderVariant.CategoryOnly) (4 * scale).dp else (2 * scale).dp,
@@ -217,6 +206,24 @@ fun TvHeader(
                 } else {
                     category.key == selectedCategoryKey && category.id == selectedCategoryId
                 }
+                // 分类行使用显式左右邻居表，快速连按也只在分类标签之间移动，
+                // 不会因为默认几何搜索逃逸到下方海报区或跳回旧分类。
+                val chipKey = "${category.key}:${category.id}:${category.name}"
+                val chipRequester = categoryFocusRequesters.getOrPut(chipKey) {
+                    if (index == 0) initialCategoryFocus else androidx.compose.ui.focus.FocusRequester()
+                }
+                val previousRequester = if (index > 0) {
+                    val prev = allCategories[index - 1]
+                    categoryFocusRequesters.getOrPut("${prev.key}:${prev.id}:${prev.name}") {
+                        androidx.compose.ui.focus.FocusRequester()
+                    }
+                } else chipRequester
+                val nextRequester = if (index < allCategories.lastIndex) {
+                    val next = allCategories[index + 1]
+                    categoryFocusRequesters.getOrPut("${next.key}:${next.id}:${next.name}") {
+                        androidx.compose.ui.focus.FocusRequester()
+                    }
+                } else chipRequester
                 TvCategoryChip(
                     category = category,
                     onClick = {
@@ -224,7 +231,6 @@ fun TvHeader(
                     },
                     scale = scale,
                     selected = home && currentRoute == Routes.HOME && !categoryFocusSeen,
-                    autoFocus = home && currentRoute == Routes.HOME,
                     onFocused = {
                         categoryFocusSeen = true
                         homeCategoryFocused = home && currentRoute == Routes.HOME
@@ -232,18 +238,16 @@ fun TvHeader(
                         TvHeaderFocusState.navFocusedOnce = false
                         if (home) navFocusEnabled = true
                     },
-                    downFocus = if (home && currentRoute == Routes.HOME) firstNavFocus else null,
+                    downFocus = null,
+                    leftFocus = previousRequester,
+                    rightFocus = nextRequester,
                     onFocusTrigger = {
                         when {
                             home && currentRoute != Routes.HOME -> onNavigate(Routes.HOME)
                             !home && !current -> onCategory(category)
                         }
                     },
-                    focusRequester = when {
-                        index == 0 -> initialCategoryFocus
-                        current -> CategoryFilterController.categoryFocusRequester
-                        else -> null
-                    },
+                    focusRequester = chipRequester,
                 )
             }
         }
@@ -437,10 +441,11 @@ private fun TvCategoryChip(
     onClick: () -> Unit,
     scale: Float = 1f,
     selected: Boolean = false,
-    autoFocus: Boolean = false,
     onFocused: () -> Unit = {},
     onFocusTrigger: () -> Unit = {},
     downFocus: androidx.compose.ui.focus.FocusRequester? = null,
+    leftFocus: androidx.compose.ui.focus.FocusRequester? = null,
+    rightFocus: androidx.compose.ui.focus.FocusRequester? = null,
     focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -448,9 +453,10 @@ private fun TvCategoryChip(
     val focused by interaction.collectIsFocusedAsState()
     val localFocus = remember { androidx.compose.ui.focus.FocusRequester() }
     val targetFocus = focusRequester ?: localFocus
-    var autoFocusRequested by remember { mutableStateOf(false) }
     LaunchedEffect(focused) {
-        if (focused) onFocused()
+        if (focused) {
+            onFocused()
+        }
     }
     LaunchedEffect(focused) {
         if (focused) {
@@ -458,18 +464,6 @@ private fun TvCategoryChip(
             // while the remote is passing through items.
             delay(100)
             if (focused) onFocusTrigger()
-        }
-    }
-    LaunchedEffect(autoFocus) {
-        if (autoFocus) {
-            autoFocusRequested = false
-            // Retry quickly until the category chip actually owns focus.
-            // This runs only while autoFocus is true and stops once focused.
-            repeat(12) {
-                if (focused) return@LaunchedEffect
-                runCatching { targetFocus.requestFocus() }
-                delay(40)
-            }
         }
     }
     val shape = RoundedCornerShape(8.dp)
@@ -483,17 +477,11 @@ private fun TvCategoryChip(
         maxLines = 1,
         modifier = modifier
             .focusRequester(targetFocus)
-            .onFocusChanged {
-                if (it.isFocused) onFocused()
-            }
+            .onFocusChanged { if (it.isFocused) onFocused() }
             .focusProperties {
                 if (downFocus != null) down = downFocus
-            }
-            .onGloballyPositioned {
-                if (autoFocus && !autoFocusRequested) {
-                    autoFocusRequested = true
-                    runCatching { targetFocus.requestFocus() }
-                }
+                if (leftFocus != null) left = leftFocus
+                if (rightFocus != null) right = rightFocus
             }
             .clip(shape)
             .background(

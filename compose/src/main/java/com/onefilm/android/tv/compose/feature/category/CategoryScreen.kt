@@ -113,8 +113,6 @@ private fun CategoryContent(
         delay(120)
         if (showFilters) {
             runCatching { firstFilterFocus.requestFocus() }
-        } else {
-            runCatching { CategoryFilterController.categoryFocusRequester.requestFocus() }
         }
     }
     Box(Modifier.fillMaxSize()) {
