@@ -1,5 +1,6 @@
 package com.onefilm.android.tv.composebridge
 
+import com.onefilm.android.tv.App
 import com.onefilm.android.tv.api.SiteApi
 import com.onefilm.android.tv.api.config.VodConfig
 import com.onefilm.android.tv.bean.History
@@ -8,6 +9,7 @@ import com.onefilm.android.tv.compose.bridge.HomeDataSource
 import com.onefilm.android.tv.compose.bridge.HomeCategory
 import com.onefilm.android.tv.compose.bridge.HomeFeed
 import com.onefilm.android.tv.compose.bridge.HomeSection
+import com.onefilm.android.tv.compose.bridge.HomeFeedCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -43,6 +45,6 @@ class AppHomeDataSource : HomeDataSource {
             categories = categories,
             siteName = site.name.orEmpty(),
             notice = result.msg.orEmpty(),
-        )
+        ).also { HomeFeedCache.feed = it }
     }
 }

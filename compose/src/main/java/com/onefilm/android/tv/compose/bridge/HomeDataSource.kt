@@ -24,6 +24,11 @@ data class HomeFeed(
     val notice: String = "",
 )
 
+object HomeFeedCache {
+    @Volatile
+    var feed: HomeFeed? = null
+}
+
 interface HomeDataSource {
     suspend fun load(): HomeFeed
 }
