@@ -89,7 +89,10 @@ fun SearchScreen(
     var query by remember(initialQuery) { mutableStateOf(initialQuery.orEmpty()) }
     val firstLetterFocus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
-    val landing = state is SearchUiState.Idle
+    val hasInitialQuery = !initialQuery.isNullOrBlank()
+    // A card/category click passes an initial query: show the result view
+    // (loading or content) immediately, never the search landing page.
+    val landing = state is SearchUiState.Idle && !hasInitialQuery
 
     Column(Modifier.fillMaxSize()) {
         TvBrandRow(compact = true)
@@ -317,8 +320,10 @@ private fun AlphabetGrid(
 ) {
     val keys = ('A'..'Z').map { it.toString() } + (0..9).map { it.toString() }
     LaunchedEffect(Unit) {
-        kotlinx.coroutines.delay(1200)
-        firstLetterFocus.requestFocus()
+        // Focus the alphabet immediately. The old 1200ms delay let the
+        // history "清空" button take initial focus before jumping here.
+        kotlinx.coroutines.delay(40)
+        runCatching { firstLetterFocus.requestFocus() }
     }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         keys.chunked(6).forEachIndexed { rowIndex, row ->
