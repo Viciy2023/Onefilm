@@ -15,6 +15,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -105,12 +106,14 @@ class ComposeMainActivity : ComponentActivity() {
                 },
             ) {
                 val navController = rememberNavController()
+                var searchFocusToken by remember { mutableIntStateOf(0) }
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val route = backStackEntry?.destination?.route
                 val categoryArgs = backStackEntry?.arguments
                 val selectedCategoryKey = categoryArgs?.getString("key")
                 val selectedCategoryId = categoryArgs?.getString("tid")
                 LaunchedEffect(route) {
+                    if (route?.startsWith("search") == true) searchFocusToken++
                     playerRouteActive = route?.startsWith("player") == true
                     val keepPlaying = route?.startsWith("detail") == true ||
                         route?.startsWith("player") == true
@@ -247,6 +250,7 @@ class ComposeMainActivity : ComponentActivity() {
                         },
                         searchContent = { initialQuery ->
                             SearchRoute(
+                                focusToken = searchFocusToken,
                                 dataSource = searchDataSource,
                                 metaDataSource = searchMetaDataSource,
                                 initialQuery = initialQuery,

@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SearchRoute(
+    focusToken: Int = 0,
     dataSource: SearchDataSource,
     metaDataSource: SearchMetaDataSource,
     onCardClick: (MediaCard) -> Unit,
@@ -61,6 +62,7 @@ fun SearchRoute(
         rankings = rankings,
         suggestions = suggestions,
         initialQuery = initialQuery,
+        focusToken = focusToken,
         onQueryChange = { q ->
             suggestJob?.cancel()
             if (q.isBlank()) {

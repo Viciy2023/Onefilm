@@ -49,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -81,6 +82,7 @@ fun SearchScreen(
     rankings: List<SearchRank> = emptyList(),
     suggestions: List<String> = emptyList(),
     initialQuery: String? = null,
+    focusToken: Int = 0,
     onQueryChange: (String) -> Unit = {},
     onClearHistory: () -> Unit = {},
 ) {
@@ -136,6 +138,7 @@ fun SearchScreen(
         } else {
             SearchResults(
                 state = state,
+                focusToken = focusToken,
                 onCardClick = onCardClick,
             )
         }
@@ -455,6 +458,7 @@ private fun KeywordChip(text: String, modifier: Modifier = Modifier, onClick: ()
 @Composable
 private fun SearchResults(
     state: SearchUiState,
+    focusToken: Int = 0,
     onCardClick: (MediaCard) -> Unit,
 ) {
     val content = state as? SearchUiState.Content
@@ -469,7 +473,11 @@ private fun SearchResults(
         (it.siteName?.takeIf { name -> name.isNotBlank() } ?: it.key) == selectedSite
     }
     val cardFocusRequesters = remember { mutableMapOf<String, FocusRequester>() }
-    LaunchedEffect(content?.keyword, visibleItems.size, selectedSite) {
+    var restoreComplete by remember(focusToken) { mutableStateOf(false) }
+    val restoringCard = !restoreComplete &&
+        SearchFocusState.cardKey != null &&
+        SearchFocusState.query == content?.keyword
+    LaunchedEffect(focusToken, content?.keyword, visibleItems.size, selectedSite) {
         if (SearchFocusState.query != content?.keyword) {
             SearchFocusState.cardKey = null
         }
@@ -481,6 +489,9 @@ private fun SearchResults(
                 runCatching { cardFocusRequesters[target]?.requestFocus() }
                 delay(60)
             }
+            restoreComplete = true
+        } else {
+            restoreComplete = true
         }
     }
 
@@ -517,12 +528,14 @@ private fun SearchResults(
                 SiteButton(
                     text = "全部显示",
                     selected = selectedSite == null,
+                    focusEnabled = !restoringCard,
                     onClick = { selectedSite = null },
                 )
                 sites.forEach { site ->
                     SiteButton(
                         text = site,
                         selected = selectedSite == site,
+                        focusEnabled = !restoringCard,
                         onClick = { selectedSite = site },
                     )
                 }
@@ -575,7 +588,12 @@ private fun SearchResults(
 }
 
 @Composable
-private fun SiteButton(text: String, selected: Boolean, onClick: () -> Unit) {
+private fun SiteButton(
+    text: String,
+    selected: Boolean,
+    focusEnabled: Boolean = true,
+    onClick: () -> Unit,
+) {
     Text(
         text = text,
         color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
@@ -589,6 +607,7 @@ private fun SiteButton(text: String, selected: Boolean, onClick: () -> Unit) {
             .padding(horizontal = 6.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant)
+            .focusProperties { canFocus = focusEnabled }
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 7.dp),
     )

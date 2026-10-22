@@ -158,8 +158,47 @@ fun TvHeader(
             compact = variant == TvHeaderVariant.CategoryOnly,
         )
 
+        // 第二行：接口分类。"主页"是唯一主页入口。
+        val allCategories = listOf(HomeCategory("", "", "主页")) + categories
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(
+                    start = 48.dp,
+                    top = if (variant == TvHeaderVariant.CategoryOnly) (4 * scale).dp else (2 * scale).dp,
+                    end = 48.dp,
+                    bottom = (2 * scale).dp,
+                ),
+            horizontalArrangement = Arrangement.spacedBy((6 * scale).dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            allCategories.forEachIndexed { index, category ->
+                val home = category.key.isBlank()
+                val current = if (home) {
+                    currentRoute == Routes.HOME
+                } else {
+                    category.key == selectedCategoryKey && category.id == selectedCategoryId
+                }
+                TvCategoryChip(
+                    category = category,
+                    onClick = {
+                        if (home) onNavigate(Routes.HOME) else onCategory(category)
+                    },
+                    scale = scale,
+                    selected = current,
+                    autoFocus = home && currentRoute == Routes.HOME,
+                    onFocused = { if (home) navFocusEnabled = true },
+                    focusRequester = when {
+                        index == 0 -> initialCategoryFocus
+                        current -> CategoryFilterController.categoryFocusRequester
+                        else -> null
+                    },
+                )
+            }
+        }
         if (variant == TvHeaderVariant.Full) {
-        // 第二行：功能导航。九项等权铺满，图标 + 文字。
+        // 第三行：功能导航。九项等权铺满，图标 + 文字。
         Row(
             Modifier
                 .fillMaxWidth()
@@ -193,45 +232,7 @@ fun TvHeader(
         }
         }
 
-        // 第三行：分类标签。从左往右自然排列，超出屏宽后横向滑动。
-        val allCategories = listOf(HomeCategory("", "", "主页")) + categories
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(
-                    start = 48.dp,
-                    top = if (variant == TvHeaderVariant.CategoryOnly) (4 * scale).dp else (2 * scale).dp,
-                    end = 48.dp,
-                    bottom = (2 * scale).dp,
-                ),
-            horizontalArrangement = Arrangement.spacedBy((6 * scale).dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            allCategories.forEachIndexed { index, category ->
-                val home = category.key.isBlank()
-                val current = if (home) {
-                    currentRoute == Routes.HOME
-                } else {
-                    category.key == selectedCategoryKey && category.id == selectedCategoryId
-                }
-                TvCategoryChip(
-                    category = category,
-                    onClick = {
-                        if (home) onNavigate(Routes.HOME) else onCategory(category)
-                    },
-                    scale = scale,
-                    selected = false,
-                    autoFocus = home && currentRoute == Routes.HOME,
-                    onFocused = { if (home) navFocusEnabled = true },
-                    focusRequester = when {
-                        index == 0 -> initialCategoryFocus
-                        current -> CategoryFilterController.categoryFocusRequester
-                        else -> null
-                    },
-                )
-            }
-        }
+        // 第二行：分类标签。从左往右自然排列，超出屏宽后横向滑动。
         Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)))
         }
     }
