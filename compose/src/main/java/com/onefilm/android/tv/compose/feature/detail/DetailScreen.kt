@@ -176,6 +176,66 @@ private fun DetailContent(
             Modifier.fillMaxWidth().weight(1.15f),
             horizontalArrangement = Arrangement.spacedBy(20.dp),
         ) {
+            Box(
+                Modifier
+                    .weight(0.40f)
+                    .fillMaxWidth()
+                    .aspectRatio(16f / 9f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.Black),
+            ) {
+                if (loading) {
+                    Box(
+                        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AppLogoLoading(size = 48.dp)
+                    }
+                } else if (errorMessage != null) {
+                    Column(
+                        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(errorMessage, color = Color.White, fontSize = 14.sp)
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = onRetry) { Text("重试") }
+                    }
+                } else if (playingUrl != null) {
+                    if (inlineReady) {
+                        InlinePlayer(onExpand = onExpandPlayer, modifier = Modifier.fillMaxSize())
+                    } else {
+                        Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+                            AppLogoLoading(size = 64.dp)
+                        }
+                    }
+                } else {
+                    if (!info.posterUrl.isNullOrBlank()) {
+                        RemoteImage(
+                            rawUrl = info.posterUrl,
+                            contentDescription = info.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Brush.verticalGradient(listOf(Color(0x22000000), Color(0xAA000000)))),
+                    )
+                    Text(
+                        text = "点击播放",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .clickable {
+                                onPlay(selectedFlag?.name, episodes.firstOrNull()?.url)
+                            },
+                    )
+                }
+            }
+
             Column(Modifier.weight(0.60f).fillMaxHeight()) {
                 Text(
                     text = info.title.ifBlank { "未命名" },
@@ -242,65 +302,6 @@ private fun DetailContent(
                         label = if (favorite) "已收藏" else "加入收藏",
                         active = favorite,
                         onClick = onToggleFavorite,
-                    )
-                }
-            }
-            Box(
-                Modifier
-                    .weight(0.40f)
-                    .fillMaxWidth()
-                    .aspectRatio(16f / 9f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.Black),
-            ) {
-                if (loading) {
-                    Box(
-                        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        AppLogoLoading(size = 48.dp)
-                    }
-                } else if (errorMessage != null) {
-                    Column(
-                        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Text(errorMessage, color = Color.White, fontSize = 14.sp)
-                        Spacer(Modifier.height(8.dp))
-                        Button(onClick = onRetry) { Text("重试") }
-                    }
-                } else if (playingUrl != null) {
-                    if (inlineReady) {
-                        InlinePlayer(onExpand = onExpandPlayer, modifier = Modifier.fillMaxSize())
-                    } else {
-                        Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
-                            AppLogoLoading(size = 64.dp)
-                        }
-                    }
-                } else {
-                    if (!info.posterUrl.isNullOrBlank()) {
-                        RemoteImage(
-                            rawUrl = info.posterUrl,
-                            contentDescription = info.title,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    }
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(Brush.verticalGradient(listOf(Color(0x22000000), Color(0xAA000000)))),
-                    )
-                    Text(
-                        text = "点击播放",
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .clickable {
-                                onPlay(selectedFlag?.name, episodes.firstOrNull()?.url)
-                            },
                     )
                 }
             }

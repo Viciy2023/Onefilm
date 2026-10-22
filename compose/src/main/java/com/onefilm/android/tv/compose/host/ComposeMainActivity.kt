@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.AttributeSet
 import android.util.Rational
+import android.view.KeyEvent
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -22,6 +23,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -33,6 +35,12 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import com.onefilm.android.tv.compose.navigation.TvHeaderFocusState
 import com.onefilm.android.tv.compose.design.OneFilmTheme
 import com.onefilm.android.tv.compose.design.ThemeController
 import com.onefilm.android.tv.compose.bridge.MediaCard
@@ -63,6 +71,18 @@ class ComposeMainActivity : ComponentActivity() {
 
     @Volatile
     private var playerRouteActive = false
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN &&
+            event.keyCode == KeyEvent.KEYCODE_DPAD_DOWN &&
+            TvHeaderFocusState.homeCategoryFocused
+        ) {
+            TvHeaderFocusState.homeCategoryFocused = false
+            runCatching { TvHeaderFocusState.firstNavRequester?.requestFocus() }
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
@@ -179,6 +199,19 @@ class ComposeMainActivity : ComponentActivity() {
                         },
                     )
                 }
+                Box(
+                    Modifier.fillMaxSize().onPreviewKeyEvent { event ->
+                        if (route?.startsWith(Routes.HOME) == true &&
+                            TvHeaderFocusState.homeCategoryFocused &&
+                            event.type == KeyEventType.KeyDown &&
+                            event.key == Key.DirectionDown
+                        ) {
+                            TvHeaderFocusState.homeCategoryFocused = false
+                            runCatching { TvHeaderFocusState.firstNavRequester?.requestFocus() }
+                            true
+                        } else false
+                    },
+                ) {
                 AdaptiveNavigation(
                     isTv = isTv,
                     currentRoute = route,
@@ -201,7 +234,7 @@ class ComposeMainActivity : ComponentActivity() {
                     tvHeader = {
                         val variant = when {
                             route?.startsWith(Routes.HOME) == true -> TvHeaderVariant.Full
-                            route?.startsWith("category") == true -> TvHeaderVariant.Full
+                            route?.startsWith("category") == true -> TvHeaderVariant.CategoryOnly
                             else -> null
                         }
                         if (variant != null) {
@@ -313,7 +346,7 @@ class ComposeMainActivity : ComponentActivity() {
                                         )
                                     } else {
                                         launcher.open(
-                                            this,
+                                            this@ComposeMainActivity,
                                             MediaCard(item.key, item.id, item.title, item.subtitle, item.posterUrl),
                                         )
                                     }
@@ -403,6 +436,7 @@ class ComposeMainActivity : ComponentActivity() {
                         },
                         onConfigChanged = homeViewModel::retry,
                     )
+                }
                 }
             }
         }

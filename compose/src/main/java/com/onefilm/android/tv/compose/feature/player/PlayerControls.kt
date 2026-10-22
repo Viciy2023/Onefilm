@@ -77,6 +77,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -305,11 +306,14 @@ fun PlayerControls(
         add(MenuEntry("音画偏移 ${PlaybackSession.audioOffsetMs}ms") { PlaybackSession.shiftAudioOffset(100L) })
     }
 
-    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, isTv) {
-        if (!isTv && controlsVisible && PlaybackSession.isPlaying && !showEpisodes && !showMore) {
-            delay(4000)
+    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore) {
+        if (controlsVisible && PlaybackSession.isPlaying && !showEpisodes && !showMore) {
+            delay(3500)
             controlsVisible = false
         }
+    }
+    LaunchedEffect(PlaybackSession.isPlaying) {
+        if (!PlaybackSession.isPlaying) controlsVisible = true
     }
     LaunchedEffect(showMore, isTv, inline) {
         // The inline player must not steal focus from the detail actions.
@@ -339,6 +343,30 @@ fun PlayerControls(
     Box(
         modifier
             .fillMaxSize()
+            .onPreviewKeyEvent { event ->
+                if (!inline && event.type == KeyEventType.KeyDown && !showEpisodes && !showMore) {
+                    when (event.key) {
+                        Key.DirectionLeft -> {
+                            PlaybackSession.seekBy(-5_000L)
+                            controlsVisible = true
+                            true
+                        }
+                        Key.DirectionRight -> {
+                            PlaybackSession.seekBy(5_000L)
+                            controlsVisible = true
+                            true
+                        }
+                        Key.DirectionCenter, Key.Enter -> {
+                            if (!controlsVisible) {
+                                PlaybackSession.toggle()
+                                controlsVisible = true
+                                true
+                            } else false
+                        }
+                        else -> false
+                    }
+                } else false
+            }
             .pointerInput(inline) {
                 detectTapGestures(
                     onTap = {
@@ -683,6 +711,14 @@ private fun SeekBar(
     ) {
         val centerY = size.height / 2f
         val trackH = 2.dp.toPx()
+        if (focused) {
+            drawRoundRect(
+                color = Ink.copy(alpha = 0.18f),
+                topLeft = Offset(0f, 0f),
+                size = size,
+                cornerRadius = CornerRadius(8.dp.toPx()),
+            )
+        }
         val fraction = (if (dragging) preview else position).toFloat()
             .coerceIn(0f, safeDuration.toFloat()) / safeDuration.toFloat()
         drawRoundRect(
@@ -708,7 +744,7 @@ private fun SeekBar(
                 topLeft = Offset(0f, 0f),
                 size = size,
                 cornerRadius = CornerRadius(6.dp.toPx()),
-                style = Stroke(2.dp.toPx()),
+                style = Stroke(3.dp.toPx()),
             )
         }
     }

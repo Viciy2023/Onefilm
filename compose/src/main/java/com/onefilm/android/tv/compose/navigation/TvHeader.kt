@@ -46,6 +46,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -70,6 +71,11 @@ import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.delay
 
 private val TvInk = Color(0xFF1C1C1E)
+
+object TvHeaderFocusState {
+    var homeCategoryFocused by mutableStateOf(false)
+    var firstNavRequester: androidx.compose.ui.focus.FocusRequester? = null
+}
 
 object TvBrandState {
     var notice by mutableStateOf("")
@@ -134,6 +140,7 @@ fun TvHeader(
         val navFocusRequesters = remember { mutableMapOf<String, androidx.compose.ui.focus.FocusRequester>() }
         val initialCategoryFocus = remember { androidx.compose.ui.focus.FocusRequester() }
         val firstNavFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+        LaunchedEffect(firstNavFocus) { TvHeaderFocusState.firstNavRequester = firstNavFocus }
         var navFocusEnabled by remember { mutableStateOf(variant != TvHeaderVariant.Full) }
         var categoryFocusSeen by remember { mutableStateOf(false) }
         var homeCategoryFocused by remember { mutableStateOf(false) }
@@ -219,6 +226,7 @@ fun TvHeader(
                     onFocused = {
                         categoryFocusSeen = true
                         homeCategoryFocused = home && currentRoute == Routes.HOME
+                        TvHeaderFocusState.homeCategoryFocused = home && currentRoute == Routes.HOME
                         if (home) navFocusEnabled = true
                     },
                     downFocus = if (home && currentRoute == Routes.HOME) firstNavFocus else null,
@@ -469,6 +477,9 @@ private fun TvCategoryChip(
         maxLines = 1,
         modifier = modifier
             .focusRequester(targetFocus)
+            .onFocusChanged {
+                if (it.isFocused) onFocused()
+            }
             .focusProperties {
                 if (downFocus != null) down = downFocus
             }
