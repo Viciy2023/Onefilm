@@ -71,6 +71,8 @@ fun TvPosterCard(
                 rawUrl = posterUrl,
                 contentDescription = title,
                 contentScale = ContentScale.Crop,
+                requestWidth = 480,
+                requestHeight = 720,
                 modifier = Modifier.fillMaxSize(),
             )
             Box(

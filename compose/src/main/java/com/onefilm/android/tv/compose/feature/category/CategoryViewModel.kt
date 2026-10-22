@@ -6,6 +6,7 @@ import com.onefilm.android.tv.compose.bridge.CategoryDataSource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class CategoryViewModel(
@@ -23,6 +24,7 @@ class CategoryViewModel(
 
     private var page = 1
     private var loading = false
+    private var loadJob: Job? = null
 
     fun retry() = load(reset = true)
 
@@ -41,9 +43,10 @@ class CategoryViewModel(
 
     private fun load(reset: Boolean, keepContent: Boolean = false) {
         if (loading) return
+        loadJob?.cancel()
         loading = true
         if (reset) page = 1
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             if (reset && !keepContent) _state.value = CategoryUiState.Loading
             runCatching { dataSource.load(key, tid, page, selected) }
                 .onSuccess { pageData ->

@@ -15,6 +15,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
@@ -43,7 +45,8 @@ fun AppLogoLoading(
         painter = painterResource(R.drawable.app_logo),
         contentDescription = "加载中",
         modifier = modifier
-            .size(size)
+            .size(size * 0.5f)
+            .clip(CircleShape)
             .graphicsLayer { rotationZ = angle },
     )
 }

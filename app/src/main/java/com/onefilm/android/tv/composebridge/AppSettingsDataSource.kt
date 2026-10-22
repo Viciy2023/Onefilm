@@ -328,6 +328,10 @@ class AppSettingsDataSource : SettingsDataSource {
 
     override fun clearCache() {
         Path.clear(Path.cache())
+        runCatching {
+            Path.files().listFiles { _, name -> name.startsWith("vod_config_") }
+                ?.forEach { it.delete() }
+        }
     }
 
     private fun ensureWallpaperLoadedIfNeeded() {

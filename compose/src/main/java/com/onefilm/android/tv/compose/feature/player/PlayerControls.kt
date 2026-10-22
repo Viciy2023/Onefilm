@@ -17,6 +17,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.focusGroup
@@ -104,7 +105,7 @@ private val Ink = Color(0xFFF5F5F7)
 private val InkDim = Color(0x8AF5F5F7)
 private val InkFaint = Color(0x4DF5F5F7)
 private val Panel = Color(0xF21C1C1E)
-private val Press = Color(0x1FFFFFFF)
+private val Press = Color(0xFFFFFFFF)
 
 private data class MenuEntry(
     val label: String,
@@ -566,13 +567,45 @@ fun PlayerControls(
 /** 详情页顶部小窗播放器。 */
 @Composable
 fun InlinePlayer(onExpand: () -> Unit, modifier: Modifier = Modifier) {
-    Box(modifier.background(Color.Black).clipToBounds()) {
+    var focused by remember { mutableStateOf(false) }
+    Box(
+        modifier
+            .background(Color.Black)
+            .clipToBounds()
+            .border(
+                2.dp,
+                if (focused) Color.White else Color.Transparent,
+                RoundedCornerShape(12.dp),
+            )
+            .onFocusChanged { focused = it.isFocused }
+            .focusable()
+            .onKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown &&
+                    (event.key == Key.DirectionCenter || event.key == Key.Enter)
+                ) {
+                    onExpand()
+                    true
+                } else false
+            },
+    ) {
         VideoSurface(Modifier.fillMaxSize())
         PlayerControls(
             inline = true,
             onToggleFullscreen = onExpand,
             modifier = Modifier.fillMaxSize(),
         )
+        if (focused) {
+            Text(
+                text = "按确认全屏",
+                color = Color.White,
+                fontSize = 12.sp,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .background(Color.Black.copy(alpha = 0.65f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+        }
     }
 }
 
@@ -774,7 +807,11 @@ private fun MenuText(entry: MenuEntry, width: Dp) {
     ) {
         Text(
             text = entry.label,
-            color = if (entry.enabled) Ink.copy(alpha = 0.92f) else InkFaint,
+            color = when {
+                focused -> Color.Black
+                entry.enabled -> Ink.copy(alpha = 0.92f)
+                else -> InkFaint
+            },
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
@@ -915,7 +952,7 @@ private fun IconAction(
     ) {
         PlayerIcon(
             glyph = glyph,
-            tint = if (enabled) Ink else InkFaint,
+            tint = if (focused) Color.Black else if (enabled) Ink else InkFaint,
             modifier = Modifier.size(size * 0.52f),
         )
     }
@@ -933,7 +970,12 @@ private fun TextAction(text: String, onClick: () -> Unit) {
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 6.dp),
     ) {
-        Text(text, color = Ink, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        Text(
+            text,
+            color = if (focused) Color.Black else Ink,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+        )
     }
 }
 
@@ -970,6 +1012,7 @@ private fun FlatTile(
         Text(
             text = text,
             color = when {
+                focused -> Color.Black
                 !enabled -> InkFaint
                 emphasis -> Color.Black
                 else -> Ink

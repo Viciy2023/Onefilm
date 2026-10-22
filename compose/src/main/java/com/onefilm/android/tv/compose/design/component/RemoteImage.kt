@@ -24,6 +24,8 @@ fun RemoteImage(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
+    requestWidth: Int? = null,
+    requestHeight: Int? = null,
 ) {
     val source = remember(rawUrl) { parseImageSource(rawUrl) }
     if (source == null) {
@@ -31,13 +33,16 @@ fun RemoteImage(
         return
     }
     val context = LocalContext.current
-    val request = remember(source) {
+    val request = remember(source, requestWidth, requestHeight) {
         ImageRequest.Builder(context)
             .data(source.url)
             .apply {
                 source.headers.forEach { (name, value) -> addHeader(name, value) }
             }
             .crossfade(false)
+            .apply {
+                if (requestWidth != null && requestHeight != null) size(requestWidth, requestHeight)
+            }
             .build()
     }
     Box(modifier) {

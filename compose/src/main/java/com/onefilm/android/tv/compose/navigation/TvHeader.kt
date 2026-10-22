@@ -146,16 +146,9 @@ fun TvHeader(
                     if (!navFocusEnabled) {
                         runCatching { focusManager.moveFocus(FocusDirection.Down) }
                     }
-                    // Home content can take default focus after the header is laid out.
-                    // Re-assert the category home focus once the first content frame settles.
-                    delay(300)
-                    runCatching { initialCategoryFocus.requestFocus() }
                 }
                 TvHeaderVariant.CategoryOnly -> {
                     if (selectedCategoryKey != null && selectedCategoryId != null) {
-                        runCatching { CategoryFilterController.categoryFocusRequester.requestFocus() }
-                        // The grid can take default focus while its first page loads.
-                        delay(300)
                         runCatching { CategoryFilterController.categoryFocusRequester.requestFocus() }
                     } else {
                         runCatching { initialCategoryFocus.requestFocus() }

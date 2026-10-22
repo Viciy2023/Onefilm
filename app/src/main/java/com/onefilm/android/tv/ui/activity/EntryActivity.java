@@ -48,37 +48,36 @@ public class EntryActivity extends Activity {
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.WHITE);
 
-        LinearLayout column = new LinearLayout(this);
-        column.setOrientation(LinearLayout.VERTICAL);
-        column.setGravity(Gravity.CENTER_HORIZONTAL);
-
         ImageView logo = new ImageView(this);
         logo.setImageResource(R.drawable.splash_logo);
         logo.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        column.addView(logo, new LinearLayout.LayoutParams(dp(150), dp(150)));
+        FrameLayout.LayoutParams logoParams = new FrameLayout.LayoutParams(dp(150), dp(150), Gravity.CENTER);
+        root.addView(logo, logoParams);
+
+        LinearLayout bottom = new LinearLayout(this);
+        bottom.setOrientation(LinearLayout.VERTICAL);
+        bottom.setGravity(Gravity.CENTER_HORIZONTAL);
 
         SplashProgressView progress = new SplashProgressView(this);
-        LinearLayout.LayoutParams progressParams =
-                new LinearLayout.LayoutParams(dp(260), dp(6));
-        progressParams.topMargin = dp(20);
-        column.addView(progress, progressParams);
+        bottom.addView(progress, new LinearLayout.LayoutParams(dp(260), dp(6)));
 
         TextView hint = new TextView(this);
         hint.setText("正在加载，请稍候！");
         hint.setTextColor(0xFF737373);
         hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
         hint.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams hintParams =
-                new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams hintParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
         hintParams.topMargin = dp(14);
-        column.addView(hint, hintParams);
+        bottom.addView(hint, hintParams);
 
-        FrameLayout.LayoutParams columnParams = new FrameLayout.LayoutParams(
+        FrameLayout.LayoutParams bottomParams = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER);
-        root.addView(column, columnParams);
+                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        bottomParams.bottomMargin = dp(64);
+        root.addView(bottom, bottomParams);
         return root;
     }
 

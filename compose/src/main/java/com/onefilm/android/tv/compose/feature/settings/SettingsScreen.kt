@@ -87,6 +87,11 @@ fun SettingsScreen(
     var showClearCacheConfirm by remember { mutableStateOf(false) }
     var configMessage by remember { mutableStateOf<String?>(null) }
     var configMessageSuccess by remember { mutableStateOf(true) }
+    val firstSettingFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        delay(120)
+        runCatching { firstSettingFocus.requestFocus() }
+    }
     LaunchedEffect(Unit) {
         ServerEventBridge.settings.collect { pushed ->
             editName = pushed.name
@@ -145,6 +150,7 @@ fun SettingsScreen(
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ConfigRow(
                         title = "点播接口",
+                        modifier = Modifier.focusRequester(firstSettingFocus),
                         value = snapshot.configUrl,
                         loading = reloadingType == 0,
                         onEdit = { openConfig(0, snapshot.configUrl) },
@@ -772,6 +778,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 @Composable
 private fun ConfigRow(
     title: String,
+    modifier: Modifier = Modifier,
     value: String,
     loading: Boolean,
     onEdit: () -> Unit,
@@ -779,7 +786,7 @@ private fun ConfigRow(
 ) {
     var focused by remember { mutableStateOf(false) }
     Row(
-        Modifier
+        modifier
             .fillMaxSize()
             .onFocusChanged { focused = it.isFocused }
             .border(
