@@ -12,6 +12,9 @@ import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -137,21 +140,44 @@ class ComposeMainActivity : ComponentActivity() {
                     TvBrandState.siteName = brandFeed?.siteName.orEmpty()
                 }
                 var showConfigDialog by remember { mutableStateOf(false) }
+                var showExitDialog by remember { mutableStateOf(false) }
                 var showLinesDialog by remember { mutableStateOf(false) }
 
                 LaunchedEffect(Unit) { homeViewModel.retry() }
 
                 BackHandler(enabled = true) {
-                    if (navController.previousBackStackEntry != null) {
-                        navController.popBackStack()
-                    } else if (route?.startsWith(Routes.HOME) != true) {
-                        navController.navigate(Routes.HOME) {
+                    when {
+                        route?.startsWith(Routes.HOME) == true -> showExitDialog = true
+                        // Any API category returns straight to home, never to the
+                        // previously focused category.
+                        route?.startsWith("category") == true -> {
+                            if (!navController.popBackStack(Routes.HOME, false)) {
+                                navController.navigate(Routes.HOME) {
+                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            }
+                        }
+                        navController.previousBackStackEntry != null -> navController.popBackStack()
+                        else -> navController.navigate(Routes.HOME) {
                             popUpTo(navController.graph.startDestinationId) { inclusive = true }
                             launchSingleTop = true
                         }
-                    } else {
-                        finish()
                     }
+                }
+                if (showExitDialog) {
+                    BackHandler(enabled = true) { showExitDialog = false }
+                    AlertDialog(
+                        onDismissRequest = { showExitDialog = false },
+                        title = { Text("退出应用") },
+                        text = { Text("确定要退出 OneFilm 吗？") },
+                        confirmButton = {
+                            TextButton(onClick = { finish() }) { Text("退出") }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showExitDialog = false }) { Text("取消") }
+                        },
+                    )
                 }
                 AdaptiveNavigation(
                     isTv = isTv,
@@ -204,7 +230,12 @@ class ComposeMainActivity : ComponentActivity() {
                                     ) {
                                         CategoryFilterController.requestShow()
                                     } else {
-                                        navController.navigate(Routes.category(category.key, category.id, category.name))
+                                        navController.navigate(Routes.category(category.key, category.id, category.name)) {
+                                            // Replace the previous category entry so Back
+                                            // always lands on the API home, not category N-1.
+                                            popUpTo(Routes.HOME) { inclusive = false }
+                                            launchSingleTop = true
+                                        }
                                     }
                                 },
                             )

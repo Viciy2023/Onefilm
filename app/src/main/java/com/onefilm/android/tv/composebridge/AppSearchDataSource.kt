@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
@@ -21,7 +22,8 @@ class AppSearchDataSource : SearchDataSource {
     private val cache = ConcurrentHashMap<String, List<MediaCard>>()
 
     override fun search(keyword: String, page: Int): Flow<SearchProgress> = channelFlow {
-        VodConfig.get().ensureLoaded()
+        // Config parsing/network must never run on the Compose main thread.
+        withContext(Dispatchers.IO) { VodConfig.get().ensureLoaded() }
         val key = Trans.t2s(keyword).trim()
         if (key.isEmpty()) {
             send(SearchProgress(emptyList(), true))

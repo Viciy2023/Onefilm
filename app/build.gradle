@@ -173,3 +173,12 @@ dependencies {
     coreLibraryDesugaring libs.desugar
 }
 
+
+
+// AGP 9.3 may request compose-group-mapping:2.2.10 which is not published.
+// Release verification builds can skip that auxiliary mapping task.
+if (project.hasProperty("skipComposeMapping")) {
+    tasks.configureEach {
+        if (name.contains("ReleaseComposeMapping")) enabled = false
+    }
+}

@@ -21,6 +21,7 @@ import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.ui.PlayerView;
 import androidx.palette.graphics.Palette;
 
+import com.onefilm.android.tv.App;
 import com.onefilm.android.tv.R;
 import com.onefilm.android.tv.databinding.ViewWallBinding;
 import com.onefilm.android.tv.event.ConfigEvent;
@@ -102,11 +103,15 @@ public class CustomWallView extends FrameLayout implements DefaultLifecycleObser
     }
 
     private void theme() {
-        int newColor = getWallColor();
-        int oldColor = Setting.getWallColor();
-        if (newColor == oldColor) return;
-        Setting.putWallColor(newColor);
-        if (Setting.getThemeColor() == 0) RefreshEvent.theme();
+        final int oldColor = Setting.getWallColor();
+        new Thread(() -> {
+            final int newColor = getWallColor();
+            if (newColor == oldColor) return;
+            App.post(() -> {
+                Setting.putWallColor(newColor);
+                if (Setting.getThemeColor() == 0) RefreshEvent.theme();
+            });
+        }, "onefilm-wall-color").start();
     }
 
     private void loadRes(int resId) {
@@ -114,13 +119,14 @@ public class CustomWallView extends FrameLayout implements DefaultLifecycleObser
     }
 
     private void loadImage() {
-        Drawable cache = cache();
-        if (cache != null) {
-            binding.image.setImageDrawable(cache);
-        } else {
-            binding.image.setImageDrawable(null);
-            binding.image.setBackgroundColor(Color.TRANSPARENT);
-        }
+        binding.image.setImageDrawable(null);
+        binding.image.setBackgroundColor(Color.TRANSPARENT);
+        new Thread(() -> {
+            Drawable cache = cache();
+            App.post(() -> {
+                if (binding != null && cache != null) binding.image.setImageDrawable(cache);
+            });
+        }, "onefilm-wall-image").start();
     }
 
     private void loadVideo(File file) {

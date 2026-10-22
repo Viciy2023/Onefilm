@@ -128,8 +128,12 @@ fun TvHeader(
         val navFocusRequesters = remember { mutableMapOf<String, androidx.compose.ui.focus.FocusRequester>() }
         val initialCategoryFocus = remember { androidx.compose.ui.focus.FocusRequester() }
         var navFocusEnabled by remember { mutableStateOf(variant != TvHeaderVariant.Full) }
+        var categoryFocusSeen by remember { mutableStateOf(false) }
         LaunchedEffect(variant, currentRoute, selectedCategoryKey, selectedCategoryId, categories) {
-            if (variant == TvHeaderVariant.Full) navFocusEnabled = false
+            if (variant == TvHeaderVariant.Full) {
+                navFocusEnabled = false
+                categoryFocusSeen = false
+            }
             delay(100)
             when (variant) {
                 TvHeaderVariant.Full -> {
@@ -142,6 +146,10 @@ fun TvHeader(
                     if (!navFocusEnabled) {
                         runCatching { focusManager.moveFocus(FocusDirection.Down) }
                     }
+                    // Home content can take default focus after the header is laid out.
+                    // Re-assert the category home focus once the first content frame settles.
+                    delay(300)
+                    runCatching { initialCategoryFocus.requestFocus() }
                 }
                 TvHeaderVariant.CategoryOnly -> {
                     if (selectedCategoryKey != null && selectedCategoryId != null) {
@@ -186,9 +194,18 @@ fun TvHeader(
                         if (home) onNavigate(Routes.HOME) else onCategory(category)
                     },
                     scale = scale,
-                    selected = current,
+                    selected = home && currentRoute == Routes.HOME && !categoryFocusSeen,
                     autoFocus = home && currentRoute == Routes.HOME,
-                    onFocused = { if (home) navFocusEnabled = true },
+                    onFocused = {
+                        categoryFocusSeen = true
+                        if (home) navFocusEnabled = true
+                    },
+                    onFocusTrigger = {
+                        when {
+                            home && currentRoute != Routes.HOME -> onNavigate(Routes.HOME)
+                            !home && !current -> onCategory(category)
+                        }
+                    },
                     focusRequester = when {
                         index == 0 -> initialCategoryFocus
                         current -> CategoryFilterController.categoryFocusRequester
@@ -387,6 +404,7 @@ private fun TvCategoryChip(
     selected: Boolean = false,
     autoFocus: Boolean = false,
     onFocused: () -> Unit = {},
+    onFocusTrigger: () -> Unit = {},
     focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -397,6 +415,14 @@ private fun TvCategoryChip(
     var autoFocusRequested by remember { mutableStateOf(false) }
     LaunchedEffect(focused) {
         if (focused) onFocused()
+    }
+    LaunchedEffect(focused) {
+        if (focused) {
+            // Category pages load on focus; a short debounce avoids firing
+            // while the remote is passing through items.
+            delay(100)
+            if (focused) onFocusTrigger()
+        }
     }
     LaunchedEffect(autoFocus) {
         if (autoFocus) {

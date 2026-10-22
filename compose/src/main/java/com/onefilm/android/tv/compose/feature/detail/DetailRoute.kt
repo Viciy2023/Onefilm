@@ -113,7 +113,7 @@ fun DetailRoute(
             playingUrl = PlaybackSession.url
             return@LaunchedEffect
         }
-        delay(350)
+        delay(150)
         val history = historyStore.find(key, id)
         val flag = history?.let { saved ->
             info.flags.firstOrNull { candidate ->

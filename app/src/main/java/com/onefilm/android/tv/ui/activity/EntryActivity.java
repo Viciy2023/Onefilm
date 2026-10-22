@@ -25,7 +25,7 @@ import com.onefilm.android.tv.ui.custom.SplashProgressView;
 /** OneFilm: launcher router between the Compose UI and the legacy XML UI. */
 public class EntryActivity extends Activity {
 
-    private static final long SPLASH_DURATION_MS = 1800L;
+    private static final long SPLASH_DURATION_MS = 600L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable routeRunnable = this::routeToHome;
