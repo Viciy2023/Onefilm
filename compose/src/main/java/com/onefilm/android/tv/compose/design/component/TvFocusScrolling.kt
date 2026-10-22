@@ -7,6 +7,7 @@ import androidx.compose.foundation.gestures.BringIntoViewSpec
 import androidx.compose.foundation.gestures.LocalBringIntoViewSpec
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import kotlin.math.abs
 
 /**
  * TV 焦点滚动策略。
@@ -18,12 +19,16 @@ private val TvFocusBringIntoViewSpec = object : BringIntoViewSpec {
     override val scrollAnimationSpec: AnimationSpec<Float> = tween(durationMillis = 180)
 
     override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float): Float {
-        val leadingEdge = -offset
-        val trailingEdge = containerSize - (offset + size)
+        val leadingEdge = offset
+        val trailingEdge = offset + size
         return when {
-            leadingEdge > 0f -> leadingEdge
-            trailingEdge < 0f -> trailingEdge
-            else -> 0f
+            // 已经完全可见，不滚动。
+            leadingEdge >= 0f && trailingEdge <= containerSize -> 0f
+            // 卡片比可视区还大，保持当前对齐，避免来回推整页。
+            leadingEdge < 0f && trailingEdge > containerSize -> 0f
+            // 选择距离最近的一条边，产生最小滚动距离。
+            abs(leadingEdge) < abs(trailingEdge - containerSize) -> leadingEdge
+            else -> trailingEdge - containerSize
         }
     }
 }
