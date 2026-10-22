@@ -47,6 +47,7 @@ import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.design.component.HeroBanner
 import com.onefilm.android.tv.compose.design.component.PosterItem
 import com.onefilm.android.tv.compose.design.component.TvPosterCard
+import com.onefilm.android.tv.compose.navigation.TvHeaderFocusState
 import com.onefilm.android.tv.compose.design.component.SectionRow
 
 @Composable
@@ -158,6 +159,7 @@ private fun TvPosterSection(
                 posterUrl = item.posterUrl,
                 subtitle = item.subtitle,
                 modifier = Modifier.fillMaxWidth(),
+                focusEnabled = TvHeaderFocusState.navFocusedOnce,
                 onClick = { onCardClick(item) },
             )
         }

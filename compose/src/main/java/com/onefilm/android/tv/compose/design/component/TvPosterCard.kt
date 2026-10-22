@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -45,16 +46,18 @@ fun TvPosterCard(
     modifier: Modifier = Modifier,
     width: Dp? = null,
     sourceLabel: String? = null,
+    focusEnabled: Boolean = true,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
-    val scale by animateFloatAsState(if (focused) 1.04f else 1f, tween(110), label = "poster-focus")
+    val scale by animateFloatAsState(if (focused) 1.08f else 1f, tween(110), label = "poster-focus")
     val shape = RoundedCornerShape(12.dp)
     val sizeModifier = if (width != null) Modifier.width(width) else Modifier.fillMaxWidth()
     Box(
         modifier
             .then(sizeModifier)
             .graphicsLayer { scaleX = scale; scaleY = scale }
+            .focusProperties { canFocus = focusEnabled }
             .clip(shape)
             .border(if (focused) 2.dp else 0.dp, Color.White.copy(alpha = 0.8f), shape)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick),

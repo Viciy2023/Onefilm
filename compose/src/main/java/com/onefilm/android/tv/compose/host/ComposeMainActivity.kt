@@ -75,7 +75,8 @@ class ComposeMainActivity : ComponentActivity() {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (event.action == KeyEvent.ACTION_DOWN &&
             event.keyCode == KeyEvent.KEYCODE_DPAD_DOWN &&
-            TvHeaderFocusState.homeCategoryFocused
+            TvHeaderFocusState.homeRoute &&
+            !TvHeaderFocusState.navFocusedOnce
         ) {
             TvHeaderFocusState.homeCategoryFocused = false
             runCatching { TvHeaderFocusState.firstNavRequester?.requestFocus() }
@@ -136,6 +137,8 @@ class ComposeMainActivity : ComponentActivity() {
                 val selectedCategoryKey = categoryArgs?.getString("key")
                 val selectedCategoryId = categoryArgs?.getString("tid")
                 LaunchedEffect(route) {
+                    TvHeaderFocusState.homeRoute = route?.startsWith(Routes.HOME) == true
+                    if (TvHeaderFocusState.homeRoute) TvHeaderFocusState.navFocusedOnce = false
                     if (route?.startsWith("search") == true) searchFocusToken++
                     playerRouteActive = route?.startsWith("player") == true
                     val keepPlaying = route?.startsWith("detail") == true ||

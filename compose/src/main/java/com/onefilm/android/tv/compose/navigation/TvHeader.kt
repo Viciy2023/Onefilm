@@ -74,6 +74,8 @@ private val TvInk = Color(0xFF1C1C1E)
 
 object TvHeaderFocusState {
     var homeCategoryFocused by mutableStateOf(false)
+    var navFocusedOnce by mutableStateOf(false)
+    var homeRoute by mutableStateOf(false)
     var firstNavRequester: androidx.compose.ui.focus.FocusRequester? = null
 }
 
@@ -227,6 +229,7 @@ fun TvHeader(
                         categoryFocusSeen = true
                         homeCategoryFocused = home && currentRoute == Routes.HOME
                         TvHeaderFocusState.homeCategoryFocused = home && currentRoute == Routes.HOME
+                        TvHeaderFocusState.navFocusedOnce = false
                         if (home) navFocusEnabled = true
                     },
                     downFocus = if (home && currentRoute == Routes.HOME) firstNavFocus else null,
@@ -273,6 +276,7 @@ fun TvHeader(
                     uiScale = scale,
                     selected = false,
                     focusEnabled = navFocusEnabled,
+                    onFocused = { TvHeaderFocusState.navFocusedOnce = true },
                     focusRequester = focusRequester,
                 )
             }
@@ -353,6 +357,7 @@ private fun TvNavTab(
     uiScale: Float = 1f,
     selected: Boolean = false,
     focusEnabled: Boolean = true,
+    onFocused: () -> Unit = {},
     focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
@@ -374,6 +379,7 @@ private fun TvNavTab(
             Modifier
                 .fillMaxSize()
                 .focusRequester(targetFocus)
+                .onFocusChanged { if (it.isFocused) onFocused() }
                 .clip(shape)
                 .background(
                     if (highlighted) {
