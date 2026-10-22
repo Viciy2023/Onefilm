@@ -1,5 +1,8 @@
 # OneFilm 架构设计
 
+> **文档状态（2026-10-21）**：历史设计/交接/回归记录，部分内容已被后续实现覆盖。最新项目进度以 [`2026-10-21-project-status.md`](2026-10-21-project-status.md) 和 [`compose-ui-roadmap.md`](compose-ui-roadmap.md) 为准。
+
+
 **状态**：Draft  
 **日期**：2026-10-18  
 **基座**：FongMi/TV `fongmi` 分支，commit `0af3b31a1783b8fa4f0ce12e52ac9fad78ddfb1e`，版本 5.6.3  

@@ -1,5 +1,8 @@
 # OneFilm 二开工作交接
 
+> **文档状态（2026-10-21）**：历史设计/交接/回归记录，部分内容已被后续实现覆盖。最新项目进度以 [`2026-10-21-project-status.md`](2026-10-21-project-status.md) 和 [`compose-ui-roadmap.md`](compose-ui-roadmap.md) 为准。
+
+
 **日期**：2026-10-18  
 **项目目录**：`F:\APK\Onefilm`  
 **状态**：环境已验证（JDK 21 / Gradle 9.7.1 / AGP 9.3.1 / SDK 37 / Kotlin 2.3.20）；尚未导入代码、尚未 `git init`、尚未构建 OneFilm 本体  

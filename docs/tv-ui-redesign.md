@@ -1,5 +1,8 @@
 # OneFilm TV 端 UI 重构方案
 
+> **文档状态（2026-10-21）**：历史设计/交接/回归记录，部分内容已被后续实现覆盖。最新项目进度以 [`2026-10-21-project-status.md`](2026-10-21-project-status.md) 和 [`compose-ui-roadmap.md`](compose-ui-roadmap.md) 为准。
+
+
 - 日期：2026-10-20
 - 范围：仅 `leanback` TV 端；手机端现有白灰 iOS 设计保持不变
 - 目标：建立独立于手机端的 Apple TV 式大屏布局与遥控器焦点体系

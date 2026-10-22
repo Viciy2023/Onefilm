@@ -1,5 +1,8 @@
 # Phase 2 实施记录
 
+> **文档状态（2026-10-21）**：历史设计/交接/回归记录，部分内容已被后续实现覆盖。最新项目进度以 [`2026-10-21-project-status.md`](2026-10-21-project-status.md) 和 [`compose-ui-roadmap.md`](compose-ui-roadmap.md) 为准。
+
+
 ## 状态
 
 | 项 | 状态 | 说明 |

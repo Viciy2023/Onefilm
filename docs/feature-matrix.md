@@ -1,5 +1,8 @@
 # OneFilm 功能矩阵
 
+> **文档状态（2026-10-21）**：历史设计/交接/回归记录，部分内容已被后续实现覆盖。最新项目进度以 [`2026-10-21-project-status.md`](2026-10-21-project-status.md) 和 [`compose-ui-roadmap.md`](compose-ui-roadmap.md) 为准。
+
+
 **状态**：Draft  
 **用途**：记录 FongMi/TV 现有功能、TV/手机差异、新 UI 迁移阶段与回归验证方式。  
 **原则**：任何功能在旧 UI 未删除前都算“保留”；新 UI 屏幕只有通过对应验证后才切换默认入口。
