@@ -50,6 +50,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
@@ -127,8 +133,10 @@ fun TvHeader(
         val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
         val navFocusRequesters = remember { mutableMapOf<String, androidx.compose.ui.focus.FocusRequester>() }
         val initialCategoryFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+        val firstNavFocus = remember { androidx.compose.ui.focus.FocusRequester() }
         var navFocusEnabled by remember { mutableStateOf(variant != TvHeaderVariant.Full) }
         var categoryFocusSeen by remember { mutableStateOf(false) }
+        var homeCategoryFocused by remember { mutableStateOf(false) }
         LaunchedEffect(variant, currentRoute, selectedCategoryKey, selectedCategoryId, categories) {
             if (variant == TvHeaderVariant.Full) {
                 navFocusEnabled = false
@@ -137,14 +145,16 @@ fun TvHeader(
             delay(100)
             when (variant) {
                 TvHeaderVariant.Full -> {
-                    // Home navigation was removed: the API category "主页" is the
-                    // single home entry. Focus it directly on launch/back.
-                    runCatching { initialCategoryFocus.requestFocus() }
-                    delay(80)
-                    // If the direct request lost the race against focus restoration,
-                    // nav tabs are still disabled; Down lands on the home category.
-                    if (!navFocusEnabled) {
-                        runCatching { focusManager.moveFocus(FocusDirection.Down) }
+                    if (selectedCategoryKey != null && selectedCategoryId != null) {
+                        runCatching { CategoryFilterController.categoryFocusRequester.requestFocus() }
+                    } else {
+                        // Home navigation was removed: the API category "主页" is the
+                        // single home entry. Focus it directly on launch/back.
+                        runCatching { initialCategoryFocus.requestFocus() }
+                        delay(80)
+                        if (!navFocusEnabled) {
+                            runCatching { focusManager.moveFocus(FocusDirection.Down) }
+                        }
                     }
                 }
                 TvHeaderVariant.CategoryOnly -> {
@@ -156,7 +166,21 @@ fun TvHeader(
                 }
             }
         }
-        Column(Modifier.fillMaxWidth()) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .onPreviewKeyEvent { event ->
+                    if (homeCategoryFocused &&
+                        event.type == KeyEventType.KeyDown &&
+                        event.key == Key.DirectionDown
+                    ) {
+                        homeCategoryFocused = false
+                        navFocusEnabled = true
+                        runCatching { firstNavFocus.requestFocus() }
+                        true
+                    } else false
+                },
+        ) {
         TvBrandRow(
             centerText = centerText,
             compact = variant == TvHeaderVariant.CategoryOnly,
@@ -194,8 +218,10 @@ fun TvHeader(
                     autoFocus = home && currentRoute == Routes.HOME,
                     onFocused = {
                         categoryFocusSeen = true
+                        homeCategoryFocused = home && currentRoute == Routes.HOME
                         if (home) navFocusEnabled = true
                     },
+                    downFocus = if (home && currentRoute == Routes.HOME) firstNavFocus else null,
                     onFocusTrigger = {
                         when {
                             home && currentRoute != Routes.HOME -> onNavigate(Routes.HOME)
@@ -230,7 +256,7 @@ fun TvHeader(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             entries.forEach { entry ->
-                val focusRequester = navFocusRequesters.getOrPut(entry.label) {
+                val focusRequester = if (entry.label == "历史") firstNavFocus else navFocusRequesters.getOrPut(entry.label) {
                     androidx.compose.ui.focus.FocusRequester()
                 }
                 TvNavTab(
@@ -340,7 +366,6 @@ private fun TvNavTab(
             Modifier
                 .fillMaxSize()
                 .focusRequester(targetFocus)
-                .focusProperties { canFocus = focusEnabled }
                 .clip(shape)
                 .background(
                     if (highlighted) {
@@ -401,6 +426,7 @@ private fun TvCategoryChip(
     autoFocus: Boolean = false,
     onFocused: () -> Unit = {},
     onFocusTrigger: () -> Unit = {},
+    downFocus: androidx.compose.ui.focus.FocusRequester? = null,
     focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -443,6 +469,9 @@ private fun TvCategoryChip(
         maxLines = 1,
         modifier = modifier
             .focusRequester(targetFocus)
+            .focusProperties {
+                if (downFocus != null) down = downFocus
+            }
             .onGloballyPositioned {
                 if (autoFocus && !autoFocusRequested) {
                     autoFocusRequested = true

@@ -201,7 +201,7 @@ class ComposeMainActivity : ComponentActivity() {
                     tvHeader = {
                         val variant = when {
                             route?.startsWith(Routes.HOME) == true -> TvHeaderVariant.Full
-                            route?.startsWith("category") == true -> TvHeaderVariant.CategoryOnly
+                            route?.startsWith("category") == true -> TvHeaderVariant.Full
                             else -> null
                         }
                         if (variant != null) {
