@@ -1,5 +1,7 @@
 package com.onefilm.android.tv.compose.navigation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -27,7 +29,14 @@ fun OneFilmNavHost(
     netdiskContent: @Composable () -> Unit = {},
     onConfigChanged: () -> Unit = {},
 ) {
-    NavHost(navController = navController, startDestination = Routes.HOME) {
+    NavHost(
+        navController = navController,
+        startDestination = Routes.HOME,
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = { ExitTransition.None },
+    ) {
         composable(Routes.HOME) { homeContent() }
         composable(Routes.SEARCH) { searchContent(null) }
         composable(

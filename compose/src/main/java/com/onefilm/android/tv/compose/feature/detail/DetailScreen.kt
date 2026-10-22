@@ -81,30 +81,29 @@ fun DetailScreen(
     playingEpisodeUrl: String? = null,
 ) {
     when (state) {
-        DetailUiState.Loading -> {
-            if (!previewTitle.isNullOrBlank()) {
-                DetailPlaceholder(
-                    title = previewTitle,
-                    posterUrl = previewPoster,
-                    onBack = onBack,
-                    loading = true,
-                )
-            } else {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    AppLogoLoading(size = 84.dp)
-                }
-            }
-        }
-        is DetailUiState.Error -> {
-            DetailPlaceholder(
-                title = previewTitle.orEmpty().ifBlank { "影片详情" },
-                posterUrl = previewPoster,
-                onBack = onBack,
-                loading = false,
-                message = "详情加载失败，请重试",
-                onRetry = onRetry,
-            )
-        }
+        DetailUiState.Loading -> DetailContent(
+            info = previewDetailInfo(previewTitle, previewPoster),
+            onBack = onBack,
+            onPlay = onPlay,
+            favorite = favorite,
+            onToggleFavorite = onToggleFavorite,
+            playingUrl = null,
+            onExpandPlayer = onExpandPlayer,
+            playingEpisodeUrl = null,
+            loading = true,
+        )
+        is DetailUiState.Error -> DetailContent(
+            info = previewDetailInfo(previewTitle, previewPoster),
+            onBack = onBack,
+            onPlay = onPlay,
+            favorite = favorite,
+            onToggleFavorite = onToggleFavorite,
+            playingUrl = null,
+            onExpandPlayer = onExpandPlayer,
+            playingEpisodeUrl = null,
+            errorMessage = "详情加载失败，请重试",
+            onRetry = onRetry,
+        )
         is DetailUiState.Content -> DetailContent(
             state.info,
             onBack,
@@ -118,74 +117,17 @@ fun DetailScreen(
     }
 }
 
-@Composable
-private fun DetailPlaceholder(
-    title: String,
-    posterUrl: String?,
-    onBack: () -> Unit,
-    loading: Boolean,
-    message: String? = null,
-    onRetry: () -> Unit = {},
-) {
-    Box(Modifier.fillMaxSize().padding(24.dp)) {
-        Text(
-            text = "‹ 返回",
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 14.sp,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .clip(RoundedCornerShape(10.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .clickable(onClick = onBack)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
-        )
-        Row(
-            Modifier
-                .align(Alignment.Center)
-                .widthIn(max = 720.dp)
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(28.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                Modifier
-                    .width(160.dp)
-                    .aspectRatio(2f / 3f)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-            ) {
-                if (!posterUrl.isNullOrBlank()) {
-                    RemoteImage(
-                        rawUrl = posterUrl,
-                        contentDescription = title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                }
-            }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = title.ifBlank { "影片详情" },
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (loading) {
-                    AppLogoLoading(size = 48.dp)
-                    Text("正在加载详情…", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-                } else {
-                    Text(
-                        text = message.orEmpty().ifBlank { "详情加载失败" },
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp,
-                    )
-                    Button(onClick = onRetry) { Text("重试") }
-                }
-            }
-        }
-    }
-}
+private fun previewDetailInfo(title: String?, posterUrl: String?): DetailInfo = DetailInfo(
+    key = "",
+    id = "",
+    title = title.orEmpty().ifBlank { "影片详情" },
+    posterUrl = posterUrl,
+    description = null,
+    year = null,
+    area = null,
+    remarks = null,
+    flags = emptyList(),
+)
 
 @Composable
 private fun DetailContent(
@@ -197,6 +139,9 @@ private fun DetailContent(
     playingUrl: String?,
     onExpandPlayer: () -> Unit,
     playingEpisodeUrl: String?,
+    loading: Boolean = false,
+    errorMessage: String? = null,
+    onRetry: () -> Unit = {},
 ) {
     var selectedFlagIndex by remember(info.title) { mutableIntStateOf(0) }
     var manualFlagSelection by remember(info.title) { mutableStateOf(false) }
@@ -239,19 +184,21 @@ private fun DetailContent(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(
-                    text = buildString {
-                        append("来源：")
-                        append(info.sourceName ?: info.key)
-                        info.year?.let { append("    年份：$it") }
-                        info.area?.let { append("    地区：$it") }
-                        info.remarks?.let { append("    $it") }
-                    },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 14.sp,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                val meta = buildList {
+                    if (!info.sourceName.isNullOrBlank()) add("来源：${info.sourceName}")
+                    if (!info.year.isNullOrBlank()) add("年份：${info.year}")
+                    if (!info.area.isNullOrBlank()) add("地区：${info.area}")
+                    if (!info.remarks.isNullOrBlank()) add(info.remarks.orEmpty())
+                }.joinToString("    ")
+                if (meta.isNotBlank()) {
+                    Text(
+                        text = meta,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 Spacer(Modifier.height(8.dp))
                 Column(
                     Modifier.weight(1f).verticalScroll(rememberScrollState()),
@@ -306,7 +253,24 @@ private fun DetailContent(
                     .clip(RoundedCornerShape(12.dp))
                     .background(Color.Black),
             ) {
-                if (playingUrl != null) {
+                if (loading) {
+                    Box(
+                        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        AppLogoLoading(size = 48.dp)
+                    }
+                } else if (errorMessage != null) {
+                    Column(
+                        Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(errorMessage, color = Color.White, fontSize = 14.sp)
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = onRetry) { Text("重试") }
+                    }
+                } else if (playingUrl != null) {
                     if (inlineReady) {
                         InlinePlayer(onExpand = onExpandPlayer, modifier = Modifier.fillMaxSize())
                     } else {

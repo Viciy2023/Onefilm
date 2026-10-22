@@ -1032,7 +1032,7 @@ private fun ChoiceRow(
         ) {
             FlowRow(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 options.forEachIndexed { index, (label, _) ->

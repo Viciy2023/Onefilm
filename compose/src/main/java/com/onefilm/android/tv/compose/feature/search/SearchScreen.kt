@@ -63,6 +63,12 @@ import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.bridge.SearchRank
 import com.onefilm.android.tv.compose.design.component.TvPosterCard
 import com.onefilm.android.tv.compose.navigation.TvBrandRow
+import kotlinx.coroutines.delay
+
+private object SearchFocusState {
+    var query: String? = null
+    var cardKey: String? = null
+}
 
 @Composable
 fun SearchScreen(
@@ -462,6 +468,21 @@ private fun SearchResults(
     val visibleItems = if (selectedSite == null) items else items.filter {
         (it.siteName?.takeIf { name -> name.isNotBlank() } ?: it.key) == selectedSite
     }
+    val cardFocusRequesters = remember { mutableMapOf<String, FocusRequester>() }
+    LaunchedEffect(content?.keyword, visibleItems.size, selectedSite) {
+        if (SearchFocusState.query != content?.keyword) {
+            SearchFocusState.cardKey = null
+        }
+        val target = SearchFocusState.cardKey
+        if (target != null && SearchFocusState.query == content?.keyword) {
+            // Compose navigation restores focus late on some TV devices.
+            // Retry briefly so returning from detail lands on the card again.
+            repeat(8) {
+                runCatching { cardFocusRequesters[target]?.requestFocus() }
+                delay(60)
+            }
+        }
+    }
 
     Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(
@@ -532,13 +553,19 @@ private fun SearchResults(
                         items = visibleItems,
                         key = { index, card -> "${card.key}:${card.id}:$index" },
                     ) { _, card ->
+                        val cardKey = "${card.key}:${card.id}"
+                        val requester = cardFocusRequesters.getOrPut(cardKey) { FocusRequester() }
                         TvPosterCard(
                             title = card.title,
                             posterUrl = card.posterUrl,
                             subtitle = card.subtitle,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().focusRequester(requester),
                             sourceLabel = card.siteName?.takeIf { it.isNotBlank() } ?: card.key,
-                            onClick = { onCardClick(card) },
+                            onClick = {
+                                SearchFocusState.query = content?.keyword
+                                SearchFocusState.cardKey = cardKey
+                                onCardClick(card)
+                            },
                         )
                     }
                 }

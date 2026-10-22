@@ -43,11 +43,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -67,7 +71,7 @@ object TvBrandState {
 }
 
 object TvNavState {
-    var lastLabel by mutableStateOf("首页")
+    var lastLabel by mutableStateOf("历史")
 }
 
 data class TvNavEntry(
@@ -102,7 +106,6 @@ fun TvHeader(
         ?: siteName?.takeIf { it.isNotBlank() }
         ?: "ONEFILM 影视"
     val entries = listOf(
-        TvNavEntry("首页", Icons.Outlined.Home, route = Routes.HOME) { onNavigate(Routes.HOME) },
         TvNavEntry("历史", Icons.Outlined.History, route = Routes.HISTORY) { onNavigate(Routes.HISTORY) },
         TvNavEntry("收藏", Icons.Outlined.Star, route = Routes.LIBRARY) { onNavigate(Routes.LIBRARY) },
         TvNavEntry("搜索", Icons.Outlined.Search, route = Routes.SEARCH) { onNavigate(Routes.SEARCH) },
@@ -120,22 +123,31 @@ fun TvHeader(
     ) {
         // TV 与手机使用同一套 sp/dp 基准，不再按屏宽二次放大字体，避免 4K 电视溢出。
         val scale = 1f
+        val focusManager = LocalFocusManager.current
         val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
         val navFocusRequesters = remember { mutableMapOf<String, androidx.compose.ui.focus.FocusRequester>() }
         val initialCategoryFocus = remember { androidx.compose.ui.focus.FocusRequester() }
-        LaunchedEffect(variant, currentRoute, selectedCategoryKey, selectedCategoryId) {
-            delay(600)
+        var navFocusEnabled by remember { mutableStateOf(variant != TvHeaderVariant.Full) }
+        LaunchedEffect(variant, currentRoute, selectedCategoryKey, selectedCategoryId, categories) {
+            if (variant == TvHeaderVariant.Full) navFocusEnabled = false
+            delay(100)
             when (variant) {
                 TvHeaderVariant.Full -> {
-                    val target = navFocusRequesters[TvNavState.lastLabel]
-                        ?: navFocusRequesters["首页"]
-                    target?.requestFocus()
+                    // Home navigation was removed: the API category "主页" is the
+                    // single home entry. Focus it directly on launch/back.
+                    runCatching { initialCategoryFocus.requestFocus() }
+                    delay(80)
+                    // If the direct request lost the race against focus restoration,
+                    // nav tabs are still disabled; Down lands on the home category.
+                    if (!navFocusEnabled) {
+                        runCatching { focusManager.moveFocus(FocusDirection.Down) }
+                    }
                 }
                 TvHeaderVariant.CategoryOnly -> {
                     if (selectedCategoryKey != null && selectedCategoryId != null) {
                         runCatching { CategoryFilterController.categoryFocusRequester.requestFocus() }
                     } else {
-                        initialCategoryFocus.requestFocus()
+                        runCatching { initialCategoryFocus.requestFocus() }
                     }
                 }
             }
@@ -174,6 +186,7 @@ fun TvHeader(
                     modifier = Modifier.weight(1f),
                     uiScale = scale,
                     selected = false,
+                    focusEnabled = navFocusEnabled,
                     focusRequester = focusRequester,
                 )
             }
@@ -209,9 +222,11 @@ fun TvHeader(
                     },
                     scale = scale,
                     selected = false,
+                    autoFocus = home && currentRoute == Routes.HOME,
+                    onFocused = { if (home) navFocusEnabled = true },
                     focusRequester = when {
+                        index == 0 -> initialCategoryFocus
                         current -> CategoryFilterController.categoryFocusRequester
-                        index == 0 && selectedCategoryKey == null -> initialCategoryFocus
                         else -> null
                     },
                 )
@@ -289,13 +304,14 @@ private fun TvNavTab(
     modifier: Modifier = Modifier,
     uiScale: Float = 1f,
     selected: Boolean = false,
+    focusEnabled: Boolean = true,
     focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val localFocus = remember { androidx.compose.ui.focus.FocusRequester() }
     val targetFocus = focusRequester ?: localFocus
-    val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(10.dp)
     val highlighted = selected || focused
     val contentColor = if (highlighted) {
         MaterialTheme.colorScheme.background
@@ -310,6 +326,7 @@ private fun TvNavTab(
             Modifier
                 .fillMaxSize()
                 .focusRequester(targetFocus)
+                .focusProperties { canFocus = focusEnabled }
                 .clip(shape)
                 .background(
                     if (highlighted) {
@@ -367,6 +384,8 @@ private fun TvCategoryChip(
     onClick: () -> Unit,
     scale: Float = 1f,
     selected: Boolean = false,
+    autoFocus: Boolean = false,
+    onFocused: () -> Unit = {},
     focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -374,7 +393,23 @@ private fun TvCategoryChip(
     val focused by interaction.collectIsFocusedAsState()
     val localFocus = remember { androidx.compose.ui.focus.FocusRequester() }
     val targetFocus = focusRequester ?: localFocus
-    val shape = RoundedCornerShape(12.dp)
+    var autoFocusRequested by remember { mutableStateOf(false) }
+    LaunchedEffect(focused) {
+        if (focused) onFocused()
+    }
+    LaunchedEffect(autoFocus) {
+        if (autoFocus) {
+            autoFocusRequested = false
+            // Retry quickly until the category chip actually owns focus.
+            // This runs only while autoFocus is true and stops once focused.
+            repeat(12) {
+                if (focused) return@LaunchedEffect
+                runCatching { targetFocus.requestFocus() }
+                delay(40)
+            }
+        }
+    }
+    val shape = RoundedCornerShape(8.dp)
     val highlighted = selected || focused
     Text(
         text = category.name.ifBlank { "未命名" },
@@ -385,6 +420,12 @@ private fun TvCategoryChip(
         maxLines = 1,
         modifier = modifier
             .focusRequester(targetFocus)
+            .onGloballyPositioned {
+                if (autoFocus && !autoFocusRequested) {
+                    autoFocusRequested = true
+                    runCatching { targetFocus.requestFocus() }
+                }
+            }
             .clip(shape)
             .background(
                 if (highlighted) {
