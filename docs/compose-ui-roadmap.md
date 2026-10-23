@@ -138,7 +138,7 @@
 - [x] 关闭 `compose_ui` fallback，`EntryActivity` 固定进入 Compose
 - [x] 迁移外部 SEARCH/SEND/VIEW Intent
 - [x] 删除 HomeActivity 与旧首页 manifest 入口
-- [ ] 分批删除旧 Fragment/XML（保留 Live/Video/File）
+- [x] 分批删除 Compose 替代的旧 Fragment/XML；Live/Video/File 运行时资源保留
 - [ ] 清理无引用临时 bridge；保留仍使用的桥
 - [x] GPL 归属、NOTICE、0.1.0 发布说明
 - [ ] 正式源码 tag

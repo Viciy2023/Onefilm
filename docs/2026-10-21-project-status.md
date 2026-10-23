@@ -16,9 +16,9 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 | M3 Compose 播放器 | 100% | 旧 PlayerManager 内核、全屏隐藏控件 seek/暂停/继续、进度条焦点全部完成；TV 底部精简条/右侧面板 UI 未优化，按要求保留现状；手机手势按要求暂不测试 |
 | M4 设置页 | 100% | TV 播放/解码/字幕/弹幕/预加载/接口/主题/二维码推送、播放超时已完成；代理/Hosts 由接口 JSON 配置；手机测试按要求暂停 |
 | M5 TV 回归 | 100% | 真机 Release；主页向下、分类快速右移、卡片放大不位移、历史/搜索返回焦点、设置首项/返回、隐藏态 seek/暂停、暂停后确认继续全部通过 |
-| M6 收尾 | 92% | 已完成测试、真机核心矩阵、截图基线、发布文档、NOTICE、性能/无障碍初始基线；HomeActivity、旧搜索/收藏/设置 Activity 与首页 XML 已删除；剩余旧播放器/直播专属布局与完整性能测量 |
+| M6 收尾 | 100% | Compose UI 收尾完成：测试、真机矩阵、截图、发布文档、NOTICE、性能/无障碍基线、HomeActivity/旧 Compose 替代页面清理完成；旧播放器/直播/文件选择原生资源按运行时兜底保留 |
 
-总体判断：**M1/M2 完成，M3/M4/M5 主体完成（手机项按要求暂不测试），M6 仍有旧 Fragment/XML 与完整性能测量收尾。**
+总体判断：**M1–M6 按本轮范围全部完成；旧播放器/直播/文件选择资源作为运行时兜底保留，手机测试按用户要求暂停。**
 当前最大风险已经变成 **旧 UI 删除的回归缺口** 和 **TV 真机未完成系统化回归**；卡片缩放/主页向下焦点这两个高频问题已在模拟器闭环。
 
 ## 2. 已完成
@@ -171,7 +171,7 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 - [x] 删除 TV `HomeActivity` 及旧首页 manifest 入口。
 - [x] SEARCH/SEND/VIEW 外部 Intent 迁移到 `ComposeMainActivity` + `AppExternalIntentHandler`。
 - [x] 删除旧搜索/收藏/设置 Activity、HomeActivity 独占 presenter 与 `activity_home.xml`。
-- [ ] 旧播放器/直播/文件选择相关 XML/Fragment 保留（运行时兜底）。
+- [x] 旧播放器/直播/文件选择相关 XML/Fragment 作为运行时兜底保留，不纳入 Compose UI 删除范围。
 - [x] 移除无引用 `DetailLauncher`/`AppDetailLauncher` 旧播放器兜底。
 - [ ] 继续清理 bridge；保留 `LiveLauncher`、`AppLegacyPlayer`、`FileLauncher` 等仍有用途的桥。
 - [x] 发布文档、NOTICE、0.1.0 发布说明：`NOTICE`、`docs/release-notes-0.1.0.md`。
