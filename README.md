@@ -89,17 +89,13 @@
 |---|---|
 | ![手机收藏](docs/screenshots/readme/mobile-favorites.jpg) | ![手机历史](docs/screenshots/readme/mobile-history.jpg) |
 
-| 电影详情 | 播放 |
+| 电影详情 | 分类筛选 |
 |---|---|
-| ![手机详情](docs/screenshots/readme/mobile-detail.jpg) | ![手机播放](docs/screenshots/readme/mobile-player.png) |
+| ![手机详情](docs/screenshots/readme/mobile-detail.jpg) | ![手机筛选](docs/screenshots/readme/mobile-filter.jpg) |
 
 | 设置 | 分类 |
 |---|---|
 | ![手机设置](docs/screenshots/readme/mobile-settings.jpg) | ![手机分类](docs/screenshots/readme/mobile-category.png) |
-
-| 分类筛选 |
-|---|
-| ![手机筛选](docs/screenshots/readme/mobile-filter.jpg) |
 
 > 截图仅用于展示界面和开发测试，影片、海报和接口地址均为演示内容；正式发布版不内置任何影视资源或可用接口。
 
