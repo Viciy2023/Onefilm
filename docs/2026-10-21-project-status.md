@@ -15,7 +15,7 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 | M2 数据接入 | 100% | 首页、分类、搜索、详情、收藏、历史、网盘已接真实数据与持久化缓存；来源页统一进入 Compose 详情，旧 DetailLauncher 兜底已移除 |
 | M3 Compose 播放器 | 95% | 旧 PlayerManager 内核已接入；全屏控件自动隐藏、左右 5 秒 seek、确认暂停/继续、进度条焦点高亮已完成；TV 底部精简条和手机手势未完成 |
 | M4 设置页 | 95% | 播放/解码/字幕/弹幕/预加载/接口/主题/二维码推送已接；新增播放超时 5–60 秒；代理/Hosts 仍由接口 JSON 配置 |
-| M5 TV 回归 | 93% | 真机 Release；主页向下、分类快速右移、卡片放大不位移、历史/搜索返回焦点、设置首项/返回、隐藏态 seek/暂停通过；暂停后继续已加兜底待复测 |
+| M5 TV 回归 | 98% | 真机 Release；主页向下、分类快速右移、卡片放大不位移、历史/搜索返回焦点、设置首项/返回、隐藏态 seek/暂停、暂停后确认继续全部通过 |
 | M6 收尾 | 85% | 已完成测试、真机核心矩阵、截图基线、发布文档、NOTICE、性能/无障碍初始基线；HomeActivity 已删除，SEARCH/SEND/VIEW 已迁移；剩余旧 Fragment/XML 与完整性能测量 |
 
 总体判断：**Compose UI 主体约 95% 完成，M5 真机回归约 90%，M6 收尾已进入发布准备。**
@@ -167,7 +167,7 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 - [x] 卡片放大 1.1 + 弹簧过渡。
 - [x] 设置页新增播放超时，Compose 播放器启动使用该值。
 - [x] 全屏控件隐藏时确认/左右键直达播放器；隐藏态 seek/暂停真机通过。
-- [ ] 暂停后确认继续（已加播放按钮焦点兜底，待复测）。
+- [x] 暂停后确认继续（真机媒体会话 `state=2 → 3`）。
 - [x] 删除 TV `HomeActivity` 及旧首页 manifest 入口。
 - [x] SEARCH/SEND/VIEW 外部 Intent 迁移到 `ComposeMainActivity` + `AppExternalIntentHandler`。
 - [ ] 继续分批删除无引用旧 Fragment/XML（Live/Video/File 相关保留）。
@@ -204,7 +204,7 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 | 搜索结果→详情崩溃 | 已修复 | 崩溃栈：`PlayerManager.stop()` 对 `engine` 空引用；已加 `engine/player` 空保护并通过复测 |
 | 全屏控件隐藏 → 左右 seek | 通过 | 媒体位置：右移 `179404→187528ms`，左移 `→183793ms` |
 | 全屏控件隐藏 → 确认暂停 | 通过 | 媒体会话 `state=2（paused）` |
-| 暂停后确认继续 | 修复后待复测 | 已增加播放按钮焦点时 Activity 直接 toggle 的兜底 |
+| 暂停后确认继续 | 通过 | 媒体会话 `state=2 → state=3`，确认键恢复播放 |
 | 设置/配置页首项与返回 | 通过 | 首项 `[32,62][634,162]`，下移 3 次到 `[32,398][478,499]`，返回回主页 |
 | 外部 SEARCH Intent | 通过 | `am start -a SEARCH --es query hello` 进入 Compose 搜索结果 |
 | HomeActivity 删除后启动 | 通过 | 无 HomeActivity，EntryActivity 仍进入 Compose 主页 |
