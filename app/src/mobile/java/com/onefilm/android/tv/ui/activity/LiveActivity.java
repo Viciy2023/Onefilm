@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
 
 import com.bumptech.glide.request.transition.Transition;
+import com.github.catvod.utils.Prefers;
 import com.onefilm.android.tv.App;
 import com.onefilm.android.tv.Constant;
 import com.onefilm.android.tv.R;
@@ -101,7 +102,11 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     private int count;
 
     public static void start(Context context) {
-        context.startActivity(new Intent(context, LiveActivity.class).putExtra("empty", LiveConfig.isEmpty()));
+        Intent intent = new Intent(context, LiveActivity.class);
+        intent.putExtra("empty", LiveConfig.isEmpty());
+        String saved = Prefers.getString("compose_live_url");
+        if (saved != null && !saved.isEmpty()) intent.putExtra("live_url", saved);
+        context.startActivity(intent);
     }
 
     private boolean isEmpty() {
@@ -155,6 +160,17 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Util.hideSystemUI(this);
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        String saved = intent.getStringExtra("live_url");
+        if (saved != null && !saved.isEmpty()) {
+            android.util.Log.d("MobileLive", "onNewIntent reload saved=" + saved);
+            LiveConfig.load(Config.find(saved, 1), getCallback());
+        }
     }
 
     @Override
@@ -257,7 +273,11 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     }
 
     private void checkLive() {
-        if (isEmpty()) {
+        String saved = getIntent().getStringExtra("live_url");
+        android.util.Log.d("MobileLive", "checkLive saved=" + saved + " empty=" + isEmpty() + " current=" + LiveConfig.getUrl());
+        if (saved != null && !saved.isEmpty()) {
+            LiveConfig.load(Config.find(saved, 1), getCallback());
+        } else if (isEmpty()) {
             LiveConfig.get().init().load(getCallback());
         } else {
             getLive();
@@ -268,11 +288,13 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
         return new Callback() {
             @Override
             public void success() {
+                android.util.Log.d("MobileLive", "loaded url=" + LiveConfig.getUrl() + " lives=" + LiveConfig.get().getLives().size() + " groups=" + getHome().getGroups().size());
                 getLive();
             }
 
             @Override
             public void error(String msg) {
+                android.util.Log.e("MobileLive", "load error url=" + LiveConfig.getUrl() + " msg=" + msg);
                 Notify.show(msg);
             }
         };
@@ -885,6 +907,8 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
 
             @Override
             public void success() {
+                String url = LiveConfig.getUrl();
+                if (url != null && !url.isEmpty()) Prefers.put("compose_live_url", url);
                 setLive(getHome());
             }
 

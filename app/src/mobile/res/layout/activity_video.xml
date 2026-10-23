@@ -154,6 +154,20 @@
                         android:textSize="14sp"
                         tools:text="演員：OneFilm" />
 
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/favorite"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:text="@string/detail_favorite_add"
+                        android:textColor="@color/white"
+                        app:backgroundTint="@android:color/transparent"
+                        app:strokeColor="@color/white"
+                        app:strokeWidth="1dp" />
+
                     <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

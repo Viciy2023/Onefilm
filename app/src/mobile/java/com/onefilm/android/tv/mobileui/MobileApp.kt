@@ -1,8 +1,10 @@
 package com.onefilm.android.tv.mobileui
 
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
@@ -20,35 +23,45 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
+import com.onefilm.android.tv.compose.bridge.HomeCategory
 import com.onefilm.android.tv.compose.bridge.HomeFeedCache
 import com.onefilm.android.tv.compose.bridge.LibraryData
 import com.onefilm.android.tv.compose.bridge.LibraryDataSource
@@ -60,6 +73,9 @@ import com.onefilm.android.tv.compose.feature.search.SearchUiState
 import com.onefilm.android.tv.mobileui.component.MobileRemoteImage
 import com.onefilm.android.tv.ui.activity.LiveActivity
 import com.onefilm.android.tv.ui.activity.VideoActivity
+import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 private enum class MobileTab(val label: String) {
     HOME("首页"),
@@ -80,16 +96,29 @@ fun MobileApp() {
     var homeRefresh by remember { mutableIntStateOf(0) }
     var tab by rememberSaveable { mutableStateOf(MobileTab.HOME) }
     var libraryTab by rememberSaveable { mutableIntStateOf(0) }
+    var categoryTarget by remember { mutableStateOf<HomeCategory?>(null) }
+    var searchResetToken by remember { mutableIntStateOf(0) }
 
-    fun openCard(card: MediaCard) {
+    fun resetSearch() {
+        SearchSession.cancel()
+        searchResetToken++
+    }
+
+    fun playCard(card: MediaCard) {
         val activity = context as? Activity ?: return
         if (card.key.isNotBlank() && card.id.isNotBlank()) {
             VideoActivity.start(activity, card.key, card.id, card.title, card.posterUrl)
         }
     }
 
+    fun openCard(card: MediaCard) {
+        playCard(card)
+    }
+
     fun openLive() {
         val activity = context as? Activity ?: return
+        // Start immediately so the click is never blocked by a slow/unreachable M3U
+        // config; LiveActivity loads the saved live URL itself.
         LiveActivity.start(activity)
     }
 
@@ -104,44 +133,70 @@ fun MobileApp() {
             )
     }
 
+    LaunchedEffect(Unit) {
+        // Live is a direct action, not a retained Compose destination. Avoid restoring
+        // the old portrait placeholder after a process/config recreation.
+        if (tab == MobileTab.LIVE) tab = MobileTab.HOME
+    }
+
+    BackHandler(enabled = categoryTarget != null) { categoryTarget = null }
+
     Column(
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding(),
     ) {
-        MobileTopBar(title = if (tab == MobileTab.HOME) "壹影" else tab.label)
+        MobileTopBar(
+            title = categoryTarget?.name
+                ?: if (tab == MobileTab.HOME) "壹影" else tab.label,
+        )
         Box(Modifier.weight(1f)) {
-            when (tab) {
-                MobileTab.HOME -> MobileHomeScreen(
-                    state = homeState,
-                    onRetry = { homeRefresh++ },
+            val category = categoryTarget
+            if (category != null) {
+                MobileCategoryScreen(
+                    category = category,
+                    dataSource = ComposeDependencies.categoryDataSource,
+                    onBack = { categoryTarget = null },
                     onCardClick = ::openCard,
                 )
-                MobileTab.SEARCH -> MobileSearchScreen(
-                    dataSource = ComposeDependencies.searchDataSource,
-                    onCardClick = ::openCard,
-                )
-                MobileTab.LIBRARY -> MobileLibraryScreen(
-                    dataSource = ComposeDependencies.libraryDataSource,
-                    initialTab = libraryTab,
-                    onTabChange = { libraryTab = it },
-                    onCardClick = ::openCard,
-                )
-                MobileTab.LIVE -> MobileLiveScreen(
-                    onOpen = ::openLive,
-                )
-                MobileTab.SETTINGS -> MobileSettingsScreen(
-                    dataSource = ComposeDependencies.settingsDataSource,
-                )
+            } else {
+                when (tab) {
+                    MobileTab.HOME -> MobileHomeScreen(
+                        state = homeState,
+                        onRetry = { homeRefresh++ },
+                        onCardClick = ::openCard,
+                        onCategoryClick = { categoryTarget = it },
+                    )
+                    MobileTab.SEARCH -> MobileSearchScreen(
+                        dataSource = ComposeDependencies.searchDataSource,
+                        resetToken = searchResetToken,
+                        onCardClick = ::openCard,
+                    )
+                    MobileTab.LIBRARY -> MobileLibraryScreen(
+                        dataSource = ComposeDependencies.libraryDataSource,
+                        initialTab = libraryTab,
+                        onTabChange = { libraryTab = it },
+                        onCardClick = ::openCard,
+                    )
+                    MobileTab.LIVE -> MobileLiveScreen(onOpen = ::openLive)
+                    MobileTab.SETTINGS -> MobileSettingsScreen(
+                        dataSource = ComposeDependencies.settingsDataSource,
+                    )
+                }
             }
         }
         MobileBottomBar(
             selected = tab,
             onSelect = { selected ->
-                tab = selected
+                val wasSearch = tab == MobileTab.SEARCH
                 if (selected == MobileTab.LIVE) {
+                    if (wasSearch) resetSearch()
                     openLive()
+                } else {
+                    if (wasSearch && selected != MobileTab.SEARCH) resetSearch()
+                    categoryTarget = null
+                    tab = selected
                 }
             },
         )
@@ -208,17 +263,22 @@ private fun MobileHomeScreen(
     state: HomeUiState,
     onRetry: () -> Unit,
     onCardClick: (MediaCard) -> Unit,
+    onCategoryClick: (HomeCategory) -> Unit,
 ) {
     when (state) {
         HomeUiState.Loading -> MobileLoading()
         HomeUiState.Empty -> MobileStatus("暂无内容", onRetry)
         is HomeUiState.Error -> MobileStatus(state.message, onRetry)
-        is HomeUiState.Content -> MobileHomeContent(state, onCardClick)
+        is HomeUiState.Content -> MobileHomeContent(state, onCardClick, onCategoryClick)
     }
 }
 
 @Composable
-private fun MobileHomeContent(state: HomeUiState.Content, onCardClick: (MediaCard) -> Unit) {
+private fun MobileHomeContent(
+    state: HomeUiState.Content,
+    onCardClick: (MediaCard) -> Unit,
+    onCategoryClick: (HomeCategory) -> Unit,
+) {
     val feed = state.feed
     LazyColumn(
         state = rememberLazyListState(),
@@ -236,17 +296,50 @@ private fun MobileHomeContent(state: HomeUiState.Content, onCardClick: (MediaCar
                             modifier = Modifier
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
+                                .clickable { onCategoryClick(category) }
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                         )
                     }
                 }
             }
         }
-        if (feed.hero.isNotEmpty()) {
-            item { MobilePosterRail("推荐", feed.hero, onCardClick) }
+        val recommendationIndex = feed.sections.indexOfFirst {
+            it.title == "推荐" && it.items.isNotEmpty()
         }
-        items(feed.sections) { section ->
+        val recommendation = feed.sections.getOrNull(recommendationIndex)?.items
+            ?: feed.hero.takeIf { it.isNotEmpty() }
+        if (!recommendation.isNullOrEmpty()) {
+            item { MobileRecommendationRail("推荐", recommendation, onCardClick) }
+        }
+        items(feed.sections.filterIndexed { index, _ -> index != recommendationIndex }) { section ->
             MobilePosterRail(section.title, section.items, onCardClick)
+        }
+    }
+}
+
+@Composable
+private fun MobileRecommendationRail(
+    title: String,
+    items: List<MediaCard>,
+    onCardClick: (MediaCard) -> Unit,
+) {
+    if (items.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = title,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        LazyHorizontalGrid(
+            rows = GridCells.Fixed(2),
+            modifier = Modifier.fillMaxWidth().height(500.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            gridItemsIndexed(items, key = { index, card -> "${card.key}:${card.id}:$index" }) { _, card ->
+                MobilePosterCard(card) { onCardClick(card) }
+            }
         }
     }
 }
@@ -313,36 +406,101 @@ private fun MobilePosterCard(card: MediaCard, onClick: () -> Unit) {
 @Composable
 private fun MobileSearchScreen(
     dataSource: SearchDataSource,
+    resetToken: Int,
     onCardClick: (MediaCard) -> Unit,
 ) {
-    var query by rememberSaveable { mutableStateOf("") }
+    val context = LocalContext.current
+    var query by rememberSaveable(resetToken) { mutableStateOf("") }
+    var history by remember { mutableStateOf(MobileSearchHistory.load(context)) }
     val state by SearchSession.state.collectAsState()
 
-    fun submit() {
-        val keyword = query.trim()
-        if (keyword.isNotEmpty()) SearchSession.start(dataSource, keyword)
+    fun submit(keywordValue: String = query) {
+        val keyword = keywordValue.trim()
+        if (keyword.isEmpty()) return
+        query = keyword
+        history = MobileSearchHistory.add(context, keyword)
+        SearchSession.start(dataSource, keyword)
     }
 
     Column(
         Modifier.fillMaxSize().padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            OutlinedTextField(
+            BasicTextField(
                 value = query,
                 onValueChange = { query = it },
-                placeholder = { Text("搜索电影、剧集、演员") },
                 singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
+                ),
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { submit() }),
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).height(44.dp),
+                decorationBox = { innerTextField ->
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
+                            .padding(horizontal = 14.dp),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        if (query.isEmpty()) {
+                            Text(
+                                "搜索电影、剧集、演员",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 14.sp,
+                            )
+                        }
+                        innerTextField()
+                    }
+                },
             )
-            Button(onClick = { submit() }) { Text("搜索") }
+            Button(
+                onClick = { submit() },
+                modifier = Modifier.height(44.dp),
+                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 0.dp),
+            ) { Text("搜索") }
         }
+
+        if (history.isNotEmpty()) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                LazyRow(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    items(history) { keyword ->
+                        Text(
+                            text = keyword,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                .clickable { submit(keyword) }
+                                .padding(horizontal = 10.dp, vertical = 7.dp),
+                        )
+                    }
+                }
+                TextButton(
+                    onClick = {
+                        MobileSearchHistory.clear(context)
+                        history = emptyList()
+                    },
+                ) { Text("清空", fontSize = 12.sp) }
+            }
+        }
+
         when (val current = state) {
             SearchUiState.Idle -> MobileHint("输入关键词，开始聚合搜索")
             SearchUiState.Loading -> MobileLoading()
@@ -359,7 +517,7 @@ private fun MobileSearchScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(current.items) { card ->
-                        MobileMediaRow(card) { onCardClick(card) }
+                        MobileMediaRow(card = card, onClick = { onCardClick(card) })
                     }
                 }
             }
@@ -375,6 +533,7 @@ private fun MobileLibraryScreen(
     onCardClick: (MediaCard) -> Unit,
 ) {
     var data by remember { mutableStateOf<LibraryData?>(null) }
+    val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { data = runCatching { dataSource.load() }.getOrNull() }
     val items = if (initialTab == 1) data?.history.orEmpty() else data?.favorites.orEmpty()
 
@@ -397,22 +556,97 @@ private fun MobileLibraryScreen(
         } else if (items.isEmpty()) {
             MobileHint("这里还没有内容")
         } else {
+            Text(
+                text = "向左或向右滑动条目可删除",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 6.dp),
+            )
             LazyColumn(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(items) { card -> MobileMediaRow(card) { onCardClick(card) } }
+                items(items, key = { "${it.key}|${it.id}" }) { card ->
+                    MobileSwipeDeleteRow(
+                        card = card,
+                        onClick = { onCardClick(card) },
+                        onDelete = {
+                            if (initialTab == 1) dataSource.deleteHistory(card)
+                            else dataSource.deleteFavorite(card)
+                            data = runCatching { dataSource.load() }.getOrNull()
+                        },
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun MobileMediaRow(card: MediaCard, onClick: () -> Unit) {
-    Row(
+private fun MobileSwipeDeleteRow(
+    card: MediaCard,
+    onClick: () -> Unit,
+    onDelete: suspend () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val threshold = with(density) { 80.dp.toPx() }
+    val maxSwipe = with(density) { 150.dp.toPx() }
+    var offsetX by remember(card.key, card.id) { mutableFloatStateOf(0f) }
+
+    Box(
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.9f)),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(
+            text = "删除",
+            color = MaterialTheme.colorScheme.onError,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 18.dp),
+        )
+        MobileMediaRow(
+            card = card,
+            onClick = onClick,
+            modifier = Modifier
+                .offset { IntOffset(offsetX.roundToInt(), 0) }
+                .pointerInput(card.key, card.id) {
+                    detectHorizontalDragGestures(
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            offsetX = (offsetX + dragAmount).coerceIn(-maxSwipe, maxSwipe)
+                        },
+                        onDragEnd = {
+                            if (abs(offsetX) >= threshold) {
+                                scope.launch {
+                                    offsetX = if (offsetX > 0f) maxSwipe else -maxSwipe
+                                    onDelete()
+                                }
+                            } else {
+                                offsetX = 0f
+                            }
+                        },
+                        onDragCancel = { offsetX = 0f },
+                    )
+                },
+        )
+    }
+}
+
+@Composable
+private fun MobileMediaRow(
+    card: MediaCard,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surface)
             .clickable(onClick = onClick)
             .padding(6.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),

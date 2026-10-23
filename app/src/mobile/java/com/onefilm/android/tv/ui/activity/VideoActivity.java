@@ -330,6 +330,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         mBinding.control.cast.setOnClickListener(view -> onCast());
         mBinding.control.info.setOnClickListener(view -> onInfo());
         mBinding.control.keep.setOnClickListener(view -> onKeep());
+        mBinding.favorite.setOnClickListener(view -> onFavorite());
         mBinding.control.play.setOnClickListener(view -> checkPlay());
         mBinding.control.next.setOnClickListener(view -> checkNext());
         mBinding.control.prev.setOnClickListener(view -> checkPrev());
@@ -907,6 +908,11 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         checkKeepImg();
     }
 
+    private void onFavorite() {
+        if (mHistory == null) return;
+        onKeep();
+    }
+
     private void checkPlay() {
         setR1Callback();
         if (player().isPlaying()) onPaused();
@@ -1236,7 +1242,9 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
     }
 
     private void checkKeepImg() {
-        mBinding.control.keep.setImageResource(Keep.find(getHistoryKey()) == null ? R.drawable.ic_control_keep_off : R.drawable.ic_control_keep_on);
+        boolean kept = Keep.find(getHistoryKey()) != null;
+        mBinding.control.keep.setImageResource(kept ? R.drawable.ic_control_keep_on : R.drawable.ic_control_keep_off);
+        mBinding.favorite.setText(kept ? R.string.detail_favorite_added : R.string.detail_favorite_add);
     }
 
     private void checkLockImg() {

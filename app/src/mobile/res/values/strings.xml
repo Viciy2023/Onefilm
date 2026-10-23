@@ -25,6 +25,8 @@
     <string name="detail_quality">Quality</string>
     <string name="detail_content">Summary</string>
     <string name="detail_search">Searching <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_favorite_add">Add to favorites</string>
+    <string name="detail_favorite_added">Added to favorites</string>
 
     <!-- Device -->
     <string name="device_select">Select devices</string>

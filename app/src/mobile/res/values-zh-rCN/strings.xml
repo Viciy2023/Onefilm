@@ -25,6 +25,8 @@
     <string name="detail_quality">画质</string>
     <string name="detail_content">简介</string>
     <string name="detail_search">快搜“<xliff:g name="name">%s</xliff:g>”</string>
+    <string name="detail_favorite_add">加入收藏</string>
+    <string name="detail_favorite_added">已收藏</string>
 
     <!-- Device -->
     <string name="device_select">选择装置</string>

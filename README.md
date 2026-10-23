@@ -79,6 +79,28 @@
 |---|---|
 | ![详情](docs/screenshots/readme/detail.png) | ![播放](docs/screenshots/readme/player.png) |
 
+### 手机版界面
+
+| 首页 | 搜索 |
+|---|---|
+| ![手机首页](docs/screenshots/readme/mobile-home.jpg) | ![手机搜索](docs/screenshots/readme/mobile-search.jpg) |
+
+| 收藏 | 历史 |
+|---|---|
+| ![手机收藏](docs/screenshots/readme/mobile-favorites.jpg) | ![手机历史](docs/screenshots/readme/mobile-history.jpg) |
+
+| 电影详情 | 播放 |
+|---|---|
+| ![手机详情](docs/screenshots/readme/mobile-detail.jpg) | ![手机播放](docs/screenshots/readme/mobile-player.png) |
+
+| 设置 | 分类 |
+|---|---|
+| ![手机设置](docs/screenshots/readme/mobile-settings.jpg) | ![手机分类](docs/screenshots/readme/mobile-category.png) |
+
+| 分类筛选 |
+|---|
+| ![手机筛选](docs/screenshots/readme/mobile-filter.jpg) |
+
 > 截图仅用于展示界面和开发测试，影片、海报和接口地址均为演示内容；正式发布版不内置任何影视资源或可用接口。
 
 ## 说明

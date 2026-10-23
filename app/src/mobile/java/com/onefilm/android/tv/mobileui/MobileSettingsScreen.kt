@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.design.ThemeController
+import com.github.catvod.utils.Prefers
 
 private data class MobileChoice(
     val title: String,
@@ -65,6 +66,9 @@ fun MobileSettingsScreen(dataSource: SettingsDataSource) {
         }
     }
 
+    val liveUrl = Prefers.getString("compose_live_url").orEmpty()
+        .ifBlank { snapshot.liveConfigUrl }
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 20.dp),
@@ -79,9 +83,9 @@ fun MobileSettingsScreen(dataSource: SettingsDataSource) {
             }
         }
         item {
-            MobileSettingRow("直播接口", snapshot.liveConfigUrl) {
+            MobileSettingRow("直播接口", liveUrl) {
                 configType = 1
-                configDraft = snapshot.liveConfigUrl
+                configDraft = liveUrl
                 configError = null
             }
         }
