@@ -8,10 +8,11 @@
 
 | 项 | 结果 | 来源 |
 |---|---|---|
-| EntryActivity Displayed（Release） | 约 5.1s | `2026-10-22-tv-performance-analysis.md` |
-| ComposeMainActivity Displayed（Release） | 约 2.6s | 同上 |
-| 热启动 | 约 0.4–0.6s | 同上 |
+| EntryActivity Displayed（Release，2026-10-23 复测） | 528ms（cold） | `am start -W` + logcat |
+| ComposeMainActivity Displayed（Release，2026-10-23 复测） | 3.094s（warm） | logcat `Displayed ... ComposeMainActivity` |
+| 热启动 | 约 0.4–0.6s | 启动页到路由 |
 | Debug 冷启动 | 约 12s | 仅开发参考，不作为体验基线 |
+| TV Release APK | 65,500,711 bytes | `leanback-armeabi-v7a-debugsigned-latest.apk` |
 
 ## 当前优化状态
 

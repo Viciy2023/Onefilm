@@ -28,7 +28,6 @@ import com.onefilm.android.tv.bean.Value;
 import com.onefilm.android.tv.bean.Vod;
 import com.onefilm.android.tv.databinding.FragmentTypeBinding;
 import com.onefilm.android.tv.model.SiteViewModel;
-import com.onefilm.android.tv.ui.activity.CollectActivity;
 import com.onefilm.android.tv.ui.activity.VideoActivity;
 import com.onefilm.android.tv.ui.base.BaseFragment;
 import com.onefilm.android.tv.ui.custom.CustomRowPresenter;
@@ -260,15 +259,14 @@ public class TypeFragment extends BaseFragment implements CustomScroller.Callbac
             getParent().openFolder(item.getId(), mExtends);
             headerVisible = mBinding.recycler.isHeaderVisible();
         } else {
-            if (getSite().isIndex()) CollectActivity.start(requireActivity(), item.getName());
-            else VideoActivity.start(requireActivity(), getKey(), item.getId(), item.getName(), item.getPic(), isFolder() ? item.getName() : null);
+            VideoActivity.start(requireActivity(), getKey(), item.getId(), item.getName(), item.getPic(), isFolder() ? item.getName() : null);
         }
     }
 
     @Override
     public boolean onLongClick(Vod item) {
         if (item.isAction() || item.isFolder()) return false;
-        CollectActivity.start(requireActivity(), item.getName());
+        VideoActivity.start(requireActivity(), getKey(), item.getId(), item.getName(), item.getPic(), isFolder() ? item.getName() : null);
         return true;
     }
 
