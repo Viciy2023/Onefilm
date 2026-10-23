@@ -27,20 +27,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <activity
-            android:name=".ui.activity.MobileComposeActivity"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
-            android:screenOrientation="portrait" />
-
-        <activity
-            android:name=".ui.activity.HomeActivity"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
-            android:exported="true"
-            android:launchMode="singleTop"
-            android:theme="@style/Theme.Splash"
-            android:windowSoftInputMode="adjustPan">
 
             <meta-data
                 android:name="android.app.searchable"
@@ -96,27 +82,16 @@
                 <data android:scheme="thunder" />
                 <data android:scheme="jianpian" />
             </intent-filter>
+
         </activity>
 
         <activity
-            android:name=".ui.activity.SearchActivity"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout"
-            android:windowSoftInputMode="adjustPan" />
+            android:name=".ui.activity.MobileComposeActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name=".ui.activity.FileActivity"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout" />
-
-        <activity
-            android:name=".ui.activity.FolderActivity"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout" />
-
-        <activity
-            android:name=".ui.activity.HistoryActivity"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout" />
-
-        <activity
-            android:name=".ui.activity.KeepActivity"
             android:configChanges="screenSize|smallestScreenSize|screenLayout" />
 
         <activity
@@ -124,7 +99,7 @@
             android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation"
             android:exported="true"
             android:launchMode="singleTop"
-            android:parentActivityName=".ui.activity.HomeActivity"
+            android:parentActivityName=".ui.activity.MobileComposeActivity"
             android:screenOrientation="sensorLandscape"
             android:supportsPictureInPicture="true" />
 
@@ -136,7 +111,7 @@
             android:name=".ui.activity.VideoActivity"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation"
             android:launchMode="singleTop"
-            android:parentActivityName=".ui.activity.HomeActivity"
+            android:parentActivityName=".ui.activity.MobileComposeActivity"
             android:supportsPictureInPicture="true" />
 
         <receiver

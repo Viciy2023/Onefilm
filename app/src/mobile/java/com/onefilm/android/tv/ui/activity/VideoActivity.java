@@ -798,9 +798,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
         return new ClickableSpan() {
             @Override
             public void onClick(@NonNull View view) {
-                FolderActivity.start(getActivity(), getKey(), result);
-                ((TextView) view).setMaxLines(Integer.MAX_VALUE);
-                setRedirect(true);
+                // Old XML folder UI has been removed; keep the description selectable.
             }
         };
     }
@@ -1659,7 +1657,7 @@ public class VideoActivity extends PlaybackActivity implements Clock.Callback, C
             exitFullscreen();
         } else if (!isLock()) {
             mViewModel.stopSearch();
-            if (isTaskRoot()) startActivity(new Intent(this, HomeActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP));
+            if (isTaskRoot()) startActivity(new Intent(this, MobileComposeActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP));
             super.onBackInvoked();
         }
     }
