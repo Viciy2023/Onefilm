@@ -38,69 +38,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".ui.activity.HomeActivity"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
-            android:exported="true"
-            android:launchMode="singleTop"
-            android:screenOrientation="sensorLandscape"
-            android:theme="@style/Theme.Splash">
-
-            <meta-data
-                android:name="android.app.searchable"
-                android:resource="@xml/searchable" />
-
-            <intent-filter>
-                <action android:name="android.intent.action.SEARCH" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="text/plain" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="content" />
-                <data android:scheme="file" />
-                <data android:mimeType="video/*" />
-                <data android:mimeType="audio/*" />
-                <data android:mimeType="text/plain" />
-                <data android:mimeType="application/x-bittorrent" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="smb" />
-                <data android:scheme="rtmp" />
-                <data android:scheme="rtsp" />
-                <data android:scheme="http" />
-                <data android:scheme="https" />
-                <data android:mimeType="video/*" />
-                <data android:mimeType="audio/*" />
-            </intent-filter>
-
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="ed2k" />
-                <data android:scheme="magnet" />
-                <data android:scheme="thunder" />
-                <data android:scheme="jianpian" />
-            </intent-filter>
-        </activity>
 
         <activity
             android:name=".ui.activity.CastActivity"
@@ -124,14 +61,14 @@
             android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation"
             android:exported="true"
             android:launchMode="singleTop"
-            android:parentActivityName=".ui.activity.HomeActivity"
+            android:parentActivityName="com.onefilm.android.tv.compose.host.ComposeMainActivity"
             android:screenOrientation="sensorLandscape" />
 
         <activity
             android:name=".ui.activity.VideoActivity"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation|keyboard|keyboardHidden|navigation"
             android:launchMode="singleTop"
-            android:parentActivityName=".ui.activity.HomeActivity"
+            android:parentActivityName="com.onefilm.android.tv.compose.host.ComposeMainActivity"
             android:screenOrientation="sensorLandscape" />
 
         <activity

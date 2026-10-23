@@ -12,11 +12,11 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 |---|---|---|
 | P0 基础/身份/构建 | 100% | 两 flavor 可构建，Compose 宿主机和旧 UI fallback 已建立 |
 | M1 基础设施 | 100% | 设计系统、Bridge、导航、首页骨架完成 |
-| M2 数据接入 | 98% | 首页、分类、搜索、详情、收藏、历史、网盘已接真实数据；首页/分类/详情/搜索已接持久化缓存 |
+| M2 数据接入 | 100% | 首页、分类、搜索、详情、收藏、历史、网盘已接真实数据与持久化缓存；来源页统一进入 Compose 详情，旧 DetailLauncher 兜底已移除 |
 | M3 Compose 播放器 | 95% | 旧 PlayerManager 内核已接入；全屏控件自动隐藏、左右 5 秒 seek、确认暂停/继续、进度条焦点高亮已完成；TV 底部精简条和手机手势未完成 |
-| M4 设置页 | 90% | 播放/解码/字幕/弹幕/预加载/接口/主题/二维码推送已接；网络代理、Hosts、超时未迁移 |
-| M5 TV 回归 | 90% | 真机 Release；主页向下、分类快速右移、卡片放大不位移、历史/搜索返回焦点、设置首项/返回、隐藏态 seek/暂停通过；暂停后继续待复测 |
-| M6 收尾 | 65% | 已完成测试、真机核心矩阵、截图基线、发布文档与初始性能/无障碍基线；已关闭旧 UI fallback；旧 UI/bridge 删除和性能测量未完成 |
+| M4 设置页 | 95% | 播放/解码/字幕/弹幕/预加载/接口/主题/二维码推送已接；新增播放超时 5–60 秒；代理/Hosts 仍由接口 JSON 配置 |
+| M5 TV 回归 | 93% | 真机 Release；主页向下、分类快速右移、卡片放大不位移、历史/搜索返回焦点、设置首项/返回、隐藏态 seek/暂停通过；暂停后继续已加兜底待复测 |
+| M6 收尾 | 85% | 已完成测试、真机核心矩阵、截图基线、发布文档、NOTICE、性能/无障碍初始基线；HomeActivity 已删除，SEARCH/SEND/VIEW 已迁移；剩余旧 Fragment/XML 与完整性能测量 |
 
 总体判断：**Compose UI 主体约 95% 完成，M5 真机回归约 90%，M6 收尾已进入发布准备。**
 当前最大风险已经变成 **旧 UI 删除的回归缺口** 和 **TV 真机未完成系统化回归**；卡片缩放/主页向下焦点这两个高频问题已在模拟器闭环。
@@ -113,6 +113,8 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 - [x] 多选项弹卡：单行居中，无独立“确定”，选中立即生效。
 - [x] 主题、播放、解码、字幕、弹幕、预加载、缓存、接口配置。
 - [x] “清除缓存”同时清理 `Path.cache`、`vod_config_*.json`、首页/详情/搜索内存缓存。
+- [x] 新增播放超时设置（5/10/15/20/30/45/60 秒），接入 Compose 播放器启动超时。
+- [x] 接口代理/Hosts 继续由接口 JSON 的 `proxy`/`hosts` 字段应用；设置页暴露 DoH 与播放超时。
 - [x] 接口配置二维码推送桥接（`ServerEventBridge`）。
 - [x] 配置/线路编辑、删除持久化。
 - [x] 默认网络壁纸、纯色/无壁纸。
@@ -163,12 +165,14 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 - [x] 修复详情返回时 `PlayerManager.stop()` 空 engine 导致 `PlaybackService.onUnbind` 崩溃。
 - [x] 搜索结果首批到达后自动聚焦第一张卡片。
 - [x] 卡片放大 1.1 + 弹簧过渡。
+- [x] 设置页新增播放超时，Compose 播放器启动使用该值。
 - [x] 全屏控件隐藏时确认/左右键直达播放器；隐藏态 seek/暂停真机通过。
 - [ ] 暂停后确认继续（已加播放按钮焦点兜底，待复测）。
-- [ ] 分批删除旧 XML/Fragment/Activity（按依赖清单，不一次性删除）。
-  - 第一批已把 Live/Video/Crash 的首页返回改到 Compose。
-  - `HomeActivity` 暂留：仍承接 SEARCH/SEND/VIEW 外部 intent，迁移后再删。
-- [ ] 清理确实无引用的临时 bridge；保留 `DetailLauncher`、`LiveLauncher`、`AppLegacyPlayer` 等仍有用途的桥。
+- [x] 删除 TV `HomeActivity` 及旧首页 manifest 入口。
+- [x] SEARCH/SEND/VIEW 外部 Intent 迁移到 `ComposeMainActivity` + `AppExternalIntentHandler`。
+- [ ] 继续分批删除无引用旧 Fragment/XML（Live/Video/File 相关保留）。
+- [x] 移除无引用 `DetailLauncher`/`AppDetailLauncher` 旧播放器兜底。
+- [ ] 继续清理 bridge；保留 `LiveLauncher`、`AppLegacyPlayer`、`FileLauncher` 等仍有用途的桥。
 - [x] 发布文档、NOTICE、0.1.0 发布说明：`NOTICE`、`docs/release-notes-0.1.0.md`。
 - [ ] 正式源码 tag。
 - [ ] 包体/ABI/R8 继续优化（Release 已启用 R8/资源压缩）。
@@ -182,7 +186,7 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 
 | 项 | 结果 | 证据/说明 |
 |---|---|---|
-| Release 安装 | 通过 | `adb install -r` 返回 `Success`，最新 `lastUpdateTime=2026-10-23 09:36:46` |
+| Release 安装 | 通过 | `adb install -r` 返回 `Success`，最新 `lastUpdateTime=2026-10-23 10:36:55` |
 | 启动默认焦点 | 通过 | 焦点“主页” `[96,63][208,139]` |
 | 主页分类向下 → 历史 | 通过 | 焦点“历史” `[96,139][291,231]` |
 | 历史向下 → 海报区 | 通过 | 首张卡片 `[96,279][358,672]` |
@@ -193,7 +197,7 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 | 分类页向下进入卡片 | 通过 | 焦点 `[977,161][1238,553]` |
 | 进入历史页焦点 | 修复后通过 | 原先无焦点；现自动聚焦首张 `[96,222][358,615]` |
 | 历史 → 详情 → 返回 | 修复后通过 | 第 3 张卡片进入，返回仍聚焦 `[684,222][945,614]` |
-| Release 历史页首卡焦点 | 通过 | 最新 Release `09:36:46` 进入历史自动聚焦 `[96,222][358,615]` |
+| Release 历史页首卡焦点 | 通过 | 最新 Release `10:36:55` 进入历史自动聚焦 `[96,222][358,615]` |
 | 搜索 → 结果卡片 | 通过（自动聚焦） | 输入 `hello` 后首卡自动聚焦 `[372,70][650,487]` |
 | 搜索详情返回 | 通过 | 搜索结果首卡 → 详情 → 返回，仍聚焦 `[372,70][650,487]`，应用未崩溃 |
 | 详情页视频播放 | 通过（可见但难自动 dump） | 日志 `ComposeDetail loaded`，播放状态 ACTIVE；视频 Surface 导致 uiautomator 无法 idle |
@@ -202,9 +206,11 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 | 全屏控件隐藏 → 确认暂停 | 通过 | 媒体会话 `state=2（paused）` |
 | 暂停后确认继续 | 修复后待复测 | 已增加播放按钮焦点时 Activity 直接 toggle 的兜底 |
 | 设置/配置页首项与返回 | 通过 | 首项 `[32,62][634,162]`，下移 3 次到 `[32,398][478,499]`，返回回主页 |
+| 外部 SEARCH Intent | 通过 | `am start -a SEARCH --es query hello` 进入 Compose 搜索结果 |
+| HomeActivity 删除后启动 | 通过 | 无 HomeActivity，EntryActivity 仍进入 Compose 主页 |
 | TV 截图基线 | 已建立 | `docs/screenshots/tv-{home,category,detail,settings}-2026-10-23.png`；播放器截图因 Surface 黑屏，待补 |
 
-本轮修复：`LibraryScreen` 首卡自动聚焦/最后焦点恢复；搜索结果首卡自动聚焦；`PlayerManager` 空 engine/player 保护；`EntryActivity` 固定进入 Compose；卡片 1.1 弹簧缩放；全屏控件隐藏时 Activity 拦截 seek/暂停。
+本轮修复：`LibraryScreen` 首卡自动聚焦/最后焦点恢复；搜索结果首卡自动聚焦；`PlayerManager` 空 engine/player 保护；`EntryActivity` 固定进入 Compose；删除 `HomeActivity` 并迁移 SEARCH/SEND/VIEW；播放超时设置；卡片 1.1 弹簧缩放；全屏控件隐藏时 Activity 拦截 seek/暂停。
 
 ## 5. 文档现状
 
@@ -249,7 +255,7 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 | 设置弹卡居中 | 已截图验证 |
 | 分类卡片直达搜索结果 | 已截图验证 |
 | 主页行顺序/主页默认高亮 | 已截图验证 |
-| 最新 Release 构建/签名 | 通过（`leanback-armeabi-v7a-debugsigned-latest.apk`，2026-10-23 09:36:46） |
+| 最新 Release 构建/签名 | 通过（`leanback-armeabi-v7a-debugsigned-latest.apk`，2026-10-23 10:36:55） |
 | 真机 TV 安装 | 通过（`MiTV-ASTP0`） |
 | 真机主页向下/卡片移动/分类快速右移 | 通过 |
 | 真机历史页进入与详情返回焦点 | 通过（本轮修复） |
@@ -259,6 +265,8 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 | 真机暂停后确认继续 | 修复后待复测 |
 | 截图基线 | `docs/screenshots/` 已建立 |
 | 真机关闭 fallback 后启动 | 通过（仍进入 Compose 主页） |
+| HomeActivity 删除后启动 | 通过 |
+| 外部 SEARCH Intent | 通过（进入 Compose 搜索） |
 | 手机真机 | 未连接，待验证 |
 
 ## 8. 已知测试限制

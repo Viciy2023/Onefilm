@@ -1,6 +1,5 @@
 package com.onefilm.android.tv.compose.bridge
 
-import android.content.Context
 import java.io.Serializable
 
 data class MediaCard(
@@ -32,9 +31,4 @@ object HomeFeedCache {
 
 interface HomeDataSource {
     suspend fun load(): HomeFeed
-}
-
-interface DetailLauncher {
-    fun open(context: Context, card: MediaCard)
-    fun openEpisode(context: Context, card: MediaCard, mark: String)
 }

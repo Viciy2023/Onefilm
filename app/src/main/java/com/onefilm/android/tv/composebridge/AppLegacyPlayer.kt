@@ -143,7 +143,7 @@ class AppLegacyPlayer : LegacyPlayer {
             pending.headers.toMutableMap(),
             metadata,
         ).checkUa()
-        manager?.start(spec, Constant.TIMEOUT_PLAY, pending.startMs)
+        manager?.start(spec, PlayerSetting.getPlayTimeout() * 1000L, pending.startMs)
     }
 
     override fun bindPlayerView(view: PlayerView) {

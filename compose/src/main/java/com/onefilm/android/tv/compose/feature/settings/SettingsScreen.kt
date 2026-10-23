@@ -272,6 +272,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
+                    ActionRow("播放超时", "${snapshot.playTimeoutSeconds} 秒") { refresh { cyclePlayTimeout() } }
 
 
 

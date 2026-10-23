@@ -1,7 +1,9 @@
 package com.onefilm.android.tv.compose.host
 
 import android.app.PictureInPictureParams
+import android.app.SearchManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
@@ -73,6 +75,26 @@ class ComposeMainActivity : ComponentActivity() {
 
     @Volatile
     private var playerRouteActive = false
+    private val pendingSearchQuery = mutableStateOf<String?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleExternalIntent(intent)
+    }
+
+    private fun handleExternalIntent(intent: Intent?) {
+        when (intent?.action) {
+            Intent.ACTION_SEARCH -> {
+                intent.getStringExtra(SearchManager.QUERY)
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { pendingSearchQuery.value = it }
+            }
+            Intent.ACTION_SEND, Intent.ACTION_VIEW -> {
+                ComposeDependencies.externalIntentHandler.handle(this, intent)
+            }
+        }
+    }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         // 控件隐藏时焦点不在任何播放按钮上，Compose 的 onPreviewKeyEvent
@@ -96,10 +118,11 @@ class ComposeMainActivity : ComponentActivity() {
                         return true
                     }
                 }
-            } else if (TvPlayerKeyState.playFocused &&
+            } else if (!TvPlayerKeyState.menuOpen &&
+                (!PlaybackSession.isPlaying || TvPlayerKeyState.playFocused) &&
                 (event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER || event.keyCode == KeyEvent.KEYCODE_ENTER)
             ) {
-                // 暂停后控件重新出现，焦点在播放按钮上时也保证确认键能继续。
+                // 暂停后控件重新出现，确认键必须能继续播放；菜单打开时不劫持。
                 PlaybackSession.toggle()
                 return true
             }
@@ -126,6 +149,7 @@ class ComposeMainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleExternalIntent(intent)
         val isTv = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
             (resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) ==
             Configuration.UI_MODE_TYPE_TELEVISION ||
@@ -139,7 +163,6 @@ class ComposeMainActivity : ComponentActivity() {
         val libraryDataSource = ComposeDependencies.libraryDataSource
         val favoriteStore = ComposeDependencies.favoriteStore
         val sourceDataSource = ComposeDependencies.sourceDataSource
-        val launcher = ComposeDependencies.detailLauncher
 
         setContent {
             PlaybackSession.historyStore = ComposeDependencies.playbackHistoryStore
@@ -152,6 +175,13 @@ class ComposeMainActivity : ComponentActivity() {
                 },
             ) {
                 val navController = rememberNavController()
+                val pendingSearch = pendingSearchQuery.value
+                LaunchedEffect(pendingSearch) {
+                    if (!pendingSearch.isNullOrBlank()) {
+                        navController.navigate(Routes.search(pendingSearch)) { launchSingleTop = true }
+                        pendingSearchQuery.value = null
+                    }
+                }
                 var searchFocusToken by remember { mutableIntStateOf(0) }
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val route = backStackEntry?.destination?.route
@@ -357,11 +387,6 @@ class ComposeMainActivity : ComponentActivity() {
                                                 item.title,
                                                 item.posterUrl,
                                             ),
-                                        )
-                                    } else {
-                                        launcher.open(
-                                            this@ComposeMainActivity,
-                                            MediaCard(item.key, item.id, item.title, item.subtitle, item.posterUrl),
                                         )
                                     }
                                 },

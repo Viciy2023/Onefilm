@@ -5,7 +5,54 @@
             android:name="com.onefilm.android.tv.compose.host.ComposeMainActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"
             android:exported="true"
+            android:launchMode="singleTop"
             android:supportsPictureInPicture="true"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="video/*" />
+                <data android:mimeType="audio/*" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="application/x-bittorrent" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="smb" />
+                <data android:scheme="rtmp" />
+                <data android:scheme="rtsp" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:mimeType="video/*" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="ed2k" />
+                <data android:scheme="magnet" />
+                <data android:scheme="thunder" />
+                <data android:scheme="jianpian" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

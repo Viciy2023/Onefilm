@@ -56,6 +56,7 @@ class AppSettingsDataSource : SettingsDataSource {
         engineMpv = PlayerSetting.isMpv(),
         background = PlayerSetting.getBackground(),
         bufferSeconds = PlayerSetting.getBuffer(),
+        playTimeoutSeconds = PlayerSetting.getPlayTimeout(),
         renderTexture = PlayerSetting.getRender() == PlayerSetting.RENDER_TEXTURE,
         tunnel = DecodeSetting.isTunnel(),
         audioPassThrough = DecodeSetting.isAudioPassThrough(),
@@ -289,6 +290,12 @@ class AppSettingsDataSource : SettingsDataSource {
         val current = items.indexOf(Doh.objectFrom(Setting.getDoh()))
         val next = items[(current + 1).takeIf { it >= 0 }?.mod(items.size) ?: 0]
         Setting.putDoh(next.toString())
+    }
+
+    override fun cyclePlayTimeout() {
+        val values = listOf(5, 10, 15, 20, 30, 45, 60)
+        val current = PlayerSetting.getPlayTimeout()
+        PlayerSetting.putPlayTimeout(values[(values.indexOf(current).takeIf { it >= 0 } ?: 2).let { (it + 1) % values.size }])
     }
 
     override fun setIncognito(enabled: Boolean) {

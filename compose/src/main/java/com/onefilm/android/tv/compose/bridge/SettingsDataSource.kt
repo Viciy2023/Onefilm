@@ -6,6 +6,7 @@ data class SettingsSnapshot(
     val engineMpv: Boolean,
     val background: Int,
     val bufferSeconds: Int,
+    val playTimeoutSeconds: Int,
     val renderTexture: Boolean,
     val tunnel: Boolean,
     val audioPassThrough: Boolean,
@@ -91,6 +92,7 @@ interface SettingsDataSource {
     fun allConfigLines(): List<ConfigLine>
     fun deleteConfigLine(type: Int, url: String)
     fun cycleDoh()
+    fun cyclePlayTimeout()
     fun setIncognito(enabled: Boolean)
     fun configPushUrl(): String
     fun qrBitmap(content: String, size: Int): Bitmap?

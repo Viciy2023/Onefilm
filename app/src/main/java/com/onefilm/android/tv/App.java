@@ -93,13 +93,13 @@ public class App extends Application implements Application.ActivityLifecycleCal
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setSourceDataSource(new com.onefilm.android.tv.composebridge.AppSourceDataSource());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setLibraryDataSource(new com.onefilm.android.tv.composebridge.AppLibraryDataSource());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setFavoriteStore(new com.onefilm.android.tv.composebridge.AppFavoriteStore());
-        com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setDetailLauncher(new com.onefilm.android.tv.composebridge.AppDetailLauncher());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setPlaybackResolver(new com.onefilm.android.tv.composebridge.AppPlaybackResolver());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setPlaybackHistoryStore(new com.onefilm.android.tv.composebridge.AppPlaybackHistoryStore());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setDanmakuDataSource(new com.onefilm.android.tv.composebridge.AppDanmakuDataSource());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setLegacyPlayerFactory(new com.onefilm.android.tv.composebridge.AppLegacyPlayerFactory());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setSettingsDataSource(new com.onefilm.android.tv.composebridge.AppSettingsDataSource());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setLiveLauncher(new com.onefilm.android.tv.composebridge.AppLiveLauncher());
+        com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setExternalIntentHandler(new com.onefilm.android.tv.composebridge.AppExternalIntentHandler());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setNetdiskDataSource(new com.onefilm.android.tv.composebridge.AppNetdiskDataSource());
         try {
             Class<?> dlnaClass = Class.forName("com.onefilm.android.tv.composebridge.AppDlnaDataSource");

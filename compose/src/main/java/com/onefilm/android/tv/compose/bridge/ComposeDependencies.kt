@@ -9,13 +9,13 @@ object ComposeDependencies {
     lateinit var libraryDataSource: LibraryDataSource
     lateinit var favoriteStore: FavoriteStore
     lateinit var sourceDataSource: SourceDataSource
-    lateinit var detailLauncher: DetailLauncher
     lateinit var playbackResolver: PlaybackResolver
     lateinit var playbackHistoryStore: PlaybackHistoryStore
     lateinit var danmakuDataSource: DanmakuDataSource
     lateinit var legacyPlayerFactory: LegacyPlayerFactory
     lateinit var settingsDataSource: SettingsDataSource
     lateinit var liveLauncher: LiveLauncher
+    lateinit var externalIntentHandler: ExternalIntentHandler
     lateinit var netdiskDataSource: NetdiskDataSource
     var dlnaDataSource: DlnaDataSource? = null
 }

@@ -42,7 +42,7 @@
 - [x] 海报 Referer/User-Agent 解析
 - [x] 详情页预览秒开 + 内存缓存
 - [x] 聚合搜索 6 秒上限 + 结果写回缓存
-- [ ] 来源页换源与旧播放器兜底策略对齐
+- [x] 来源页换源统一进入 Compose 详情，移除 DetailLauncher 旧播放器兜底
 - [x] 分类卡片点击直接进入搜索结果页，不经过搜索落地页
 - [x] 首页/分类/详情/搜索持久化缓存 + 设置页清除缓存
 - [x] 首页第二次启动优先显示上次卡片
@@ -89,8 +89,9 @@
 - [x] 关于/版本/配置地址/开源许可
 - [x] 设置项与旧 `*Setting` 双向绑定
 - [x] 多选项弹卡：单行居中，无独立“确定”，选中立即生效
-- [ ] 网络与代理：HTTP 代理、Hosts、超时（DoH 已接）
-- [ ] 设置页 TV 焦点逐项回归（手机滚动已验证）
+- [x] 播放超时设置（5–60 秒）
+- [x] 代理/Hosts：由接口 JSON 的 proxy/hosts 字段应用；DoH 已接
+- [ ] 设置页 TV 焦点逐项完整回归（首项/下移/返回已通过）
 
 ## M5 TV 回归（真机第一轮通过，剩余项进行中）
 
@@ -135,7 +136,9 @@
 - [ ] 播放器截图基线（视频 Surface 截图黑屏，待补）
 - [ ] 真机 TV 回归矩阵全部通过（设置/配置首项与返回已通过）
 - [x] 关闭 `compose_ui` fallback，`EntryActivity` 固定进入 Compose
-- [ ] 分批删除旧 XML/Fragment/Activity（先迁移外部 intent，再删 HomeActivity）
+- [x] 迁移外部 SEARCH/SEND/VIEW Intent
+- [x] 删除 HomeActivity 与旧首页 manifest 入口
+- [ ] 分批删除旧 Fragment/XML（保留 Live/Video/File）
 - [ ] 清理无引用临时 bridge；保留仍使用的桥
 - [x] GPL 归属、NOTICE、0.1.0 发布说明
 - [ ] 正式源码 tag

@@ -111,6 +111,7 @@ object TvPlayerKeyState {
     @Volatile var fullscreenActive: Boolean = false
     @Volatile var controlsVisible: Boolean = true
     @Volatile var playFocused: Boolean = false
+    @Volatile var menuOpen: Boolean = false
     @Volatile var requestControls: (() -> Unit)? = null
 }
 
@@ -249,6 +250,7 @@ fun PlayerControls(
         TvPlayerKeyState.fullscreenActive = !inline
         TvPlayerKeyState.controlsVisible = controlsVisible
         if (!controlsVisible) TvPlayerKeyState.playFocused = false
+        TvPlayerKeyState.menuOpen = showEpisodes || showMore || showDlna
         TvPlayerKeyState.requestControls = { controlsVisible = true }
     }
     DisposableEffect(Unit) {

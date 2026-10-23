@@ -16,6 +16,8 @@ public class PlayerSetting {
     private static final int MAX_BUFFER = 10;
     private static final int MIN_BACKGROUND = 0;
     private static final int MAX_BACKGROUND = 2;
+    private static final int MIN_TIMEOUT = 5;
+    private static final int MAX_TIMEOUT = 60;
 
     public static int getEngine() {
         return Math.clamp(Prefers.getInt("player_engine", ENGINE_EXO), ENGINE_EXO, ENGINE_MPV);
@@ -117,6 +119,14 @@ public class PlayerSetting {
 
     public static void putBuffer(int buffer) {
         Prefers.put("buffer", Math.clamp(buffer, MIN_BUFFER, MAX_BUFFER));
+    }
+
+    public static int getPlayTimeout() {
+        return Math.clamp(Prefers.getInt("play_timeout", 15), MIN_TIMEOUT, MAX_TIMEOUT);
+    }
+
+    public static void putPlayTimeout(int seconds) {
+        Prefers.put("play_timeout", Math.clamp(seconds, MIN_TIMEOUT, MAX_TIMEOUT));
     }
 
 }
