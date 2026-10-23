@@ -1,6 +1,7 @@
 package com.onefilm.android.tv.compose.feature.search
 
 import com.onefilm.android.tv.compose.bridge.SearchDataSource
+import com.onefilm.android.tv.compose.bridge.SearchProgress
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,7 +35,13 @@ object SearchSession {
         }
         job = scope.launch {
             _state.value = SearchUiState.Loading
+            var lastUpdate = 0L
             source.search(keywordTrimmed).collect { progress ->
+                // 聚合搜索每命中一个站点都会回调；这里按 180ms 合并，
+                // 避免 400+ 个站点完成时每一帧都重建整张卡片列表。
+                val now = System.currentTimeMillis()
+                if (!progress.done && now - lastUpdate < 180L) return@collect
+                lastUpdate = now
                 _state.value = when {
                     progress.items.isNotEmpty() -> SearchUiState.Content(
                         keywordTrimmed,

@@ -41,7 +41,7 @@ class AppSearchDataSource : SearchDataSource {
         // quickSearch 源优先，其余源继续并行；并发 32，返回一个追加一个。
         val sites = VodConfig.get().getSites().filter { it.isSearchable }
             .sortedByDescending { it.isQuickSearch }
-        val semaphore = Semaphore(32)
+        val semaphore = Semaphore(16)
         val completed = AtomicInteger(0)
         val seen = LinkedHashSet<String>()
         val items = ArrayList<MediaCard>()

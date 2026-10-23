@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.focus.onFocusChanged
@@ -797,9 +798,14 @@ private fun ConfigRow(
     onReload: () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
+    var reloadFocused by remember { mutableStateOf(false) }
+    val editFocus = remember { FocusRequester() }
+    val reloadFocus = remember { FocusRequester() }
     Row(
         modifier
             .fillMaxSize()
+            .focusRequester(editFocus)
+            .focusProperties { right = reloadFocus }
             .onFocusChanged { focused = it.isFocused }
             .border(
                 2.dp,
@@ -826,15 +832,27 @@ private fun ConfigRow(
             Modifier
                 .width(64.dp)
                 .height(36.dp)
+                .focusRequester(reloadFocus)
+                .focusProperties { left = editFocus }
+                .onFocusChanged { reloadFocused = it.isFocused }
                 .clip(RoundedCornerShape(10.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .background(
+                    if (reloadFocused) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.surfaceVariant,
+                )
+                .border(
+                    if (reloadFocused) 2.dp else 0.dp,
+                    MaterialTheme.colorScheme.primary,
+                    RoundedCornerShape(10.dp),
+                )
                 .clickable(enabled = !loading && value.isNotBlank(), onClick = onReload),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = if (loading) "加载中" else "加载",
                 fontSize = 13.sp,
-                color = if (!loading && value.isNotBlank()) MaterialTheme.colorScheme.onSurface
+                color = if (reloadFocused) MaterialTheme.colorScheme.onPrimary
+                else if (!loading && value.isNotBlank()) MaterialTheme.colorScheme.onSurface
                 else MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
             )
