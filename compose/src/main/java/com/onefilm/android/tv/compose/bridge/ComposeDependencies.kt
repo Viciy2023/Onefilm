@@ -17,5 +17,6 @@ object ComposeDependencies {
     lateinit var liveLauncher: LiveLauncher
     lateinit var externalIntentHandler: ExternalIntentHandler
     lateinit var netdiskDataSource: NetdiskDataSource
+    lateinit var updateDataSource: UpdateDataSource
     var dlnaDataSource: DlnaDataSource? = null
 }

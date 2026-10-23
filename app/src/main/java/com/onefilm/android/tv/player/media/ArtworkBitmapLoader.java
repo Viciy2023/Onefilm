@@ -27,7 +27,7 @@ import okhttp3.Callback;
 import okhttp3.Response;
 
 /**
- * OneFilm compatibility shim for FongMi's fork of DataSourceBitmapLoader.
+ * OneFilm compatibility shim for the upstream DataSourceBitmapLoader.
  * Phase 1 decodes artwork locally instead of using the media3-session loader.
  */
 public final class ArtworkBitmapLoader implements BitmapLoader {

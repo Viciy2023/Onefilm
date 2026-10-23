@@ -34,7 +34,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -272,12 +271,8 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    // DoH 单独一项；播放超时已移到设置页第 8 行单独设置项。
                     ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
-                    ActionRow("播放超时", "${snapshot.playTimeoutSeconds} 秒") { refresh { cyclePlayTimeout() } }
-
-
-
-
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
@@ -522,16 +517,6 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
                 }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ActionRow(
-                        title = "Dolby Vision 输出",
-                        value = snapshot.dvPolicyLabel,
-                    ) { refresh { cycleDolbyVisionPolicy() } }
-
-
-
-
-                }
             }
             Row(
                 Modifier.fillMaxWidth().weight(1f),
@@ -565,12 +550,22 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
                 }
+            }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ActionRow("恢复默认 UA", "清空自定义 UA") { refresh { resetUa() } }
-
-
-
-
+                    ActionRow("播放超时", "${snapshot.playTimeoutSeconds} 秒") { refresh { cyclePlayTimeout() } }
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ActionRow("重置 UA", "清空自定义") { refresh { resetUa() } }
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ActionRow(
+                        title = "Dolby Vision 输出",
+                        value = snapshot.dvPolicyLabel,
+                    ) { refresh { cycleDolbyVisionPolicy() } }
                 }
             }
             Row(
@@ -609,18 +604,7 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    InfoRow("版本", snapshot.version)
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    InfoRow("开源许可", "GPL-3.0 · 基于 FongMi/TV")
-
-
-
-
+                    InfoRow("版本", "${snapshot.version} · GPL-3.0")
                 }
             }
         }
@@ -969,6 +953,14 @@ private fun SwitchRow(
     onChange: (Boolean) -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
+    var dialogVisible by remember { mutableStateOf(false) }
+    val firstOptionFocus = remember { FocusRequester() }
+    LaunchedEffect(dialogVisible) {
+        if (dialogVisible) {
+            delay(80)
+            runCatching { firstOptionFocus.requestFocus() }
+        }
+    }
     Row(
         Modifier
             .fillMaxSize()
@@ -978,22 +970,71 @@ private fun SwitchRow(
                 if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
                 RoundedCornerShape(16.dp),
             )
-            .clickable { onChange(!checked) }
+            .clickable { dialogVisible = true }
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            title,
+            fontSize = 15.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            if (checked) "开启" else "关闭",
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+        )
+        Spacer(Modifier.width(6.dp))
+        Text("›", fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+
+    if (dialogVisible) {
+        SettingsDialog(
+            onDismiss = { dialogVisible = false },
+            width = 360.dp,
+            padding = 14.dp,
+        ) {
             Text(
-                subtitle,
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                title,
+                fontSize = 17.sp,
+                color = MaterialTheme.colorScheme.onSurface,
             )
+            if (subtitle.isNotBlank()) {
+                Spacer(Modifier.height(5.dp))
+                Text(
+                    subtitle,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SettingChip(
+                    label = "关闭",
+                    selected = !checked,
+                    modifier = Modifier.weight(1f).focusRequester(firstOptionFocus),
+                ) {
+                    onChange(false)
+                    dialogVisible = false
+                }
+                SettingChip(
+                    label = "开启",
+                    selected = checked,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    onChange(true)
+                    dialogVisible = false
+                }
+            }
         }
-        Spacer(Modifier.width(10.dp))
-        Switch(checked = checked, onCheckedChange = { onChange(it) })
     }
 }
 
@@ -1031,18 +1072,13 @@ private fun ChoiceRow(
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (!subtitle.isNullOrBlank()) {
-                Text(
-                    subtitle,
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
+        Text(
+            title,
+            fontSize = 15.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
         Spacer(Modifier.width(8.dp))
         Text(
             selectedLabel,
@@ -1067,6 +1103,20 @@ private fun ChoiceRow(
             },
             padding = 10.dp,
         ) {
+            Text(
+                title,
+                fontSize = 17.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (!subtitle.isNullOrBlank()) {
+                Text(
+                    subtitle,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(top = 5.dp, bottom = 6.dp),
+                )
+            }
             FlowRow(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
@@ -1114,11 +1164,16 @@ private fun ChoiceRow(
 }
 
 @Composable
-private fun SettingChip(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun SettingChip(
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     Box(
-        Modifier
+        modifier
             .clip(RoundedCornerShape(16.dp))
             .background(
                 when {
@@ -1128,19 +1183,27 @@ private fun SettingChip(label: String, selected: Boolean, onClick: () -> Unit) {
                 },
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,
-            fontSize = 13.sp,
+            fontSize = 14.sp,
             color = if (selected) MaterialTheme.colorScheme.background
             else MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
 
 @Composable
-private fun ActionRow(title: String, value: String, onClick: () -> Unit) {
+private fun ActionRow(
+    title: String,
+    value: String,
+    compact: Boolean = false,
+    onClick: () -> Unit,
+) {
     var focused by remember { mutableStateOf(false) }
     Row(
         Modifier
@@ -1152,26 +1215,29 @@ private fun ActionRow(title: String, value: String, onClick: () -> Unit) {
                 RoundedCornerShape(16.dp),
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(
+                horizontal = if (compact) 12.dp else 16.dp,
+                vertical = if (compact) 3.dp else 10.dp,
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             title,
-            fontSize = 15.sp,
+            fontSize = if (compact) 14.sp else 15.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
         Text(
             value,
-            fontSize = 13.sp,
+            fontSize = if (compact) 12.sp else 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = 180.dp),
+            modifier = Modifier.widthIn(max = if (compact) 120.dp else 180.dp),
         )
         Spacer(Modifier.width(6.dp))
-        Text("›", fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("›", fontSize = if (compact) 13.sp else 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

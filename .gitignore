@@ -30,3 +30,5 @@ docs/screenshots/*
 !docs/screenshots/readme/**
 key.properties
 KeyStore/
+
+README.md.bak.*

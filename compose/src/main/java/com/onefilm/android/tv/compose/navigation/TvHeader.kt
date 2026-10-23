@@ -117,7 +117,7 @@ fun TvHeader(
 ) {
     val centerText = notice?.takeIf { it.isNotBlank() }
         ?: siteName?.takeIf { it.isNotBlank() }
-        ?: "ONEFILM 影视"
+        ?: "ONEFILM"
     val entries = listOf(
         TvNavEntry("历史", Icons.Outlined.History, route = Routes.HISTORY) { onNavigate(Routes.HISTORY) },
         TvNavEntry("收藏", Icons.Outlined.Star, route = Routes.LIBRARY) { onNavigate(Routes.LIBRARY) },
@@ -303,7 +303,7 @@ fun TvBrandRow(
     val resolvedCenter = centerText.takeIf { it.isNotBlank() }
         ?: TvBrandState.notice.takeIf { it.isNotBlank() }
         ?: TvBrandState.siteName.takeIf { it.isNotBlank() }
-        ?: "ONEFILM 影视"
+        ?: "ONEFILM"
     var now by remember { mutableStateOf(LocalDateTime.now()) }
     LaunchedEffect(Unit) {
         while (true) {

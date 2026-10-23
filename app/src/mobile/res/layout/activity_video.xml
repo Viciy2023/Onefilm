@@ -139,7 +139,7 @@
                         android:singleLine="true"
                         android:textColor="@color/white"
                         android:textSize="14sp"
-                        tools:text="導演：FongMi" />
+                        tools:text="導演：OneFilm" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/actor"
@@ -152,7 +152,7 @@
                         android:maxLines="1"
                         android:textColor="@color/white"
                         android:textSize="14sp"
-                        tools:text="演員：FongMi" />
+                        tools:text="演員：OneFilm" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"

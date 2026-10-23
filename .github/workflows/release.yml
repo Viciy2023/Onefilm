@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      VERSION_NAME: ${{ github.ref_name }}
+      GITHUB_REPOSITORY_NAME: ${{ github.repository }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set version
+        shell: bash
+        run: |
+          echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$(git rev-list --count HEAD)" >> "$GITHUB_ENV"
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Validate signing secrets
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE_BASE64" || (echo "ANDROID_KEYSTORE_BASE64 is required" && exit 1)
+
+      - name: Restore signing key
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          mkdir -p KeyStore
+          echo "$KEYSTORE_BASE64" | base64 -d > KeyStore/onefilm-onetv.jks
+          cat > key.properties <<EOF
+          storeFile=KeyStore/onefilm-onetv.jks
+          keyAlias=$KEY_ALIAS
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: Build signed release
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleLeanbackRelease :app:assembleMobileRelease \
+            -PversionName="$VERSION_NAME" \
+            -PversionCode="$VERSION_CODE" \
+            -PskipComposeMapping \
+            --no-daemon --console=plain
+
+      - name: Upload GitHub Release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            app/build/outputs/apk/leanback/release/OneFilm-TV-*.apk
+            app/build/outputs/apk/mobile/release/OneFilm-Mobile-*.apk
+          generate_release_notes: true
+
+      - name: Publish R2 update manifest
+        shell: pwsh
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_API_TOKEN: ${{ secrets.R2_API_TOKEN }}
+        run: |
+          ./tools/publish-r2-manifest.ps1 `
+            -Version "$env:VERSION_NAME" `
+            -VersionCode "$env:VERSION_CODE" `
+            -Repo "$env:GITHUB_REPOSITORY_NAME" `
+            -Tag "${{ github.ref_name }}" `
+            -BaseUrl "https://onefilmapk.alibabagroup.de5.net"

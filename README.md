@@ -1,6 +1,6 @@
-# OneFilm 影视
+# 壹影 OneFilm
 
-OneFilm 是一款面向 Android TV 的影视聚合客户端。项目基于 Jetpack Compose 重做电视端界面，保留了 FongMi/TV 的播放器与 Spider 引擎，支持远程配置、分类浏览、聚合搜索、详情、播放、收藏和历史。
+壹影（OneFilm）是一款面向 Android TV 的影视聚合客户端。项目基于 Jetpack Compose 重做电视端界面，保留了 FongMi/TV 的播放器与 Spider 引擎，支持远程配置、分类浏览、聚合搜索、详情、播放、收藏和历史。
 
 > **重要声明**
 >

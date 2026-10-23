@@ -101,6 +101,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setLiveLauncher(new com.onefilm.android.tv.composebridge.AppLiveLauncher());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setExternalIntentHandler(new com.onefilm.android.tv.composebridge.AppExternalIntentHandler());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setNetdiskDataSource(new com.onefilm.android.tv.composebridge.AppNetdiskDataSource());
+        com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setUpdateDataSource(new com.onefilm.android.tv.composebridge.AppUpdateDataSource());
         try {
             Class<?> dlnaClass = Class.forName("com.onefilm.android.tv.composebridge.AppDlnaDataSource");
             com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setDlnaDataSource((com.onefilm.android.tv.compose.bridge.DlnaDataSource) dlnaClass.getDeclaredConstructor().newInstance());

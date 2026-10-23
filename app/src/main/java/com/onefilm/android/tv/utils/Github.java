@@ -1,18 +1,20 @@
 package com.onefilm.android.tv.utils;
 
+/**
+ * GitHub is only the APK distribution channel for OneFilm/壹影.
+ * Update metadata is hosted on R2 (see BuildConfig.UPDATE_STABLE_URL).
+ */
 public class Github {
 
-    public static final String URL = "https://raw.githubusercontent.com/FongMi/Release/fongmi";
+    /** Replace this if the public repository is renamed. */
+    public static final String REPO = "Viciy2023/Onefilm";
+    public static final String RELEASES = "https://github.com/" + REPO + "/releases";
 
-    private static String getUrl(String name) {
-        return URL + "/apk/" + name;
+    public static String releaseUrl(String tag) {
+        return RELEASES + "/tag/" + tag;
     }
 
-    public static String getJson(String name) {
-        return getUrl(name + ".json");
-    }
-
-    public static String getApk(String name) {
-        return getUrl(name + ".apk");
+    public static String updateManifestUrl() {
+        return com.onefilm.android.tv.BuildConfig.UPDATE_STABLE_URL;
     }
 }

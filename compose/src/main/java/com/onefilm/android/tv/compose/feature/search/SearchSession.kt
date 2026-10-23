@@ -40,7 +40,7 @@ object SearchSession {
                 // 聚合搜索每命中一个站点都会回调；这里按 180ms 合并，
                 // 避免 400+ 个站点完成时每一帧都重建整张卡片列表。
                 val now = System.currentTimeMillis()
-                if (!progress.done && now - lastUpdate < 250L) return@collect
+                if (!progress.done && now - lastUpdate < 180L) return@collect
                 lastUpdate = now
                 _state.value = when {
                     progress.items.isNotEmpty() -> SearchUiState.Content(

@@ -35,6 +35,15 @@ def hasReleaseSigning =
     signingStorePassword &&
     signingKeyPassword
 
+// 更新清单放在 R2；APK 本身由 GitHub Releases 分发。
+// 可在 local.properties 中覆盖：
+//   onefilm.updateStableUrl=https://apk.example.com/onefilm-stable.json
+//   onefilm.updateBetaUrl=https://apk.example.com/onefilm-beta.json
+def updateStableUrl = localProps['onefilm.updateStableUrl'] ?: 'https://onefilmapk.alibabagroup.de5.net/onefilm-stable.json'
+def updateBetaUrl = localProps['onefilm.updateBetaUrl'] ?: 'https://onefilmapk.alibabagroup.de5.net/onefilm-beta.json'
+def appVersionName = project.findProperty('versionName') ?: '0.1.0'
+def appVersionCode = (project.findProperty('versionCode') ?: '1').toString().toInteger()
+
 android {
     namespace = 'com.onefilm.android.tv'
 
@@ -44,8 +53,10 @@ android {
         applicationId "com.onefilm.android.tv"
         minSdk libs.versions.minSdk.get().toInteger()
         targetSdk libs.versions.targetSdk.get().toInteger()
-        versionCode 1
-        versionName "0.1.0"
+        versionCode appVersionCode
+        versionName appVersionName
+        buildConfigField "String", "UPDATE_STABLE_URL", "\"${updateStableUrl}\""
+        buildConfigField "String", "UPDATE_BETA_URL", "\"${updateBetaUrl}\""
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = ["room.schemaLocation": "$projectDir/schemas".toString(), "eventBusIndex": "com.onefilm.android.tv.event.EventIndex"]

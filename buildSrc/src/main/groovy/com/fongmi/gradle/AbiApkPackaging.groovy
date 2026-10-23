@@ -10,10 +10,12 @@ class AbiApkPackaging {
         def android = project.extensions.getByName('android')
         def components = project.extensions.getByName('androidComponents')
         configureAbis(android)
-        components.onVariants(components.selector().withBuildType('release')) { variant ->
-            def device = configureOutputFileNames(variant)
-            configureFinalizer(project, android, components, variant, apkArtifact)
-            configureReleaseExport(project, variant, device)
+        components.onVariants(components.selector().all()) { variant ->
+            def device = configureOutputFileNames(variant, android)
+            if (variant.buildType == 'release') {
+                configureFinalizer(project, android, components, variant, apkArtifact)
+                configureReleaseExport(project, variant, device)
+            }
         }
     }
 
@@ -30,12 +32,14 @@ class AbiApkPackaging {
         }
     }
 
-    private static String configureOutputFileNames(def variant) {
+    private static String configureOutputFileNames(def variant, def android) {
         def flavors = variant.productFlavors.collectEntries { [(it.first): it.second] }
         def device = flavors['device'] ?: 'device'
+        def label = device == 'leanback' ? 'TV' : (device == 'mobile' ? 'Mobile' : device)
+        def version = android.defaultConfig.versionName?.toString()?.trim() ?: 'unknown'
         variant.outputs.each { output ->
-            def abi = output.filters.find { it.filterType.name() == 'ABI' }?.identifier?.replace('-', '_') ?: 'universal'
-            output.outputFileName.set("${device}-${abi}.apk")
+            def abi = output.filters.find { it.filterType.name() == 'ABI' }?.identifier ?: 'universal'
+            output.outputFileName.set("OneFilm-${label}-v${version}-${abi}.apk")
         }
         return device
     }
@@ -72,7 +76,7 @@ class AbiApkPackaging {
         project.tasks.matching { it.name == taskName }.configureEach {
             doLast {
                 project.copy {
-                    from project.fileTree(dir: apkDirectory, include: "${device}-*.apk")
+                    from project.fileTree(dir: apkDirectory, include: "OneFilm-${device == 'leanback' ? 'TV' : (device == 'mobile' ? 'Mobile' : device)}-*.apk")
                     into project.rootProject.file('Release/apk')
                     eachFile { it.path = it.name }
                     includeEmptyDirs = false

@@ -15,9 +15,6 @@ import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -70,6 +67,7 @@ import com.onefilm.android.tv.compose.feature.config.ConfigScreen
 import com.onefilm.android.tv.compose.feature.lines.LinesScreen
 import com.onefilm.android.tv.compose.navigation.OneFilmNavHost
 import com.onefilm.android.tv.compose.navigation.Routes
+import kotlinx.coroutines.delay
 
 class ComposeMainActivity : ComponentActivity() {
 
@@ -217,6 +215,17 @@ class ComposeMainActivity : ComponentActivity() {
                 var showConfigDialog by remember { mutableStateOf(false) }
                 var showExitDialog by remember { mutableStateOf(false) }
                 var showLinesDialog by remember { mutableStateOf(false) }
+                var updateInfo by remember { mutableStateOf<com.onefilm.android.tv.compose.bridge.UpdateInfo?>(null) }
+                var updateProgress by remember { mutableIntStateOf(-1) }
+                var updateError by remember { mutableStateOf<String?>(null) }
+
+                LaunchedEffect(Unit) {
+                    // 等首屏稳定后再检查更新，避免更新清单请求与首屏重组叠加。
+                    delay(1500)
+                    runCatching {
+                        ComposeDependencies.updateDataSource.check { info -> updateInfo = info }
+                    }
+                }
 
                 LaunchedEffect(Unit) { homeViewModel.retry() }
 
@@ -242,15 +251,44 @@ class ComposeMainActivity : ComponentActivity() {
                 }
                 if (showExitDialog) {
                     BackHandler(enabled = true) { showExitDialog = false }
-                    AlertDialog(
-                        onDismissRequest = { showExitDialog = false },
-                        title = { Text("退出应用") },
-                        text = { Text("确定要退出 OneFilm 吗？") },
-                        confirmButton = {
-                            TextButton(onClick = { finish() }) { Text("退出") }
+                    ExitAppDialog(
+                        onConfirm = { finish() },
+                        onDismiss = { showExitDialog = false },
+                    )
+                }
+                updateInfo?.let { info ->
+                    BackHandler(enabled = true) {
+                        if (updateProgress < 0) {
+                            updateInfo = null
+                            updateError = null
+                        }
+                    }
+                    UpdatePromptDialog(
+                        version = info.version,
+                        notes = info.notes,
+                        progress = updateProgress,
+                        error = updateError,
+                        onConfirm = {
+                            updateProgress = 0
+                            updateError = null
+                            ComposeDependencies.updateDataSource.download(
+                                url = info.url,
+                                onProgress = { updateProgress = it },
+                                onSuccess = {
+                                    updateProgress = -1
+                                    updateInfo = null
+                                },
+                                onError = { message ->
+                                    updateProgress = -1
+                                    updateError = message.ifBlank { "下载失败，请稍后重试。" }
+                                },
+                            )
                         },
-                        dismissButton = {
-                            TextButton(onClick = { showExitDialog = false }) { Text("取消") }
+                        onDismiss = {
+                            ComposeDependencies.updateDataSource.cancelDownload()
+                            updateProgress = -1
+                            updateError = null
+                            updateInfo = null
                         },
                     )
                 }
