@@ -193,6 +193,7 @@ dependencies {
     leanbackImplementation libs.androidautosize
     mobileImplementation libs.biometric
     mobileImplementation libs.zxing.android.embedded
+    mobileImplementation 'io.coil-kt:coil-compose:2.7.0'
     annotationProcessor libs.room.compiler
     annotationProcessor libs.eventbus.annotation.processor
     annotationProcessor libs.glide.compiler
