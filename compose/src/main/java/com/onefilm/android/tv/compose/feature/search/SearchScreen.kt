@@ -479,6 +479,7 @@ private fun SearchResults(
     }
     val cardFocusRequesters = remember { mutableMapOf<String, FocusRequester>() }
     var restoreComplete by remember(focusToken) { mutableStateOf(false) }
+    var autoFocusedKeyword by remember { mutableStateOf<String?>(null) }
     val restoringCard = !restoreComplete &&
         SearchFocusState.cardKey != null &&
         SearchFocusState.query == content?.keyword
@@ -497,6 +498,15 @@ private fun SearchResults(
             restoreComplete = true
         } else {
             restoreComplete = true
+            // 新关键词的首批结果到达后，把初始焦点从左侧站点栏移到第一张卡片。
+            // 只在关键词变化时执行一次，切换站点筛选不会反复抢焦点。
+            val keyword = content?.keyword
+            if (keyword != null && visibleItems.isNotEmpty() && autoFocusedKeyword != keyword) {
+                autoFocusedKeyword = keyword
+                delay(120)
+                val firstKey = "${visibleItems.first().key}:${visibleItems.first().id}"
+                runCatching { cardFocusRequesters[firstKey]?.requestFocus() }
+            }
         }
     }
 

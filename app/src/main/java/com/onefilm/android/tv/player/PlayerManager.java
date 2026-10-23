@@ -419,12 +419,12 @@ public class PlayerManager implements ParseCallback {
     }
 
     public void stop() {
-        engine.stop();
+        if (engine != null) engine.stop();
         stopParse();
     }
 
     public void clearMediaItems() {
-        player.clearMediaItems();
+        if (player != null) player.clearMediaItems();
     }
 
     public boolean isRepeatOne() {
