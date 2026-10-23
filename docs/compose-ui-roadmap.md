@@ -126,8 +126,8 @@
 - [x] 历史/收藏页进入与详情返回焦点恢复
 - [ ] TV 关键页面截图基线
 - [ ] 真机 TV 回归矩阵全部通过
-- [ ] 删除 `compose_ui` 开关与 TV 旧 UI fallback（真机通过后）
-- [ ] 分批删除旧 XML/Fragment/Activity
+- [x] 关闭 `compose_ui` fallback，`EntryActivity` 固定进入 Compose
+- [ ] 分批删除旧 XML/Fragment/Activity（先 HomeActivity 及独占资源）
 - [ ] 清理无引用临时 bridge；保留仍使用的桥
 - [ ] GPL 归属、版权页、发布文档
 - [ ] 包体/ABI/R8 优化

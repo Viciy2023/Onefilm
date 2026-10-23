@@ -16,7 +16,7 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 | M3 Compose 播放器 | 95% | 旧 PlayerManager 内核已接入；全屏控件自动隐藏、左右 5 秒 seek、确认暂停/继续、进度条焦点高亮已完成；TV 底部精简条和手机手势未完成 |
 | M4 设置页 | 90% | 播放/解码/字幕/弹幕/预加载/接口/主题/二维码推送已接；网络代理、Hosts、超时未迁移 |
 | M5 TV 回归 | 85% | 真机已安装 Release；主页向下、分类快速右移、卡片放大不位移、历史/收藏焦点恢复通过；搜索/播放器矩阵仍待补 |
-| M6 收尾 | 30% | 已建立 M6 计划、单元测试通过、instrumentation 10/10、真机 Release 安装和第一轮矩阵；旧 UI/临时 bridge 未删除，截图基线和发布文档未完成 |
+| M6 收尾 | 35% | 已建立 M6 计划、单元测试通过、instrumentation 10/10、真机 Release 安装和第一轮矩阵；已关闭旧 UI fallback；旧 UI/bridge 未删除，截图基线和发布文档未完成 |
 
 总体判断：**Compose UI 主体约 95% 完成，M5 真机回归约 85%，M6 收尾已启动。**
 当前最大风险已经变成 **旧 UI 删除的回归缺口** 和 **TV 真机未完成系统化回归**；卡片缩放/主页向下焦点这两个高频问题已在模拟器闭环。
@@ -30,7 +30,7 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 - [x] 手机包名：`com.onefilm.android.tv.mobile`
 - [x] `leanback` / `mobile` 两 flavor 构建。
 - [x] Compose 宿主 `ComposeMainActivity` + Navigation Compose。
-- [x] `EntryActivity` 启动路由与旧 UI fallback 开关。
+- [x] `EntryActivity` 固定启动 `ComposeMainActivity`；旧 UI fallback 开关已移除。
 - [x] 白色启动页：LOGO + 多彩循环进度条 + “正在加载，请稍候！”。
 - [x] x86 模拟器临时 ABI 打包流程（构建后还原，不影响发布 ABI）。
 
@@ -155,8 +155,9 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 - [x] 已有单元测试：`HomeFeedMapperTest`、`DetailViewModelTest`、`HomeViewModelTest`、`DolbyVisionPolicyTest`，当前 `testDebugUnitTest` 通过。
 - [x] Compose instrumentation 测试：`connectedDebugAndroidTest` 在 `Television_1080p(AVD)` 上 10/10 通过（2026-10-22），含卡片焦点不改变布局的回归测试。
 - [ ] 建立 TV 关键页面截图基线（首页/分类/详情/播放器/设置）。
-- [ ] TV 真机完整 D-pad/返回矩阵，通过后再删除旧 UI fallback。
-- [ ] 删除旧 XML/Fragment/Activity 与 `compose_ui` 回退（按依赖清单分批，不一次性删除）。
+- [ ] TV 真机完整 D-pad/返回矩阵，通过后再删除旧 UI 文件。
+- [x] 关闭 `compose_ui` fallback，`EntryActivity` 固定进入 Compose。
+- [ ] 分批删除旧 XML/Fragment/Activity（按依赖清单，不一次性删除）。
 - [ ] 清理确实无引用的临时 bridge；保留 `DetailLauncher`、`LiveLauncher`、`AppLegacyPlayer` 等仍有用途的桥。
 - [ ] 发布流程、GPL/NOTICE、版权页、源码 tag。
 - [ ] 包体/ABI/R8 优化。
@@ -232,6 +233,7 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 | 真机 TV 安装 | 通过（`MiTV-ASTP0`，2026-10-23 08:19:03） |
 | 真机主页向下/卡片移动/分类快速右移 | 通过 |
 | 真机历史页进入与详情返回焦点 | 通过（本轮修复） |
+| 真机关闭 fallback 后启动 | 通过（仍进入 Compose 主页） |
 | 手机真机 | 未连接，待验证 |
 
 ## 8. 已知测试限制

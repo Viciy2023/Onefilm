@@ -19,7 +19,6 @@ import androidx.annotation.Nullable;
 
 import com.onefilm.android.tv.R;
 import com.onefilm.android.tv.compose.host.ComposeMainActivity;
-import com.onefilm.android.tv.setting.PlayerSetting;
 import com.onefilm.android.tv.ui.custom.SplashProgressView;
 
 /** OneFilm: launcher router between the Compose UI and the legacy XML UI. */
@@ -91,9 +90,7 @@ public class EntryActivity extends Activity {
             return;
         }
         routed = true;
-        Intent intent = new Intent(this,
-                PlayerSetting.isComposeUi() ? ComposeMainActivity.class : HomeActivity.class);
-        startActivity(intent);
+        startActivity(new Intent(this, ComposeMainActivity.class));
         finish();
     }
 
