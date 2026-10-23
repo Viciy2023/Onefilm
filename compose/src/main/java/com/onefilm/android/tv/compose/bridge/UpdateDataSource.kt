@@ -4,6 +4,7 @@ data class UpdateInfo(
     val version: String,
     val notes: String,
     val url: String,
+    val force: Boolean,
 )
 
 /**

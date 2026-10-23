@@ -95,6 +95,7 @@ class AppSettingsDataSource : SettingsDataSource {
             5 -> "网络壁纸"
             else -> "纯色 ${Setting.getWall()}"
         },
+        forceUpdate = Setting.getForceUpdate(),
         )
     }
 
@@ -300,6 +301,10 @@ class AppSettingsDataSource : SettingsDataSource {
 
     override fun setIncognito(enabled: Boolean) {
         Setting.putIncognito(enabled)
+    }
+
+    override fun setForceUpdate(enabled: Boolean) {
+        Setting.putForceUpdate(enabled)
     }
 
     override fun setThemeMode(mode: Int) {

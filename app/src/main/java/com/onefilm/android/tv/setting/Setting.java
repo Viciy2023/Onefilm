@@ -129,6 +129,14 @@ public class Setting {
         Prefers.put("update", update);
     }
 
+    public static boolean getForceUpdate() {
+        return Prefers.getBoolean("force_update", false);
+    }
+
+    public static void putForceUpdate(boolean forceUpdate) {
+        Prefers.put("force_update", forceUpdate);
+    }
+
     public static boolean isAdblock() {
         return Prefers.getBoolean("adblock", true);
     }

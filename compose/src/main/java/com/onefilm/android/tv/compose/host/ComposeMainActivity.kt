@@ -220,8 +220,8 @@ class ComposeMainActivity : ComponentActivity() {
                 var updateError by remember { mutableStateOf<String?>(null) }
 
                 LaunchedEffect(Unit) {
-                    // 等首屏稳定后再检查更新，避免更新清单请求与首屏重组叠加。
-                    delay(1500)
+                    // 启动进入主界面后等待 60 秒再检查更新，避免打扰首屏播放。
+                    delay(60_000L)
                     runCatching {
                         ComposeDependencies.updateDataSource.check { info -> updateInfo = info }
                     }
@@ -258,7 +258,7 @@ class ComposeMainActivity : ComponentActivity() {
                 }
                 updateInfo?.let { info ->
                     BackHandler(enabled = true) {
-                        if (updateProgress < 0) {
+                        if (!info.force && updateProgress < 0) {
                             updateInfo = null
                             updateError = null
                         }
@@ -268,6 +268,7 @@ class ComposeMainActivity : ComponentActivity() {
                         notes = info.notes,
                         progress = updateProgress,
                         error = updateError,
+                        force = info.force,
                         onConfirm = {
                             updateProgress = 0
                             updateError = null
@@ -285,10 +286,12 @@ class ComposeMainActivity : ComponentActivity() {
                             )
                         },
                         onDismiss = {
-                            ComposeDependencies.updateDataSource.cancelDownload()
-                            updateProgress = -1
-                            updateError = null
-                            updateInfo = null
+                            if (!info.force) {
+                                ComposeDependencies.updateDataSource.cancelDownload()
+                                updateProgress = -1
+                                updateError = null
+                                updateInfo = null
+                            }
                         },
                     )
                 }

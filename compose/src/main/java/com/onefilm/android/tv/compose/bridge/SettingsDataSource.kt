@@ -39,6 +39,7 @@ data class SettingsSnapshot(
     val cacheDays: Int,
     val cacheSizeLabel: String,
     val wallpaperLabel: String,
+    val forceUpdate: Boolean,
 )
 
 data class ConfigLine(
@@ -94,6 +95,7 @@ interface SettingsDataSource {
     fun cycleDoh()
     fun cyclePlayTimeout()
     fun setIncognito(enabled: Boolean)
+    fun setForceUpdate(enabled: Boolean)
     fun configPushUrl(): String
     fun qrBitmap(content: String, size: Int): Bitmap?
     fun setThemeMode(mode: Int)

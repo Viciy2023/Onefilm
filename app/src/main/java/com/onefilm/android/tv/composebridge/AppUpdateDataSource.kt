@@ -27,6 +27,7 @@ class AppUpdateDataSource : UpdateDataSource {
                     version = info.version,
                     notes = info.notes.ifBlank { "发现新版本，建议更新后再使用。" },
                     url = info.url,
+                    force = Setting.getForceUpdate(),
                 )
             } else {
                 null

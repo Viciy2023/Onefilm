@@ -567,6 +567,13 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                         value = snapshot.dvPolicyLabel,
                     ) { refresh { cycleDolbyVisionPolicy() } }
                 }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    SwitchRow(
+                        "强制升级",
+                        "检测到新版本后自动下载并强制更新",
+                        snapshot.forceUpdate,
+                    ) { refresh { setForceUpdate(it) } }
+                }
             }
             Row(
                 Modifier.fillMaxWidth().weight(1f),

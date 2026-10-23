@@ -126,16 +126,20 @@ fun UpdatePromptDialog(
     notes: String,
     progress: Int,
     error: String?,
+    force: Boolean,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val cancelFocus = remember { FocusRequester() }
+    val confirmFocus = remember { FocusRequester() }
+    val autoStarted = remember { mutableStateOf(false) }
     val downloading = progress >= 0
     Dialog(
-        onDismissRequest = { if (!downloading) onDismiss() },
+        onDismissRequest = { if (!force && !downloading) onDismiss() },
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             dismissOnClickOutside = false,
+            dismissOnBackPress = !force,
         ),
     ) {
         Box(
@@ -162,6 +166,14 @@ fun UpdatePromptDialog(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
+                    if (force) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "当前已启用强制升级，更新完成后才能继续使用。",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                     Spacer(Modifier.height(6.dp))
                     Text(
                         text = notes,
@@ -192,15 +204,18 @@ fun UpdatePromptDialog(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        DialogAction(
-                            label = "稍后",
-                            focusRequester = cancelFocus,
-                            enabled = !downloading,
-                            modifier = Modifier.weight(1f),
-                            onClick = onDismiss,
-                        )
+                        if (!force) {
+                            DialogAction(
+                                label = "稍后",
+                                focusRequester = cancelFocus,
+                                enabled = !downloading,
+                                modifier = Modifier.weight(1f),
+                                onClick = onDismiss,
+                            )
+                        }
                         DialogAction(
                             label = if (downloading) "下载中 $progress%" else "立即更新",
+                            focusRequester = if (force) confirmFocus else null,
                             enabled = !downloading,
                             primary = true,
                             modifier = Modifier.weight(1f),
@@ -213,7 +228,15 @@ fun UpdatePromptDialog(
     }
     LaunchedEffect(Unit) {
         delay(60)
-        runCatching { cancelFocus.requestFocus() }
+        runCatching {
+            if (force) confirmFocus.requestFocus() else cancelFocus.requestFocus()
+        }
+    }
+    LaunchedEffect(force) {
+        if (force && !autoStarted.value) {
+            autoStarted.value = true
+            onConfirm()
+        }
     }
 }
 
