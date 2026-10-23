@@ -20,12 +20,17 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.bridge.LibraryData
@@ -33,6 +38,7 @@ import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.design.component.AppLogoLoading
 import com.onefilm.android.tv.compose.design.component.TvPosterCard
 import com.onefilm.android.tv.compose.navigation.TvBrandRow
+import kotlinx.coroutines.delay
 
 @Composable
 fun LibraryScreen(
@@ -49,6 +55,19 @@ fun LibraryScreen(
     var deleteMode by remember(historyMode) { mutableStateOf(false) }
     var pendingDelete by remember { mutableStateOf<MediaCard?>(null) }
     var pendingClear by remember { mutableStateOf(false) }
+    val focusRequesters = remember { mutableMapOf<String, FocusRequester>() }
+    var lastFocusedKey by rememberSaveable { mutableStateOf<String?>(null) }
+
+    // 历史/收藏页没有导航行，进入页面或从详情返回时必须主动恢复卡片焦点，
+    // 否则遥控器会停在“无焦点”状态，必须多按一次方向键才出现选中框。
+    LaunchedEffect(items.size) {
+        if (items.isNotEmpty()) {
+            delay(120)
+            val target = lastFocusedKey?.takeIf { focusRequesters.containsKey(it) }
+                ?: items.firstOrNull()?.let { "${it.key}:${it.id}" }
+            target?.let { focusRequesters[it]?.requestFocus() }
+        }
+    }
 
     Column(Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 24.dp)) {
         TvBrandRow(
@@ -118,11 +137,16 @@ fun LibraryScreen(
                 verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
                 itemsIndexed(items, key = { index, card -> "${card.key}:${card.id}:$index" }) { _, card ->
+                    val cardKey = "${card.key}:${card.id}"
+                    val requester = focusRequesters.getOrPut(cardKey) { FocusRequester() }
                     TvPosterCard(
                         title = card.title,
                         posterUrl = card.posterUrl,
                         subtitle = card.subtitle,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(requester)
+                            .onFocusChanged { if (it.isFocused) lastFocusedKey = cardKey },
                         onClick = {
                             if (deleteMode) pendingDelete = card else onCardClick(card)
                         },
