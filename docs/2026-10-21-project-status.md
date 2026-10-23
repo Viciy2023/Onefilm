@@ -156,7 +156,7 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 
 - [x] 建立 M6 执行计划：`docs/superpowers/plans/2026-10-22-m6-closeout.md`。
 - [x] 已有单元测试：`HomeFeedMapperTest`、`DetailViewModelTest`、`HomeViewModelTest`、`DolbyVisionPolicyTest`，当前 `testDebugUnitTest` 通过。
-- [x] Compose instrumentation 测试：`connectedDebugAndroidTest` 在 `Television_1080p(AVD)` 上 10/10 通过（2026-10-22），含卡片焦点不改变布局的回归测试。
+- [x] Compose instrumentation 测试：`connectedDebugAndroidTest` 在 `MiTV-ASTP0` 上 10/10 通过（2026-10-23），含卡片焦点不改变布局的回归测试。
 - [x] 建立 TV 关键页面截图基线（首页/分类/详情/设置）：`docs/screenshots/`。
 - [ ] TV 真机完整 D-pad/返回矩阵，通过后再删除旧 UI 文件。
 - [x] 关闭 `compose_ui` fallback，`EntryActivity` 固定进入 Compose。
