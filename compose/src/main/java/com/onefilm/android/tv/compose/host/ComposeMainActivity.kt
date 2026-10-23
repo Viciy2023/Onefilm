@@ -51,6 +51,7 @@ import com.onefilm.android.tv.compose.feature.library.LibraryRoute
 import com.onefilm.android.tv.compose.feature.player.PlaybackEpisode
 import com.onefilm.android.tv.compose.feature.player.PlaybackSession
 import com.onefilm.android.tv.compose.feature.player.PlayerRoute
+import com.onefilm.android.tv.compose.feature.player.TvPlayerKeyState
 import com.onefilm.android.tv.compose.feature.search.SearchRoute
 import com.onefilm.android.tv.compose.feature.search.SearchSession
 import com.onefilm.android.tv.compose.feature.source.SourceRoute
@@ -74,6 +75,35 @@ class ComposeMainActivity : ComponentActivity() {
     private var playerRouteActive = false
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // 控件隐藏时焦点不在任何播放按钮上，Compose 的 onPreviewKeyEvent
+        // 收不到按键；这里在全屏播放路由直接处理确认/左右键。
+        if (event.action == KeyEvent.ACTION_DOWN && TvPlayerKeyState.fullscreenActive) {
+            if (!TvPlayerKeyState.controlsVisible) {
+                when (event.keyCode) {
+                    KeyEvent.KEYCODE_DPAD_LEFT -> {
+                        PlaybackSession.seekBy(-5_000L)
+                        TvPlayerKeyState.requestControls?.invoke()
+                        return true
+                    }
+                    KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                        PlaybackSession.seekBy(5_000L)
+                        TvPlayerKeyState.requestControls?.invoke()
+                        return true
+                    }
+                    KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                        PlaybackSession.toggle()
+                        TvPlayerKeyState.requestControls?.invoke()
+                        return true
+                    }
+                }
+            } else if (TvPlayerKeyState.playFocused &&
+                (event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER || event.keyCode == KeyEvent.KEYCODE_ENTER)
+            ) {
+                // 暂停后控件重新出现，焦点在播放按钮上时也保证确认键能继续。
+                PlaybackSession.toggle()
+                return true
+            }
+        }
         return super.dispatchKeyEvent(event)
     }
 

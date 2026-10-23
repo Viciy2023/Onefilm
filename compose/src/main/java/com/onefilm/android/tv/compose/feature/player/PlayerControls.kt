@@ -51,6 +51,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -101,6 +102,17 @@ import com.onefilm.android.tv.compose.bridge.DlnaDevice
 import com.onefilm.android.tv.compose.design.component.AppLogoLoading
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+
+/**
+ * 全屏播放器的按键状态。Activity 在控件隐藏时直接消费确认/左右键，
+ * 避免控件移除后焦点丢失导致按键到不了 Compose。
+ */
+object TvPlayerKeyState {
+    @Volatile var fullscreenActive: Boolean = false
+    @Volatile var controlsVisible: Boolean = true
+    @Volatile var playFocused: Boolean = false
+    @Volatile var requestControls: (() -> Unit)? = null
+}
 
 private val Ink = Color(0xFFF5F5F7)
 private val InkDim = Color(0x8AF5F5F7)
@@ -233,6 +245,19 @@ fun PlayerControls(
     val playFocus = remember { FocusRequester() }
     val fullscreenFocus = remember { FocusRequester() }
 
+    SideEffect {
+        TvPlayerKeyState.fullscreenActive = !inline
+        TvPlayerKeyState.controlsVisible = controlsVisible
+        if (!controlsVisible) TvPlayerKeyState.playFocused = false
+        TvPlayerKeyState.requestControls = { controlsVisible = true }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            TvPlayerKeyState.fullscreenActive = false
+            TvPlayerKeyState.requestControls = null
+        }
+    }
+
     val menuEntries = buildList {
         add(MenuEntry("上集", onPrevious != null) { onPrevious?.invoke() })
         add(MenuEntry("下集", onNext != null) { onNext?.invoke() })
@@ -324,6 +349,8 @@ fun PlayerControls(
     }
     LaunchedEffect(player, controlsVisible, isTv, inline) {
         if (!inline && controlsVisible && isTv) {
+            // 等控件完成淡入后再请求焦点，避免暂停后确认键落空。
+            delay(100)
             runCatching { playFocus.requestFocus() }
         }
     }
@@ -458,6 +485,7 @@ fun PlayerControls(
                         .size(if (inline) 46.dp else 64.dp)
                         .focusRequester(playFocus)
                         .focusable()
+                        .onFocusChanged { TvPlayerKeyState.playFocused = it.isFocused }
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.32f))
                         .clickable { PlaybackSession.toggle() },

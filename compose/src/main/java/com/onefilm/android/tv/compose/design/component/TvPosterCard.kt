@@ -1,7 +1,7 @@
 package com.onefilm.android.tv.compose.design.component
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -51,7 +51,16 @@ fun TvPosterCard(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
-    val scale by animateFloatAsState(if (focused) 1.08f else 1f, tween(110), label = "poster-focus")
+    // 弹簧参数让放大/缩小都有缓入缓出，且不做布局测量，避免整页位移。
+    val scale by animateFloatAsState(
+        targetValue = if (focused) 1.1f else 1f,
+        animationSpec = spring(
+            dampingRatio = 0.82f,
+            stiffness = 320f,
+            visibilityThreshold = 0.0005f,
+        ),
+        label = "poster-focus",
+    )
     val shape = RoundedCornerShape(12.dp)
     val sizeModifier = if (width != null) Modifier.width(width) else Modifier.fillMaxWidth()
     Box(
