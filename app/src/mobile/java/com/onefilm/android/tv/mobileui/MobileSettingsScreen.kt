@@ -206,14 +206,22 @@ fun MobileSettingsScreen(dataSource: SettingsDataSource) {
     choice?.let { current ->
         AlertDialog(
             onDismissRequest = { choice = null },
-            title = { Text(current.title) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     current.options.forEachIndexed { index, option ->
-                        TextButton(onClick = { current.onSelect(index) }, modifier = Modifier.fillMaxWidth()) {
+                        TextButton(
+                            onClick = { current.onSelect(index) },
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 4.dp),
+                        ) {
                             Text(
                                 option,
-                                modifier = Modifier.fillMaxWidth(),
+                                maxLines = 1,
+                                fontSize = 13.sp,
                                 fontWeight = if (index == current.selected) FontWeight.SemiBold else FontWeight.Normal,
                             )
                         }
@@ -227,50 +235,55 @@ fun MobileSettingsScreen(dataSource: SettingsDataSource) {
     configType?.let { type ->
         AlertDialog(
             onDismissRequest = { if (!configBusy) configType = null },
-            title = { Text(if (type == 0) "点播接口" else if (type == 1) "直播接口" else "壁纸接口") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = configDraft,
-                        onValueChange = { configDraft = it },
-                        singleLine = true,
-                        placeholder = { Text("粘贴接口地址") },
-                        enabled = !configBusy,
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                    )
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        OutlinedTextField(
+                            value = configDraft,
+                            onValueChange = { configDraft = it },
+                            singleLine = true,
+                            placeholder = { Text("粘贴接口地址") },
+                            enabled = !configBusy,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(
+                            onClick = { configType = null },
+                            enabled = !configBusy,
+                        ) { Text("取消") }
+                        Button(
+                            enabled = !configBusy,
+                            onClick = {
+                                if (configDraft.isBlank()) {
+                                    configError = "请输入接口地址"
+                                } else {
+                                    configBusy = true
+                                    configError = null
+                                    if (type == 1) {
+                                        Prefers.put("compose_live_url", configDraft.trim())
+                                    }
+                                    dataSource.loadConfig(type, configDraft.trim()) { ok, message ->
+                                        configBusy = false
+                                        if (ok) {
+                                            configType = null
+                                            refresh()
+                                        } else {
+                                            configError = message.ifBlank { "加载失败" }
+                                        }
+                                    }
+                                }
+                            },
+                        ) { Text(if (configBusy) "加载中…" else "加载") }
+                    }
                     if (!configError.isNullOrBlank()) {
                         Text(configError ?: "", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                     }
                 }
             },
-            confirmButton = {
-                Button(
-                    enabled = !configBusy,
-                    onClick = {
-                        if (configDraft.isBlank()) {
-                            configError = "请输入接口地址"
-                        } else {
-                            configBusy = true
-                            configError = null
-                            if (type == 1) {
-                                Prefers.put("compose_live_url", configDraft.trim())
-                            }
-                            dataSource.loadConfig(type, configDraft.trim()) { ok, message ->
-                                configBusy = false
-                                if (ok) {
-                                    configType = null
-                                    refresh()
-                                } else {
-                                    configError = message.ifBlank { "加载失败" }
-                                }
-                            }
-                        }
-                    },
-                ) { Text(if (configBusy) "加载中…" else "加载") }
-            },
-            dismissButton = {
-                TextButton(onClick = { configType = null }, enabled = !configBusy) { Text("取消") }
-            },
+            confirmButton = {},
         )
     }
 }
