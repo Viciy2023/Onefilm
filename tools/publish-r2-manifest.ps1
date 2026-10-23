@@ -54,6 +54,14 @@ $assets = @(
   @{
     name = "OneFilm-TV-v$Version-arm64-v8a.apk"
     browser_download_url = "https://github.com/$Repo/releases/download/$Tag/OneFilm-TV-v$Version-arm64-v8a.apk"
+  },
+  @{
+    name = "OneFilm-Mobile-v$Version-armeabi-v7a.apk"
+    browser_download_url = "https://github.com/$Repo/releases/download/$Tag/OneFilm-Mobile-v$Version-armeabi-v7a.apk"
+  },
+  @{
+    name = "OneFilm-Mobile-v$Version-arm64-v8a.apk"
+    browser_download_url = "https://github.com/$Repo/releases/download/$Tag/OneFilm-Mobile-v$Version-arm64-v8a.apk"
   }
 )
 
