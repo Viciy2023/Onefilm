@@ -3,6 +3,7 @@ package com.onefilm.android.tv.mobileui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,10 +16,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,10 +31,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.design.ThemeController
 import com.github.catvod.utils.Prefers
@@ -204,58 +208,108 @@ fun MobileSettingsScreen(dataSource: SettingsDataSource) {
     }
 
     choice?.let { current ->
-        AlertDialog(
+        Dialog(
             onDismissRequest = { choice = null },
-            text = {
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(0.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     current.options.forEachIndexed { index, option ->
                         TextButton(
                             onClick = { current.onSelect(index) },
-                            modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 4.dp),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(38.dp),
+                            contentPadding = PaddingValues(0.dp),
                         ) {
                             Text(
                                 option,
                                 maxLines = 1,
-                                fontSize = 13.sp,
+                                fontSize = 12.sp,
                                 fontWeight = if (index == current.selected) FontWeight.SemiBold else FontWeight.Normal,
                             )
                         }
                     }
                 }
-            },
-            confirmButton = {},
-        )
+            }
+        }
     }
 
     configType?.let { type ->
-        AlertDialog(
+        Dialog(
             onDismissRequest = { if (!configBusy) configType = null },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        OutlinedTextField(
+                        BasicTextField(
                             value = configDraft,
                             onValueChange = { configDraft = it },
                             singleLine = true,
-                            placeholder = { Text("粘贴接口地址") },
-                            enabled = !configBusy,
-                            modifier = Modifier.weight(1f),
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            ),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(40.dp),
+                            decorationBox = { innerTextField ->
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))
+                                        .padding(horizontal = 10.dp),
+                                    contentAlignment = Alignment.CenterStart,
+                                ) {
+                                    if (configDraft.isEmpty()) {
+                                        Text(
+                                            "粘贴接口地址",
+                                            fontSize = 13.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        )
+                                    }
+                                    innerTextField()
+                                }
+                            },
                         )
                         TextButton(
                             onClick = { configType = null },
                             enabled = !configBusy,
-                        ) { Text("取消") }
+                            modifier = Modifier.height(40.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        ) { Text("取消", fontSize = 13.sp) }
                         Button(
                             enabled = !configBusy,
+                            modifier = Modifier.height(40.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
                             onClick = {
                                 if (configDraft.isBlank()) {
                                     configError = "请输入接口地址"
@@ -276,15 +330,14 @@ fun MobileSettingsScreen(dataSource: SettingsDataSource) {
                                     }
                                 }
                             },
-                        ) { Text(if (configBusy) "加载中…" else "加载") }
+                        ) { Text(if (configBusy) "加载中…" else "加载", fontSize = 13.sp) }
                     }
                     if (!configError.isNullOrBlank()) {
                         Text(configError ?: "", color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
                     }
                 }
-            },
-            confirmButton = {},
-        )
+            }
+        }
     }
 }
 
