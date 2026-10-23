@@ -7,6 +7,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.viewbinding.ViewBinding;
 
 import com.onefilm.android.tv.R;
+import com.onefilm.android.tv.compose.host.ComposeMainActivity;
 import com.onefilm.android.tv.databinding.ActivityCrashBinding;
 import com.onefilm.android.tv.ui.base.BaseActivity;
 import com.github.catvod.utils.Prefers;
@@ -47,7 +48,7 @@ public class CrashActivity extends BaseActivity {
         String[] lines = log.split("\n");
         for (int i = lines.length - 1; i >= 0; i--) {
             if (lines[i].isEmpty()) continue;
-            if (lines[i].contains(HomeActivity.class.getSimpleName())) {
+            if (lines[i].contains(ComposeMainActivity.class.getSimpleName())) {
                 Prefers.put("crash", true);
                 break;
             }

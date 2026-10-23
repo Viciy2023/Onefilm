@@ -127,7 +127,7 @@
 - [ ] TV 关键页面截图基线
 - [ ] 真机 TV 回归矩阵全部通过
 - [x] 关闭 `compose_ui` fallback，`EntryActivity` 固定进入 Compose
-- [ ] 分批删除旧 XML/Fragment/Activity（先 HomeActivity 及独占资源）
+- [ ] 分批删除旧 XML/Fragment/Activity（先迁移外部 intent，再删 HomeActivity）
 - [ ] 清理无引用临时 bridge；保留仍使用的桥
 - [ ] GPL 归属、版权页、发布文档
 - [ ] 包体/ABI/R8 优化

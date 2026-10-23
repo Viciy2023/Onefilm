@@ -138,6 +138,7 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 | 分类/导航返回焦点 | 部分 | 已改为回主页分类并缩短切换；快速右移已验证，返回焦点仍需真机确认 |
 | 卡片页面平滑滚动 | 部分 | 已接最小距离滚动与默认弹簧动画；x86 缺 ARM 蜘蛛库，需 TV 真机视觉确认 |
 | 来源页换源/旧播放器兜底 | 未收敛 | 来源页与旧播放器兜底策略未完全对齐 |
+| 外部 Intent 入口 | 待迁移 | `HomeActivity` 仍承接 SEARCH/SEND/VIEW；完整删除旧首页前需先把这些 intent 接到 Compose |
 | TV 播放器底部精简条/右侧面板 | 未完成 | 当前全屏控制条可用，TV 专用形态未做 |
 | 手机播放器手势 | 未完成 | 双击播放、左右进度、上下亮度/音量未实现 |
 | 网络代理/Hosts/超时 | 未完成 | DoH 已接；代理、Hosts、超时未迁移 |
@@ -158,6 +159,8 @@ Compose UI 功能开发基本结束，项目已进入 **M6 收尾阶段**。当�
 - [ ] TV 真机完整 D-pad/返回矩阵，通过后再删除旧 UI 文件。
 - [x] 关闭 `compose_ui` fallback，`EntryActivity` 固定进入 Compose。
 - [ ] 分批删除旧 XML/Fragment/Activity（按依赖清单，不一次性删除）。
+  - 第一批已把 Live/Video/Crash 的首页返回改到 Compose。
+  - `HomeActivity` 暂留：仍承接 SEARCH/SEND/VIEW 外部 intent，迁移后再删。
 - [ ] 清理确实无引用的临时 bridge；保留 `DetailLauncher`、`LiveLauncher`、`AppLegacyPlayer` 等仍有用途的桥。
 - [ ] 发布流程、GPL/NOTICE、版权页、源码 tag。
 - [ ] 包体/ABI/R8 优化。

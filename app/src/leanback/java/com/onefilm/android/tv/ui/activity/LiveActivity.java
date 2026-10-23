@@ -76,6 +76,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import com.onefilm.android.tv.compose.host.ComposeMainActivity;
 
 public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnClickListener, ChannelAdapter.OnClickListener, EpgDataAdapter.OnClickListener, CustomKeyDownLive.Listener, CustomLiveListView.Callback, PassListener, ConfigListener, LiveListener, LivePlaybackHost {
 
@@ -1049,7 +1050,7 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
         } else if (isVisible(mBinding.recycler)) {
             hideUI();
         } else {
-            if (isTaskRoot()) startActivity(new Intent(this, HomeActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP));
+            if (isTaskRoot()) startActivity(new Intent(this, ComposeMainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP));
             super.onBackInvoked();
         }
     }
