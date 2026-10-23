@@ -28,3 +28,5 @@ docs/**/*.md
 docs/screenshots/*
 !docs/screenshots/readme/
 !docs/screenshots/readme/**
+key.properties
+KeyStore/
