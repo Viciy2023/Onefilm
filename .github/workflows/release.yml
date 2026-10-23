@@ -60,7 +60,12 @@ jobs:
       - name: Build signed release
         run: |
           chmod +x gradlew
-          ./gradlew :app:assembleLeanbackRelease :app:assembleMobileRelease \
+          ./gradlew :app:assembleLeanbackRelease \
+            -PversionName="$VERSION_NAME" \
+            -PversionCode="$VERSION_CODE" \
+            -PskipComposeMapping \
+            --no-daemon --console=plain
+          ./gradlew :app:assembleMobileRelease \
             -PversionName="$VERSION_NAME" \
             -PversionCode="$VERSION_CODE" \
             -PskipComposeMapping \
