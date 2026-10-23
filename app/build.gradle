@@ -14,11 +14,26 @@ if (localPropsFile.exists()) {
     }
 }
 
+// Release signing can be supplied by an ignored key.properties file at repo
+// root (preferred) or by local.properties. Secrets must never be committed.
+def keyProps = new Properties()
+def keyPropsFile = rootProject.file('key.properties')
+if (keyPropsFile.exists()) {
+    keyPropsFile.withInputStream {
+        keyProps.load(it)
+    }
+}
+
+def signingStoreFile = keyProps['storeFile'] ?: localProps['storeFile']
+def signingKeyAlias = keyProps['keyAlias'] ?: localProps['keyAlias']
+def signingStorePassword = keyProps['storePassword'] ?: localProps['storePassword']
+def signingKeyPassword = keyProps['keyPassword'] ?: localProps['keyPassword'] ?: signingStorePassword
+
 def hasReleaseSigning =
-    localProps['storeFile'] &&
-    localProps['keyAlias'] &&
-    localProps['storePassword'] &&
-    localProps['keyPassword']
+    signingStoreFile &&
+    signingKeyAlias &&
+    signingStorePassword &&
+    signingKeyPassword
 
 android {
     namespace = 'com.onefilm.android.tv'
@@ -63,10 +78,10 @@ android {
     signingConfigs {
         if (hasReleaseSigning) {
             release {
-                storeFile file(localProps['storeFile'])
-                keyAlias localProps['keyAlias']
-                keyPassword localProps['storePassword']
-                storePassword localProps['storePassword']
+                storeFile rootProject.file(signingStoreFile)
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPassword
+                storePassword signingStorePassword
             }
         }
     }
