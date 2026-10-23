@@ -252,6 +252,9 @@ fun MobileSettingsScreen(dataSource: SettingsDataSource) {
                         } else {
                             configBusy = true
                             configError = null
+                            if (type == 1) {
+                                Prefers.put("compose_live_url", configDraft.trim())
+                            }
                             dataSource.loadConfig(type, configDraft.trim()) { ok, message ->
                                 configBusy = false
                                 if (ok) {
