@@ -21,3 +21,10 @@ local.properties
 .superpowers/
 # local test media
 261019.mp4
+docs/ing
+
+# Local project docs and screenshots (not published)
+docs/**/*.md
+docs/screenshots/*
+!docs/screenshots/readme/
+!docs/screenshots/readme/**

@@ -32,6 +32,10 @@ OneFilm 是一款面向 Android TV 的影视聚合客户端。项目基于 Jetpa
 
 ![OneFilm TV 历史页](docs/screenshots/readme/history.png)
 
+### 设置
+
+![OneFilm TV 设置页](docs/screenshots/readme/settings.png)
+
 ### 详情
 
 ![OneFilm TV 详情页](docs/screenshots/readme/detail.png)
@@ -70,80 +74,9 @@ OneFilm/
 ├─ chaquo/              Python Spider 运行时
 ├─ media3compat/        Media3 兼容层
 ├─ mpvapi/              MPV 播放器接口
-├─ docs/                项目文档与界面截图
-└─ Release/apk/         本地测试 Release 产物
+├─ docs/                本地开发资料与界面截图（不随仓库发布）
+└─ Release/apk/         本地测试产物（不随仓库发布）
 ```
-
-## 构建
-
-环境要求：
-
-- JDK 21
-- Android SDK（`compileSdk` 见 `gradle/libs.versions.toml`）
-- Python 3.10（Chaquopy 构建需要）
-- `app/libs/` 下的配套 AAR
-- 本地签名配置 `local.properties`
-
-```properties
-sdk.dir=C:/Android/Sdk
-storeFile=C:/keys/your-release.jks
-keyAlias=your-key-alias
-storePassword=your-keystore-password
-```
-
-构建 TV 版本：
-
-```powershell
-$env:JAVA_HOME='C:\Users\Amy\.jdks\jbr-21.0.11'
-.\gradlew.bat :app:assembleLeanbackDebug
-.\gradlew.bat :app:assembleLeanbackRelease
-```
-
-构建手机版本：
-
-```powershell
-.\gradlew.bat :app:assembleMobileDebug
-.\gradlew.bat :app:assembleMobileRelease
-```
-
-## 测试
-
-```powershell
-# 单元测试
-.\gradlew.bat :compose:testDebugUnitTest :app:testLeanbackDebugUnitTest --offline
-
-# Compose instrumentation（需要连接设备）
-.\gradlew.bat :compose:connectedDebugAndroidTest --offline
-```
-
-当前 TV 真机验证：MiTV-ASTP0，Compose instrumentation 10/10 通过。
-
-## 安装
-
-```powershell
-adb connect <TV_IP>:5555
-adb -s <TV_IP>:5555 install -r "Release\apk\leanback-armeabi-v7a-debugsigned-latest.apk"
-```
-
-> `Release/apk/*-debugsigned*.apk` 仅用于本地测试，不作为正式发布包。
-
-## 里程碑
-
-| 阶段 | 状态 |
-|---|---|
-| M1 基础设施 | 100% |
-| M2 数据接入 | 100% |
-| M3 Compose 播放器 | 100%（播放器 UI 按当前形态保留） |
-| M4 设置页 | 100%（TV 范围） |
-| M5 TV 回归 | 100%（TV 核心矩阵） |
-| M6 收尾 | 100%（Compose UI 范围；旧播放器/直播原生资源保留为运行时兜底） |
-
-详细进度与验证记录见：
-
-- [项目总进度](docs/2026-10-21-project-status.md)
-- [Compose UI 路线图](docs/compose-ui-roadmap.md)
-- [TV 性能基线](docs/performance-baseline.md)
-- [TV 无障碍基线](docs/accessibility-baseline.md)
 
 ## 许可证与上游
 
@@ -152,6 +85,5 @@ OneFilm 继续使用 **GPL-3.0**，基于 [FongMi/TV](https://github.com/FongMi/
 - 上游初始提交：`0af3b31a1783b8fa4f0ce12e52ac9fad78ddfb1e`
 - 许可证：[LICENSE.md](LICENSE.md)
 - 第三方与上游声明：[NOTICE](NOTICE)
-- 发布说明：[docs/release-notes-0.1.0.md](docs/release-notes-0.1.0.md)
 
 再次强调：**仓库只提供软件外壳与开发接口，不提供任何影视内容或可用点播/直播接口；正式发布版为空壳影视软件。**
