@@ -89,7 +89,6 @@ fun SettingsScreen(
     var configMessage by remember { mutableStateOf<String?>(null) }
     var configMessageSuccess by remember { mutableStateOf(true) }
     val firstSettingFocus = remember { FocusRequester() }
-    var firstSettingRequested by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         repeat(8) {
             delay(100)
@@ -151,98 +150,76 @@ fun SettingsScreen(
                 Modifier.fillMaxWidth().weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ConfigRow(
-                        title = "点播接口",
-                        modifier = Modifier
-                            .focusRequester(firstSettingFocus)
-                            .onGloballyPositioned {
-                                if (!firstSettingRequested) {
-                                    firstSettingRequested = true
-                                    runCatching { firstSettingFocus.requestFocus() }
+                ConfigBlock(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    title = "点播接口",
+                    value = snapshot.configUrl,
+                    loading = reloadingType == 0,
+                    initialFocus = firstSettingFocus,
+                    onEdit = { openConfig(0, snapshot.configUrl) },
+                    onReload = {
+                        val url = snapshot.configUrl
+                        if (url.isNotBlank()) {
+                            reloadingType = 0
+                            dataSource.loadConfig(0, url) { ok, message ->
+                                reloadingType = null
+                                if (ok) {
+                                    onConfigChanged()
+                                    snapshot = dataSource.load()
                                 }
-                            },
-                        value = snapshot.configUrl,
-                        loading = reloadingType == 0,
-                        onEdit = { openConfig(0, snapshot.configUrl) },
-                        onReload = {
-                            val url = snapshot.configUrl
-                            if (url.isNotBlank()) {
-                                reloadingType = 0
-                                dataSource.loadConfig(0, url) { ok, message ->
-                                    reloadingType = null
-                                    if (ok) {
-                                        onConfigChanged()
-                                        snapshot = dataSource.load()
-                                    }
-                                    reportConfig("点播接口", ok, message)
-                                }
-                            } else {
-                                reportConfig("点播接口", false, "未配置接口地址")
+                                reportConfig("点播接口", ok, message)
                             }
-                        },
-                    )
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ConfigRow(
-                        title = "直播接口",
-                        value = snapshot.liveConfigUrl,
-                        loading = reloadingType == 1,
-                        onEdit = { openConfig(1, snapshot.liveConfigUrl) },
-                        onReload = {
-                            val url = snapshot.liveConfigUrl
-                            if (url.isNotBlank()) {
-                                reloadingType = 1
-                                dataSource.loadConfig(1, url) { ok, message ->
-                                    reloadingType = null
-                                    if (ok) {
-                                        onConfigChanged()
-                                        snapshot = dataSource.load()
-                                    }
-                                    reportConfig("直播接口", ok, message)
+                        } else {
+                            reportConfig("点播接口", false, "未配置接口地址")
+                        }
+                    },
+                )
+                ConfigBlock(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    title = "直播接口",
+                    value = snapshot.liveConfigUrl,
+                    loading = reloadingType == 1,
+                    onEdit = { openConfig(1, snapshot.liveConfigUrl) },
+                    onReload = {
+                        val url = snapshot.liveConfigUrl
+                        if (url.isNotBlank()) {
+                            reloadingType = 1
+                            dataSource.loadConfig(1, url) { ok, message ->
+                                reloadingType = null
+                                if (ok) {
+                                    onConfigChanged()
+                                    snapshot = dataSource.load()
                                 }
-                            } else {
-                                reportConfig("直播接口", false, "未配置接口地址")
+                                reportConfig("直播接口", ok, message)
                             }
-                        },
-                    )
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ConfigRow(
-                        title = "壁纸接口",
-                        value = snapshot.wallConfigUrl,
-                        loading = reloadingType == 2,
-                        onEdit = { openConfig(2, snapshot.wallConfigUrl) },
-                        onReload = {
-                            val url = snapshot.wallConfigUrl
-                            if (url.isNotBlank()) {
-                                reloadingType = 2
-                                dataSource.loadConfig(2, url) { ok, message ->
-                                    reloadingType = null
-                                    if (ok) {
-                                        onConfigChanged()
-                                        snapshot = dataSource.load()
-                                    }
-                                    reportConfig("壁纸接口", ok, message)
+                        } else {
+                            reportConfig("直播接口", false, "未配置接口地址")
+                        }
+                    },
+                )
+                ConfigBlock(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    title = "壁纸接口",
+                    value = snapshot.wallConfigUrl,
+                    loading = reloadingType == 2,
+                    onEdit = { openConfig(2, snapshot.wallConfigUrl) },
+                    onReload = {
+                        val url = snapshot.wallConfigUrl
+                        if (url.isNotBlank()) {
+                            reloadingType = 2
+                            dataSource.loadConfig(2, url) { ok, message ->
+                                reloadingType = null
+                                if (ok) {
+                                    onConfigChanged()
+                                    snapshot = dataSource.load()
                                 }
-                            } else {
-                                reportConfig("壁纸接口", false, "未配置接口地址")
+                                reportConfig("壁纸接口", ok, message)
                             }
-                        },
-                    )
-
-
-
-
-                }
+                        } else {
+                            reportConfig("壁纸接口", false, "未配置接口地址")
+                        }
+                    },
+                )
             }
             Row(
                 Modifier.fillMaxWidth().weight(1f),
@@ -780,23 +757,57 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 }
 
 @Composable
-private fun ConfigRow(
-    title: String,
+private fun ConfigBlock(
     modifier: Modifier = Modifier,
+    title: String,
     value: String,
     loading: Boolean,
     onEdit: () -> Unit,
     onReload: () -> Unit,
+    initialFocus: FocusRequester? = null,
 ) {
-    var focused by remember { mutableStateOf(false) }
-    var reloadFocused by remember { mutableStateOf(false) }
     val editFocus = remember { FocusRequester() }
     val reloadFocus = remember { FocusRequester() }
+    val rowFocus = initialFocus ?: editFocus
+    Row(
+        modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+            ConfigRow(
+                title = title,
+                value = value,
+                onEdit = onEdit,
+                modifier = Modifier
+                    .focusRequester(rowFocus)
+                    .focusProperties { right = reloadFocus },
+            )
+        }
+        ConfigLoadButton(
+            loading = loading,
+            enabled = value.isNotBlank(),
+            onClick = onReload,
+            modifier = Modifier
+                .width(64.dp)
+                .height(36.dp)
+                .focusRequester(reloadFocus)
+                .focusProperties { left = rowFocus },
+        )
+    }
+}
+
+@Composable
+private fun ConfigRow(
+    title: String,
+    value: String,
+    onEdit: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var focused by remember { mutableStateOf(false) }
     Row(
         modifier
             .fillMaxSize()
-            .focusRequester(editFocus)
-            .focusProperties { right = reloadFocus }
             .onFocusChanged { focused = it.isFocused }
             .border(
                 2.dp,
@@ -804,52 +815,65 @@ private fun ConfigRow(
                 RoundedCornerShape(16.dp),
             )
             .clickable(onClick = onEdit)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.width(10.dp))
-        Text(
-            value.ifBlank { "未配置" },
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f),
-        )
         Spacer(Modifier.width(8.dp))
         Box(
-            Modifier
-                .width(64.dp)
-                .height(36.dp)
-                .focusRequester(reloadFocus)
-                .focusProperties { left = editFocus }
-                .onFocusChanged { reloadFocused = it.isFocused }
+            modifier = Modifier
+                .weight(1f)
+                .height(28.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(
-                    if (reloadFocused) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.surfaceVariant,
-                )
-                .border(
-                    if (reloadFocused) 2.dp else 0.dp,
-                    MaterialTheme.colorScheme.primary,
-                    RoundedCornerShape(10.dp),
-                )
-                .clickable(enabled = !loading && value.isNotBlank(), onClick = onReload),
-            contentAlignment = Alignment.Center,
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+                .padding(horizontal = 8.dp),
+            contentAlignment = Alignment.CenterStart,
         ) {
             Text(
-                text = if (loading) "加载中" else "加载",
-                fontSize = 13.sp,
-                color = if (reloadFocused) MaterialTheme.colorScheme.onPrimary
-                else if (!loading && value.isNotBlank()) MaterialTheme.colorScheme.onSurface
-                else MaterialTheme.colorScheme.onSurfaceVariant,
+                value.ifBlank { "未配置" },
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         Spacer(Modifier.width(4.dp))
         Text("›", fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun ConfigLoadButton(
+    loading: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var focused by remember { mutableStateOf(false) }
+    Box(
+        modifier
+            .onFocusChanged { focused = it.isFocused }
+            .clip(RoundedCornerShape(10.dp))
+            .background(
+                if (focused) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceVariant,
+            )
+            .border(
+                if (focused) 2.dp else 0.dp,
+                MaterialTheme.colorScheme.primary,
+                RoundedCornerShape(10.dp),
+            )
+            .clickable(enabled = enabled && !loading, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = if (loading) "加载中" else "加载",
+            fontSize = 12.sp,
+            color = if (focused) MaterialTheme.colorScheme.onPrimary
+            else if (enabled) MaterialTheme.colorScheme.onSurface
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+        )
     }
 }
 
@@ -959,90 +983,15 @@ private fun SwitchRow(
     checked: Boolean,
     onChange: (Boolean) -> Unit,
 ) {
-    var focused by remember { mutableStateOf(false) }
-    var dialogVisible by remember { mutableStateOf(false) }
-    val firstOptionFocus = remember { FocusRequester() }
-    LaunchedEffect(dialogVisible) {
-        if (dialogVisible) {
-            delay(80)
-            runCatching { firstOptionFocus.requestFocus() }
-        }
-    }
-    Row(
-        Modifier
-            .fillMaxSize()
-            .onFocusChanged { focused = it.isFocused }
-            .border(
-                2.dp,
-                if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
-                RoundedCornerShape(16.dp),
-            )
-            .clickable { dialogVisible = true }
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            title,
-            fontSize = 15.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            if (checked) "开启" else "关闭",
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-        )
-        Spacer(Modifier.width(6.dp))
-        Text("›", fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-
-    if (dialogVisible) {
-        SettingsDialog(
-            onDismiss = { dialogVisible = false },
-            width = 360.dp,
-            padding = 14.dp,
-        ) {
-            Text(
-                title,
-                fontSize = 17.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            if (subtitle.isNotBlank()) {
-                Spacer(Modifier.height(5.dp))
-                Text(
-                    subtitle,
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                SettingChip(
-                    label = "关闭",
-                    selected = !checked,
-                    modifier = Modifier.weight(1f).focusRequester(firstOptionFocus),
-                ) {
-                    onChange(false)
-                    dialogVisible = false
-                }
-                SettingChip(
-                    label = "开启",
-                    selected = checked,
-                    modifier = Modifier.weight(1f),
-                ) {
-                    onChange(true)
-                    dialogVisible = false
-                }
-            }
-        }
-    }
+    // The switch is edited in the same option dialog as ChoiceRow.
+    ChoiceRow(
+        title = title,
+        subtitle = subtitle,
+        options = listOf(
+            "关闭" to !checked,
+            "开启" to checked,
+        ),
+    ) { index -> onChange(index == 1) }
 }
 
 @Composable
@@ -1224,7 +1173,7 @@ private fun ActionRow(
             .clickable(onClick = onClick)
             .padding(
                 horizontal = if (compact) 12.dp else 16.dp,
-                vertical = if (compact) 3.dp else 10.dp,
+                vertical = if (compact) 3.dp else 8.dp,
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -1251,7 +1200,7 @@ private fun ActionRow(
 @Composable
 private fun InfoRow(title: String, value: String) {
     Row(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 10.dp),
+        Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
