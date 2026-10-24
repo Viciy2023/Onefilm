@@ -45,6 +45,10 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # v3 defaults to the removed legacy "tools" package; only install
+          # platform-tools and let Gradle resolve the SDK platform/build-tools.
+          packages: "platform-tools"
 
       - name: Validate signing secrets
         shell: bash
