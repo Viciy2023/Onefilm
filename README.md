@@ -53,8 +53,8 @@
 ## 开始使用
 
 1. 从 [GitHub Releases](https://github.com/Viciy2023/Onefilm/releases) 下载适合设备的 APK：
-   - 电视/盒子：`OneFilm-TV-v0.1.2-*.apk`
-   - 手机/平板：`OneFilm-Mobile-v0.1.2-*.apk`
+   - 电视/盒子：`OneFilm-TV-v0.1.5-*.apk`
+   - 手机/平板：`OneFilm-Mobile-v0.1.5-*.apk`
 2. 安装后打开壹影。
 3. 在“配置”或“设置”中导入你自己的合法影视/直播接口。
 4. 回到首页，搜索或浏览想看的内容。
