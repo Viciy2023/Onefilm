@@ -35,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -145,6 +146,9 @@ fun TvHeader(
         var navFocusEnabled by remember { mutableStateOf(variant != TvHeaderVariant.Full) }
         var categoryFocusSeen by remember { mutableStateOf(false) }
         var homeCategoryFocused by remember { mutableStateOf(false) }
+        DisposableEffect(Unit) {
+            onDispose { TvHeaderFocusState.homeCategoryFocused = false }
+        }
         // 不能在 categories 刷新时重新抢焦点：首页数据晚到会把焦点从
         // 导航“历史”拽回“主页”，表现为向下永远无法离开分类行。
         LaunchedEffect(variant, currentRoute) {
@@ -233,8 +237,10 @@ fun TvHeader(
                     selected = home && currentRoute == Routes.HOME && !categoryFocusSeen,
                     onFocused = {
                         categoryFocusSeen = true
-                        homeCategoryFocused = home && currentRoute == Routes.HOME
-                        TvHeaderFocusState.homeCategoryFocused = home && currentRoute == Routes.HOME
+                        // “主页”按钮的返回键只负责退出：只要焦点在主页上，
+                        // 不管当前是首页还是分类页，都交给 Activity 弹退出确认。
+                        homeCategoryFocused = home
+                        TvHeaderFocusState.homeCategoryFocused = home
                         TvHeaderFocusState.navFocusedOnce = false
                         if (home) navFocusEnabled = true
                     },

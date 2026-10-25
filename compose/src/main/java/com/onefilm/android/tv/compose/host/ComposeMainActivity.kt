@@ -189,6 +189,13 @@ class ComposeMainActivity : ComponentActivity() {
                 LaunchedEffect(route) {
                     TvHeaderFocusState.homeRoute = route?.startsWith(Routes.HOME) == true
                     if (TvHeaderFocusState.homeRoute) TvHeaderFocusState.navFocusedOnce = false
+                    // 顶部导航只存在于首页/分类页；离开这些页面时清掉“主页按钮”
+                    // 焦点标记，避免详情/播放页按返回误弹退出。
+                    if (route?.startsWith(Routes.HOME) != true &&
+                        route?.startsWith("category") != true
+                    ) {
+                        TvHeaderFocusState.homeCategoryFocused = false
+                    }
                     if (route?.startsWith("search") == true) searchFocusToken++
                     playerRouteActive = route?.startsWith("player") == true
                     val keepPlaying = route?.startsWith("detail") == true ||
@@ -231,6 +238,9 @@ class ComposeMainActivity : ComponentActivity() {
 
                 BackHandler(enabled = true) {
                     when {
+                        // TV 顶部“主页”按钮只有退出语义：焦点在它上面时按返回
+                        // 直接弹退出确认，不再执行回到上一页/分类页的逻辑。
+                        isTv && TvHeaderFocusState.homeCategoryFocused -> showExitDialog = true
                         route?.startsWith(Routes.HOME) == true -> showExitDialog = true
                         // Any API category returns straight to home, never to the
                         // previously focused category.

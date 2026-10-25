@@ -5,30 +5,27 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,8 +36,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -50,6 +51,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.onefilm.android.tv.compose.bridge.ConfigLine
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.ServerEventBridge
+import kotlinx.coroutines.delay
 
 @Composable
 fun ConfigScreen(
@@ -62,8 +64,10 @@ fun ConfigScreen(
     var name by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
+    var loadingLineKey by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var lines by remember { mutableStateOf(dataSource.allConfigLines()) }
+    val firstLineFocus = remember { FocusRequester() }
     val pushUrl = remember { dataSource.configPushUrl() }
     val qrBitmap = remember(pushUrl) {
         if (pushUrl.isBlank()) null else dataSource.qrBitmap(pushUrl, 640)
@@ -82,8 +86,15 @@ fun ConfigScreen(
         }
     }
 
+    LaunchedEffect(lines) {
+        if (lines.isNotEmpty()) {
+            delay(80)
+            runCatching { firstLineFocus.requestFocus() }
+        }
+    }
+
     Dialog(
-        onDismissRequest = { if (!loading) onBack() },
+        onDismissRequest = { if (!loading && loadingLineKey == null) onBack() },
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
@@ -101,46 +112,82 @@ fun ConfigScreen(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(Modifier.height(4.dp))
-                Row(Modifier.fillMaxWidth()) {
-                    Column(
-                        Modifier.weight(0.33f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
+                // 二维码和线路框同高；188dp 在 6 条紧凑线路时仍留有余量。
+                val qrSize = 188.dp
+                Row(
+                    Modifier.fillMaxWidth().height(qrSize),
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Box(
+                        Modifier.width(qrSize).fillMaxHeight(),
+                        contentAlignment = Alignment.Center,
                     ) {
                         qrBitmap?.let {
                             Image(
                                 bitmap = it.asImageBitmap(),
                                 contentDescription = "配置二维码",
                                 contentScale = ContentScale.Fit,
-                                modifier = Modifier.fillMaxWidth().aspectRatio(1f),
+                                modifier = Modifier.fillMaxSize(),
                             )
                         } ?: Text("二维码生成失败", fontSize = 14.sp)
                     }
                     Spacer(Modifier.width(10.dp))
-                    Column(
+                    Box(
                         Modifier
-                            .weight(0.67f)
-                            .heightIn(max = 120.dp)
-                            .verticalScroll(rememberScrollState()),
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(12.dp))
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.outline.copy(alpha = 0.55f),
+                                RoundedCornerShape(12.dp),
+                            )
+                            .padding(4.dp),
                     ) {
                         if (lines.isEmpty()) {
-                            Text("暂无已配置线路", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                            Text(
+                                "暂无已配置线路",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 14.sp,
+                            )
                         } else {
-                            lines.forEach { line ->
-                                ConfigLineRow(
-                                    line = line,
-                                    onPick = {
-                                        type = line.type
-                                        name = line.name
-                                        url = line.url
-                                        error = null
-                                    },
-                                    onDelete = {
-                                        dataSource.deleteConfigLine(line.type, line.url)
-                                        refreshLines()
-                                        onConfigChanged()
-                                    },
-                                )
+                            Column(
+                                Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(2.dp),
+                            ) {
+                                lines.forEachIndexed { index, line ->
+                                    ConfigLineRow(
+                                        line = line,
+                                        loading = loadingLineKey == line.key(),
+                                        enabled = loadingLineKey == null && !loading,
+                                        focusRequester = if (index == 0) firstLineFocus else null,
+                                        onPick = {
+                                            if (loadingLineKey == null && !loading) {
+                                                type = line.type
+                                                name = line.name
+                                                url = line.url
+                                                error = null
+                                                loadingLineKey = line.key()
+                                                dataSource.loadConfig(line.type, line.url, line.name) { ok, message ->
+                                                    loadingLineKey = null
+                                                    if (ok) {
+                                                        onConfigChanged()
+                                                        onDone()
+                                                    } else {
+                                                        error = message
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        onDelete = {
+                                            if (loadingLineKey == null && !loading) {
+                                                dataSource.deleteConfigLine(line.type, line.url)
+                                                refreshLines()
+                                                onConfigChanged()
+                                            }
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
@@ -176,7 +223,7 @@ fun ConfigScreen(
                                 }
                             }
                         },
-                        enabled = !loading,
+                        enabled = !loading && loadingLineKey == null,
                         modifier = Modifier.height(38.dp).width(106.dp),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                     ) {
@@ -218,7 +265,7 @@ private fun CompactInput(
             .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.45f), RoundedCornerShape(8.dp))
             .padding(horizontal = 10.dp, vertical = 9.dp),
         decorationBox = { inner ->
-            androidx.compose.foundation.layout.Box(contentAlignment = Alignment.CenterStart) {
+            Box(contentAlignment = Alignment.CenterStart) {
                 if (value.isBlank()) {
                     Text(hint, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -231,41 +278,66 @@ private fun CompactInput(
 @Composable
 private fun ConfigLineRow(
     line: ConfigLine,
+    loading: Boolean,
+    enabled: Boolean,
+    focusRequester: FocusRequester? = null,
     onPick: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(10.dp)
+    var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(8.dp)
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp)
+            .height(26.dp)
+            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+            .onFocusChanged { focused = it.isFocused }
             .clip(shape)
             .background(
-                if (line.current) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                when {
+                    line.current -> MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                    focused -> MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+                    else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                },
             )
             .border(
-                1.dp,
-                if (line.current) MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
-                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-                shape,
+                width = if (focused) 2.dp else 1.dp,
+                color = when {
+                    focused -> MaterialTheme.colorScheme.primary
+                    line.current -> MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
+                    else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+                },
+                shape = shape,
             )
-            .padding(horizontal = 8.dp, vertical = 1.dp),
+            .clickable(enabled = enabled && !loading, onClick = onPick)
+            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = line.name.ifBlank { line.url },
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
+            text = if (loading) "加载中…" else line.name.ifBlank { line.url },
+            fontSize = 13.sp,
+            fontWeight = if (line.current) FontWeight.SemiBold else FontWeight.Medium,
+            color = if (enabled) MaterialTheme.colorScheme.onSurface
+            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f).clickable(onClick = onPick).padding(vertical = 6.dp),
+            modifier = Modifier.weight(1f),
         )
         if (line.type == 1) {
-            Text("直播", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("直播", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.width(6.dp))
         }
-        TextButton(onClick = onDelete) {
-            Text("删除", fontSize = 14.sp, color = MaterialTheme.colorScheme.error)
-        }
+        Text(
+            text = "删除",
+            fontSize = 12.sp,
+            color = if (enabled && !loading) MaterialTheme.colorScheme.error
+            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            modifier = Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .clickable(enabled = enabled && !loading, onClick = onDelete)
+                .padding(horizontal = 6.dp, vertical = 3.dp),
+        )
     }
 }
+
+private fun ConfigLine.key(): String = "$type|$url|$name"
