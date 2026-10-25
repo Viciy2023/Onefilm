@@ -13,12 +13,13 @@ import org.json.JSONObject;
  * {
  *   "versionCode": 2,
  *   "tag_name": "v0.1.1",
- *   "assets": [{ "name": "leanback-armeabi_v7a.apk",
- *                "browser_download_url": "https://github.com/.../....apk" }],
+ *   "assets": [{ "name": "OneFilm-TV-v0.1.1-arm64-v8a.apk",
+ *                "browser_download_url": "https://onefilmapk.../....apk" }],
  *   "body": "release notes"
  * }
  *
- * The APK is distributed by GitHub Releases; R2 only hosts this small JSON.
+ * Both the manifest and the APKs live on Cloudflare R2 so in-app updates do not
+ * depend on GitHub download speed; GitHub Releases stay the public download page.
  */
 public final class UpdateManifest {
 
