@@ -118,4 +118,5 @@ jobs:
             -Repo "$env:GITHUB_REPOSITORY_NAME" `
             -Tag "v${{ inputs.version }}" `
             -BaseUrl "https://onefilmapk.alibabagroup.de5.net" `
-            -ApkFiles $apks.FullName
+            -ApkFiles $apks.FullName `
+            -PruneOldApks

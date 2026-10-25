@@ -18,7 +18,12 @@
 # Example:
 #   .\tools\publish-r2-manifest.ps1 -Version 0.1.5 -VersionCode 6 `
 #       -Repo Viciy2023/Onefilm -NotesFile .\docs\release-notes-0.1.5.md `
-#       -ApkFiles .\app\build\outputs\apk\leanback\release\OneFilm-TV-v0.1.5-arm64-v8a.apk
+#       -ApkFiles .\app\build\outputs\apk\leanback\release\OneFilm-TV-v0.1.5-arm64-v8a.apk `
+#       -PruneOldApks
+#
+# -PruneOldApks deletes every .apk object that the freshly published manifest does
+# not reference, so the bucket keeps exactly one version. Old APKs are removed
+# only after the new manifest is verified live; rollback then needs a re-upload.
 #
 # Without -DryRun, set R2_ACCOUNT_ID, R2_BUCKET and either R2_API_TOKEN or
 # R2_TOKEN_FILE. Never commit the token.
@@ -42,6 +47,7 @@ param(
   [string]$TokenFile = $env:R2_TOKEN_FILE,
   [string]$Token = $env:R2_API_TOKEN,
   [switch]$ManifestOnly,
+  [switch]$PruneOldApks,
   [switch]$DryRun
 )
 
@@ -121,6 +127,7 @@ Write-Host "json         : $json"
 
 if ($DryRun) {
   Write-Host "DRY RUN: not uploading"
+  if ($PruneOldApks) { Write-Host "DRY RUN: would delete every .apk object not referenced by this manifest" }
   exit 0
 }
 
@@ -180,3 +187,45 @@ if ($check.versionCode -ne $VersionCode -or -not $check.assets -or $check.assets
   throw "published manifest failed read-back check"
 }
 Write-Host "PUBLISHED $publicUrl"
+
+# ---------------------------------------------------------------------------
+# Optional cleanup: keep only the APK set referenced by the manifest we just
+# published (i.e. one version). Runs after the manifest is live, so a failed
+# publish never strands clients without a downloadable APK.
+# ---------------------------------------------------------------------------
+if ($PruneOldApks) {
+  $keep = @{}
+  foreach ($u in $uploads) { $keep[$u.Key.ToLowerInvariant()] = $true }
+
+  $listed = @()
+  $cursor = ""
+  do {
+    $listUrl = "$objectsApi`?per_page=1000"
+    if (-not [string]::IsNullOrEmpty($cursor)) { $listUrl += "&cursor=" + [Uri]::EscapeDataString($cursor) }
+    $page = Invoke-RestMethod -Method Get -Uri $listUrl -Headers @{ Authorization = "Bearer $Token" }
+    if (-not $page.success) { throw "R2 object listing failed" }
+    $listed += @($page.result)
+    $cursor = if ($page.result_info -and $page.result_info.is_truncated) { [string]$page.result_info.cursor } else { "" }
+  } while (-not [string]::IsNullOrEmpty($cursor))
+
+  $stale = @($listed | Where-Object {
+      $_.key -match '(?i)\.apk$' -and -not $keep.ContainsKey(([string]$_.key).ToLowerInvariant())
+    })
+  $freed = 0
+  foreach ($s in $stale) { $freed += [int64]$s.size }
+  Write-Host ("prune: keeping {0} apk object(s), deleting {1} stale ({2:N1} MB)" -f $keep.Count, $stale.Count, ($freed / 1MB))
+
+  foreach ($s in $stale) {
+    Write-Host ("  DELETE {0}" -f $s.key)
+    $deleteUrl = "$objectsApi/" + [Uri]::EscapeDataString([string]$s.key)
+    & $curl -sS --max-time 120 -X DELETE `
+      -H "Authorization: Bearer $Token" `
+      -o "$env:TEMP/onefilm-apk-delete.json" `
+      -w "HTTP=%{http_code}`n" `
+      $deleteUrl
+    if ($LASTEXITCODE -ne 0) { throw "delete failed: $($s.key) (curl exit $LASTEXITCODE)" }
+    $resp = Get-Content "$env:TEMP/onefilm-apk-delete.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+    if (-not $resp.success) { throw "delete rejected by R2: $($s.key)" }
+  }
+  if ($stale.Count -gt 0) { Write-Host "prune done" }
+}
