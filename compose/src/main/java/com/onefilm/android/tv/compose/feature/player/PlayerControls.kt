@@ -401,34 +401,25 @@ fun PlayerControls(
         modifier
             .fillMaxSize()
             .onPreviewKeyEvent { event ->
-                if (inline || event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                lastInteractionAt = SystemClock.uptimeMillis()
-                // 控制栏可见时把方向键交给焦点系统：左右要能在按钮/菜单之间
-                // 移动焦点。只有控件隐藏（焦点树为空）时，方向键才用于快进
-                // 快退和唤出控制栏。
-                if (showEpisodes || showMore || showDlna || controlsVisible) return@onPreviewKeyEvent false
-                when (event.key) {
-                    Key.DirectionLeft -> {
-                        seekWithHint(-5_000L)
-                        true
-                    }
-                    Key.DirectionRight -> {
-                        seekWithHint(5_000L)
-                        true
-                    }
-                    Key.DirectionUp, Key.DirectionDown -> {
-                        revealToMenu = true
-                        controlsVisible = true
-                        true
-                    }
-                    Key.DirectionCenter, Key.Enter -> {
-                        PlaybackSession.toggle()
-                        revealToMenu = false
-                        controlsVisible = true
-                        true
-                    }
-                    else -> false
-                }
+                dispatchPlayerKey(
+                    event = event,
+                    inline = inline,
+                    actions = PlayerKeyActions(
+                        hidden = { !controlsVisible },
+                        overlayOpen = { showEpisodes || showMore || showDlna },
+                        seek = { deltaMs -> seekWithHint(deltaMs) },
+                        reveal = {
+                            revealToMenu = false
+                            controlsVisible = true
+                        },
+                        revealToMenu = {
+                            revealToMenu = true
+                            controlsVisible = true
+                        },
+                        togglePlay = { PlaybackSession.toggle() },
+                        touch = { lastInteractionAt = SystemClock.uptimeMillis() },
+                    ),
+                )
             }
             .pointerInput(inline) {
                 detectTapGestures(
