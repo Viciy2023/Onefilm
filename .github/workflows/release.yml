@@ -50,6 +50,11 @@ jobs:
           # platform-tools and let Gradle resolve the SDK platform/build-tools.
           packages: "platform-tools"
 
+      - name: Set up Python 3.10 (Chaquopy)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
       - name: Validate signing secrets
         shell: bash
         env:

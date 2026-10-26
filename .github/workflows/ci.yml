@@ -27,6 +27,11 @@ jobs:
           # v3 默认安装已下线的 legacy "tools" 包，只装 platform-tools 即可
           packages: "platform-tools"
 
+      - name: Set up Python 3.10 (Chaquopy)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
