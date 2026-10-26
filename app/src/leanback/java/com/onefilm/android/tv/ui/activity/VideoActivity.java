@@ -103,7 +103,7 @@ import java.util.List;
 import java.util.Objects;
 import com.onefilm.android.tv.compose.host.ComposeMainActivity;
 
-public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, CustomKeyDownVod.Listener, ParseDialog.Listener, ArrayAdapter.OnClickListener, FlagAdapter.OnClickListener, EpisodeAdapter.OnClickListener, QualityAdapter.OnClickListener, QuickAdapter.OnClickListener, Clock.Callback {
+public class VideoActivity extends VodPlaybackActivity implements VodPlaybackHost, CustomKeyDownVod.Listener, ParseDialog.Listener, ArrayAdapter.OnClickListener, FlagAdapter.OnClickListener, EpisodeAdapter.OnClickListener, QualityAdapter.OnClickListener, QuickAdapter.OnClickListener, Clock.Callback {
 
     private ActivityVideoBinding mBinding;
     private VideoViewModel mViewModel;
@@ -182,41 +182,6 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         return getIntent().getBooleanExtra("cast", false);
     }
 
-    private String getName() {
-        return Objects.toString(getIntent().getStringExtra("name"), "");
-    }
-
-    private String getPic() {
-        return Objects.toString(getIntent().getStringExtra("pic"), "");
-    }
-
-    private String getMark() {
-        return Objects.toString(getIntent().getStringExtra("mark"), "");
-    }
-
-    private String getKey() {
-        return Objects.toString(getIntent().getStringExtra("key"), "");
-    }
-
-    private String getId() {
-        return Objects.toString(getIntent().getStringExtra("id"), "");
-    }
-
-    private boolean isSameVideo(Intent intent) {
-        String key = Objects.toString(intent.getStringExtra("key"), "");
-        String id = Objects.toString(intent.getStringExtra("id"), "");
-        return TextUtils.equals(key, getKey()) && TextUtils.equals(id, getId());
-    }
-
-    @Override
-    public String getHistoryKey() {
-        return getKey().concat(AppDatabase.SYMBOL).concat(getId()).concat(AppDatabase.SYMBOL) + VodConfig.getCid();
-    }
-
-    private Site getSite() {
-        return VodConfig.get().getSite(getKey());
-    }
-
     private Episode getEpisode() {
         return mEpisodeAdapter.getActivated();
     }
@@ -229,11 +194,6 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         mVod.setScale(scale);
         mBinding.player.setResizeMode(scale);
         mBinding.control.action.scale.setText(ResUtil.getStringArray(R.array.select_scale)[scale]);
-    }
-
-    @Override
-    public boolean isFromCollect() {
-        return getIntent().getBooleanExtra("collect", false);
     }
 
     @Override
@@ -400,16 +360,6 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     }
 
     @Override
-    public String getVodKey() {
-        return getKey();
-    }
-
-    @Override
-    public String getVodId() {
-        return getId();
-    }
-
-    @Override
     public void setVodId(String id) {
         getIntent().putExtra("id", id);
     }
@@ -418,16 +368,6 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     public String getVodName() {
         String name = mBinding.name.getText().toString();
         return name.isEmpty() ? getName() : name;
-    }
-
-    @Override
-    public String getVodPic() {
-        return getPic();
-    }
-
-    @Override
-    public String getVodMark() {
-        return getMark();
     }
 
     @Override
@@ -658,18 +598,9 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         Notify.show(reversed ? R.string.error_play_next : R.string.error_play_prev);
     }
 
-    @Override
-    public void finishVod() {
-        finish();
-    }
-
     private void checkCast() {
         if (isCast() && !isFullscreen()) enterFullscreen();
         else mBinding.progressLayout.showProgress();
-    }
-
-    private void checkId() {
-        mVod.checkId();
     }
 
     private void showEmpty() {
@@ -1119,11 +1050,6 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
             VideoActivity.this.onReplay();
         }
     };
-
-    @Override
-    protected String getPlaybackKey() {
-        return getHistoryKey();
-    }
 
     @Override
     protected void onPrepare() {
