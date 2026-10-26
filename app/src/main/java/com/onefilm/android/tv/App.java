@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -82,6 +83,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @Override
     public void onCreate() {
         super.onCreate();
+        installThreadGuard();
         CoreContext.INSTANCE.init(this);
         Notify.createChannel();
         registerActivityLifecycleCallbacks(this);
@@ -117,6 +119,26 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @Override
     public String getPackageName() {
         return hook != null ? hook.getPackageName() : getBaseContext().getPackageName();
+    }
+
+    /**
+     * 盒子上的线程数有上限，第三方库（本地代理、网盘、goproxy 等）在请求高峰
+     * 会不断 new Thread；一旦到顶，Thread.start() 抛
+     * OutOfMemoryError: pthread_create failed，未捕获就会把整个进程带走。
+     * 这里只兜住这一种 OOM（主线程除外），其余异常仍交给原有崩溃处理。
+     */
+    private void installThreadGuard() {
+        final Thread.UncaughtExceptionHandler previous = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            boolean threadCreationFailed = throwable instanceof OutOfMemoryError
+                    && throwable.getMessage() != null
+                    && throwable.getMessage().contains("pthread_create");
+            if (threadCreationFailed && !"main".equals(thread.getName())) {
+                Log.e("OneFilm", "thread creation failed on " + thread.getName(), throwable);
+                return;
+            }
+            if (previous != null) previous.uncaughtException(thread, throwable);
+        });
     }
 
     @Override

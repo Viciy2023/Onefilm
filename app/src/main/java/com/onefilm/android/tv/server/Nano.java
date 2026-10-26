@@ -28,6 +28,9 @@ public class Nano extends NanoHTTPD {
 
     public Nano(int port) {
         super(port);
+        // 默认的 DefaultAsyncRunner 每个连接新建线程，盒子线程耗尽时会抛
+        // OutOfMemoryError 直接杀掉进程；换成有界线程池。
+        setAsyncRunner(new BoundedAsyncRunner());
         addProcess();
     }
 
@@ -60,13 +63,18 @@ public class Nano extends NanoHTTPD {
 
     @Override
     public Response serve(IHTTPSession session) {
-        String url = session.getUri().trim();
-        Map<String, String> files = new HashMap<>();
-        if (session.getMethod() == Method.POST) parse(session, files);
-        if (url.startsWith("/tvbus")) return ok(LiveConfig.getResp());
-        if (url.startsWith("/device")) return ok(Device.get().toString());
-        for (Process process : process) if (process.isRequest(session, url)) return process.doResponse(session, url, files);
-        return getAssets(url.substring(1));
+        try {
+            String url = session.getUri().trim();
+            Map<String, String> files = new HashMap<>();
+            if (session.getMethod() == Method.POST) parse(session, files);
+            if (url.startsWith("/tvbus")) return ok(LiveConfig.getResp());
+            if (url.startsWith("/device")) return ok(Device.get().toString());
+            for (Process process : process) if (process.isRequest(session, url)) return process.doResponse(session, url, files);
+            return getAssets(url.substring(1));
+        } catch (Throwable e) {
+            // 单个请求失败只影响该连接，不能把异常抛到连接线程外。
+            return error("server error");
+        }
     }
 
     private void parse(IHTTPSession session, Map<String, String> files) {
