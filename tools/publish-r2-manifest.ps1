@@ -191,7 +191,9 @@ foreach ($mapping in $MappingFiles) {
   if (-not (Test-Path $mapping)) { throw "mapping file not found: $mapping" }
   $mappingItem = Get-Item $mapping
   if ($mappingItem.Length -le 0) { throw "mapping file is empty: $mapping" }
-  $mappingKey = "mapping/v$Version/$($mappingItem.Name)"
+  # 两个 flavor 的 mapping 都叫 mapping.txt，key 里加 flavor 前缀避免互相覆盖
+  $flavor = $mappingItem.Directory.Name -replace 'Release$', ''
+  $mappingKey = "mapping/v$Version/$flavor-$($mappingItem.Name)"
   $mappingMd5 = (Get-FileHash $mappingItem.FullName -Algorithm MD5).Hash.ToLowerInvariant()
   Write-Host "PUT $mappingKey"
   & $curl -sS --max-time 600 -X PUT `
