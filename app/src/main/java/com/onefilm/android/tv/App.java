@@ -116,11 +116,13 @@ public class App extends Application implements Application.ActivityLifecycleCal
     }
 
     private static final int THREAD_WARN_THRESHOLD = 300;
+    /** 32 位盒子原生内存有限，超过该值就先留证据（实测崩溃前会出现 std::bad_alloc）。 */
+    private static final long MEMORY_WARN_BYTES = 512L * 1024 * 1024;
 
     /**
-     * 每分钟采样一次线程数。盒子上线程耗尽会直接 SIGABRT，这里在接近上限时
-     * 留一条记录并清一次图片内存缓存；不动 spider/WebView（归属不明确，
-     * 误清理会打断播放）。
+     * 每分钟采样一次线程数与内存。盒子上线程/原生内存耗尽会直接 SIGABRT，
+     * 这里在接近上限时留记录并清一次图片内存缓存；不动 spider/WebView
+     * （归属不明确，误清理会打断播放）。
      */
     private void startThreadMonitor() {
         final Handler handler = new Handler(Looper.getMainLooper());
@@ -129,9 +131,17 @@ public class App extends Application implements Application.ActivityLifecycleCal
             public void run() {
                 try {
                     int count = Thread.activeCount();
-                    if (count >= THREAD_WARN_THRESHOLD) {
-                        Log.w("OneFilm", "thread count high: " + count);
-                        com.onefilm.android.tv.utils.CrashLog.note(App.this, "thread count high: " + count);
+                    long nativeHeap = android.os.Debug.getNativeHeapAllocatedSize();
+                    long javaHeap = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+                    long used = nativeHeap + javaHeap;
+                    if (count >= THREAD_WARN_THRESHOLD || used >= MEMORY_WARN_BYTES) {
+                        Log.w("OneFilm", "resource warning: threads=" + count
+                                + " native=" + (nativeHeap / 1048576) + "MB"
+                                + " java=" + (javaHeap / 1048576) + "MB");
+                        com.onefilm.android.tv.utils.CrashLog.note(
+                                App.this,
+                                "threads=" + count + " native=" + (nativeHeap / 1048576)
+                                        + "MB java=" + (javaHeap / 1048576) + "MB");
                         com.bumptech.glide.Glide.get(App.this).clearMemory();
                     }
                 } catch (Throwable ignored) {

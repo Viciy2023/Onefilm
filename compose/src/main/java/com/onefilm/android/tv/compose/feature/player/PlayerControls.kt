@@ -126,12 +126,6 @@ private val InkFaint = Color(0x4DF5F5F7)
 private val Panel = Color(0xF21C1C1E)
 private val Press = Color(0xFFFFFFFF)
 
-private data class MenuEntry(
-    val label: String,
-    val enabled: Boolean = true,
-    val onClick: () -> Unit = {},
-)
-
 /** 视频画面：绑定旧 PlayerManager，Exo 用 PlayerView，MPV 额外挂 SurfaceView。 */
 @Composable
 fun VideoSurface(modifier: Modifier = Modifier) {
@@ -245,7 +239,7 @@ fun PlayerControls(
     var dlnaDevices by remember { mutableStateOf<List<DlnaDevice>>(emptyList()) }
     var dlnaLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    var overflowEntries by remember { mutableStateOf<List<MenuEntry>>(emptyList()) }
+    var overflowEntries by remember { mutableStateOf<List<PlayerMenuEntry>>(emptyList()) }
     var danmakuOn by remember { mutableStateOf(true) }
     var tick by remember { mutableIntStateOf(0) }
     var playButtonFocused by remember { mutableStateOf(false) }
@@ -312,77 +306,50 @@ fun PlayerControls(
         }
     }
 
-    val menuEntries = buildList {
-        add(MenuEntry("上集", onPrevious != null) { onPrevious?.invoke() })
-        add(MenuEntry("下集", onNext != null) { onNext?.invoke() })
-        add(MenuEntry("重播") { PlaybackSession.replay() })
-        add(MenuEntry("刷新") { PlaybackSession.refresh() })
-        add(MenuEntry("选集", PlaybackSession.queue.size > 1) { showEpisodes = true })
-        add(MenuEntry("片头 ${formatTime(PlaybackSession.openingMs)}") { PlaybackSession.markOpening() })
-        add(MenuEntry("片尾 ${formatTime(PlaybackSession.endingMs)}") { PlaybackSession.markEnding() })
-        add(MenuEntry("${PlaybackSession.speed}x") { PlaybackSession.cycleSpeed() })
-        add(
-            MenuEntry(
-                if (PlaybackSession.repeatMode == Player.REPEAT_MODE_ONE) "循环 开" else "循环 关",
-            ) { PlaybackSession.toggleRepeat() },
-        )
-        add(MenuEntry(if (danmakuOn) "弹幕 开" else "弹幕 关") {
-            danmakuOn = !danmakuOn
-            DanmakuController.updateEnabled(danmakuOn)
-            PlaybackSession.legacyPlayer?.setDanmakuEnabled(danmakuOn)
-            if (danmakuOn) {
-                DanmakuController.ensureLoaded(
-                    context,
-                    danmakuKey,
-                    ComposeDependencies.danmakuDataSource,
-                )
-            }
-        })
-        add(MenuEntry("画中画") {
-            val activity = context.findActivity()
-            if (activity != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                runCatching {
-                    activity.enterPictureInPictureMode(
-                        PictureInPictureParams.Builder()
-                            .setAspectRatio(Rational(16, 9))
-                            .build(),
+    val menuEntries = buildPlayerMenu(
+        PlayerMenuActions(
+            onPrevious = onPrevious,
+            onNext = onNext,
+            onOpenEpisodes = { showEpisodes = true },
+            danmakuOn = danmakuOn,
+            onToggleDanmaku = {
+                danmakuOn = !danmakuOn
+                DanmakuController.updateEnabled(danmakuOn)
+                PlaybackSession.legacyPlayer?.setDanmakuEnabled(danmakuOn)
+                if (danmakuOn) {
+                    DanmakuController.ensureLoaded(
+                        context,
+                        danmakuKey,
+                        ComposeDependencies.danmakuDataSource,
                     )
                 }
-            }
-        })
-        add(MenuEntry("投屏") {
-            val source = ComposeDependencies.dlnaDataSource
-            if (source != null) {
-                showDlna = true
-                dlnaLoading = true
-                dlnaDevices = emptyList()
-                scope.launch {
-                    dlnaDevices = runCatching { source.devices() }.getOrDefault(emptyList())
-                    dlnaLoading = false
+            },
+            onPip = {
+                val activity = context.findActivity()
+                if (activity != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    runCatching {
+                        activity.enterPictureInPictureMode(
+                            PictureInPictureParams.Builder()
+                                .setAspectRatio(Rational(16, 9))
+                                .build(),
+                        )
+                    }
                 }
-            }
-        })
-        add(MenuEntry("画面 ${PlaybackSession.resizeLabel}") { PlaybackSession.cycleResizeMode() })
-        add(MenuEntry("引擎 ${if (PlaybackSession.engineMpv) "MPV" else "Exo"}") {
-            PlaybackSession.setEngine(!PlaybackSession.engineMpv)
-        })
-        add(MenuEntry("解码 ${PlaybackSession.decodeLabel}") { PlaybackSession.toggleDecode() })
-        add(MenuEntry("渲染 ${PlaybackSession.renderLabel}") { PlaybackSession.toggleRenderMode() })
-        add(MenuEntry("字幕 ${PlaybackSession.subtitleLabel}") { PlaybackSession.cycleSubtitle() })
-        add(MenuEntry("字幕大小 %.1fx".format(PlaybackSession.subtitleScale)) {
-            PlaybackSession.cycleSubtitleScale()
-        })
-        add(MenuEntry("字幕位置 ${PlaybackSession.subtitlePosition.toInt()}") {
-            PlaybackSession.cycleSubtitlePosition()
-        })
-        add(MenuEntry("字幕颜色 ${PlaybackSession.subtitleColor}") {
-            PlaybackSession.cycleSubtitleColor()
-        })
-        add(MenuEntry("音轨 ${PlaybackSession.audioLabel}") { PlaybackSession.cycleAudio() })
-        add(MenuEntry("视轨 ${PlaybackSession.videoLabel}") { PlaybackSession.cycleVideo() })
-        add(MenuEntry("字幕偏移 ${PlaybackSession.textOffsetMs}ms") { PlaybackSession.shiftTextOffset(100L) })
-        add(MenuEntry("音画偏移 ${PlaybackSession.audioOffsetMs}ms") { PlaybackSession.shiftAudioOffset(100L) })
-    }
+            },
+            onDlna = {
+                val source = ComposeDependencies.dlnaDataSource
+                if (source != null) {
+                    showDlna = true
+                    dlnaLoading = true
+                    dlnaDevices = emptyList()
+                    scope.launch {
+                        dlnaDevices = runCatching { source.devices() }.getOrDefault(emptyList())
+                        dlnaLoading = false
+                    }
+                }
+            },
+        ),
+    )
 
     LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, showDlna) {
         if (!controlsVisible) return@LaunchedEffect
@@ -860,9 +827,9 @@ private fun SeekBar(
 
 @Composable
 private fun MenuRow(
-    entries: List<MenuEntry>,
+    entries: List<PlayerMenuEntry>,
     inline: Boolean,
-    onMore: (List<MenuEntry>) -> Unit,
+    onMore: (List<PlayerMenuEntry>) -> Unit,
     onFullscreen: () -> Unit,
     fullscreenFocusRequester: FocusRequester? = null,
     firstItemFocusRequester: FocusRequester? = null,
@@ -927,7 +894,7 @@ private fun MenuRow(
                 MenuText(entry, widths[index], requester)
             }
             if (hasOverflow) {
-                MenuText(MenuEntry("更多") { onMore(entries.drop(visible)) }, moreWidth)
+                MenuText(PlayerMenuEntry("更多") { onMore(entries.drop(visible)) }, moreWidth)
             }
             Spacer(Modifier.weight(1f))
             IconAction(
@@ -943,7 +910,7 @@ private fun MenuRow(
 
 /** 进度条下方的紧凑菜单项：自适应宽度，保证手机可点按。 */
 @Composable
-private fun MenuText(entry: MenuEntry, width: Dp, focusRequester: FocusRequester? = null) {
+private fun MenuText(entry: PlayerMenuEntry, width: Dp, focusRequester: FocusRequester? = null) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     Box(
@@ -1017,7 +984,7 @@ private fun DlnaPopup(
 
 @Composable
 private fun OverflowPopup(
-    entries: List<MenuEntry>,
+    entries: List<PlayerMenuEntry>,
     inline: Boolean,
     onDismiss: () -> Unit,
 ) {
@@ -1179,18 +1146,6 @@ private fun FlatTile(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-    }
-}
-
-private fun formatTime(ms: Long): String {
-    val totalSeconds = (ms.coerceAtLeast(0L) / 1000L)
-    val hours = totalSeconds / 3600
-    val minutes = (totalSeconds % 3600) / 60
-    val seconds = totalSeconds % 60
-    return if (hours > 0) {
-        "%d:%02d:%02d".format(hours, minutes, seconds)
-    } else {
-        "%02d:%02d".format(minutes, seconds)
     }
 }
 
