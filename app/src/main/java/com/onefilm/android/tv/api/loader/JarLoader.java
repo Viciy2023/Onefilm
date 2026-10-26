@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -25,24 +26,30 @@ import dalvik.system.DexClassLoader;
 
 public class JarLoader {
 
+    /** jar spider 数量上限：超过后淘汰最久未使用的实例并 destroy。 */
+    private static final int MAX_SPIDERS = 12;
+
     private final ConcurrentHashMap<String, DexClassLoader> loaders;
     private final ConcurrentHashMap<String, Method> methods;
-    private final ConcurrentHashMap<String, Spider> spiders;
+    private final LinkedHashMap<String, Spider> spiders;
     private final ConcurrentHashMap<String, Object> locks;
+    private final Object spiderLock = new Object();
     private volatile String recent;
 
     public JarLoader() {
         loaders = new ConcurrentHashMap<>();
         methods = new ConcurrentHashMap<>();
-        spiders = new ConcurrentHashMap<>();
+        spiders = new LinkedHashMap<>(16, 0.75f, true);
         locks = new ConcurrentHashMap<>();
     }
 
     public void clear() {
-        spiders.values().forEach(Spider::destroy);
+        synchronized (spiderLock) {
+            for (Spider spider : spiders.values()) destroy(spider);
+            spiders.clear();
+        }
         loaders.clear();
         methods.clear();
-        spiders.clear();
         locks.clear();
         recent = null;
     }
@@ -115,20 +122,49 @@ public class JarLoader {
     public Spider getSpider(String key, String api, String ext, String jar) {
         String jaKey = Crypto.md5(jar);
         String spKey = jaKey + key;
-        return spiders.computeIfAbsent(spKey, k -> {
+        synchronized (spiderLock) {
+            Spider cached = spiders.get(spKey);
+            if (cached != null) return cached;
+            Spider spider;
             try {
                 parseJar(jaKey, jar);
                 DexClassLoader loader = loaders.get(jaKey);
                 if (loader == null) return new SpiderNull();
-                Spider spider = (Spider) loader.loadClass("com.github.catvod.spider." + api.split("csp_")[1]).newInstance();
+                spider = (Spider) loader.loadClass("com.github.catvod.spider." + api.split("csp_")[1]).newInstance();
                 spider.siteKey = key;
                 spider.init(App.get(), ext);
-                return spider;
             } catch (Throwable e) {
                 e.printStackTrace();
-                return new SpiderNull();
+                spider = new SpiderNull();
             }
-        });
+            spiders.put(spKey, spider);
+            evictLocked();
+            return spider;
+        }
+    }
+
+    private void evictLocked() {
+        while (spiders.size() > MAX_SPIDERS) {
+            Iterator<Map.Entry<String, Spider>> iterator = spiders.entrySet().iterator();
+            Map.Entry<String, Spider> victim = null;
+            while (iterator.hasNext()) {
+                Map.Entry<String, Spider> entry = iterator.next();
+                // 正在使用的 jar（recent 是 jar md5）不淘汰，避免打断代理播放
+                if (entry.getKey().startsWith(recent)) continue;
+                victim = entry;
+                break;
+            }
+            if (victim == null) break;
+            iterator.remove();
+            destroy(victim.getValue());
+        }
+    }
+
+    private static void destroy(Spider spider) {
+        try {
+            spider.destroy();
+        } catch (Throwable ignored) {
+        }
     }
 
     private DexClassLoader requireRecentLoader() {
