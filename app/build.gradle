@@ -41,8 +41,8 @@ def hasReleaseSigning =
 //   onefilm.updateBetaUrl=https://apk.example.com/onefilm-beta.json
 def updateStableUrl = localProps['onefilm.updateStableUrl'] ?: 'https://onefilmapk.alibabagroup.de5.net/onefilm-stable.json'
 def updateBetaUrl = localProps['onefilm.updateBetaUrl'] ?: 'https://onefilmapk.alibabagroup.de5.net/onefilm-beta.json'
-def appVersionName = project.findProperty('versionName') ?: '0.1.6'
-def appVersionCode = (project.findProperty('versionCode') ?: '7').toString().toInteger()
+def appVersionName = project.findProperty('versionName') ?: '0.1.7'
+def appVersionCode = (project.findProperty('versionCode') ?: '8').toString().toInteger()
 
 android {
     namespace = 'com.onefilm.android.tv'
