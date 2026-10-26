@@ -98,6 +98,14 @@ class ComposeMainActivity : ComponentActivity() {
         // 控件隐藏时焦点不在任何播放按钮上，Compose 的 onPreviewKeyEvent
         // 收不到按键；这里在全屏播放路由直接处理确认/左右键。
         if (event.action == KeyEvent.ACTION_DOWN && TvPlayerKeyState.fullscreenActive) {
+            // 任何按键都算用户操作，用于重置控制栏的 10 秒自动隐藏计时。
+            TvPlayerKeyState.onUserInteraction?.invoke()
+            if (event.keyCode == KeyEvent.KEYCODE_BACK && TvPlayerKeyState.controlsVisible) {
+                // 返回键分层：先关弹窗，再收控制栏，最后才退出全屏。
+                if (TvPlayerKeyState.closeOverlay?.invoke() == true) return true
+                TvPlayerKeyState.hideControls?.invoke()
+                return true
+            }
             if (!TvPlayerKeyState.controlsVisible) {
                 when (event.keyCode) {
                     KeyEvent.KEYCODE_DPAD_LEFT -> {
@@ -110,19 +118,17 @@ class ComposeMainActivity : ComponentActivity() {
                         TvPlayerKeyState.requestControls?.invoke()
                         return true
                     }
+                    KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
+                        // 控件隐藏时上下键唤出控制栏，焦点直接落到菜单行第一项。
+                        TvPlayerKeyState.requestControlsToMenu?.invoke()
+                        return true
+                    }
                     KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
                         PlaybackSession.toggle()
                         TvPlayerKeyState.requestControls?.invoke()
                         return true
                     }
                 }
-            } else if (!TvPlayerKeyState.menuOpen &&
-                (!PlaybackSession.isPlaying || TvPlayerKeyState.playFocused) &&
-                (event.keyCode == KeyEvent.KEYCODE_DPAD_CENTER || event.keyCode == KeyEvent.KEYCODE_ENTER)
-            ) {
-                // 暂停后控件重新出现，确认键必须能继续播放；菜单打开时不劫持。
-                PlaybackSession.toggle()
-                return true
             }
         }
         return super.dispatchKeyEvent(event)

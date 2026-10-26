@@ -5,6 +5,7 @@ import android.app.PictureInPictureParams
 import android.content.Context
 import android.content.ContextWrapper
 import android.os.Build
+import android.os.SystemClock
 import android.util.Rational
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -113,6 +114,10 @@ object TvPlayerKeyState {
     @Volatile var playFocused: Boolean = false
     @Volatile var menuOpen: Boolean = false
     @Volatile var requestControls: (() -> Unit)? = null
+    @Volatile var requestControlsToMenu: (() -> Unit)? = null
+    @Volatile var hideControls: (() -> Unit)? = null
+    @Volatile var closeOverlay: (() -> Boolean)? = null
+    @Volatile var onUserInteraction: (() -> Unit)? = null
 }
 
 private val Ink = Color(0xFFF5F5F7)
@@ -243,20 +248,47 @@ fun PlayerControls(
     var overflowEntries by remember { mutableStateOf<List<MenuEntry>>(emptyList()) }
     var danmakuOn by remember { mutableStateOf(true) }
     var tick by remember { mutableIntStateOf(0) }
+    var playButtonFocused by remember { mutableStateOf(false) }
     val playFocus = remember { FocusRequester() }
     val fullscreenFocus = remember { FocusRequester() }
+    val menuFirstFocus = remember { FocusRequester() }
+    // 任何按键/点击都算一次操作，控制栏只在 10 秒无操作后才隐藏。
+    var lastInteractionAt by remember { mutableLongStateOf(SystemClock.uptimeMillis()) }
+    // 用上下键唤出控制栏时，焦点直接落到菜单行第一项。
+    var revealToMenu by remember { mutableStateOf(false) }
 
     SideEffect {
         TvPlayerKeyState.fullscreenActive = !inline
         TvPlayerKeyState.controlsVisible = controlsVisible
         if (!controlsVisible) TvPlayerKeyState.playFocused = false
         TvPlayerKeyState.menuOpen = showEpisodes || showMore || showDlna
-        TvPlayerKeyState.requestControls = { controlsVisible = true }
+        TvPlayerKeyState.requestControls = {
+            if (!controlsVisible) revealToMenu = false
+            controlsVisible = true
+        }
+        TvPlayerKeyState.requestControlsToMenu = {
+            if (!controlsVisible) revealToMenu = true
+            controlsVisible = true
+        }
+        TvPlayerKeyState.hideControls = { controlsVisible = false }
+        TvPlayerKeyState.closeOverlay = {
+            when {
+                showDlna -> { showDlna = false; true }
+                showMore -> { showMore = false; true }
+                showEpisodes -> { showEpisodes = false; true }
+                else -> false
+            }
+        }
+        TvPlayerKeyState.onUserInteraction = { lastInteractionAt = SystemClock.uptimeMillis() }
     }
     DisposableEffect(Unit) {
         onDispose {
             TvPlayerKeyState.fullscreenActive = false
             TvPlayerKeyState.requestControls = null
+            TvPlayerKeyState.requestControlsToMenu = null
+            TvPlayerKeyState.hideControls = null
+            TvPlayerKeyState.closeOverlay = null
+            TvPlayerKeyState.onUserInteraction = null
         }
     }
 
@@ -310,7 +342,6 @@ fun PlayerControls(
                 }
             }
         })
-        add(MenuEntry("片尾 ${formatTime(PlaybackSession.endingMs)}") { PlaybackSession.markEnding() })
         add(MenuEntry("画面 ${PlaybackSession.resizeLabel}") { PlaybackSession.cycleResizeMode() })
         add(MenuEntry("引擎 ${if (PlaybackSession.engineMpv) "MPV" else "Exo"}") {
             PlaybackSession.setEngine(!PlaybackSession.engineMpv)
@@ -333,10 +364,18 @@ fun PlayerControls(
         add(MenuEntry("音画偏移 ${PlaybackSession.audioOffsetMs}ms") { PlaybackSession.shiftAudioOffset(100L) })
     }
 
-    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore) {
-        if (controlsVisible && PlaybackSession.isPlaying && !showEpisodes && !showMore) {
-            delay(3500)
-            controlsVisible = false
+    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, showDlna) {
+        if (!controlsVisible) return@LaunchedEffect
+        // 菜单打开或暂停时不自动隐藏；播放中则 10 秒无操作才隐藏。
+        if (!PlaybackSession.isPlaying || showEpisodes || showMore || showDlna) return@LaunchedEffect
+        // 重新开始计时：暂停后恢复、弹窗关闭都要从当下重新数 10 秒。
+        lastInteractionAt = SystemClock.uptimeMillis()
+        while (true) {
+            if (SystemClock.uptimeMillis() - lastInteractionAt >= 10_000L) {
+                controlsVisible = false
+                break
+            }
+            delay(250)
         }
     }
     LaunchedEffect(PlaybackSession.isPlaying) {
@@ -353,7 +392,9 @@ fun PlayerControls(
         if (!inline && controlsVisible && isTv) {
             // 等控件完成淡入后再请求焦点，避免暂停后确认键落空。
             delay(100)
-            runCatching { playFocus.requestFocus() }
+            val target = if (revealToMenu) menuFirstFocus else playFocus
+            runCatching { target.requestFocus() }
+            revealToMenu = false
         }
     }
     LaunchedEffect(player) {
@@ -373,32 +414,43 @@ fun PlayerControls(
         modifier
             .fillMaxSize()
             .onPreviewKeyEvent { event ->
-                if (!inline && event.type == KeyEventType.KeyDown && !showEpisodes && !showMore) {
-                    when (event.key) {
-                        Key.DirectionLeft -> {
-                            PlaybackSession.seekBy(-5_000L)
-                            controlsVisible = true
-                            true
-                        }
-                        Key.DirectionRight -> {
-                            PlaybackSession.seekBy(5_000L)
-                            controlsVisible = true
-                            true
-                        }
-                        Key.DirectionCenter, Key.Enter -> {
-                            if (!controlsVisible) {
-                                PlaybackSession.toggle()
-                                controlsVisible = true
-                                true
-                            } else false
-                        }
-                        else -> false
+                if (inline || event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                lastInteractionAt = SystemClock.uptimeMillis()
+                // 控制栏可见时把方向键交给焦点系统：左右要能在按钮/菜单之间
+                // 移动焦点。只有控件隐藏（焦点树为空）时，方向键才用于快进
+                // 快退和唤出控制栏。
+                if (showEpisodes || showMore || showDlna || controlsVisible) return@onPreviewKeyEvent false
+                when (event.key) {
+                    Key.DirectionLeft -> {
+                        PlaybackSession.seekBy(-5_000L)
+                        revealToMenu = false
+                        controlsVisible = true
+                        true
                     }
-                } else false
+                    Key.DirectionRight -> {
+                        PlaybackSession.seekBy(5_000L)
+                        revealToMenu = false
+                        controlsVisible = true
+                        true
+                    }
+                    Key.DirectionUp, Key.DirectionDown -> {
+                        revealToMenu = true
+                        controlsVisible = true
+                        true
+                    }
+                    Key.DirectionCenter, Key.Enter -> {
+                        PlaybackSession.toggle()
+                        revealToMenu = false
+                        controlsVisible = true
+                        true
+                    }
+                    else -> false
+                }
             }
             .pointerInput(inline) {
                 detectTapGestures(
                     onTap = {
+                        lastInteractionAt = SystemClock.uptimeMillis()
                         when {
                             showEpisodes -> showEpisodes = false
                             showMore -> showMore = false
@@ -486,16 +538,21 @@ fun PlayerControls(
                     Modifier
                         .size(if (inline) 46.dp else 64.dp)
                         .focusRequester(playFocus)
+                        .onFocusChanged {
+                            playButtonFocused = it.isFocused
+                            TvPlayerKeyState.playFocused = it.isFocused
+                        }
                         .focusable()
-                        .onFocusChanged { TvPlayerKeyState.playFocused = it.isFocused }
                         .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.32f))
+                        .background(
+                            if (playButtonFocused) Press else Color.Black.copy(alpha = 0.32f),
+                        )
                         .clickable { PlaybackSession.toggle() },
                     contentAlignment = Alignment.Center,
                 ) {
                     PlayerIcon(
                         glyph = if (PlaybackSession.isPlaying) PlayerGlyph.Pause else PlayerGlyph.Play,
-                        tint = Ink,
+                        tint = if (playButtonFocused) Color.Black else Ink,
                         modifier = Modifier.size(if (inline) 20.dp else 30.dp),
                     )
                 }
@@ -543,6 +600,7 @@ fun PlayerControls(
                     },
                     onFullscreen = onToggleFullscreen,
                     fullscreenFocusRequester = if (inline) fullscreenFocus else null,
+                    firstItemFocusRequester = if (inline) null else menuFirstFocus,
                 )
             }
         }
@@ -694,8 +752,8 @@ private fun SeekBar(
         Modifier
             .fillMaxWidth()
             .height(26.dp)
-            .focusable()
             .onFocusChanged { focused = it.isFocused }
+            .focusable()
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
                 when (event.key) {
@@ -787,6 +845,7 @@ private fun MenuRow(
     onMore: (List<MenuEntry>) -> Unit,
     onFullscreen: () -> Unit,
     fullscreenFocusRequester: FocusRequester? = null,
+    firstItemFocusRequester: FocusRequester? = null,
 ) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val density = LocalDensity.current
@@ -833,8 +892,19 @@ private fun MenuRow(
             horizontalArrangement = Arrangement.spacedBy(spacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            entries.take(visible).forEachIndexed { index, entry ->
-                MenuText(entry, widths[index])
+            var menuRequesterAssigned = false
+            val visibleEntries = entries.take(visible)
+            val firstEnabledIndex = visibleEntries.indexOfFirst { it.enabled }
+            val nextEpisodeIndex = visibleEntries.indexOfFirst { it.enabled && it.label.startsWith("下集") }
+            val defaultIndex = if (nextEpisodeIndex >= 0) nextEpisodeIndex else firstEnabledIndex
+            visibleEntries.forEachIndexed { index, entry ->
+                val requester = if (!menuRequesterAssigned && index == defaultIndex) {
+                    menuRequesterAssigned = true
+                    firstItemFocusRequester
+                } else {
+                    null
+                }
+                MenuText(entry, widths[index], requester)
             }
             if (hasOverflow) {
                 MenuText(MenuEntry("更多") { onMore(entries.drop(visible)) }, moreWidth)
@@ -853,11 +923,12 @@ private fun MenuRow(
 
 /** 进度条下方的紧凑菜单项：自适应宽度，保证手机可点按。 */
 @Composable
-private fun MenuText(entry: MenuEntry, width: Dp) {
+private fun MenuText(entry: MenuEntry, width: Dp, focusRequester: FocusRequester? = null) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     Box(
         Modifier
+            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
             .width(width)
             .height(40.dp)
             .scale(if (focused) 1.06f else 1f)

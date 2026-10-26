@@ -102,11 +102,15 @@ object PlaybackSession {
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(playing: Boolean) {
             isPlaying = playing
+            // 播放器可能自行重连成功（例如刚开始网络没就绪），此时旧的
+            // 错误提示必须跟着消失，否则会一直挂在小窗/全屏上。
+            if (playing) error = null
         }
 
         override fun onPlaybackStateChanged(state: Int) {
             isBuffering = state == Player.STATE_BUFFERING
             if (state == Player.STATE_READY) {
+                error = null
                 durationMs = playerHolder?.duration?.coerceAtLeast(0L) ?: 0L
                 refreshTrackLabels()
             }
