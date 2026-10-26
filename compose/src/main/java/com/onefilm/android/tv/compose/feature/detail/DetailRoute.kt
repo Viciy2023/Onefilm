@@ -86,6 +86,12 @@ fun DetailRoute(
                     episodes = selectedFlag.episodes.map { PlaybackEpisode(it.name, it.url) },
                     index = index,
                 )
+                // 供播放失败时自动切换下一条线路
+                PlaybackSession.setAlternatives(
+                    info.flags.map { detailFlag ->
+                        detailFlag.name to detailFlag.episodes.map { PlaybackEpisode(it.name, it.url) }
+                    },
+                )
                 val resumeFromHistory = history?.episodeUrl == sourceUrl
                 val start = if (resumeFromHistory) {
                     (history!!.positionMs - 10_000L).coerceAtLeast(0L)

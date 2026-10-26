@@ -76,6 +76,10 @@ object PlaybackSession {
     // 播放失败时自动重试（同源、同一地址），最多 2 次；成功或换集后重置。
     private var autoRetryLeft = AUTO_RETRY_MAX
     private var autoRetryToken = 0
+    // 跨线路回退：详情页把全部 flags 传进来，同源重试仍失败时自动切下一条线路。
+    private var alternatives: List<Pair<String, List<PlaybackEpisode>>> = emptyList()
+    private var resolverRef: PlaybackResolver? = null
+    private var lineSwitchUsed = 0
     var resizeMode by mutableIntStateOf(AspectRatioFrameLayout.RESIZE_MODE_FIT)
         private set
     var softwareDecode by mutableStateOf(false)
@@ -112,6 +116,7 @@ object PlaybackSession {
             if (playing) {
                 error = null
                 autoRetryLeft = AUTO_RETRY_MAX
+                lineSwitchUsed = 0
             }
         }
 
@@ -143,6 +148,8 @@ object PlaybackSession {
                 }
                 return
             }
+            // 同源两次重试仍失败：如果详情页提供了其它线路，自动切下一条。
+            if (alternatives.size > 1 && lineSwitchUsed < alternatives.size - 1 && tryNextLine()) return
             error = message
         }
 
@@ -327,6 +334,28 @@ object PlaybackSession {
         currentIndex = index.coerceIn(0, (episodes.size - 1).coerceAtLeast(0))
     }
 
+    /** 详情页把全部线路传进来，播放失败时用于自动回退。 */
+    fun setAlternatives(list: List<Pair<String, List<PlaybackEpisode>>>) {
+        alternatives = list
+        lineSwitchUsed = 0
+    }
+
+    private fun tryNextLine(): Boolean {
+        val ctx = appContext ?: return false
+        val resolver = resolverRef ?: return false
+        val current = alternatives.indexOfFirst { it.first == flagName }
+        if (current < 0) return false
+        val next = alternatives.getOrNull(current + 1) ?: return false
+        lineSwitchUsed++
+        flagName = next.first
+        queue = next.second
+        currentIndex = currentIndex.coerceIn(0, (next.second.size - 1).coerceAtLeast(0))
+        autoRetryLeft = AUTO_RETRY_MAX
+        error = "线路不可用，正在切换到「${next.first}」"
+        scope.launch { playEpisode(ctx, currentIndex, resolver) }
+        return true
+    }
+
     fun play(
         context: Context,
         url: String,
@@ -352,6 +381,7 @@ object PlaybackSession {
     }
 
     fun playEpisode(context: Context, index: Int, resolver: PlaybackResolver) {
+        resolverRef = resolver
         val item = queue.getOrNull(index) ?: return
         val key = siteKey
         val flag = flagName
