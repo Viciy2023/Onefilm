@@ -1,0 +1,46 @@
+name: Preflight
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check signing secrets exist
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -e
+          for name in KEYSTORE_BASE64 KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            eval "value=\$$name"
+            test -n "$value" || (echo "missing $name" && exit 1)
+          done
+          echo "$KEYSTORE_BASE64" | base64 -d > /tmp/release.jks
+          keytool -list -keystore /tmp/release.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /dev/null
+          echo "keystore and alias OK"
+          rm -f /tmp/release.jks
+
+      - name: Check R2 token
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_API_TOKEN: ${{ secrets.R2_API_TOKEN }}
+        run: |
+          set -e
+          for name in R2_ACCOUNT_ID R2_BUCKET R2_API_TOKEN; do
+            eval "value=\$$name"
+            test -n "$value" || (echo "missing $name" && exit 1)
+          done
+          url="https://api.cloudflare.com/client/v4/accounts/$R2_ACCOUNT_ID/r2/buckets/$R2_BUCKET/objects?per_page=1"
+          code=$(curl -s -o /tmp/r2.json -w "%{http_code}" -H "Authorization: Bearer $R2_API_TOKEN" "$url")
+          echo "R2 list HTTP=$code"
+          test "$code" = "200" || (head -c 400 /tmp/r2.json && exit 1)
+          grep -q '"success":true' /tmp/r2.json || (head -c 400 /tmp/r2.json && exit 1)
+          echo "R2 token OK"
