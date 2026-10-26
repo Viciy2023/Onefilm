@@ -398,9 +398,9 @@ fun PlayerControls(
             delay(250)
         }
     }
-    LaunchedEffect(PlaybackSession.isPlaying) {
-        if (!PlaybackSession.isPlaying) controlsVisible = true
-    }
+    // 不要再在“暂停时自动显示控制栏”：seek 引起的瞬时 isPlaying=false 会把
+    // 控制栏弹出来，导致隐藏态按左右键既快进又显示控制栏。用户主动暂停时，
+    // 按键处理本身就会唤出控制栏。
     LaunchedEffect(showMore, isTv, inline) {
         // The inline player must not steal focus from the detail actions.
         // Only the dedicated full-screen route owns the initial player focus.
