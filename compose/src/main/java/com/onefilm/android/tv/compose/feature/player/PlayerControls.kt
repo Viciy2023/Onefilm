@@ -74,7 +74,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -117,6 +116,7 @@ object TvPlayerKeyState {
     @Volatile var requestControlsToMenu: (() -> Unit)? = null
     @Volatile var hideControls: (() -> Unit)? = null
     @Volatile var closeOverlay: (() -> Boolean)? = null
+    @Volatile var seekBy: ((Long) -> Unit)? = null
     @Volatile var onUserInteraction: (() -> Unit)? = null
 }
 
@@ -249,6 +249,8 @@ fun PlayerControls(
     var danmakuOn by remember { mutableStateOf(true) }
     var tick by remember { mutableIntStateOf(0) }
     var playButtonFocused by remember { mutableStateOf(false) }
+    // 控制栏隐藏时左右键只快进/快退：用一条短提示给出位置反馈，不唤出控制栏。
+    var seekHint by remember { mutableStateOf<String?>(null) }
     val playFocus = remember { FocusRequester() }
     val fullscreenFocus = remember { FocusRequester() }
     val menuFirstFocus = remember { FocusRequester() }
@@ -288,7 +290,25 @@ fun PlayerControls(
             TvPlayerKeyState.requestControlsToMenu = null
             TvPlayerKeyState.hideControls = null
             TvPlayerKeyState.closeOverlay = null
+            TvPlayerKeyState.seekBy = null
             TvPlayerKeyState.onUserInteraction = null
+        }
+    }
+
+    fun seekWithHint(deltaMs: Long) {
+        PlaybackSession.seekBy(deltaMs)
+        val target = (PlaybackSession.positionMs() + deltaMs).coerceAtLeast(0L)
+        val action = if (deltaMs > 0) "快进" else "快退"
+        seekHint = "$action ${kotlin.math.abs(deltaMs) / 1000} 秒 · ${formatTime(target)}"
+    }
+
+    SideEffect {
+        TvPlayerKeyState.seekBy = { deltaMs -> seekWithHint(deltaMs) }
+    }
+    LaunchedEffect(seekHint) {
+        if (seekHint != null) {
+            delay(1_200)
+            seekHint = null
         }
     }
 
@@ -422,15 +442,11 @@ fun PlayerControls(
                 if (showEpisodes || showMore || showDlna || controlsVisible) return@onPreviewKeyEvent false
                 when (event.key) {
                     Key.DirectionLeft -> {
-                        PlaybackSession.seekBy(-5_000L)
-                        revealToMenu = false
-                        controlsVisible = true
+                        seekWithHint(-5_000L)
                         true
                     }
                     Key.DirectionRight -> {
-                        PlaybackSession.seekBy(5_000L)
-                        revealToMenu = false
-                        controlsVisible = true
+                        seekWithHint(5_000L)
                         true
                     }
                     Key.DirectionUp, Key.DirectionDown -> {
@@ -677,6 +693,25 @@ fun PlayerControls(
                 },
             )
         }
+
+        // 控制栏隐藏时的快进/快退提示：扁平胶囊，1.2 秒后自动消失。
+        seekHint?.let { hint ->
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = if (inline) 90.dp else 150.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color.Black.copy(alpha = 0.62f))
+                    .padding(horizontal = 18.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = hint,
+                    color = Ink,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+        }
     }
 }
 
@@ -798,19 +833,13 @@ private fun SeekBar(
             },
     ) {
         val centerY = size.height / 2f
-        val trackH = 2.dp.toPx()
-        if (focused) {
-            drawRoundRect(
-                color = Ink.copy(alpha = 0.18f),
-                topLeft = Offset(0f, 0f),
-                size = size,
-                cornerRadius = CornerRadius(8.dp.toPx()),
-            )
-        }
+        // 扁平焦点态：不加边框/底色，只把轨道加粗、调亮，圆点放大。
+        val trackH = (if (focused) 4.dp else 2.dp).toPx()
+        val trackAlpha = if (focused) 0.5f else 0.22f
         val fraction = (if (dragging) preview else position).toFloat()
             .coerceIn(0f, safeDuration.toFloat()) / safeDuration.toFloat()
         drawRoundRect(
-            color = Ink.copy(alpha = 0.22f),
+            color = Ink.copy(alpha = trackAlpha),
             topLeft = Offset(0f, centerY - trackH / 2f),
             size = Size(size.width, trackH),
             cornerRadius = CornerRadius(trackH / 2f),
@@ -823,18 +852,9 @@ private fun SeekBar(
         )
         drawCircle(
             color = Ink,
-            radius = if (dragging) 7.dp.toPx() else 5.dp.toPx(),
+            radius = if (dragging || focused) 7.dp.toPx() else 5.dp.toPx(),
             center = Offset(size.width * fraction, centerY),
         )
-        if (focused) {
-            drawRoundRect(
-                color = Ink.copy(alpha = 0.9f),
-                topLeft = Offset(0f, 0f),
-                size = size,
-                cornerRadius = CornerRadius(6.dp.toPx()),
-                style = Stroke(3.dp.toPx()),
-            )
-        }
     }
 }
 

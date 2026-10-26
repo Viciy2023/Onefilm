@@ -109,13 +109,13 @@ class ComposeMainActivity : ComponentActivity() {
             if (!TvPlayerKeyState.controlsVisible) {
                 when (event.keyCode) {
                     KeyEvent.KEYCODE_DPAD_LEFT -> {
-                        PlaybackSession.seekBy(-5_000L)
-                        TvPlayerKeyState.requestControls?.invoke()
+                        // 控制栏隐藏时左右键只负责快进/快退，不唤出控制栏；
+                        // 位置反馈由播放器的短提示给出。
+                        TvPlayerKeyState.seekBy?.invoke(-5_000L)
                         return true
                     }
                     KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                        PlaybackSession.seekBy(5_000L)
-                        TvPlayerKeyState.requestControls?.invoke()
+                        TvPlayerKeyState.seekBy?.invoke(5_000L)
                         return true
                     }
                     KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_DPAD_DOWN -> {
