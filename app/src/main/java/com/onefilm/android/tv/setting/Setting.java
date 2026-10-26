@@ -137,6 +137,15 @@ public class Setting {
         Prefers.put("force_update", forceUpdate);
     }
 
+    /** 首次启动的存储权限说明是否已展示过。 */
+    public static boolean getStorageIntroDone() {
+        return Prefers.getBoolean("storage_intro_done", false);
+    }
+
+    public static void putStorageIntroDone(boolean done) {
+        Prefers.put("storage_intro_done", done);
+    }
+
     public static boolean isAdblock() {
         return Prefers.getBoolean("adblock", true);
     }

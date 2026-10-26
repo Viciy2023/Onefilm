@@ -105,4 +105,9 @@ interface SettingsDataSource {
 
     /** 导出诊断信息（环境 + 最近一次崩溃）到 Download 目录，返回路径；失败返回空串。 */
     fun exportDiagnostics(): String = ""
+
+    /** 首次启动是否展示存储权限说明。 */
+    fun shouldShowStorageIntro(): Boolean = false
+
+    fun markStorageIntroDone() {}
 }

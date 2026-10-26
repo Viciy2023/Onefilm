@@ -227,6 +227,9 @@ class ComposeMainActivity : ComponentActivity() {
                 }
                 var showConfigDialog by remember { mutableStateOf(false) }
                 var showExitDialog by remember { mutableStateOf(false) }
+                var showStorageIntro by remember {
+                    mutableStateOf(ComposeDependencies.settingsDataSource.shouldShowStorageIntro())
+                }
                 var showLinesDialog by remember { mutableStateOf(false) }
                 var updateInfo by remember { mutableStateOf<com.onefilm.android.tv.compose.bridge.UpdateInfo?>(null) }
                 var updateProgress by remember { mutableIntStateOf(-1) }
@@ -264,6 +267,32 @@ class ComposeMainActivity : ComponentActivity() {
                             launchSingleTop = true
                         }
                     }
+                }
+                if (showStorageIntro) {
+                    StorageIntroDialog(
+                        onGrant = {
+                            ComposeDependencies.settingsDataSource.markStorageIntroDone()
+                            showStorageIntro = false
+                            runCatching {
+                                startActivity(
+                                    Intent(
+                                        android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                                        android.net.Uri.parse("package:$packageName"),
+                                    ),
+                                )
+                            }.onFailure {
+                                runCatching {
+                                    startActivity(
+                                        Intent(android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION),
+                                    )
+                                }
+                            }
+                        },
+                        onDismiss = {
+                            ComposeDependencies.settingsDataSource.markStorageIntroDone()
+                            showStorageIntro = false
+                        },
+                    )
                 }
                 if (showExitDialog) {
                     BackHandler(enabled = true) { showExitDialog = false }

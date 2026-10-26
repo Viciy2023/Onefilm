@@ -121,6 +121,82 @@ fun ExitAppDialog(
 }
 
 @Composable
+fun StorageIntroDialog(
+    onGrant: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val dismissFocus = remember { FocusRequester() }
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnClickOutside = false,
+        ),
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f),
+                ),
+                modifier = Modifier.widthIn(min = 360.dp, max = 470.dp),
+            ) {
+                Column(
+                    Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
+                ) {
+                    Text(
+                        text = "存储权限",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = "壹影需要“所有文件访问”权限来做缓存、下载更新包和导入本地配置。" +
+                            "你可以先跳过，部分功能会受限，之后可在系统设置里重新授权。",
+                        fontSize = 14.sp,
+                        lineHeight = 20.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        DialogAction(
+                            label = "暂不",
+                            focusRequester = dismissFocus,
+                            primary = false,
+                            modifier = Modifier.weight(1f),
+                            onClick = onDismiss,
+                        )
+                        DialogAction(
+                            label = "去授权",
+                            primary = true,
+                            modifier = Modifier.weight(1f),
+                            onClick = onGrant,
+                        )
+                    }
+                }
+            }
+        }
+    }
+    LaunchedEffect(Unit) {
+        delay(60)
+        runCatching { dismissFocus.requestFocus() }
+    }
+}
+
+@Composable
 fun UpdatePromptDialog(
     version: String,
     notes: String,

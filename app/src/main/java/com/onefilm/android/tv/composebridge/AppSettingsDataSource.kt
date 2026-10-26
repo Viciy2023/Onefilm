@@ -355,6 +355,12 @@ class AppSettingsDataSource : SettingsDataSource {
         com.onefilm.android.tv.utils.CrashLog.export(com.github.catvod.Init.context())
     }.getOrDefault("")
 
+    override fun shouldShowStorageIntro(): Boolean = !Setting.getStorageIntroDone()
+
+    override fun markStorageIntroDone() {
+        Setting.putStorageIntroDone(true)
+    }
+
     private fun ensureWallpaperLoadedIfNeeded() {
         if (Setting.getWall() != 5) return
         ensureWallpaperLoaded()
