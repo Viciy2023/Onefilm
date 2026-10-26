@@ -18,9 +18,11 @@ import com.onefilm.android.tv.compose.bridge.DetailCache
 import com.onefilm.android.tv.compose.bridge.FavoriteStore
 import com.onefilm.android.tv.compose.bridge.PlaybackResolver
 import com.onefilm.android.tv.compose.bridge.PlaybackHistoryStore
+import com.onefilm.android.tv.compose.bridge.SearchDataSource
 import com.onefilm.android.tv.compose.feature.player.PlaybackEpisode
 import com.onefilm.android.tv.compose.feature.player.PlaybackSession
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 @Composable
@@ -35,6 +37,8 @@ fun DetailRoute(
     historyStore: PlaybackHistoryStore,
     onBack: () -> Unit,
     onEnterFullscreen: () -> Unit,
+    searchDataSource: SearchDataSource? = null,
+    onSwitchSite: ((key: String, id: String, title: String, poster: String?) -> Unit)? = null,
 ) {
     val viewModel: DetailViewModel = viewModel(
         key = "$key:$id",
@@ -51,6 +55,26 @@ fun DetailRoute(
         if (DetailCache.get(key, id) == null) viewModel.retry()
     }
     var autoStarted by rememberSaveable(key, id) { mutableStateOf(false) }
+
+    // 同源重试、线路切换都失败后，再尝试同名的其他站点（最多 2 次）。
+    LaunchedEffect(PlaybackSession.error, key, id) {
+        val message = PlaybackSession.error ?: return@LaunchedEffect
+        if (message.contains("自动重试") || message.contains("正在切换")) return@LaunchedEffect
+        val source = searchDataSource ?: return@LaunchedEffect
+        val switch = onSwitchSite ?: return@LaunchedEffect
+        val info = (state as? DetailUiState.Content)?.info ?: return@LaunchedEffect
+        SiteFallback.reset(info.title)
+        SiteFallback.mark(key)
+        if (!SiteFallback.hasBudget()) return@LaunchedEffect
+        val candidate = runCatching {
+            source.search(info.title)
+                .firstOrNull { it.items.isNotEmpty() }
+                ?.items
+                ?.firstOrNull { it.key.isNotBlank() && it.id.isNotBlank() && it.key != key }
+        }.getOrNull() ?: return@LaunchedEffect
+        if (!SiteFallback.mark(candidate.key)) return@LaunchedEffect
+        switch(candidate.key, candidate.id, candidate.title.ifBlank { info.title }, candidate.posterUrl)
+    }
 
     fun startPlayback(flagName: String?, episodeUrl: String?) {
         val info = (state as? DetailUiState.Content)?.info ?: return

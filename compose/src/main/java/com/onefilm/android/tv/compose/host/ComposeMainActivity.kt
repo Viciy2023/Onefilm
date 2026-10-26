@@ -521,6 +521,10 @@ class ComposeMainActivity : ComponentActivity() {
                         historyStore = ComposeDependencies.playbackHistoryStore,
                                 onBack = { navController.popBackStack() },
                                 onEnterFullscreen = { navController.navigate(Routes.PLAYER) },
+                                searchDataSource = ComposeDependencies.searchDataSource,
+                                onSwitchSite = { newKey, newId, newTitle, newPoster ->
+                                    navController.navigate(Routes.detail(newKey, newId, newTitle, newPoster))
+                                },
                             )
                         },
                         categoryContent = { key, tid, name ->
