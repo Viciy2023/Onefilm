@@ -47,7 +47,11 @@ jobs:
           ./gradlew :app:assembleLeanbackDebug :app:assembleMobileDebug \
             -PskipComposeMapping --no-daemon --console=plain
 
-      # 以下两步只做提示，不阻断合并（AGENTS/审计决策：CI 门禁仅提示）
+      # 以下三步只做提示，不阻断合并（AGENTS/审计决策：CI 门禁仅提示）
+      - name: Unit tests (informational)
+        continue-on-error: true
+        run: ./gradlew :compose:testDebugUnitTest --no-daemon --console=plain
+
       - name: Compile androidTest (informational)
         continue-on-error: true
         run: ./gradlew :compose:compileDebugAndroidTestKotlin --no-daemon --console=plain
