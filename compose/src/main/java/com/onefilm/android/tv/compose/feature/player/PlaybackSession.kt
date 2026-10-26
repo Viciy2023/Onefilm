@@ -23,6 +23,7 @@ import com.onefilm.android.tv.compose.bridge.PlaybackResolver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 data class PlaybackEpisode(val name: String, val url: String)
@@ -32,6 +33,7 @@ data class PlaybackEpisode(val name: String, val url: String)
  * 这里只维护 UI 状态、选集队列和 History。
  */
 object PlaybackSession {
+    private const val AUTO_RETRY_MAX = 2
     private var legacy: LegacyPlayer? = null
     private var playerHolder by mutableStateOf<Player?>(null)
     private var currentUrl: String? = null
@@ -71,6 +73,9 @@ object PlaybackSession {
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    // 播放失败时自动重试（同源、同一地址），最多 2 次；成功或换集后重置。
+    private var autoRetryLeft = AUTO_RETRY_MAX
+    private var autoRetryToken = 0
     var resizeMode by mutableIntStateOf(AspectRatioFrameLayout.RESIZE_MODE_FIT)
         private set
     var softwareDecode by mutableStateOf(false)
@@ -104,7 +109,10 @@ object PlaybackSession {
             isPlaying = playing
             // 播放器可能自行重连成功（例如刚开始网络没就绪），此时旧的
             // 错误提示必须跟着消失，否则会一直挂在小窗/全屏上。
-            if (playing) error = null
+            if (playing) {
+                error = null
+                autoRetryLeft = AUTO_RETRY_MAX
+            }
         }
 
         override fun onPlaybackStateChanged(state: Int) {
@@ -121,8 +129,21 @@ object PlaybackSession {
         }
 
         override fun onPlayerError(playerError: PlaybackException) {
-            error = playerError.message ?: "播放失败"
             isBuffering = false
+            val message = playerError.message ?: "播放失败"
+            // 同源自动重试：最多 2 次，每次间隔 1.5 秒；仍失败才把错误交给 UI。
+            if (autoRetryLeft > 0 && currentUrl != null) {
+                autoRetryLeft--
+                val attempt = AUTO_RETRY_MAX - autoRetryLeft
+                error = "$message（自动重试 $attempt/$AUTO_RETRY_MAX）"
+                val token = ++autoRetryToken
+                scope.launch {
+                    delay(1_500L)
+                    if (token == autoRetryToken && error != null) retry()
+                }
+                return
+            }
+            error = message
         }
 
         override fun onRepeatModeChanged(repeatMode: Int) {
@@ -317,6 +338,8 @@ object PlaybackSession {
         if (currentUrl != url) {
             currentUrl = url
             error = null
+            autoRetryLeft = AUTO_RETRY_MAX
+            autoRetryToken++
             openingApplied = false
             endingApplied = false
             subtitleOff = false
