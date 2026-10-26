@@ -739,4 +739,11 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     public void setUseParse(boolean useParse) {
         this.useParse = useParse;
     }
+    public boolean isPlaybackServiceReady() {
+        return service() != null;
+    }
+
+    public boolean isPlayerLive() {
+        return player().isLive();
+    }
 }

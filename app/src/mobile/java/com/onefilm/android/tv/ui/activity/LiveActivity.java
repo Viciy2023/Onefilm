@@ -702,16 +702,6 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     }
 
     @Override
-    public boolean isPlayerLive() {
-        return player().isLive();
-    }
-
-    @Override
-    public boolean isPlaybackServiceReady() {
-        return service() != null;
-    }
-
-    @Override
     public void restorePlaybackKey(@Nullable String key) {
         if (key == null || !player().hasPlaySpec() || !key.equals(player().getKey())) return;
         updateNavigationKey(mPlaybackKey = key);
