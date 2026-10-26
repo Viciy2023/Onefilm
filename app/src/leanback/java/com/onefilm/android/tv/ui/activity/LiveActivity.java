@@ -78,12 +78,9 @@ import java.util.Iterator;
 import java.util.List;
 import com.onefilm.android.tv.compose.host.ComposeMainActivity;
 
-public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnClickListener, ChannelAdapter.OnClickListener, EpgDataAdapter.OnClickListener, CustomKeyDownLive.Listener, CustomLiveListView.Callback, PassListener, ConfigListener, LiveListener, LivePlaybackHost {
+public class LiveActivity extends LivePlaybackActivity implements GroupAdapter.OnClickListener, ChannelAdapter.OnClickListener, EpgDataAdapter.OnClickListener, CustomKeyDownLive.Listener, CustomLiveListView.Callback, PassListener, ConfigListener, LiveListener, LivePlaybackHost {
 
     private ActivityLiveBinding mBinding;
-    private LiveViewModel mViewModel;
-    private LivePlaybackController mLive;
-    private GroupAdapter mGroupAdapter;
     private ChannelAdapter mChannelAdapter;
     private EpgDataAdapter mEpgDataAdapter;
     private CustomKeyDownLive mKeyDown;
@@ -91,30 +88,13 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
     private View mOldView;
     private View mFocus2;
     private Runnable mR0;
-    private Runnable mR1;
     private Runnable mR2;
-    private Runnable mR3;
     private Runnable mR4;
     private List<Group> mHides;
     private Group mGroup;
-    private Channel mChannel;
-    private String mPlaybackKey;
-    private int count;
 
     public static void start(Context context) {
         context.startActivity(new Intent(context, LiveActivity.class).putExtra("empty", LiveConfig.isEmpty()));
-    }
-
-    private boolean isEmpty() {
-        return getIntent().getBooleanExtra("empty", true);
-    }
-
-    private Group getKeep() {
-        return mGroupAdapter.get(0);
-    }
-
-    private Live getHome() {
-        return LiveConfig.get().getHome();
     }
 
     @Override
@@ -133,11 +113,6 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
     }
 
     @Override
-    protected String getPlaybackKey() {
-        return mPlaybackKey;
-    }
-
-    @Override
     protected PlayerView getPlayerView() {
         return mBinding.player;
     }
@@ -145,11 +120,6 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
     @Override
     protected PlayerSeekView getSeekView() {
         return mBinding.control.seek;
-    }
-
-    @Override
-    protected void onServiceConnected() {
-        mLive.onPlaybackServiceReady();
     }
 
     @Override
@@ -364,11 +334,6 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
         notifyItemChanged(mBinding.epgData, mEpgDataAdapter);
     }
 
-    private void checkPlay() {
-        if (player().isPlaying()) onPaused();
-        else onPlay();
-    }
-
     private void onTrack(View view) {
         TrackDialog.create().type(Integer.parseInt(view.getTag().toString())).player(player()).view(mBinding.player.getSubtitleView()).show(this);
         hideControl();
@@ -378,10 +343,6 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
         if (LiveConfig.isOnly()) setLive(getHome());
         else LiveDialog.create().show(this);
         hideControl();
-    }
-
-    private void onLine() {
-        nextLine(false);
     }
 
     private void onScale() {
@@ -478,16 +439,6 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
     @Override
     protected void onTracksChanged() {
         setTrackVisible();
-    }
-
-    @Override
-    protected void onError(String msg) {
-        mLive.playbackError(msg);
-    }
-
-    @Override
-    protected void onReclaim() {
-        mLive.refresh();
     }
 
     @Override
@@ -600,23 +551,11 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
         App.post(mR2, 1000);
     }
 
-    private void setR1Callback() {
-        App.post(mR1, Constant.INTERVAL_HIDE);
-    }
-
-    private void setR3Callback() {
-        App.post(mR3, Constant.INTERVAL_HIDE);
-    }
-
     private void onToggle() {
         if (isVisible(mBinding.control.getRoot())) hideControl();
         else if (isVisible(mBinding.recycler)) hideUI();
         else showUI();
         hideInfo();
-    }
-
-    private void resetPass() {
-        this.count = 0;
     }
 
     private void setArtwork() {
@@ -707,39 +646,14 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
         setWidth(epg);
     }
 
-    private void onXmlParsed(boolean success) {
-        if (mChannel != null && success) mViewModel.getEpg(mChannel);
-    }
-
     private void stopPlayer() {
         player().clear();
         player().stop();
     }
 
     @Override
-    public int getGroupCount() {
-        return mGroupAdapter.getItemCount();
-    }
-
-    @Override
     public int getGroupPosition() {
         return mBinding.group.getSelectedPosition();
-    }
-
-    @Override
-    public Group getGroup(int position) {
-        return mGroupAdapter.get(position);
-    }
-
-    @Override
-    public void restorePlaybackKey(@Nullable String key) {
-        if (key == null || !player().hasPlaySpec() || !key.equals(player().getKey())) return;
-        updateNavigationKey(mPlaybackKey = key);
-    }
-
-    @Override
-    public ZoneId getZoneId() {
-        return mViewModel.getZoneId();
     }
 
     @Override
@@ -889,33 +803,13 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
         PlaybackAction.setTracks(player(), mBinding.control.action.text, mBinding.control.action.audio, mBinding.control.action.video, mBinding.control.action.speed);
     }
 
-    private void prevChannel() {
-        mLive.prevChannel();
-    }
-
-    private void nextChannel() {
-        mLive.nextChannel();
-    }
-
     private void prevLine() {
         mLive.prevLine();
-    }
-
-    private void nextLine(boolean show) {
-        mLive.nextLine(show);
     }
 
     private void seek(long time) {
         mKeyDown.reset();
         seekTo(time);
-    }
-
-    private void onPaused() {
-        controller().pause();
-    }
-
-    private void onPlay() {
-        controller().play();
     }
 
     private View getFocus2() {

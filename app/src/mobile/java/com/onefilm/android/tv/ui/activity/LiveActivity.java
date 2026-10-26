@@ -81,25 +81,17 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class LiveActivity extends PlaybackActivity implements CustomKeyDown.Listener, Biometric.Callback, PassListener, ConfigListener, LiveListener, GroupAdapter.OnClickListener, ChannelAdapter.OnClickListener, EpgDataAdapter.OnClickListener, CastDialog.Listener, InfoDialog.Listener, LivePlaybackHost {
+public class LiveActivity extends LivePlaybackActivity implements CustomKeyDown.Listener, Biometric.Callback, PassListener, ConfigListener, LiveListener, GroupAdapter.OnClickListener, ChannelAdapter.OnClickListener, EpgDataAdapter.OnClickListener, CastDialog.Listener, InfoDialog.Listener, LivePlaybackHost {
 
     private ActivityLiveBinding mBinding;
-    private LiveViewModel mViewModel;
-    private LivePlaybackController mLive;
-    private GroupAdapter mGroupAdapter;
     private ChannelAdapter mChannelAdapter;
     private EpgDataAdapter mEpgDataAdapter;
     private CustomKeyDown mKeyDown;
     private PiP mPiP;
-    private Runnable mR1;
     private Runnable mR2;
-    private Runnable mR3;
     private List<Group> mHides;
     private Group mGroup;
-    private Channel mChannel;
-    private String mPlaybackKey;
     private boolean rotate;
-    private int count;
 
     public static void start(Context context) {
         Intent intent = new Intent(context, LiveActivity.class);
@@ -107,18 +99,6 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
         String saved = Prefers.getString("compose_live_url");
         if (saved != null && !saved.isEmpty()) intent.putExtra("live_url", saved);
         context.startActivity(intent);
-    }
-
-    private boolean isEmpty() {
-        return getIntent().getBooleanExtra("empty", true);
-    }
-
-    private Group getKeep() {
-        return mGroupAdapter.get(0);
-    }
-
-    private Live getHome() {
-        return LiveConfig.get().getHome();
     }
 
     @Override
@@ -137,11 +117,6 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     }
 
     @Override
-    protected String getPlaybackKey() {
-        return mPlaybackKey;
-    }
-
-    @Override
     protected PlayerView getPlayerView() {
         return mBinding.player;
     }
@@ -149,11 +124,6 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     @Override
     protected PlayerSeekView getSeekView() {
         return mBinding.control.seek;
-    }
-
-    @Override
-    protected void onServiceConnected() {
-        mLive.onPlaybackServiceReady();
     }
 
     @Override
@@ -396,11 +366,6 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
         setRequestedOrientation(PlaybackOrientation.getRotateOrientation(this));
     }
 
-    private void checkPlay() {
-        if (player().isPlaying()) onPaused();
-        else onPlay();
-    }
-
     private void onTrack(View view) {
         TrackDialog.create().type(Integer.parseInt(view.getTag().toString())).player(player()).view(mBinding.player.getSubtitleView()).show(this);
         hideControl();
@@ -410,10 +375,6 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
         if (LiveConfig.isOnly()) setLive(getHome());
         else LiveDialog.show(this);
         hideControl();
-    }
-
-    private void onLine() {
-        nextLine(false);
     }
 
     private void onScale() {
@@ -568,23 +529,11 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
         App.post(mR2, 1000);
     }
 
-    private void setR1Callback() {
-        App.post(mR1, Constant.INTERVAL_HIDE);
-    }
-
-    private void setR3Callback() {
-        App.post(mR3, Constant.INTERVAL_HIDE);
-    }
-
     private void onToggle() {
         if (isVisible(mBinding.control.getRoot())) hideControl();
         else if (isVisible(mBinding.recycler)) hideUI();
         else showUI();
         hideInfo();
-    }
-
-    private void resetPass() {
-        this.count = 0;
     }
 
     private void setArtwork() {
@@ -675,11 +624,6 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
         setWidth(epg);
     }
 
-    private void onXmlParsed(boolean success) {
-        if (mChannel != null && success)
-            mViewModel.getEpg(mChannel);
-    }
-
     private void stopPlayer() {
         player().clear();
         player().stop();
@@ -687,29 +631,8 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     }
 
     @Override
-    public int getGroupCount() {
-        return mGroupAdapter.getItemCount();
-    }
-
-    @Override
     public int getGroupPosition() {
         return mGroupAdapter.getPosition();
-    }
-
-    @Override
-    public Group getGroup(int position) {
-        return mGroupAdapter.get(position);
-    }
-
-    @Override
-    public void restorePlaybackKey(@Nullable String key) {
-        if (key == null || !player().hasPlaySpec() || !key.equals(player().getKey())) return;
-        updateNavigationKey(mPlaybackKey = key);
-    }
-
-    @Override
-    public ZoneId getZoneId() {
-        return mViewModel.getZoneId();
     }
 
     @Override
@@ -835,16 +758,6 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     }
 
     @Override
-    protected void onError(String msg) {
-        mLive.playbackError(msg);
-    }
-
-    @Override
-    protected void onReclaim() {
-        mLive.refresh();
-    }
-
-    @Override
     protected void onStateChanged(int state) {
         switch (state) {
             case Player.STATE_BUFFERING:
@@ -947,26 +860,6 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
 
     private void setTrackVisible() {
         PlaybackAction.setTracks(player(), mBinding.control.action.text, mBinding.control.action.audio, mBinding.control.action.video, mBinding.control.action.speed);
-    }
-
-    private void prevChannel() {
-        mLive.prevChannel();
-    }
-
-    private void nextChannel() {
-        mLive.nextChannel();
-    }
-
-    private void nextLine(boolean show) {
-        mLive.nextLine(show);
-    }
-
-    private void onPaused() {
-        controller().pause();
-    }
-
-    private void onPlay() {
-        controller().play();
     }
 
     public boolean isRotate() {
