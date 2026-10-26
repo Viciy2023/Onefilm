@@ -37,6 +37,7 @@ import com.onefilm.android.tv.bean.Result;
 import com.onefilm.android.tv.playback.PlaybackIntent;
 import com.onefilm.android.tv.player.PlayerManager;
 import com.onefilm.android.tv.player.media.PlaySpec;
+import com.onefilm.android.tv.playback.vod.VodPlaybackController;
 import com.onefilm.android.tv.service.PlaybackService;
 import com.onefilm.android.tv.setting.DanmakuSetting;
 import com.onefilm.android.tv.setting.PlayerSetting;
@@ -66,6 +67,10 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     private boolean bound;
     private boolean stop;
     private boolean lock;
+
+    /** 播放页共用状态：由 flavor 侧的 UI 代码赋值。 */
+    protected VodPlaybackController mVod;
+    protected boolean useParse;
 
     protected MediaController controller() {
         return mController;
@@ -673,5 +678,65 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         private void dispatch() {
             if (pending) deliver(pendingValue);
         }
+    }
+    // ---------------------------------------------------------------------
+    // P2-2 阶段 1：以下方法原本在 leanback / mobile 的 VideoActivity 中各有一份，
+    // 实现完全一致且只依赖本基类成员，统一上提到这里。
+    // ---------------------------------------------------------------------
+
+    public boolean isPlayerEmpty() {
+        return player().isEmpty();
+    }
+
+    public boolean hasPlaybackSession() {
+        return service() != null && isOwner() && player().hasPlaySpec();
+    }
+
+    public boolean isLivePlayback() {
+        return service() != null && isOwner() && player().isLive();
+    }
+
+    public boolean canTrackPlaybackProgress() {
+        return service() != null && isOwner() && player().isVod();
+    }
+
+    public boolean canPreloadNext() {
+        return service() != null && isOwner() && player().canPreloadNext();
+    }
+
+    public long getPlayerPosition() {
+        return player().getPosition();
+    }
+
+    public long getPlayerDuration() {
+        return player().getDuration();
+    }
+
+    public boolean preloadPlayback(Result result, long startPositionMs, MediaMetadata metadata) {
+        return player().preload(PlaySpec.from(result, getPlaybackKey(), metadata), startPositionMs);
+    }
+
+    public void clearPreload() {
+        if (service() != null && isOwner()) player().clearPreload();
+    }
+
+    public boolean isHostFinishing() {
+        return isFinishing() || isDestroyed();
+    }
+
+    protected void saveHistory(boolean exit) {
+        PlaybackService service = service();
+        boolean owner = service != null && getPlaybackKey().equals(service.player().getKey());
+        long position = owner ? service.player().getPosition() : C.TIME_UNSET;
+        long duration = owner ? service.player().getDuration() : C.TIME_UNSET;
+        if (mVod != null) mVod.saveHistory(exit, System.currentTimeMillis(), position, duration);
+    }
+
+    public boolean isUseParse() {
+        return useParse;
+    }
+
+    public void setUseParse(boolean useParse) {
+        this.useParse = useParse;
     }
 }

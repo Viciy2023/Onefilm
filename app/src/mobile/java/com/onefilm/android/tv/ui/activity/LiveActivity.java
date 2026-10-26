@@ -707,11 +707,6 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     }
 
     @Override
-    public boolean hasPlaybackSession() {
-        return mPlaybackKey != null && service() != null && isOwner() && player().hasPlaySpec();
-    }
-
-    @Override
     public boolean isPlaybackServiceReady() {
         return service() != null;
     }
@@ -720,11 +715,6 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     public void restorePlaybackKey(@Nullable String key) {
         if (key == null || !player().hasPlaySpec() || !key.equals(player().getKey())) return;
         updateNavigationKey(mPlaybackKey = key);
-    }
-
-    @Override
-    public long getPlayerPosition() {
-        return player().getPosition();
     }
 
     @Override

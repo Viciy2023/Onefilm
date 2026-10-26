@@ -107,7 +107,6 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     private ActivityVideoBinding mBinding;
     private VideoViewModel mViewModel;
-    private VodPlaybackController mVod;
     private FlagAdapter mFlagAdapter;
     private EpisodeAdapter mEpisodeAdapter;
     private QualityAdapter mQualityAdapter;
@@ -125,7 +124,6 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     private Runnable mR4;
     private History mHistory;
     private boolean fullscreen;
-    private boolean useParse;
 
     public static void push(FragmentActivity activity, String text) {
         Uri uri = UrlUtil.uri(text);
@@ -438,48 +436,8 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     }
 
     @Override
-    public boolean isHostFinishing() {
-        return isFinishing() || isDestroyed();
-    }
-
-    @Override
-    public boolean isPlayerEmpty() {
-        return player().isEmpty();
-    }
-
-    @Override
-    public boolean hasPlaybackSession() {
-        return service() != null && isOwner() && player().hasPlaySpec();
-    }
-
-    @Override
     public boolean isFullscreenForPlayback() {
         return isFullscreen();
-    }
-
-    @Override
-    public boolean isLivePlayback() {
-        return service() != null && isOwner() && player().isLive();
-    }
-
-    @Override
-    public boolean canTrackPlaybackProgress() {
-        return service() != null && isOwner() && player().isVod();
-    }
-
-    @Override
-    public boolean canPreloadNext() {
-        return service() != null && isOwner() && player().canPreloadNext();
-    }
-
-    @Override
-    public long getPlayerPosition() {
-        return player().getPosition();
-    }
-
-    @Override
-    public long getPlayerDuration() {
-        return player().getDuration();
     }
 
     @Override
@@ -525,16 +483,6 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
     @Override
     public void startPlayback(Result result, boolean useParse, long startPositionMs, MediaMetadata metadata) {
         startPlayer(getHistoryKey(), result, useParse, getSite().getTimeout(), startPositionMs, metadata);
-    }
-
-    @Override
-    public boolean preloadPlayback(Result result, long startPositionMs, MediaMetadata metadata) {
-        return player().preload(PlaySpec.from(result, getHistoryKey(), metadata), startPositionMs);
-    }
-
-    @Override
-    public void clearPreload() {
-        if (service() != null && isOwner()) player().clearPreload();
     }
 
     @Override
@@ -1126,14 +1074,6 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
         setR2Callback();
     }
 
-    private void saveHistory(boolean exit) {
-        PlaybackService service = service();
-        boolean owner = service != null && getPlaybackKey().equals(service.player().getKey());
-        long position = owner ? service.player().getPosition() : C.TIME_UNSET;
-        long duration = owner ? service.player().getDuration() : C.TIME_UNSET;
-        if (mVod != null) mVod.saveHistory(exit, System.currentTimeMillis(), position, duration);
-    }
-
     private void checkKeepImg() {
         mBinding.keep.setCompoundDrawablesWithIntrinsicBounds(Keep.find(getHistoryKey()) == null ? R.drawable.ic_detail_keep_off : R.drawable.ic_detail_keep_on, 0, 0, 0);
     }
@@ -1318,14 +1258,6 @@ public class VideoActivity extends PlaybackActivity implements VodPlaybackHost, 
 
     private void setFullscreen(boolean fullscreen) {
         this.fullscreen = fullscreen;
-    }
-
-    public boolean isUseParse() {
-        return useParse;
-    }
-
-    public void setUseParse(boolean useParse) {
-        this.useParse = useParse;
     }
 
     private View getFocus1() {
