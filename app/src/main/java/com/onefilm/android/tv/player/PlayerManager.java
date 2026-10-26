@@ -86,6 +86,9 @@ public class PlayerManager implements ParseCallback {
 
     public void release() {
         App.removeCallbacks(runnable);
+        // 解析进行中退出播放页时，ParseJob 的 WebView 和线程池要立刻释放，
+        // 否则会一直存活到解析超时，造成线程堆积。
+        stopParse();
         if (player != null) player.removeListener(listener);
         if (engine != null) engine.release();
         engine = null;
