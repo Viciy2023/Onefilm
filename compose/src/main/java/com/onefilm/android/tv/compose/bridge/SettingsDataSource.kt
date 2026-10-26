@@ -102,4 +102,7 @@ interface SettingsDataSource {
     fun setCacheDays(days: Int)
     fun clearCache()
     fun cycleWallpaper()
+
+    /** 导出诊断信息（环境 + 最近一次崩溃）到 Download 目录，返回路径；失败返回空串。 */
+    fun exportDiagnostics(): String = ""
 }

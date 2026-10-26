@@ -42,6 +42,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -586,6 +587,14 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
 
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    val context = LocalContext.current
+                    ActionRow("导出诊断", "写入 Download") {
+                        val path = dataSource.exportDiagnostics()
+                        val message = if (path.isBlank()) "导出失败，请检查存储权限" else "已导出：$path"
+                        android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
+                    }
                 }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     InfoRow("版本", "${snapshot.version} · GPL-3.0")

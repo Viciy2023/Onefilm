@@ -83,6 +83,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
     @Override
     public void onCreate() {
         super.onCreate();
+        long startupAt = android.os.SystemClock.uptimeMillis();
         installThreadGuard();
         CoreContext.INSTANCE.init(this);
         Notify.createChannel();
@@ -109,6 +110,35 @@ public class App extends Application implements Application.ActivityLifecycleCal
             com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setDlnaDataSource((com.onefilm.android.tv.compose.bridge.DlnaDataSource) dlnaClass.getDeclaredConstructor().newInstance());
         } catch (Throwable ignored) {
         }
+
+        Log.i("OneFilm", "application onCreate: " + (android.os.SystemClock.uptimeMillis() - startupAt) + "ms");
+        startThreadMonitor();
+    }
+
+    private static final int THREAD_WARN_THRESHOLD = 300;
+
+    /**
+     * 每分钟采样一次线程数。盒子上线程耗尽会直接 SIGABRT，这里在接近上限时
+     * 留一条记录并清一次图片内存缓存；不动 spider/WebView（归属不明确，
+     * 误清理会打断播放）。
+     */
+    private void startThreadMonitor() {
+        final Handler handler = new Handler(Looper.getMainLooper());
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    int count = Thread.activeCount();
+                    if (count >= THREAD_WARN_THRESHOLD) {
+                        Log.w("OneFilm", "thread count high: " + count);
+                        com.onefilm.android.tv.utils.CrashLog.note(App.this, "thread count high: " + count);
+                        com.bumptech.glide.Glide.get(App.this).clearMemory();
+                    }
+                } catch (Throwable ignored) {
+                }
+                handler.postDelayed(this, 60_000L);
+            }
+        }, 60_000L);
     }
 
     @Override
@@ -130,6 +160,8 @@ public class App extends Application implements Application.ActivityLifecycleCal
     private void installThreadGuard() {
         final Thread.UncaughtExceptionHandler previous = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            // 先落盘，保证任何未捕获异常都有现场（包括线程创建失败）。
+            com.onefilm.android.tv.utils.CrashLog.write(this, thread, throwable);
             boolean threadCreationFailed = throwable instanceof OutOfMemoryError
                     && throwable.getMessage() != null
                     && throwable.getMessage().contains("pthread_create");

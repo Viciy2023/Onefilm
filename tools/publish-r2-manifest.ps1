@@ -33,7 +33,9 @@
 
 [CmdletBinding()]
 param(
-  [Parameter(Mandatory = $true)][string]$Version,
+  # 省略 -Version/-VersionCode 时从 gradle.properties 的 onefilm.versionName /
+  # onefilm.versionCode 读取，保证包与清单版本一致。
+  [string]$Version = "",
   [Parameter(Mandatory = $true)][string]$Repo,
   [string]$Tag = "",
   [int]$VersionCode = 0,
@@ -42,6 +44,7 @@ param(
   [string]$NotesFile = "",
   [string]$Notes = "OneFilm update",
   [string[]]$ApkFiles = @(),
+  [string[]]$MappingFiles = @(),
   [string]$AccountId = $env:R2_ACCOUNT_ID,
   [string]$Bucket = $env:R2_BUCKET,
   [string]$TokenFile = $env:R2_TOKEN_FILE,
@@ -52,6 +55,19 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+# 版本单一来源：gradle.properties
+$gradleProps = @{}
+$gradlePropsPath = Join-Path $PSScriptRoot "..\gradle.properties"
+if (Test-Path $gradlePropsPath) {
+  foreach ($line in Get-Content $gradlePropsPath) {
+    if ($line -match '^\s*([^#=]+?)\s*=\s*(.*)$') { $gradleProps[$matches[1].Trim()] = $matches[2].Trim() }
+  }
+}
+if ([string]::IsNullOrWhiteSpace($Version)) { $Version = [string]$gradleProps['onefilm.versionName'] }
+if ($VersionCode -le 0 -and $gradleProps['onefilm.versionCode']) { $VersionCode = [int]$gradleProps['onefilm.versionCode'] }
+if ([string]::IsNullOrWhiteSpace($Version)) { throw "-Version is required (or set onefilm.versionName in gradle.properties)" }
+if ($VersionCode -le 0) { throw "-VersionCode is required (or set onefilm.versionCode in gradle.properties)" }
 
 if ($Version -match '^[vV]') { throw "-Version must not include the v prefix" }
 if ([string]::IsNullOrWhiteSpace($Tag)) { $Tag = "v$Version" }
@@ -167,6 +183,30 @@ foreach ($u in $uploads) {
   if ($remoteSize -ne $u.Size) { throw "size mismatch for $($u.Name): remote=$remoteSize local=$($u.Size)" }
   if ($remoteEtag -ne $u.Md5) { throw "etag/md5 mismatch for $($u.Name): remote=$remoteEtag local=$($u.Md5)" }
   Write-Host ("  verified {0} size={1:N0} md5={2}" -f $u.Key, $remoteSize, $remoteEtag)
+}
+
+# R8 mapping：按版本归档到私有前缀 mapping/v<version>/，只用于还原线上崩溃栈。
+foreach ($mapping in $MappingFiles) {
+  if ([string]::IsNullOrWhiteSpace($mapping)) { continue }
+  if (-not (Test-Path $mapping)) { throw "mapping file not found: $mapping" }
+  $mappingItem = Get-Item $mapping
+  if ($mappingItem.Length -le 0) { throw "mapping file is empty: $mapping" }
+  $mappingKey = "mapping/v$Version/$($mappingItem.Name)"
+  $mappingMd5 = (Get-FileHash $mappingItem.FullName -Algorithm MD5).Hash.ToLowerInvariant()
+  Write-Host "PUT $mappingKey"
+  & $curl -sS --max-time 600 -X PUT `
+    -H "Authorization: Bearer $Token" `
+    -H "Content-Type: text/plain; charset=utf-8" `
+    -H "Cache-Control: no-store" `
+    --data-binary "@$($mappingItem.FullName)" `
+    -o "$env:TEMP/onefilm-mapping-upload.json" `
+    -w "HTTP=%{http_code}`n" `
+    "$objectsApi/$($mappingKey)"
+  if ($LASTEXITCODE -ne 0) { throw "mapping upload failed: $($mappingItem.Name) (curl exit $LASTEXITCODE)" }
+  $mappingResp = Get-Content "$env:TEMP/onefilm-mapping-upload.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+  if (-not $mappingResp.success) { throw "mapping upload rejected: $($mappingItem.Name)" }
+  if ([int64]$mappingResp.result.size -ne $mappingItem.Length) { throw "mapping size mismatch: $($mappingItem.Name)" }
+  Write-Host ("  verified {0} size={1:N0}" -f $mappingKey, $mappingItem.Length)
 }
 
 # MANIFEST must NOT be cached: clients need the newest version immediately.

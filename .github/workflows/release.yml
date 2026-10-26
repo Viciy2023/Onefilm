@@ -78,13 +78,13 @@ jobs:
         run: |
           chmod +x gradlew
           ./gradlew :app:assembleLeanbackRelease \
-            -PversionName="$VERSION_NAME" \
-            -PversionCode="$VERSION_CODE" \
+            -Ponefilm.versionName="$VERSION_NAME" \
+            -Ponefilm.versionCode="$VERSION_CODE" \
             -PskipComposeMapping \
             --no-daemon --console=plain
           ./gradlew :app:assembleMobileRelease \
-            -PversionName="$VERSION_NAME" \
-            -PversionCode="$VERSION_CODE" \
+            -Ponefilm.versionName="$VERSION_NAME" \
+            -Ponefilm.versionCode="$VERSION_CODE" \
             -PskipComposeMapping \
             --no-daemon --console=plain
 
@@ -112,6 +112,10 @@ jobs:
             Get-ChildItem app/build/outputs/apk/mobile/release -Filter "OneFilm-Mobile-$env:VERSION_NAME-*.apk" -ErrorAction SilentlyContinue
           )
           if ($apks.Count -eq 0) { throw "no APK found for version $env:VERSION_NAME" }
+          $maps = @(
+            "app/build/outputs/mapping/leanbackRelease/mapping.txt"
+            "app/build/outputs/mapping/mobileRelease/mapping.txt"
+          ) | Where-Object { Test-Path $_ }
           ./tools/publish-r2-manifest.ps1 `
             -Version "$env:VERSION_NAME" `
             -VersionCode "$env:VERSION_CODE" `
@@ -119,4 +123,5 @@ jobs:
             -Tag "v${{ inputs.version }}" `
             -BaseUrl "https://onefilmapk.alibabagroup.de5.net" `
             -ApkFiles $apks.FullName `
+            -MappingFiles $maps `
             -PruneOldApks

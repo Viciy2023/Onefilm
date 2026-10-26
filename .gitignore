@@ -25,6 +25,8 @@ docs/ing
 
 # Local project docs and screenshots (not published)
 docs/**/*.md
+# 发布清单 body 等一次性输入文件，只用于本地发布
+docs/update-body-*.txt
 docs/screenshots/*
 !docs/screenshots/readme/
 !docs/screenshots/readme/**

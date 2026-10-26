@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main, feat/core-module]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          # v3 默认安装已下线的 legacy "tools" 包，只装 platform-tools 即可
+          packages: "platform-tools"
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle', '**/*.gradle.kts', 'gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+
+      - name: Assemble debug (TV + Mobile)
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleLeanbackDebug :app:assembleMobileDebug \
+            -PskipComposeMapping --no-daemon --console=plain
+
+      # 以下两步只做提示，不阻断合并（AGENTS/审计决策：CI 门禁仅提示）
+      - name: Compile androidTest (informational)
+        continue-on-error: true
+        run: ./gradlew :compose:compileDebugAndroidTestKotlin --no-daemon --console=plain
+
+      - name: Lint (informational)
+        continue-on-error: true
+        run: ./gradlew :app:lintLeanbackDebug --no-daemon --console=plain
+
+      - name: Upload lint report
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-*.html
+          if-no-files-found: ignore

@@ -41,8 +41,10 @@ def hasReleaseSigning =
 //   onefilm.updateBetaUrl=https://apk.example.com/onefilm-beta.json
 def updateStableUrl = localProps['onefilm.updateStableUrl'] ?: 'https://onefilmapk.alibabagroup.de5.net/onefilm-stable.json'
 def updateBetaUrl = localProps['onefilm.updateBetaUrl'] ?: 'https://onefilmapk.alibabagroup.de5.net/onefilm-beta.json'
-def appVersionName = project.findProperty('versionName') ?: '0.1.7'
-def appVersionCode = (project.findProperty('versionCode') ?: '8').toString().toInteger()
+// 版本号唯一来源：gradle.properties 的 onefilm.versionName / onefilm.versionCode。
+// 命令行可用 -Ponefilm.versionName=... 覆盖（CI 用），不要在脚本里再写死版本。
+def appVersionName = project.findProperty('onefilm.versionName') ?: '0.1.7'
+def appVersionCode = (project.findProperty('onefilm.versionCode') ?: '8').toString().toInteger()
 
 android {
     namespace = 'com.onefilm.android.tv'

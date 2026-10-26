@@ -351,6 +351,10 @@ class AppSettingsDataSource : SettingsDataSource {
         }
     }
 
+    override fun exportDiagnostics(): String = runCatching {
+        com.onefilm.android.tv.utils.CrashLog.export(com.github.catvod.Init.context())
+    }.getOrDefault("")
+
     private fun ensureWallpaperLoadedIfNeeded() {
         if (Setting.getWall() != 5) return
         ensureWallpaperLoaded()
