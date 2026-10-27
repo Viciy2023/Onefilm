@@ -34,3 +34,4 @@ key.properties
 KeyStore/
 
 README.md.bak.*
+.kotlin/
