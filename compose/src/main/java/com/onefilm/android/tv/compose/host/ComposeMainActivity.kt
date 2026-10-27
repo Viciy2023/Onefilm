@@ -245,29 +245,6 @@ class ComposeMainActivity : ComponentActivity() {
 
                 LaunchedEffect(Unit) { homeViewModel.retry() }
 
-                BackHandler(enabled = true) {
-                    when {
-                        // TV 顶部“主页”按钮只有退出语义：焦点在它上面时按返回
-                        // 直接弹退出确认，不再执行回到上一页/分类页的逻辑。
-                        isTv && TvHeaderFocusState.homeCategoryFocused -> showExitDialog = true
-                        route?.startsWith(Routes.HOME) == true -> showExitDialog = true
-                        // Any API category returns straight to home, never to the
-                        // previously focused category.
-                        route?.startsWith("category") == true -> {
-                            if (!navController.popBackStack(Routes.HOME, false)) {
-                                navController.navigate(Routes.HOME) {
-                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                                    launchSingleTop = true
-                                }
-                            }
-                        }
-                        navController.previousBackStackEntry != null -> navController.popBackStack()
-                        else -> navController.navigate(Routes.HOME) {
-                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    }
-                }
                 if (showStorageIntro) {
                     StorageIntroDialog(
                         onGrant = {
@@ -567,6 +544,32 @@ class ComposeMainActivity : ComponentActivity() {
                     )
                 }
                 }
+                }
+                // 返回键统一由这里处理。必须放在 NavHost 之后组合：navigation-compose 2.7.7
+                // 的 NavHost 内部自带一个 BackHandler（NavHost.kt:216，返回栈深度 > 1 时启用），
+                // 后注册的优先；放在它前面会被它抢先弹栈，表现就是“回到主页后按返回变成返回上一步”。
+                BackHandler(enabled = true) {
+                    when {
+                        // TV 顶部“主页”按钮只有退出语义：焦点在它上面时按返回
+                        // 直接弹退出确认，不再执行回到上一页/分类页的逻辑。
+                        isTv && TvHeaderFocusState.homeCategoryFocused -> showExitDialog = true
+                        route?.startsWith(Routes.HOME) == true -> showExitDialog = true
+                        // Any API category returns straight to home, never to the
+                        // previously focused category.
+                        route?.startsWith("category") == true -> {
+                            if (!navController.popBackStack(Routes.HOME, false)) {
+                                navController.navigate(Routes.HOME) {
+                                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            }
+                        }
+                        navController.previousBackStackEntry != null -> navController.popBackStack()
+                        else -> navController.navigate(Routes.HOME) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    }
                 }
             }
         }
