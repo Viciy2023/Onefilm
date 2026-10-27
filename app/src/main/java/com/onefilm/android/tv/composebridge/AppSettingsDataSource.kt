@@ -5,6 +5,7 @@ import com.onefilm.android.tv.App
 import com.onefilm.android.tv.api.config.LiveConfig
 import com.onefilm.android.tv.api.config.WallConfig
 import com.onefilm.android.tv.bean.Config
+import com.onefilm.android.tv.bean.DepotStore
 import com.onefilm.android.tv.impl.Callback
 import com.github.catvod.bean.Doh
 import com.onefilm.android.tv.BuildConfig
@@ -216,6 +217,7 @@ class AppSettingsDataSource : SettingsDataSource {
         name: String,
         onResult: (Boolean, String) -> Unit,
     ) {
+        if (type == 0) DepotStore.markLineIfKnown(url)
         val config = Config.find(url, type)
         if (name.isNotBlank()) config.setName(name)
         val callback = object : Callback() {
@@ -260,6 +262,25 @@ class AppSettingsDataSource : SettingsDataSource {
 
     override fun allConfigLines(): List<ConfigLine> =
         listOf(0, 1).flatMap { configLines(it) }
+
+    override fun depotName(): String = runCatching { DepotStore.currentName() }.getOrDefault("")
+
+    override fun depotLines(): List<ConfigLine> = runCatching {
+        val current = DepotStore.selectedLine()
+        DepotStore.lines().map { entry ->
+            ConfigLine(
+                name = entry.name.ifBlank { entry.url },
+                url = entry.url,
+                current = entry.url == current,
+                type = 0,
+            )
+        }
+    }.getOrDefault(emptyList())
+
+    override fun selectDepotLine(url: String, name: String, onResult: (Boolean, String) -> Unit) {
+        DepotStore.selectLine(url)
+        loadConfig(0, url, name, onResult)
+    }
 
     override fun deleteConfigLine(type: Int, url: String) {
         val activeUrl = when (type) {

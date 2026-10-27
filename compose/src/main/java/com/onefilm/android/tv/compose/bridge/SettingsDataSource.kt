@@ -103,6 +103,17 @@ interface SettingsDataSource {
     fun configLines(type: Int): List<ConfigLine>
     fun allConfigLines(): List<ConfigLine>
     fun deleteConfigLine(type: Int, url: String)
+
+    /** 当前多仓（仓库）名称；不是多仓时为空串。 */
+    fun depotName(): String = ""
+
+    /** 当前仓库包含的线路；不是多仓时为空列表。 */
+    fun depotLines(): List<ConfigLine> = emptyList()
+
+    /** 切换仓库里的某条线路（等价于加载这条线路的接口配置）。 */
+    fun selectDepotLine(url: String, name: String, onResult: (Boolean, String) -> Unit) {
+        loadConfig(0, url, name, onResult)
+    }
     fun cycleDoh()
     fun cyclePlayTimeout()
     fun setIncognito(enabled: Boolean)

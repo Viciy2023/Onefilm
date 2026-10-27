@@ -7,6 +7,7 @@ import com.onefilm.android.tv.api.Decoder;
 import com.onefilm.android.tv.api.loader.BaseLoader;
 import com.onefilm.android.tv.bean.Config;
 import com.onefilm.android.tv.bean.Depot;
+import com.onefilm.android.tv.bean.DepotStore;
 import com.onefilm.android.tv.bean.Parse;
 import com.onefilm.android.tv.bean.Rule;
 import com.onefilm.android.tv.bean.Site;
@@ -158,8 +159,14 @@ public class VodConfig extends BaseConfig {
         List<Config> configs = new ArrayList<>();
         for (Depot item : items) configs.add(Config.find(item, VOD));
         if (configs.isEmpty()) throw new Exception("Depot urls is empty");
-        load(this.config = configs.get(0));
-        Config.delete(config.getUrl());
+        // 多仓：先记下"仓库"和它包含的线路，供「线路」弹窗切换
+        DepotStore.selectDepot(config.getName(), config.getUrl(), items);
+        config.update();
+        Config line = configs.get(0);
+        DepotStore.selectLine(line.getUrl());
+        // 选中的线路要成为"当前配置"，否则下次启动又回到仓库本身
+        line.update();
+        load(this.config = line);
     }
 
     private void parseConfig(Config config, JsonObject object) {

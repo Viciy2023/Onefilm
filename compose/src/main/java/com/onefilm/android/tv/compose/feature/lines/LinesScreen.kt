@@ -47,13 +47,17 @@ fun LinesScreen(
     onDone: () -> Unit,
     onConfigChanged: () -> Unit = {},
 ) {
-    var lines by remember { mutableStateOf(dataSource.allConfigLines()) }
+    var depotName by remember { mutableStateOf(dataSource.depotName()) }
+    fun currentLines(): List<ConfigLine> =
+        dataSource.depotLines().ifEmpty { dataSource.allConfigLines() }
+    var lines by remember { mutableStateOf(currentLines()) }
     var loadingKey by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     val firstLineFocus = remember { FocusRequester() }
 
     fun refresh() {
-        lines = dataSource.allConfigLines()
+        depotName = dataSource.depotName()
+        lines = currentLines()
     }
 
     LaunchedEffect(Unit) { refresh() }
@@ -76,6 +80,15 @@ fun LinesScreen(
             tonalElevation = 6.dp,
         ) {
             Column(Modifier.padding(horizontal = 10.dp, vertical = 10.dp)) {
+                Text(
+                    text = if (depotName.isBlank()) "线路" else "仓库：$depotName",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                )
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -91,7 +104,7 @@ fun LinesScreen(
                 ) {
                     if (lines.isEmpty()) {
                         Text(
-                            text = "暂无线路，请先在配置弹窗中添加。",
+                            text = if (depotName.isBlank()) "暂无线路，请先在配置弹窗中添加。" else "该仓库没有可选线路",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 14.sp,
                             modifier = Modifier.padding(vertical = 16.dp),
@@ -111,7 +124,7 @@ fun LinesScreen(
                                         if (loadingKey == null) {
                                             loadingKey = line.key()
                                             error = null
-                                            dataSource.loadConfig(line.type, line.url, line.name) { ok, message ->
+                                            val onResult: (Boolean, String) -> Unit = { ok, message ->
                                                 loadingKey = null
                                                 if (ok) {
                                                     onConfigChanged()
@@ -119,6 +132,11 @@ fun LinesScreen(
                                                 } else {
                                                     error = message
                                                 }
+                                            }
+                                            if (depotName.isNotBlank()) {
+                                                dataSource.selectDepotLine(line.url, line.name, onResult)
+                                            } else {
+                                                dataSource.loadConfig(line.type, line.url, line.name, onResult)
                                             }
                                         }
                                     },
