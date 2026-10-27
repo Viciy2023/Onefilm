@@ -40,6 +40,17 @@ data class SettingsSnapshot(
     val cacheSizeLabel: String,
     val wallpaperLabel: String,
     val forceUpdate: Boolean,
+    val searchThreads: Int = 16,
+)
+
+/** 搜索线程候选值，设置页与搜索实现共用。 */
+val SEARCH_THREAD_OPTIONS = listOf(12, 16, 24, 36, 48)
+
+/** 搜索源勾选项。 */
+data class SearchSiteItem(
+    val key: String,
+    val name: String,
+    val enabled: Boolean,
 )
 
 data class ConfigLine(
@@ -102,6 +113,18 @@ interface SettingsDataSource {
     fun setCacheDays(days: Int)
     fun clearCache()
     fun cycleWallpaper()
+
+    /** 搜索线程数（12/16/24/36/48）。 */
+    fun setSearchThreads(threads: Int) {}
+
+    /** 当前点播接口下所有可搜索站点，按配置顺序返回。 */
+    fun searchSites(): List<SearchSiteItem> = emptyList()
+
+    /** 勾选/取消单个站点是否参与搜索。 */
+    fun setSearchSiteEnabled(key: String, enabled: Boolean) {}
+
+    /** 一次勾选/取消全部站点。 */
+    fun setAllSearchSites(enabled: Boolean) {}
 
     /** 导出诊断信息（环境 + 最近一次崩溃）到 Download 目录，返回路径；失败返回空串。 */
     fun exportDiagnostics(): String = ""

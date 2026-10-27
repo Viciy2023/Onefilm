@@ -29,19 +29,24 @@ class AppSearchDataSource : SearchDataSource {
             send(SearchProgress(emptyList(), true))
             return@channelFlow
         }
+        val configUrl = VodConfig.getUrl().orEmpty()
+        // 站点勾选变化后必须重新搜索，不能命中旧站点集合的缓存。
+        val cacheKey = key + "@" + SearchSettings.scopeSignature(configUrl)
         if (page == 1) {
-            cache[key]?.let { send(SearchProgress(it, true)); return@channelFlow }
-            DiskCache.read<List<MediaCard>>("search_${key.hashCode()}", 10 * 60_000L)?.let {
-                cache[key] = it
+            cache[cacheKey]?.let { send(SearchProgress(it, true)); return@channelFlow }
+            DiskCache.read<List<MediaCard>>("search_${cacheKey.hashCode()}", 10 * 60_000L)?.let {
+                cache[cacheKey] = it
                 send(SearchProgress(it, true))
                 return@channelFlow
             }
         }
 
-        // quickSearch 源优先，其余源继续并行；并发 32，返回一个追加一个。
-        val sites = VodConfig.get().getSites().filter { it.isSearchable }
+        // quickSearch 源优先，其余源继续并行；返回一个追加一个。
+        val disabledSites = SearchSettings.disabledSites(configUrl)
+        val sites = VodConfig.get().getSites()
+            .filter { it.isSearchable && it.key !in disabledSites }
             .sortedByDescending { it.isQuickSearch }
-        val semaphore = Semaphore(16)
+        val semaphore = Semaphore(SearchSettings.threads())
         val completed = AtomicInteger(0)
         val seen = LinkedHashSet<String>()
         val items = ArrayList<MediaCard>()
@@ -80,9 +85,9 @@ class AppSearchDataSource : SearchDataSource {
             }
         }
         if (page == 1) {
-            cache[key] = sorted
+            cache[cacheKey] = sorted
             SearchResultCache.items = sorted
-            DiskCache.write("search_${key.hashCode()}", sorted)
+            DiskCache.write("search_${cacheKey.hashCode()}", sorted)
         }
         send(SearchProgress(sorted, true, sites.size, sites.size))
     }

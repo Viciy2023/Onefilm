@@ -12,6 +12,8 @@ import com.onefilm.android.tv.event.ServerEvent
 import com.onefilm.android.tv.api.config.VodConfig
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
+import com.onefilm.android.tv.compose.bridge.SearchSiteItem
+import com.onefilm.android.tv.composebridge.SearchSettings
 import com.onefilm.android.tv.compose.bridge.ServerEventBridge
 import com.onefilm.android.tv.compose.bridge.HomeFeedCache
 import com.onefilm.android.tv.compose.bridge.DetailCache
@@ -96,6 +98,7 @@ class AppSettingsDataSource : SettingsDataSource {
             else -> "纯色 ${Setting.getWall()}"
         },
         forceUpdate = Setting.getForceUpdate(),
+        searchThreads = SearchSettings.threads(),
         )
     }
 
@@ -338,6 +341,28 @@ class AppSettingsDataSource : SettingsDataSource {
 
     override fun setCacheDays(days: Int) {
         Setting.putHistoryDays(days)
+    }
+
+    override fun setSearchThreads(threads: Int) {
+        SearchSettings.putThreads(threads)
+    }
+
+    override fun searchSites(): List<SearchSiteItem> = runCatching {
+        val disabled = SearchSettings.disabledSites(VodConfig.getUrl().orEmpty())
+        VodConfig.get().sites
+            .filter { it.isSearchable }
+            .map { SearchSiteItem(key = it.key, name = it.name, enabled = it.key !in disabled) }
+    }.getOrDefault(emptyList())
+
+    override fun setSearchSiteEnabled(key: String, enabled: Boolean) {
+        SearchSettings.setSiteEnabled(VodConfig.getUrl().orEmpty(), key, enabled)
+    }
+
+    override fun setAllSearchSites(enabled: Boolean) {
+        val keys = runCatching {
+            VodConfig.get().sites.filter { it.isSearchable }.map { it.key }
+        }.getOrDefault(emptyList())
+        SearchSettings.setAllEnabled(VodConfig.getUrl().orEmpty(), keys, enabled)
     }
 
     override fun clearCache() {

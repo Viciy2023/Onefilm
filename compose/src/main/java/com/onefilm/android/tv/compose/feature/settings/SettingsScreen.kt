@@ -9,6 +9,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,6 +60,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -67,6 +71,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
 import com.onefilm.android.tv.compose.bridge.ServerEventBridge
+import com.onefilm.android.tv.compose.bridge.SEARCH_THREAD_OPTIONS
+import com.onefilm.android.tv.compose.bridge.SearchSiteItem
 import com.onefilm.android.tv.compose.design.ThemeController
 import com.onefilm.android.tv.compose.navigation.TvBrandRow
 import kotlinx.coroutines.delay
@@ -87,6 +93,7 @@ fun SettingsScreen(
     var editBlockWords by remember { mutableStateOf(false) }
     var blockWordsDraft by remember { mutableStateOf("") }
     var showClearCacheConfirm by remember { mutableStateOf(false) }
+    var showSearchSites by remember { mutableStateOf(false) }
     var configMessage by remember { mutableStateOf<String?>(null) }
     var configMessageSuccess by remember { mutableStateOf(true) }
     val firstSettingFocus = remember { FocusRequester() }
@@ -559,6 +566,32 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
             ) {
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     ChoiceRow(
+                        title = "搜索线程",
+                        subtitle = "并发越高越快，越占资源",
+                        options = SEARCH_THREAD_OPTIONS.map { "$it" to (snapshot.searchThreads == it) },
+                    ) { index ->
+                        refresh { setSearchThreads(SEARCH_THREAD_OPTIONS[index]) }
+                    }
+                }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    val sites = remember(snapshot.configUrl, showSearchSites) { dataSource.searchSites() }
+                    val enabledCount = sites.count { it.enabled }
+                    ActionRow(
+                        title = "参与搜索的站点",
+                        value = when {
+                            sites.isEmpty() -> "未加载"
+                            enabledCount == sites.size -> "全部 ${sites.size} 个"
+                            else -> "$enabledCount / ${sites.size}"
+                        },
+                    ) { showSearchSites = true }
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth().weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
                         title = "缓存大小",
                         options = listOf(128, 256, 512, 1024).map {
                             "$it MB" to (snapshot.preloadSizeMb == it)
@@ -632,6 +665,18 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                 ) { Text("保存", fontSize = 13.sp) }
             }
         }
+    }
+
+    if (showSearchSites) {
+        SearchSitesDialog(
+            sites = dataSource.searchSites(),
+            onToggle = { key, enabled -> dataSource.setSearchSiteEnabled(key, enabled) },
+            onAll = { enabled -> dataSource.setAllSearchSites(enabled) },
+            onDismiss = {
+                showSearchSites = false
+                snapshot = dataSource.load()
+            },
+        )
     }
 
     if (showClearCacheConfirm) {
@@ -1228,6 +1273,186 @@ private fun InfoRow(title: String, value: String) {
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.End,
             modifier = Modifier.widthIn(max = 190.dp),
+        )
+    }
+}
+
+@Composable
+private fun SearchSitesDialog(
+    sites: List<SearchSiteItem>,
+    onToggle: (String, Boolean) -> Unit,
+    onAll: (Boolean) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val states = remember(sites) {
+        mutableStateMapOf<String, Boolean>().apply {
+            sites.forEach { put(it.key, it.enabled) }
+        }
+    }
+    val firstRowFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        delay(100)
+        runCatching { firstRowFocus.requestFocus() }
+    }
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp,
+            border = BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
+            ),
+            modifier = Modifier.width(1000.dp).height(820.dp),
+        ) {
+            Column(Modifier.fillMaxSize().padding(18.dp)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "参与搜索的站点",
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        "已选 ${states.count { it.value }} / ${sites.size}",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    DialogAction("全选") {
+                        sites.forEach { states[it.key] = true }
+                        onAll(true)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    DialogAction("全不选") {
+                        sites.forEach { states[it.key] = false }
+                        onAll(false)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    DialogAction("完成", onDismiss)
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "取消勾选的站点不会参与搜索，可随时恢复。",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                if (sites.isEmpty()) {
+                    Text(
+                        "当前接口没有可搜索的站点",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 20.dp),
+                    )
+                } else {
+                    LazyColumn(
+                        Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        itemsIndexed(sites, key = { _, site -> site.key }) { index, site ->
+                            SiteToggleRow(
+                                site = site,
+                                checked = states[site.key] == true,
+                                modifier = if (index == 0) {
+                                    Modifier.focusRequester(firstRowFocus)
+                                } else {
+                                    Modifier
+                                },
+                                onToggle = {
+                                    val next = !(states[site.key] == true)
+                                    states[site.key] = next
+                                    onToggle(site.key, next)
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SiteToggleRow(
+    site: SearchSiteItem,
+    checked: Boolean,
+    modifier: Modifier = Modifier,
+    onToggle: () -> Unit,
+) {
+    var focused by remember { mutableStateOf(false) }
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(
+                if (focused) MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+            )
+            .border(
+                2.dp,
+                if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
+                RoundedCornerShape(10.dp),
+            )
+            .onFocusChanged { focused = it.isFocused }
+            .clickable(onClick = onToggle)
+            .padding(horizontal = 12.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            if (checked) "☑" else "☐",
+            fontSize = 18.sp,
+            color = if (checked) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.width(10.dp))
+        Text(
+            site.name.ifBlank { site.key },
+            fontSize = 14.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            site.key,
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
+private fun DialogAction(label: String, onClick: () -> Unit) {
+    var focused by remember { mutableStateOf(false) }
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(
+                if (focused) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceVariant,
+            )
+            .border(
+                2.dp,
+                if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
+                RoundedCornerShape(10.dp),
+            )
+            .onFocusChanged { focused = it.isFocused }
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+    ) {
+        Text(
+            label,
+            fontSize = 14.sp,
+            color = if (focused) MaterialTheme.colorScheme.onPrimary
+            else MaterialTheme.colorScheme.onSurface,
         )
     }
 }
