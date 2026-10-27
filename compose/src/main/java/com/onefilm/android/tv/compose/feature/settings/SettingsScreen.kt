@@ -502,11 +502,32 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
 
                 }
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    ChoiceRow(
+                        title = "搜索线程",
+                        subtitle = "并发越高越快，越占资源",
+                        options = SEARCH_THREAD_OPTIONS.map { "$it" to (snapshot.searchThreads == it) },
+                    ) { index ->
+                        refresh { setSearchThreads(SEARCH_THREAD_OPTIONS[index]) }
+                    }
+                }
             }
             Row(
                 Modifier.fillMaxWidth().weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
+                    val sites = remember(snapshot.configUrl, showSearchSites) { dataSource.searchSites() }
+                    val enabledCount = sites.count { it.enabled }
+                    ActionRow(
+                        title = "参与搜索的站点",
+                        value = when {
+                            sites.isEmpty() -> "未加载"
+                            enabledCount == sites.size -> "全部 ${sites.size} 个"
+                            else -> "$enabledCount / ${sites.size}"
+                        },
+                    ) { showSearchSites = true }
+                }
                 SettingBar(Modifier.weight(1f).fillMaxHeight()) {
                     SwitchRow("开启预加载", "使用旧 PlayerManager 预加载", snapshot.preloadEnabled) {
                         refresh { setPreloadEnabled(it) }
@@ -558,32 +579,6 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                         "检测到新版本后自动下载并强制更新",
                         snapshot.forceUpdate,
                     ) { refresh { setForceUpdate(it) } }
-                }
-            }
-            Row(
-                Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "搜索线程",
-                        subtitle = "并发越高越快，越占资源",
-                        options = SEARCH_THREAD_OPTIONS.map { "$it" to (snapshot.searchThreads == it) },
-                    ) { index ->
-                        refresh { setSearchThreads(SEARCH_THREAD_OPTIONS[index]) }
-                    }
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    val sites = remember(snapshot.configUrl, showSearchSites) { dataSource.searchSites() }
-                    val enabledCount = sites.count { it.enabled }
-                    ActionRow(
-                        title = "参与搜索的站点",
-                        value = when {
-                            sites.isEmpty() -> "未加载"
-                            enabledCount == sites.size -> "全部 ${sites.size} 个"
-                            else -> "$enabledCount / ${sites.size}"
-                        },
-                    ) { showSearchSites = true }
                 }
             }
             Row(
