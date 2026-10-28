@@ -1301,9 +1301,9 @@ private fun SearchSitesDialog(
                 1.dp,
                 MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
             ),
-            modifier = Modifier.width(1000.dp).height(820.dp),
+            modifier = Modifier.width(760.dp),
         ) {
-            Column(Modifier.fillMaxSize().padding(18.dp)) {
+            Column(Modifier.fillMaxWidth().padding(18.dp)) {
                 Row(
                     Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -1344,28 +1344,41 @@ private fun SearchSitesDialog(
                         "当前接口没有可搜索的站点",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 20.dp),
+                        modifier = Modifier.padding(top = 20.dp, bottom = 8.dp),
                     )
                 } else {
+                    // 两列铺满卡片，避免「站点名」和「站点标识」之间出现大片空白
+                    val rows = (sites.size + 1) / 2
+                    val listHeight = (rows * 46 - 6).coerceIn(86, 316).dp
                     LazyColumn(
-                        Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        Modifier.fillMaxWidth().height(listHeight),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        itemsIndexed(sites, key = { _, site -> site.key }) { index, site ->
-                            SiteToggleRow(
-                                site = site,
-                                checked = states[site.key] == true,
-                                modifier = if (index == 0) {
-                                    Modifier.focusRequester(firstRowFocus)
-                                } else {
-                                    Modifier
-                                },
-                                onToggle = {
-                                    val next = !(states[site.key] == true)
-                                    states[site.key] = next
-                                    onToggle(site.key, next)
-                                },
-                            )
+                        itemsIndexed(sites.chunked(2)) { rowIndex, pair ->
+                            Row(
+                                Modifier.fillMaxWidth().height(40.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                pair.forEachIndexed { columnIndex, site ->
+                                    SiteToggleRow(
+                                        site = site,
+                                        checked = states[site.key] == true,
+                                        modifier = Modifier.weight(1f).then(
+                                            if (rowIndex == 0 && columnIndex == 0) {
+                                                Modifier.focusRequester(firstRowFocus)
+                                            } else {
+                                                Modifier
+                                            },
+                                        ),
+                                        onToggle = {
+                                            val next = !(states[site.key] == true)
+                                            states[site.key] = next
+                                            onToggle(site.key, next)
+                                        },
+                                    )
+                                }
+                                if (pair.size == 1) Spacer(Modifier.weight(1f))
+                            }
                         }
                     }
                 }
@@ -1397,30 +1410,52 @@ private fun SiteToggleRow(
             )
             .onFocusChanged { focused = it.isFocused }
             .clickable(onClick = onToggle)
-            .padding(horizontal = 12.dp, vertical = 9.dp),
+            .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            if (checked) "☑" else "☐",
-            fontSize = 18.sp,
-            color = if (checked) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.width(10.dp))
+        // 不用 ☑/☐ 字符：电视字体常常缺这些字形，会显示成方块
+        Box(
+            Modifier
+                .size(18.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(
+                    if (checked) MaterialTheme.colorScheme.primary else Color.Transparent,
+                )
+                .border(
+                    1.5.dp,
+                    if (checked) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.outline,
+                    RoundedCornerShape(4.dp),
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (checked) {
+                Box(
+                    Modifier
+                        .size(8.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(MaterialTheme.colorScheme.onPrimary),
+                )
+            }
+        }
+        Spacer(Modifier.width(8.dp))
         Text(
             site.name.ifBlank { site.key },
             fontSize = 14.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.widthIn(max = 150.dp),
         )
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(6.dp))
         Text(
             site.key,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.widthIn(max = 110.dp),
         )
+        Spacer(Modifier.weight(1f))
     }
 }
 

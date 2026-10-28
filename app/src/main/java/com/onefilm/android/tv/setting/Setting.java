@@ -130,7 +130,7 @@ public class Setting {
     }
 
     public static boolean getForceUpdate() {
-        return Prefers.getBoolean("force_update", false);
+        return Prefers.getBoolean("force_update", true);
     }
 
     public static void putForceUpdate(boolean forceUpdate) {
