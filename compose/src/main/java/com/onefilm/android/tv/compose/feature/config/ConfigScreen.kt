@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,6 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
@@ -32,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
@@ -52,6 +57,7 @@ import com.onefilm.android.tv.compose.bridge.ConfigLine
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.ServerEventBridge
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun ConfigScreen(
@@ -84,6 +90,12 @@ fun ConfigScreen(
             url = pushed.text
             error = null
         }
+    }
+
+    // 未加载过的接口：后台探测一次单仓/多仓，用于列表标签
+    LaunchedEffect(Unit) {
+        dataSource.detectConfigKinds()
+        refreshLines()
     }
 
     LaunchedEffect(lines) {
@@ -284,14 +296,18 @@ private fun ConfigLineRow(
     onPick: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    var focused by remember { mutableStateOf(false) }
+    var bodyFocused by remember { mutableStateOf(false) }
+    var deleteFocused by remember { mutableStateOf(false) }
+    val focused = bodyFocused || deleteFocused
+    val canAct = enabled && !loading
+    val bringIntoView = remember { BringIntoViewRequester() }
+    val scope = rememberCoroutineScope()
     val shape = RoundedCornerShape(8.dp)
+    val itemShape = RoundedCornerShape(6.dp)
     Row(
         Modifier
             .fillMaxWidth()
             .height(26.dp)
-            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
-            .onFocusChanged { focused = it.isFocused }
             .clip(shape)
             .background(
                 when {
@@ -309,34 +325,91 @@ private fun ConfigLineRow(
                 },
                 shape = shape,
             )
-            .clickable(enabled = enabled && !loading, onClick = onPick)
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = if (loading) "加载中…" else line.name.ifBlank { line.url },
-            fontSize = 13.sp,
-            fontWeight = if (line.current) FontWeight.SemiBold else FontWeight.Medium,
-            color = if (enabled) MaterialTheme.colorScheme.onSurface
-            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        if (line.type == 1) {
-            Text("直播", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.width(6.dp))
+        // 「主体」和「删除」必须是同级焦点。删除放在可点击的整行内部时，D-pad 无法进入子节点。
+        Row(
+            Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+                .bringIntoViewRequester(bringIntoView)
+                .onFocusChanged {
+                    bodyFocused = it.isFocused
+                    if (it.isFocused) scope.launch { bringIntoView.bringIntoView() }
+                }
+                .clip(itemShape)
+                .background(
+                    if (bodyFocused) MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+                    else Color.Transparent,
+                )
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    enabled = canAct,
+                    onClick = onPick,
+                )
+                .padding(horizontal = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = if (loading) "加载中…" else line.name.ifBlank { line.url },
+                fontSize = 13.sp,
+                fontWeight = if (line.current) FontWeight.SemiBold else FontWeight.Medium,
+                color = if (enabled) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            if (line.type == 1) {
+                Text("直播", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.width(6.dp))
+            }
+            when (line.kind) {
+                2 -> {
+                    Text("多仓", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(6.dp))
+                }
+                1 -> {
+                    Text("单仓", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.width(6.dp))
+                }
+            }
         }
-        Text(
-            text = "删除",
-            fontSize = 12.sp,
-            color = if (enabled && !loading) MaterialTheme.colorScheme.error
-            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .clickable(enabled = enabled && !loading, onClick = onDelete)
-                .padding(horizontal = 6.dp, vertical = 3.dp),
-        )
+        Spacer(Modifier.width(2.dp))
+        // 独立焦点：D-pad 右移到「删除」，OK 键触发删除
+        Box(
+            Modifier
+                .onFocusChanged { deleteFocused = it.isFocused }
+                .clip(itemShape)
+                .background(
+                    if (deleteFocused) MaterialTheme.colorScheme.error else Color.Transparent,
+                )
+                .then(
+                    if (deleteFocused) Modifier.border(2.dp, MaterialTheme.colorScheme.onError, itemShape)
+                    else Modifier,
+                )
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    enabled = canAct,
+                    onClick = onDelete,
+                )
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "删除",
+                fontSize = 12.sp,
+                color = when {
+                    deleteFocused -> MaterialTheme.colorScheme.onError
+                    canAct -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                },
+            )
+        }
     }
 }
 

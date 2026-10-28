@@ -58,6 +58,8 @@ data class ConfigLine(
     val url: String,
     val current: Boolean,
     val type: Int = 0,
+    /** 0=未探测 1=单仓 2=多仓，仅用于「配置」列表的标签。 */
+    val kind: Int = 0,
 )
 
 /** Compose 设置页与旧 *Setting 类的桥接。 */
@@ -103,6 +105,9 @@ interface SettingsDataSource {
     fun configLines(type: Int): List<ConfigLine>
     fun allConfigLines(): List<ConfigLine>
     fun deleteConfigLine(type: Int, url: String)
+
+    /** 后台探测未加载过的接口是单仓还是多仓（用于「配置」列表标签）。 */
+    suspend fun detectConfigKinds() {}
 
     /** 当前多仓（仓库）名称；不是多仓时为空串。 */
     fun depotName(): String = ""

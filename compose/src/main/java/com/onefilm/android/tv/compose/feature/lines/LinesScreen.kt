@@ -8,11 +8,13 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -138,10 +141,11 @@ fun LinesScreen(
                                                     error = message
                                                 }
                                             }
-                                            if (depotName.isNotBlank()) {
-                                                dataSource.selectDepotLine(line.url, line.name, onResult)
-                                            } else {
-                                                dataSource.loadConfig(line.type, line.url, line.name, onResult)
+                                            // 直播线路必须走直播配置加载，否则会被当成点播仓库线路
+                                            when {
+                                                line.type == 1 -> dataSource.loadConfig(1, line.url, line.name, onResult)
+                                                depotName.isNotBlank() -> dataSource.selectDepotLine(line.url, line.name, onResult)
+                                                else -> dataSource.loadConfig(line.type, line.url, line.name, onResult)
                                             }
                                         }
                                     },
@@ -179,20 +183,18 @@ private fun LineRow(
     onPick: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    var focused by remember { mutableStateOf(false) }
+    var bodyFocused by remember { mutableStateOf(false) }
+    var deleteFocused by remember { mutableStateOf(false) }
+    val focused = bodyFocused || deleteFocused
+    val canAct = enabled && !loading
     val bringIntoView = remember { BringIntoViewRequester() }
     val scope = rememberCoroutineScope()
     val shape = RoundedCornerShape(8.dp)
+    val itemShape = RoundedCornerShape(6.dp)
     Row(
         Modifier
             .fillMaxWidth()
             .height(26.dp)
-            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
-            .bringIntoViewRequester(bringIntoView)
-            .onFocusChanged {
-                focused = it.isFocused
-                if (it.isFocused) scope.launch { bringIntoView.bringIntoView() }
-            }
             .clip(shape)
             .background(
                 when {
@@ -210,38 +212,85 @@ private fun LineRow(
                 },
                 shape = shape,
             )
-            .clickable(enabled = enabled && !loading, onClick = onPick)
-            .padding(horizontal = 6.dp),
+            .padding(horizontal = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = if (loading) "加载中…" else line.name.ifBlank { line.url },
-            fontSize = 13.sp,
-            fontWeight = if (line.current) FontWeight.SemiBold else FontWeight.Medium,
-            color = if (enabled) MaterialTheme.colorScheme.onSurface
-            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        if (line.current) {
-            Text("当前", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp)
-            Spacer(Modifier.width(6.dp))
+        // 「主体」和「删除」必须是同级焦点。删除放在可点击的整行内部时，D-pad 无法进入子节点。
+        Row(
+            Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+                .bringIntoViewRequester(bringIntoView)
+                .onFocusChanged {
+                    bodyFocused = it.isFocused
+                    if (it.isFocused) scope.launch { bringIntoView.bringIntoView() }
+                }
+                .clip(itemShape)
+                .background(
+                    if (bodyFocused) MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+                    else Color.Transparent,
+                )
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    enabled = canAct,
+                    onClick = onPick,
+                )
+                .padding(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = if (loading) "加载中…" else line.name.ifBlank { line.url },
+                fontSize = 13.sp,
+                fontWeight = if (line.current) FontWeight.SemiBold else FontWeight.Medium,
+                color = if (enabled) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            if (line.current) {
+                Text("当前", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp)
+                Spacer(Modifier.width(6.dp))
+            }
+            if (line.type == 1) {
+                Text("直播", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                Spacer(Modifier.width(6.dp))
+            }
         }
-        if (line.type == 1) {
-            Text("直播", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-            Spacer(Modifier.width(6.dp))
+        Spacer(Modifier.width(2.dp))
+        // 独立焦点：D-pad 右移到「删除」，OK 键触发删除
+        Box(
+            Modifier
+                .onFocusChanged { deleteFocused = it.isFocused }
+                .clip(itemShape)
+                .background(
+                    if (deleteFocused) MaterialTheme.colorScheme.error else Color.Transparent,
+                )
+                .then(
+                    if (deleteFocused) Modifier.border(2.dp, MaterialTheme.colorScheme.onError, itemShape)
+                    else Modifier,
+                )
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    enabled = canAct,
+                    onClick = onDelete,
+                )
+                .padding(horizontal = 8.dp, vertical = 3.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "删除",
+                fontSize = 12.sp,
+                color = when {
+                    deleteFocused -> MaterialTheme.colorScheme.onError
+                    canAct -> MaterialTheme.colorScheme.error
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                },
+            )
         }
-        Text(
-            text = "删除",
-            fontSize = 12.sp,
-            color = if (enabled && !loading) MaterialTheme.colorScheme.error
-            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .clickable(enabled = enabled && !loading, onClick = onDelete)
-                .padding(horizontal = 4.dp, vertical = 2.dp),
-        )
     }
 }
 

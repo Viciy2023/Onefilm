@@ -166,8 +166,12 @@ public class VodConfig extends BaseConfig {
         if (items.isEmpty()) throw new Exception("Depot urls is empty");
         // 只保存「仓库」本身；仓库里的线路不写进配置表，避免「配置」里出现一大堆线路
         DepotStore.selectDepot(config.getName(), config.getUrl(), items);
+        DepotStore.markDepot(config.getUrl());
         // 清掉旧版本误存进来的“线路”记录（升级用户也能恢复干净的配置列表）
-        for (Depot item : items) Config.delete(item.getUrl(), VOD);
+        for (Depot item : items) {
+            Config.delete(item.getUrl(), VOD);
+            Config.delete(item.getUrl(), LIVE);
+        }
         config.update();
         Depot first = items.get(0);
         DepotStore.selectLine(first.getUrl());
@@ -175,6 +179,7 @@ public class VodConfig extends BaseConfig {
     }
 
     private void parseConfig(Config config, JsonObject object) {
+        DepotStore.markSingle(config.getUrl());
         initList(object);
         initLive(config, object);
         initWall(config, object);

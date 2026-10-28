@@ -1,5 +1,6 @@
 package com.onefilm.android.tv.compose.feature.netdisk
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -41,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -228,34 +231,78 @@ private fun DriveList(
     }
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
         drives.forEach { drive ->
+            // 行本身不再 clickable：主体、编辑、删除必须是同级焦点，否则遥控器进不到按钮上
+            var bodyFocused by remember(drive.id) { mutableStateOf(false) }
             Row(
                 Modifier
                     .fillMaxWidth()
                     .padding(vertical = 5.dp)
                     .clip(RoundedCornerShape(18.dp))
                     .background(MaterialTheme.colorScheme.surface)
-                    .clickable { onOpen(drive) }
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                    .border(
+                        if (bodyFocused) 2.dp else 1.dp,
+                        if (bodyFocused) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                        RoundedCornerShape(18.dp),
+                    )
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Box(
-                    Modifier.size(44.dp).clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                    contentAlignment = Alignment.Center,
-                ) { Text(if (drive.type == 1) "DAV" else "AL", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
-                Spacer(Modifier.size(14.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(drive.name.ifBlank { "未命名网盘" }, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    Text(
-                        if (drive.type == 1) "WebDAV" else "Alist 网页",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp,
-                    )
+                Row(
+                    Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            if (bodyFocused) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                            else Color.Transparent,
+                        )
+                        .onFocusChanged { bodyFocused = it.isFocused }
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                        ) { onOpen(drive) }
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(
+                        Modifier.size(44.dp).clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                        contentAlignment = Alignment.Center,
+                    ) { Text(if (drive.type == 1) "DAV" else "AL", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
+                    Spacer(Modifier.size(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(drive.name.ifBlank { "未命名网盘" }, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            if (drive.type == 1) "WebDAV" else "Alist 网页",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                        )
+                    }
                 }
-                TextButton(onClick = { onEdit(drive) }) { Text("编辑") }
-                TextButton(onClick = { onDelete(drive) }) { Text("删除") }
+                DriveActionButton("编辑") { onEdit(drive) }
+                DriveActionButton("删除") { onDelete(drive) }
             }
         }
+    }
+}
+
+@Composable
+private fun DriveActionButton(text: String, onClick: () -> Unit) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    TextButton(
+        onClick = onClick,
+        shape = RoundedCornerShape(10.dp),
+        border = if (focused) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = if (focused) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else Color.Transparent,
+            contentColor = if (focused) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary,
+        ),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+        interactionSource = interaction,
+        modifier = Modifier.padding(start = 4.dp),
+    ) {
+        Text(text, fontSize = 13.sp)
     }
 }
 

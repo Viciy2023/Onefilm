@@ -261,16 +261,41 @@ class AppSettingsDataSource : SettingsDataSource {
                 url = config.url.orEmpty(),
                 current = config.url.orEmpty() == currentUrl,
                 type = type,
+                kind = if (type == 0) DepotStore.kind(config.url.orEmpty()) else 0,
             )
         }
     }
 
-    override fun allConfigLines(): List<ConfigLine> =
-        listOf(0, 1).flatMap { configLines(it) }
+    override suspend fun detectConfigKinds() = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val pending = runCatching { configLines(0) }
+            .getOrDefault(emptyList())
+            .filter { it.kind == DepotStore.KIND_UNKNOWN }
+            .take(12)
+        for (line in pending) {
+            runCatching {
+                val text = com.github.catvod.net.OkHttp.string(line.url)
+                when {
+                    text.contains("\"urls\"") -> DepotStore.markDepot(line.url)
+                    text.contains("\"sites\"") -> DepotStore.markSingle(line.url)
+                }
+            }
+        }
+    }
 
-    override fun depotName(): String = runCatching { DepotStore.currentName() }.getOrDefault("")
+    override fun allConfigLines(): List<ConfigLine> {
+        // 多仓里的线路只在线路弹窗展示，不混进「配置」列表（兼容旧版本残留的数据）
+        val depotLines = runCatching { DepotStore.lines().map { it.url }.toSet() }.getOrDefault(emptySet())
+        return listOf(0, 1).flatMap { configLines(it) }
+            .filter { it.url !in depotLines }
+    }
+
+    override fun depotName(): String = runCatching {
+        // 只有当前加载的接口属于这个仓库时，才显示仓库名
+        if (DepotStore.isActive(VodConfig.getUrl().orEmpty())) DepotStore.currentName() else ""
+    }.getOrDefault("")
 
     override fun depotLines(): List<ConfigLine> = runCatching {
+        if (!DepotStore.isActive(VodConfig.getUrl().orEmpty())) return emptyList()
         val current = DepotStore.selectedLine()
         DepotStore.lines().map { entry ->
             ConfigLine(

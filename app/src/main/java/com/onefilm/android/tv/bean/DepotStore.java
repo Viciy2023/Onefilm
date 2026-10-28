@@ -28,6 +28,11 @@ public class DepotStore {
     private static final String KEY_DEPOT = "depot_current";
     private static final String KEY_LINES = "depot_lines_";
     private static final String KEY_LINE = "depot_line";
+    private static final String KEY_KIND = "depot_kind_";
+
+    public static final int KIND_UNKNOWN = 0;
+    public static final int KIND_SINGLE = 1;
+    public static final int KIND_DEPOT = 2;
 
     public static class Entry {
 
@@ -107,11 +112,40 @@ public class DepotStore {
         Prefers.put(KEY_LINE, url == null ? "" : url);
     }
 
+    /** 记录某个接口是单仓还是多仓，供「配置」列表显示标签。 */
+    public static void markDepot(String url) {
+        setKind(url, KIND_DEPOT);
+    }
+
+    public static void markSingle(String url) {
+        setKind(url, KIND_SINGLE);
+    }
+
+    public static int kind(String url) {
+        if (url == null || url.isEmpty()) return KIND_UNKNOWN;
+        return Prefers.getInt(KEY_KIND + Crypto.md5(url), KIND_UNKNOWN);
+    }
+
+    private static void setKind(String url, int kind) {
+        if (url == null || url.isEmpty()) return;
+        Prefers.put(KEY_KIND + Crypto.md5(url), kind);
+    }
+
     /** 这个地址是否是当前仓库里的某条线路。 */
     public static boolean isLine(String url) {
         if (url == null || url.isEmpty()) return false;
         for (Entry entry : lines()) if (url.equals(entry.getUrl())) return true;
         return false;
+    }
+
+    /**
+     * 当前加载的接口是否属于这个仓库（仓库本身，或它的一条线路）。
+     * 切到普通单仓接口时返回 false，避免「线路」弹窗还显示上一个仓库的线路。
+     */
+    public static boolean isActive(String loadedUrl) {
+        if (loadedUrl == null || loadedUrl.isEmpty()) return false;
+        if (loadedUrl.equals(currentUrl())) return true;
+        return isLine(loadedUrl);
     }
 
     /** 如果这个地址属于当前仓库的某条线路，就把它记为"当前线路"。 */
