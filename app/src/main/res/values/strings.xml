@@ -438,4 +438,6 @@
         <item>Select subtitle track</item>
     </string-array>
 
+    <string name="live_source_empty">Live source unavailable. Change the live config or switch lines.</string>
+
 </resources>

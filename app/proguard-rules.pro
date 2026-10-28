@@ -1,6 +1,12 @@
 # TV
 -keep class androidx.leanback.widget.** { *; }
 -keep class com.fongmi.quickjs.method.** { *; }
+
+# Compose 首页的「直播」导航通过反射调用（LiveActivity 只在 leanback flavor 里），
+# 没有这条 keep 规则时 R8 会把 start(Context) 当无用代码裁掉，点击直播会毫无反应。
+-keep class com.onefilm.android.tv.ui.activity.LiveActivity {
+    public static void start(android.content.Context);
+}
 -keep class com.onefilm.android.tv.bean.** { *; }
 
 # Gson

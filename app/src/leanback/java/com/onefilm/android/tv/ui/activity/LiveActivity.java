@@ -92,6 +92,8 @@ public class LiveActivity extends LivePlaybackActivity implements GroupAdapter.O
     private Runnable mR4;
     private List<Group> mHides;
     private Group mGroup;
+    /** 当前直播源不可用时，自动尝试其它源的重试计数。 */
+    private int liveFallbackAttempts;
 
     public static void start(Context context) {
         context.startActivity(new Intent(context, LiveActivity.class).putExtra("empty", LiveConfig.isEmpty()));
@@ -209,9 +211,34 @@ public class LiveActivity extends LivePlaybackActivity implements GroupAdapter.O
     }
 
     private void onLiveParsed(Live live) {
+        if (live.getGroups().isEmpty()) {
+            hideProgress();
+            // 当前直播源没有频道（源失效/被墙）时，自动尝试下一条线路
+            if (advanceToNextLive()) return;
+            showError(getString(R.string.live_source_empty));
+            return;
+        }
+        liveFallbackAttempts = 0;
         mViewModel.parseXml(live);
         setGroup(live);
         setWidth(live);
+    }
+
+    /** 切到直播源列表里的下一条；已试过一轮则返回 false。 */
+    private boolean advanceToNextLive() {
+        List<Live> lives = LiveConfig.get().getLives();
+        if (lives.size() <= 1) return false;
+        if (liveFallbackAttempts >= lives.size() - 1) {
+            liveFallbackAttempts = 0;
+            return false;
+        }
+        int index = LiveConfig.getHomeIndex();
+        if (index < 0) index = 0;
+        Live next = lives.get((index + 1) % lives.size());
+        liveFallbackAttempts++;
+        LiveConfig.get().setHome(next);
+        getLive();
+        return true;
     }
 
     private void onPlaybackObserved(PlaybackResult<LivePlayRequest> result) {
@@ -761,6 +788,7 @@ public class LiveActivity extends LivePlaybackActivity implements GroupAdapter.O
     @Override
     public void setLive(Live item) {
         if (item.isSelected()) item.getGroups().clear();
+        liveFallbackAttempts = 0;
         LiveConfig.get().setHome(item);
         player().reset();
         player().clear();

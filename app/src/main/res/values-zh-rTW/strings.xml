@@ -428,4 +428,6 @@
         <item>選擇字幕</item>
     </string-array>
 
+    <string name="live_source_empty">直播源載入失敗，請更換直播接口或切換線路</string>
+
 </resources>

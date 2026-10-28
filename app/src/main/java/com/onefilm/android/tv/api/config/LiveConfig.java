@@ -96,6 +96,17 @@ public class LiveConfig extends BaseConfig {
         return this;
     }
 
+    /**
+     * 直播配置是否要跟着点播配置走。
+     * 原实现只看内存里的 config：进程刚启动时它是 null，于是每次启动加载点播配置都会把
+     * 用户手动选的直播线路改写成点播接口。这里改成读数据库里已保存的直播配置。
+     */
+    @Override
+    public boolean needSync(String url) {
+        Config current = getConfig();
+        return sync || current == null || TextUtils.isEmpty(current.getUrl()) || url.equals(current.getUrl());
+    }
+
     @Override
     protected String getTag() {
         return TAG;
