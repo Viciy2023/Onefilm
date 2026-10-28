@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import com.onefilm.android.tv.App;
 import com.onefilm.android.tv.R;
 import com.onefilm.android.tv.bean.Config;
+import com.onefilm.android.tv.bean.DepotStore;
 import com.onefilm.android.tv.event.ConfigEvent;
 import com.onefilm.android.tv.impl.Callback;
 import com.onefilm.android.tv.server.Server;
@@ -92,7 +93,7 @@ abstract class BaseConfig {
             OkHttp.cancel(getTag());
             load(config);
             if (taskId.get() != id) return;
-            if (config.equals(this.config)) config.update();
+            if (config.equals(this.config) && !DepotStore.isLine(config.getUrl())) config.update();
             App.post(() -> Notify.show(config.getNotice()));
             App.post(callback::success);
         } catch (Throwable e) {

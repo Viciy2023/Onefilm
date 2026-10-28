@@ -11,6 +11,7 @@ import com.onefilm.android.tv.bean.DepotStore;
 import com.onefilm.android.tv.bean.Parse;
 import com.onefilm.android.tv.bean.Rule;
 import com.onefilm.android.tv.bean.Site;
+import com.onefilm.android.tv.db.AppDatabase;
 import com.onefilm.android.tv.event.ConfigEvent;
 import com.onefilm.android.tv.event.RefreshEvent;
 import com.onefilm.android.tv.impl.Callback;
@@ -76,6 +77,12 @@ public class VodConfig extends BaseConfig {
     }
 
     public VodConfig init() {
+        // 若上次是从多仓里选的线路，优先加载那条线路
+        String line = DepotStore.selectedLine();
+        if (!line.isEmpty()) {
+            Config item = AppDatabase.get().getConfigDao().find(line, VOD);
+            return config(item != null ? item : Config.transientConfig(VOD, line, ""));
+        }
         return config(Config.vod());
     }
 
@@ -156,17 +163,15 @@ public class VodConfig extends BaseConfig {
 
     private void parseDepot(Config config, JsonObject object) throws Throwable {
         List<Depot> items = Depot.arrayFrom(object.getAsJsonArray("urls").toString());
-        List<Config> configs = new ArrayList<>();
-        for (Depot item : items) configs.add(Config.find(item, VOD));
-        if (configs.isEmpty()) throw new Exception("Depot urls is empty");
-        // 多仓：先记下"仓库"和它包含的线路，供「线路」弹窗切换
+        if (items.isEmpty()) throw new Exception("Depot urls is empty");
+        // 只保存「仓库」本身；仓库里的线路不写进配置表，避免「配置」里出现一大堆线路
         DepotStore.selectDepot(config.getName(), config.getUrl(), items);
+        // 清掉旧版本误存进来的“线路”记录（升级用户也能恢复干净的配置列表）
+        for (Depot item : items) Config.delete(item.getUrl(), VOD);
         config.update();
-        Config line = configs.get(0);
-        DepotStore.selectLine(line.getUrl());
-        // 选中的线路要成为"当前配置"，否则下次启动又回到仓库本身
-        line.update();
-        load(this.config = line);
+        Depot first = items.get(0);
+        DepotStore.selectLine(first.getUrl());
+        load(this.config = Config.transientConfig(VOD, first.getUrl(), first.getName()));
     }
 
     private void parseConfig(Config config, JsonObject object) {

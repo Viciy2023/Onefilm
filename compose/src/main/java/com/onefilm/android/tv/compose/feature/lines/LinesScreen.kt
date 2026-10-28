@@ -1,5 +1,10 @@
 package com.onefilm.android.tv.compose.feature.lines
 
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -175,13 +180,19 @@ private fun LineRow(
     onDelete: () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
+    val bringIntoView = remember { BringIntoViewRequester() }
+    val scope = rememberCoroutineScope()
     val shape = RoundedCornerShape(8.dp)
     Row(
         Modifier
             .fillMaxWidth()
             .height(26.dp)
             .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
-            .onFocusChanged { focused = it.isFocused }
+            .bringIntoViewRequester(bringIntoView)
+            .onFocusChanged {
+                focused = it.isFocused
+                if (it.isFocused) scope.launch { bringIntoView.bringIntoView() }
+            }
             .clip(shape)
             .background(
                 when {

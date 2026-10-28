@@ -74,6 +74,11 @@ public class Config {
         return new Config().type(type).url(url).name(name).insert();
     }
 
+    /** 只构造对象、不写数据库（多仓里的线路用这个，避免污染「配置」列表）。 */
+    public static Config transientConfig(int type, String url, String name) {
+        return new Config().type(type).url(url).name(name);
+    }
+
     public static List<Config> getAll(int type) {
         return AppDatabase.get().getConfigDao().findByType(type);
     }

@@ -218,7 +218,12 @@ class AppSettingsDataSource : SettingsDataSource {
         onResult: (Boolean, String) -> Unit,
     ) {
         if (type == 0) DepotStore.markLineIfKnown(url)
-        val config = Config.find(url, type)
+        val config = if (type == 0 && DepotStore.isLine(url)) {
+            // 仓库里的线路不写配置表，只在「线路」弹窗里展示
+            Config.transientConfig(0, url, name)
+        } else {
+            Config.find(url, type)
+        }
         if (name.isNotBlank()) config.setName(name)
         val callback = object : Callback() {
             override fun success() {

@@ -107,6 +107,13 @@ public class DepotStore {
         Prefers.put(KEY_LINE, url == null ? "" : url);
     }
 
+    /** 这个地址是否是当前仓库里的某条线路。 */
+    public static boolean isLine(String url) {
+        if (url == null || url.isEmpty()) return false;
+        for (Entry entry : lines()) if (url.equals(entry.getUrl())) return true;
+        return false;
+    }
+
     /** 如果这个地址属于当前仓库的某条线路，就把它记为"当前线路"。 */
     public static void markLineIfKnown(String url) {
         if (url == null || url.isEmpty()) return;
