@@ -34,6 +34,7 @@ fun buildPlayerMenu(actions: PlayerMenuActions): List<PlayerMenuEntry> = buildLi
     add(PlayerMenuEntry("选集", PlaybackSession.queue.size > 1) { actions.onOpenEpisodes() })
     add(PlayerMenuEntry("片头 ${formatTime(PlaybackSession.openingMs)}") { PlaybackSession.markOpening() })
     add(PlayerMenuEntry("片尾 ${formatTime(PlaybackSession.endingMs)}") { PlaybackSession.markEnding() })
+    add(PlayerMenuEntry("清空片头/片尾") { PlaybackSession.clearMarks() })
     add(PlayerMenuEntry("${PlaybackSession.speed}x") { PlaybackSession.cycleSpeed() })
     add(
         PlayerMenuEntry(

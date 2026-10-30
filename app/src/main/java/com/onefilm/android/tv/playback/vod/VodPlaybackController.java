@@ -315,7 +315,9 @@ public class VodPlaybackController {
     public void onTimeChanged(long time, long position, long duration) {
         History history = currentHistory();
         historyPolicy.updateProgress(history, time, position, duration);
-        if (history != null && history.getEnding() > 0 && history.getEnding() + position >= duration) nextEpisode(false);
+        if (history != null && history.getEnding() > 0 && position >= history.getEnding()) {
+            nextEpisode(false);
+        }
     }
 
     public long startPositionMs() {

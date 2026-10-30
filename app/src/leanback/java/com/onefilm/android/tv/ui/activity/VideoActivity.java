@@ -851,7 +851,7 @@ public class VideoActivity extends VodPlaybackActivity implements VodPlaybackHos
     private void onEnding() {
         long position = player().getPosition();
         long duration = player().getDuration();
-        if (player().canSetEnding(position, duration)) setEnding(duration - position);
+        if (player().canSetEnding(position, duration)) setEnding(position);
     }
 
     private void onEndingAdd() {

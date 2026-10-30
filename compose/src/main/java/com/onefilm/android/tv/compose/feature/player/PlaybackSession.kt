@@ -130,6 +130,13 @@ object PlaybackSession {
             if (state == Player.STATE_ENDED) {
                 isPlaying = false
                 saveHistory()
+                // 自然播完也要自动下一集（片尾标记之外的第二道保险）
+                val context = appContext
+                if (context != null && currentIndex + 1 < queue.size) {
+                    scope.launch {
+                        playEpisode(context, currentIndex + 1, ComposeDependencies.playbackResolver)
+                    }
+                }
             }
         }
 
@@ -188,9 +195,16 @@ object PlaybackSession {
             playerHolder = player
             player?.addListener(playerListener)
         }
+        // 播放器重建/切集后必须重新应用倍速，否则界面显示 2x 而实际是 1x
+        if (speed != 1f) applySpeed(player)
         isPlaying = player?.isPlaying == true
         repeatMode = player?.repeatMode ?: Player.REPEAT_MODE_OFF
         durationMs = player?.duration?.takeIf { it > 0 } ?: durationMs
+    }
+
+    private fun applySpeed(target: Player?) {
+        target ?: return
+        runCatching { target.playbackParameters = PlaybackParameters(speed) }
     }
 
     private fun ensureLegacy(): LegacyPlayer? {
@@ -373,6 +387,7 @@ object PlaybackSession {
             endingApplied = false
             subtitleOff = false
             audioIndex = 0
+            durationMs = 0L
         }
         target.start(url, siteKey, title, startMs, headers)
         engineMpv = target.isMpv()
@@ -394,7 +409,11 @@ object PlaybackSession {
             }
             currentIndex = index
             val history = historyStore?.find(key, vodId)
-            val start = if (history?.episodeUrl == item.url) history.positionMs else 0L
+            val start = if (history?.episodeUrl == item.url) {
+                maxOf(history.positionMs, history.openingMs)
+            } else {
+                history?.openingMs ?: 0L
+            }
             // 片头/片尾属于整部剧，切换选集后继续沿用。
             if (history != null) {
                 setMarks(history.openingMs, history.endingMs)
@@ -402,6 +421,8 @@ object PlaybackSession {
                 setMarks(0L, 0L)
             }
             play(context, resolved, start)
+            // 切集后播放器可能重建或重置参数，这里必须重新应用倍速
+            applySpeed(playerHolder)
             if (history?.episodeUrl == item.url && history.speed > 0f) {
                 updateSpeed(history.speed)
             }
@@ -502,10 +523,18 @@ object PlaybackSession {
         saveHistory()
     }
 
+    /** 清除片头/片尾标记（设错时用）。 */
+    fun clearMarks() {
+        setMarks(0L, 0L)
+        saveHistory()
+    }
+
     fun markEnding() {
         endingMs = positionMs()
-        endingApplied = true
+        // 按下片尾时当前位置就是片尾起点，必须立刻判定并跳过（旧逻辑把它标记成“已处理”，所以永远不跳）
+        endingApplied = false
         saveHistory()
+        enforceMarkers()
     }
 
     fun enforceMarkers() {
