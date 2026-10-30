@@ -8,6 +8,8 @@ import androidx.media3.common.Player
 data class PlayerMenuEntry(
     val label: String,
     val enabled: Boolean = true,
+    /** 遥控器长按（用于片头/片尾重置）。必须放在 onClick 前面，否则尾随 lambda 会绑到长按上。 */
+    val onLongClick: (() -> Unit)? = null,
     val onClick: () -> Unit = {},
 )
 
@@ -32,9 +34,20 @@ fun buildPlayerMenu(actions: PlayerMenuActions): List<PlayerMenuEntry> = buildLi
     add(PlayerMenuEntry("重播") { PlaybackSession.replay() })
     add(PlayerMenuEntry("刷新") { PlaybackSession.refresh() })
     add(PlayerMenuEntry("选集", PlaybackSession.queue.size > 1) { actions.onOpenEpisodes() })
-    add(PlayerMenuEntry("片头 ${formatTime(PlaybackSession.openingMs)}") { PlaybackSession.markOpening() })
-    add(PlayerMenuEntry("片尾 ${formatTime(PlaybackSession.endingMs)}") { PlaybackSession.markEnding() })
-    add(PlayerMenuEntry("清空片头/片尾") { PlaybackSession.clearMarks() })
+    add(
+        PlayerMenuEntry(
+            "片头 ${formatTime(PlaybackSession.openingMs)}",
+            onClick = { PlaybackSession.markOpening() },
+            onLongClick = { PlaybackSession.clearOpening() },
+        ),
+    )
+    add(
+        PlayerMenuEntry(
+            "片尾 ${formatTime(PlaybackSession.endingMs)}",
+            onClick = { PlaybackSession.markEnding() },
+            onLongClick = { PlaybackSession.clearEnding() },
+        ),
+    )
     add(PlayerMenuEntry("${PlaybackSession.speed}x") { PlaybackSession.cycleSpeed() })
     add(
         PlayerMenuEntry(

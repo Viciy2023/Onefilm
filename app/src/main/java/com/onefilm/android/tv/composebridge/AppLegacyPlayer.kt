@@ -263,6 +263,9 @@ class AppLegacyPlayer : LegacyPlayer {
     }
 
     override fun release() {
+        // 解绑不足以停止播放：PlaybackService 是前台服务，可能仍有媒体客户端连着。
+        // 这里先让它停止播放并关掉自己，再解绑，否则退出播放页后声音会一直在后台响。
+        runCatching { service?.shutdown() }
         runCatching { context.unbindService(connection) }
         if (standalone) manager?.release()
         manager = null

@@ -20,6 +20,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -294,6 +295,55 @@ internal fun MenuRow(
     }
 }
 
+/**
+ * 遥控器长按：按住确认键 ≥500ms 触发 onLongClick，并吞掉这一次点击。
+ * Compose 的 combinedClickable 只处理触摸长按，TV 按键长按需要自己判定。
+ */
+@Composable
+internal fun longPressKey(enabled: Boolean, onLongClick: (() -> Unit)?): Modifier {
+    var pressedAt by remember { mutableLongStateOf(0L) }
+    var fired by remember { mutableStateOf(false) }
+    if (onLongClick == null) return Modifier
+    return Modifier.onPreviewKeyEvent { event ->
+        val center = event.key == Key.DirectionCenter || event.key == Key.Enter || event.key == Key.Spacebar
+        if (!enabled || !center) return@onPreviewKeyEvent false
+        when (event.type) {
+            KeyEventType.KeyDown -> {
+                // 真机遥控器长按会带 FLAG_LONG_PRESS，直接判定，避免依赖按键持续时间
+                val native = event.nativeKeyEvent
+                if (native.flags and android.view.KeyEvent.FLAG_LONG_PRESS != 0) {
+                    if (!fired) {
+                        fired = true
+                        onLongClick.invoke()
+                    }
+                    true
+                } else {
+                    if (pressedAt == 0L) pressedAt = SystemClock.uptimeMillis()
+                    false
+                }
+            }
+
+            KeyEventType.KeyUp -> {
+                val held = SystemClock.uptimeMillis() - pressedAt
+                val wasFired = fired
+                pressedAt = 0L
+                fired = false
+                when {
+                    wasFired -> true
+                    held >= 500L -> {
+                        onLongClick.invoke()
+                        true
+                    }
+
+                    else -> false
+                }
+            }
+
+            else -> false
+        }
+    }
+}
+
 @Composable
 internal fun MenuText(entry: PlayerMenuEntry, width: Dp, focusRequester: FocusRequester? = null) {
     val interaction = remember { MutableInteractionSource() }
@@ -301,16 +351,18 @@ internal fun MenuText(entry: PlayerMenuEntry, width: Dp, focusRequester: FocusRe
     Box(
         Modifier
             .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+            .then(longPressKey(entry.enabled, entry.onLongClick))
             .width(width)
             .height(40.dp)
             .scale(if (focused) 1.06f else 1f)
             .clip(RoundedCornerShape(8.dp))
             .background(if (focused) Press else Color.Transparent)
-            .clickable(
+            .combinedClickable(
                 interactionSource = interaction,
                 indication = null,
                 enabled = entry.enabled,
                 onClick = entry.onClick,
+                onLongClick = entry.onLongClick,
             ),
         contentAlignment = Alignment.Center,
     ) {
@@ -405,6 +457,12 @@ internal fun OverflowPopup(
                         text = entry.label,
                         enabled = entry.enabled,
                         modifier = if (index == 0) Modifier.focusRequester(firstFocus) else Modifier,
+                        onLongClick = entry.onLongClick?.let { handler ->
+                            {
+                                handler()
+                                onDismiss()
+                            }
+                        },
                     ) {
                         entry.onClick()
                         onDismiss()
@@ -492,12 +550,14 @@ internal fun FlatTile(
     emphasis: Boolean = false,
     enabled: Boolean = true,
     modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
     onClick: () -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     Box(
         modifier
+            .then(longPressKey(enabled, onLongClick))
             .clip(RoundedCornerShape(10.dp))
             .heightIn(min = 44.dp)
             .background(
@@ -507,14 +567,14 @@ internal fun FlatTile(
                     else -> Color.White.copy(alpha = 0.06f)
                 },
             )
-            .clickable(
+            .combinedClickable(
                 interactionSource = interaction,
                 indication = null,
                 enabled = enabled,
                 onClick = onClick,
+                onLongClick = onLongClick,
             )
-            .padding(horizontal = 10.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center,
+            .padding(horizontal = 10.dp, vertical = 10.dp),        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,

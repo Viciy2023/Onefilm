@@ -523,9 +523,17 @@ object PlaybackSession {
         saveHistory()
     }
 
-    /** 清除片头/片尾标记（设错时用）。 */
-    fun clearMarks() {
-        setMarks(0L, 0L)
+    /** 长按片头：清除片头标记。 */
+    fun clearOpening() {
+        openingMs = 0L
+        openingApplied = true
+        saveHistory()
+    }
+
+    /** 长按片尾：清除片尾标记。 */
+    fun clearEnding() {
+        endingMs = 0L
+        endingApplied = true
         saveHistory()
     }
 

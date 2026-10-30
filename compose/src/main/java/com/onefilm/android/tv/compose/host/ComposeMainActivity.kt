@@ -274,7 +274,11 @@ class ComposeMainActivity : ComponentActivity() {
                 if (showExitDialog) {
                     BackHandler(enabled = true) { showExitDialog = false }
                     ExitAppDialog(
-                        onConfirm = { finish() },
+                        onConfirm = {
+                            // 先停掉播放器和前台播放服务，再关界面，避免退出后还在出声
+                            PlaybackSession.release()
+                            finish()
+                        },
                         onDismiss = { showExitDialog = false },
                     )
                 }
