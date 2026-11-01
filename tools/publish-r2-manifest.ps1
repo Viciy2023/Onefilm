@@ -185,30 +185,43 @@ foreach ($u in $uploads) {
   Write-Host ("  verified {0} size={1:N0} md5={2}" -f $u.Key, $remoteSize, $remoteEtag)
 }
 
-# R8 mapping：按版本归档到私有前缀 mapping/v<version>/，只用于还原线上崩溃栈。
+# R8 mapping: archive under a private prefix mapping/v<version>/.
+# Mappings can be ~100MB per flavor when library mappings are included, so they
+# are gzip-compressed before upload (text compresses to roughly 10%).
 foreach ($mapping in $MappingFiles) {
   if ([string]::IsNullOrWhiteSpace($mapping)) { continue }
   if (-not (Test-Path $mapping)) { throw "mapping file not found: $mapping" }
   $mappingItem = Get-Item $mapping
   if ($mappingItem.Length -le 0) { throw "mapping file is empty: $mapping" }
-  # 两个 flavor 的 mapping 都叫 mapping.txt，key 里加 flavor 前缀避免互相覆盖
+  # Both flavors ship a file called mapping.txt; prefix the key with the flavor.
   $flavor = $mappingItem.Directory.Name -replace 'Release$', ''
-  $mappingKey = "mapping/v$Version/$flavor-$($mappingItem.Name)"
-  $mappingMd5 = (Get-FileHash $mappingItem.FullName -Algorithm MD5).Hash.ToLowerInvariant()
-  Write-Host "PUT $mappingKey"
+  $gzPath = Join-Path $env:TEMP ("onefilm-{0}-mapping.txt.gz" -f $flavor)
+  if (Test-Path $gzPath) { Remove-Item $gzPath -Force }
+  $src = [IO.File]::OpenRead($mappingItem.FullName)
+  try {
+    $dst = [IO.File]::Create($gzPath)
+    try {
+      $gzip = New-Object System.IO.Compression.GZipStream($dst, [System.IO.Compression.CompressionLevel]::Optimal)
+      try { $src.CopyTo($gzip) } finally { $gzip.Dispose() }
+    } finally { $dst.Dispose() }
+  } finally { $src.Dispose() }
+  $gzSize = (Get-Item $gzPath).Length
+  $mappingKey = "mapping/v$Version/$flavor-mapping.txt.gz"
+  Write-Host ("PUT {0} ({1:N0} -> {2:N0} bytes)" -f $mappingKey, $mappingItem.Length, $gzSize)
   & $curl -sS --max-time 600 -X PUT `
     -H "Authorization: Bearer $Token" `
-    -H "Content-Type: text/plain; charset=utf-8" `
+    -H "Content-Type: application/gzip" `
     -H "Cache-Control: no-store" `
-    --data-binary "@$($mappingItem.FullName)" `
+    --data-binary "@$gzPath" `
     -o "$env:TEMP/onefilm-mapping-upload.json" `
     -w "HTTP=%{http_code}`n" `
     "$objectsApi/$($mappingKey)"
-  if ($LASTEXITCODE -ne 0) { throw "mapping upload failed: $($mappingItem.Name) (curl exit $LASTEXITCODE)" }
+  if ($LASTEXITCODE -ne 0) { throw "mapping upload failed: $flavor (curl exit $LASTEXITCODE)" }
   $mappingResp = Get-Content "$env:TEMP/onefilm-mapping-upload.json" -Raw -Encoding UTF8 | ConvertFrom-Json
-  if (-not $mappingResp.success) { throw "mapping upload rejected: $($mappingItem.Name)" }
-  if ([int64]$mappingResp.result.size -ne $mappingItem.Length) { throw "mapping size mismatch: $($mappingItem.Name)" }
-  Write-Host ("  verified {0} size={1:N0}" -f $mappingKey, $mappingItem.Length)
+  if (-not $mappingResp.success) { throw "mapping upload rejected: $flavor" }
+  if ([int64]$mappingResp.result.size -ne $gzSize) { throw "mapping size mismatch: $flavor" }
+  Write-Host ("  verified {0} size={1:N0}" -f $mappingKey, $gzSize)
+  Remove-Item $gzPath -Force
 }
 
 # MANIFEST must NOT be cached: clients need the newest version immediately.
