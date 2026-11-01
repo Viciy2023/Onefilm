@@ -23,7 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cloud
-import androidx.compose.material.icons.outlined.FilterAlt
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LiveTv
@@ -534,7 +534,7 @@ private fun TvCategoryChip(
         if (hasFilter) {
             Spacer(Modifier.width((4 * scale).dp))
             Icon(
-                imageVector = Icons.Outlined.FilterAlt,
+                imageVector = Icons.Filled.FilterList,
                 contentDescription = "可筛选",
                 tint = foreground.copy(alpha = if (highlighted) 0.85f else 0.65f),
                 modifier = Modifier.size((13 * scale).dp),
