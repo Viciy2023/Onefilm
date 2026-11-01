@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.FilterAlt
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.LiveTv
@@ -115,6 +116,8 @@ fun TvHeader(
     onLine: () -> Unit,
     onNetwork: () -> Unit,
     onCategory: (HomeCategory) -> Unit,
+    /** 该分类是否有筛选条件；分类页的分类标签会显示漏斗图标（不单独聚焦）。 */
+    hasCategoryFilters: (HomeCategory) -> Boolean = { false },
 ) {
     val centerText = notice?.takeIf { it.isNotBlank() }
         ?: siteName?.takeIf { it.isNotBlank() }
@@ -230,6 +233,8 @@ fun TvHeader(
                 } else chipRequester
                 TvCategoryChip(
                     category = category,
+                    // 只有当前所在的分类页标签才显示漏斗；其他标签不显示
+                    hasFilter = variant == TvHeaderVariant.CategoryOnly && !home && current && hasCategoryFilters(category),
                     onClick = {
                         if (home) onNavigate(Routes.HOME) else onCategory(category)
                     },
@@ -444,6 +449,7 @@ private fun TvNavTab(
 @Composable
 private fun TvCategoryChip(
     category: HomeCategory,
+    hasFilter: Boolean = false,
     onClick: () -> Unit,
     scale: Float = 1f,
     selected: Boolean = false,
@@ -474,13 +480,9 @@ private fun TvCategoryChip(
     }
     val shape = RoundedCornerShape(8.dp)
     val highlighted = selected || focused
-    Text(
-        text = category.name.ifBlank { "未命名" },
-        color = if (highlighted) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-        fontSize = (14 * scale).sp,
-        fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Normal,
-        textAlign = TextAlign.Center,
-        maxLines = 1,
+    val foreground =
+        if (highlighted) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface
+    Row(
         modifier = modifier
             .focusRequester(targetFocus)
             .onFocusChanged { if (it.isFocused) onFocused() }
@@ -518,5 +520,25 @@ private fun TvCategoryChip(
                 onClick()
             }
             .padding(horizontal = (14 * scale).dp, vertical = (6 * scale).dp),
-    )
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = category.name.ifBlank { "未命名" },
+            color = foreground,
+            fontSize = (14 * scale).sp,
+            fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Normal,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+        )
+        // 参考欧歌：筛选图标放在标签内部，只作提示，不单独聚焦/点击
+        if (hasFilter) {
+            Spacer(Modifier.width((4 * scale).dp))
+            Icon(
+                imageVector = Icons.Outlined.FilterAlt,
+                contentDescription = "可筛选",
+                tint = foreground.copy(alpha = if (highlighted) 0.85f else 0.65f),
+                modifier = Modifier.size((13 * scale).dp),
+            )
+        }
+    }
 }

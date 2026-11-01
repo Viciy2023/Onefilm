@@ -18,6 +18,11 @@ object CategoryFilterStore {
 
     fun get(tid: String): List<CategoryFilterGroup> = store[tid].orEmpty()
 
+    /** 分类页加载时拿到的筛选条件也缓存起来，供标签图标判断。 */
+    fun putGroups(tid: String, groups: List<CategoryFilterGroup>) {
+        if (tid.isNotBlank() && groups.isNotEmpty()) store[tid] = groups
+    }
+
     fun fromFilter(filter: Filter): CategoryFilterGroup = CategoryFilterGroup(
         key = filter.key.orEmpty(),
         name = filter.name.orEmpty(),

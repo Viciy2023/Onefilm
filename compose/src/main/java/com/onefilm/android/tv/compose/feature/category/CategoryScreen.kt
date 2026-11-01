@@ -48,9 +48,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.onefilm.android.tv.compose.bridge.CategoryFilterGroup
 import com.onefilm.android.tv.compose.bridge.CategoryPage
 import com.onefilm.android.tv.compose.bridge.MediaCard
@@ -146,27 +150,52 @@ private fun CategoryContent(
             }
         }
 
-        if (showFilters) {
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.35f))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onDismissFilters,
-                    ),
-            )
-            FilterBottomSheet(
-                filters = page.filters,
-                selectedFilters = selectedFilters,
-                onToggleFilter = onToggleFilter,
-                onDismiss = onDismissFilters,
-                firstOptionFocus = firstFilterFocus,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth(),
-            )
+        if (showFilters && page.filters.isNotEmpty()) {
+            // 参考欧歌：筛选面板放在独立窗口（Dialog）里，返回键由面板窗口自己消费，
+            // 关闭后活动窗口的焦点仍是打开面板前的分类标签，不会被带回主页。
+            Dialog(
+                onDismissRequest = onDismissFilters,
+                properties = DialogProperties(
+                    usePlatformDefaultWidth = false,
+                    dismissOnClickOutside = false,
+                    dismissOnBackPress = true,
+                ),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .onPreviewKeyEvent { event ->
+                            val native = event.nativeKeyEvent
+                            if (native.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
+                                if (native.action == android.view.KeyEvent.ACTION_UP) onDismissFilters()
+                                true
+                            } else {
+                                false
+                            }
+                        },
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.35f))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = onDismissFilters,
+                            ),
+                    )
+                    FilterBottomSheet(
+                        filters = page.filters,
+                        selectedFilters = selectedFilters,
+                        onToggleFilter = onToggleFilter,
+                        onDismiss = onDismissFilters,
+                        firstOptionFocus = firstFilterFocus,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth(),
+                    )
+                }
+            }
         }
     }
 }
@@ -184,29 +213,30 @@ private fun FilterBottomSheet(
     val firstGroupIndex = filters.indexOfFirst { it.options.isNotEmpty() }
     Column(
         modifier
-            .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
+            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = {},
             )
-            .padding(horizontal = 30.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         filters.forEachIndexed { groupIndex, group ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = group.name + "：",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    text = group.name,
+                    fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.width(110.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.width(72.dp),
                 )
                 LazyRow(
                     modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(end = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    contentPadding = PaddingValues(end = 4.dp),
                 ) {
                     items(group.options.size) { optionIndex ->
                         val option = group.options[optionIndex]
@@ -234,30 +264,34 @@ private fun FilterOption(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
+    val shape = RoundedCornerShape(8.dp)
     Text(
         text = text,
         color = when {
-            selected -> MaterialTheme.colorScheme.background
-            else -> MaterialTheme.colorScheme.onSurface
+            selected -> MaterialTheme.colorScheme.onPrimary
+            focused -> MaterialTheme.colorScheme.onSurface
+            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f)
         },
-        fontSize = 14.sp,
+        fontSize = 12.sp,
         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         modifier = Modifier
             .then(
                 if (focusRequester != null) Modifier.focusRequester(focusRequester)
                 else Modifier,
             )
-            .border(
-                if (focused) 2.dp else 0.dp,
-                if (focused) MaterialTheme.colorScheme.onSurface else Color.Transparent,
-                RoundedCornerShape(percent = 50),
-            )
-            .clip(RoundedCornerShape(percent = 50))
+            .clip(shape)
             .background(
-                if (selected) MaterialTheme.colorScheme.onSurface
-                else MaterialTheme.colorScheme.surfaceVariant,
+                when {
+                    selected -> MaterialTheme.colorScheme.primary
+                    focused -> MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                    else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
+                },
+            )
+            .then(
+                if (focused) Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, shape)
+                else Modifier,
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 18.dp, vertical = 11.dp),
+            .padding(horizontal = 10.dp, vertical = 5.dp),
     )
 }

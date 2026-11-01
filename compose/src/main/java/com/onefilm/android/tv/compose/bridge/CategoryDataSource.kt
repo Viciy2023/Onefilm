@@ -23,4 +23,7 @@ interface CategoryDataSource {
         page: Int = 1,
         selected: Map<String, String> = emptyMap(),
     ): CategoryPage
+
+    /** 该分类是否有筛选条件（用于分类页标签上的漏斗图标）。 */
+    fun hasFilters(tid: String): Boolean = false
 }

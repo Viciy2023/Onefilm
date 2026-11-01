@@ -382,6 +382,11 @@ class ComposeMainActivity : ComponentActivity() {
                                         }
                                     }
                                 },
+                                hasCategoryFilters = { category ->
+                                    // 读一次版本号：分类页拿到筛选条件后图标自动出现
+                                    val version = CategoryFilterController.filtersVersion
+                                    version >= 0 && ComposeDependencies.categoryDataSource.hasFilters(category.id)
+                                },
                             )
                         }
                         if (showConfigDialog) {
