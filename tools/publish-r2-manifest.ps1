@@ -25,6 +25,10 @@
 # not reference, so the bucket keeps exactly one version. Old APKs are removed
 # only after the new manifest is verified live; rollback then needs a re-upload.
 #
+# -PruneOldMappings deletes every mapping object that is not under
+# mapping/v<current version>/, so the bucket keeps one mapping archive per app
+# version. Run it after the mapping upload of the current release.
+#
 # Without -DryRun, set R2_ACCOUNT_ID, R2_BUCKET and either R2_API_TOKEN or
 # R2_TOKEN_FILE. Never commit the token.
 #
@@ -51,6 +55,7 @@ param(
   [string]$Token = $env:R2_API_TOKEN,
   [switch]$ManifestOnly,
   [switch]$PruneOldApks,
+  [switch]$PruneOldMappings,
   [switch]$DryRun
 )
 
@@ -283,4 +288,40 @@ if ($PruneOldApks) {
     if (-not $resp.success) { throw "delete rejected by R2: $($s.key)" }
   }
   if ($stale.Count -gt 0) { Write-Host "prune done" }
+}
+
+# ---------------------------------------------------------------------------
+# -PruneOldMappings keeps only mapping/v<version>/ of the version being
+# published. Mapping archives of older releases are removed here.
+# ---------------------------------------------------------------------------
+if ($PruneOldMappings) {
+  $keepPrefix = "mapping/v$Version/"
+  $listed = @()
+  $cursor = ""
+  do {
+    $listUrl = "$objectsApi`?per_page=1000"
+    if (-not [string]::IsNullOrEmpty($cursor)) { $listUrl += "&cursor=" + [Uri]::EscapeDataString($cursor) }
+    $page = Invoke-RestMethod -Method Get -Uri $listUrl -Headers @{ Authorization = "Bearer $Token" }
+    if (-not $page.success) { throw "R2 object listing failed" }
+    $listed += @($page.result)
+    $cursor = if ($page.result_info -and $page.result_info.is_truncated) { [string]$page.result_info.cursor } else { "" }
+  } while (-not [string]::IsNullOrEmpty($cursor))
+
+  $staleMaps = $listed | Where-Object {
+    $_.key -like 'mapping/*' -and -not $_.key.StartsWith($keepPrefix, [StringComparison]::OrdinalIgnoreCase)
+  }
+
+  foreach ($s in $staleMaps) {
+    Write-Host ("  DELETE {0}" -f $s.key)
+    $deleteUrl = "$objectsApi/" + [Uri]::EscapeDataString([string]$s.key)
+    & $curl -sS --max-time 120 -X DELETE `
+      -H "Authorization: Bearer $Token" `
+      -o "$env:TEMP/onefilm-mapping-delete.json" `
+      -w "HTTP=%{http_code}`n" `
+      $deleteUrl
+    if ($LASTEXITCODE -ne 0) { throw "delete failed: $($s.key) (curl exit $LASTEXITCODE)" }
+    $resp = Get-Content "$env:TEMP/onefilm-mapping-delete.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+    if (-not $resp.success) { throw "delete rejected by R2: $($s.key)" }
+  }
+  if ($staleMaps.Count -gt 0) { Write-Host "mapping prune done" }
 }
