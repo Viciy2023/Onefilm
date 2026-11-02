@@ -56,6 +56,7 @@ param(
   [switch]$ManifestOnly,
   [switch]$PruneOldApks,
   [switch]$PruneOldMappings,
+  [switch]$SkipBuglySymbol,
   [switch]$DryRun
 )
 
@@ -227,6 +228,41 @@ foreach ($mapping in $MappingFiles) {
   if ([int64]$mappingResp.result.size -ne $gzSize) { throw "mapping size mismatch: $flavor" }
   Write-Host ("  verified {0} size={1:N0}" -f $mappingKey, $gzSize)
   Remove-Item $gzPath -Force
+}
+
+# ---------------------------------------------------------------------------
+# Bugly symbols: push the same R8 mapping to Bugly so the console can
+# deobfuscate Java stacks. Needs tools\bugly\buglyqq-upload-symbol.jar and a
+# Java runtime. Skipped by -DryRun and by -SkipBuglySymbol.
+# ---------------------------------------------------------------------------
+if (-not $SkipBuglySymbol -and -not $DryRun -and $MappingFiles.Count -gt 0) {
+  $buglyJar = Join-Path $PSScriptRoot "bugly\buglyqq-upload-symbol.jar"
+  if (-not (Test-Path $buglyJar)) {
+    Write-Host ("  skip bugly symbol: jar not found at {0}" -f $buglyJar)
+  } elseif (-not (Get-Command java -ErrorAction SilentlyContinue)) {
+    Write-Host "  skip bugly symbol: java not found on PATH"
+  } else {
+    foreach ($mapping in $MappingFiles) {
+      if ([string]::IsNullOrWhiteSpace($mapping)) { continue }
+      if (-not (Test-Path $mapping)) { throw "mapping file not found: $mapping" }
+      $mappingItem = Get-Item $mapping
+      $flavor = $mappingItem.Directory.Name -replace 'Release$', ''
+      $suffix = if ($flavor -eq "leanback") { "tv" } else { $flavor }
+      $appId = $gradleProps["onefilm.bugly.appId.$suffix"]
+      $appKey = $gradleProps["onefilm.bugly.appKey.$suffix"]
+      if ([string]::IsNullOrWhiteSpace($appId) -or [string]::IsNullOrWhiteSpace($appKey)) {
+        Write-Host ("  skip bugly symbol: no appId/appKey for flavor {0}" -f $flavor)
+        continue
+      }
+      Write-Host ("bugly symbol {0} appId={1} version={2}" -f $flavor, $appId, $Version)
+      $out = & java -jar $buglyJar -appid $appId -appkey $appKey -version $Version -platform Android -inputMapping $mappingItem.FullName 2>&1
+      if (($out | Select-String '"statusCode":0').Count -eq 0) {
+        $tail = ($out | Select-Object -Last 3) -join " | "
+        throw ("bugly symbol upload failed: {0} :: {1}" -f $flavor, $tail)
+      }
+      Write-Host ("  verified bugly symbol {0}" -f $flavor)
+    }
+  }
 }
 
 # MANIFEST must NOT be cached: clients need the newest version immediately.

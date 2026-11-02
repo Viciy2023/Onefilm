@@ -35,3 +35,7 @@ KeyStore/
 
 README.md.bak.*
 .kotlin/
+
+# Bugly symbol upload tool (downloaded, not committed)
+tools/bugly/*.jar
+buglybin/
