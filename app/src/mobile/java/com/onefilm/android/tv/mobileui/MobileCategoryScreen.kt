@@ -4,11 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -16,9 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -45,13 +42,19 @@ import com.onefilm.android.tv.compose.bridge.CategoryFilterGroup
 import com.onefilm.android.tv.compose.bridge.CategoryPage
 import com.onefilm.android.tv.compose.bridge.HomeCategory
 import com.onefilm.android.tv.compose.bridge.MediaCard
-import com.onefilm.android.tv.mobileui.component.MobileRemoteImage
+import com.onefilm.android.tv.mobileui.component.MobileHorizontalGrid
 
 private sealed interface MobileCategoryState {
     data object Loading : MobileCategoryState
     data object Error : MobileCategoryState
     data class Content(val page: CategoryPage) : MobileCategoryState
 }
+
+/** 分类页最少行数；屏幕更高（平板）时按可用高度自动增加行数。 */
+private const val MIN_ROWS = 4
+
+/** 目标行高，用来换算行数：手机约 4 行，平板会自动变多。 */
+private val TARGET_ROW_HEIGHT = 190.dp
 
 @Composable
 fun MobileCategoryScreen(
@@ -121,16 +124,25 @@ fun MobileCategoryScreen(
                     Text("重试")
                 }
             }
-            is MobileCategoryState.Content -> LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                itemsIndexed(current.page.items, key = { index, card -> "${card.key}:${card.id}:$index" }) { _, card ->
-                    MobileCategoryCard(card) { onCardClick(card) }
-                }
+            is MobileCategoryState.Content -> BoxWithConstraints(Modifier.fillMaxSize()) {
+                // 统一的左右滑动网格：4 行起步（平板按高度自动加行），左右连续滑动，不分页。
+                val rowGap = 8.dp
+                val colGap = 8.dp
+                val rows = ((maxHeight - 16.dp) / TARGET_ROW_HEIGHT).toInt().coerceAtLeast(MIN_ROWS)
+                val rowHeight = ((maxHeight - rowGap * (rows - 1) - 16.dp) / rows)
+                    .coerceAtLeast(96.dp)
+                val cardWidth = (rowHeight * 2f / 3f).coerceAtLeast(72.dp)
+                MobileHorizontalGrid(
+                    items = current.page.items,
+                    rows = rows,
+                    rowHeight = rowHeight,
+                    cardWidth = cardWidth,
+                    rowGap = rowGap,
+                    colGap = colGap,
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    onCardClick = onCardClick,
+                )
             }
         }
     }
@@ -199,40 +211,4 @@ private fun MobileCategoryFilterDialog(
         },
         confirmButton = {},
     )
-}
-
-@Composable
-private fun MobileCategoryCard(card: MediaCard, onClick: () -> Unit) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        MobileRemoteImage(
-            rawUrl = card.posterUrl,
-            contentDescription = card.title,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(2f / 3f)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-        )
-        Text(
-            text = card.title.ifBlank { "未命名" },
-            fontSize = 14.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        val subtitle = card.subtitle
-        if (!subtitle.isNullOrBlank()) {
-            Text(
-                text = subtitle,
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
 }

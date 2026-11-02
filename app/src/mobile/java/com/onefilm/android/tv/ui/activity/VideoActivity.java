@@ -21,6 +21,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.DialogFragment;
@@ -248,6 +249,23 @@ public class VideoActivity extends VodPlaybackActivity implements Clock.Callback
         checkControl();
         setOrient();
         checkId();
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        applyThemeMode();
+        super.onCreate(savedInstanceState);
+    }
+
+    /** 详情页跟随设置里的主题：0=简约（浅色）、1=深色、2=跟随系统。 */
+    private void applyThemeMode() {
+        int mode = com.github.catvod.utils.Prefers.getInt("compose_theme_mode", 0);
+        int nightMode = mode == 1
+                ? AppCompatDelegate.MODE_NIGHT_YES
+                : mode == 0
+                ? AppCompatDelegate.MODE_NIGHT_NO
+                : AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
+        getDelegate().setLocalNightMode(nightMode);
     }
 
     @Override

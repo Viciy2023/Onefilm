@@ -33,4 +33,8 @@ object DiskCache {
             ObjectInputStream(input).use { it.readObject() as T }
         }
     }.getOrNull()
+
+    fun delete(name: String) {
+        runCatching { file(name).delete() }
+    }
 }

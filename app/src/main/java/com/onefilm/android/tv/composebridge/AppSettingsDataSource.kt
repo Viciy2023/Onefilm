@@ -228,6 +228,11 @@ class AppSettingsDataSource : SettingsDataSource {
         val callback = object : Callback() {
             override fun success() {
                 config.update()
+                if (type == 0) {
+                    // 换接口后必须丢掉首页与它的分类，否则会停留在上一份接口的分类上。
+                    HomeFeedCache.feed = null
+                    DiskCache.delete("home_" + url.hashCode())
+                }
                 if (type == 1) {
                     com.github.catvod.utils.Prefers.put("compose_live_url", url)
                 }

@@ -3,10 +3,12 @@ package com.onefilm.android.tv.mobileui
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,16 +19,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -50,13 +48,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -70,9 +72,11 @@ import com.onefilm.android.tv.compose.bridge.SearchDataSource
 import com.onefilm.android.tv.compose.feature.home.HomeUiState
 import com.onefilm.android.tv.compose.feature.search.SearchSession
 import com.onefilm.android.tv.compose.feature.search.SearchUiState
+import com.onefilm.android.tv.mobileui.component.MobileHorizontalGrid
 import com.onefilm.android.tv.mobileui.component.MobileRemoteImage
 import com.onefilm.android.tv.ui.activity.LiveActivity
 import com.onefilm.android.tv.ui.activity.VideoActivity
+import com.onefilm.android.tv.R
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -182,6 +186,7 @@ fun MobileApp() {
                     MobileTab.LIVE -> MobileLiveScreen(onOpen = ::openLive)
                     MobileTab.SETTINGS -> MobileSettingsScreen(
                         dataSource = ComposeDependencies.settingsDataSource,
+                        onConfigChanged = { homeRefresh++ },
                     )
                 }
             }
@@ -280,19 +285,50 @@ private fun MobileHomeContent(
     onCategoryClick: (HomeCategory) -> Unit,
 ) {
     val feed = state.feed
-    LazyColumn(
-        state = rememberLazyListState(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
-    ) {
-        if (feed.categories.isNotEmpty()) {
-            item {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    val recommendationIndex = feed.sections.indexOfFirst {
+        it.title == "推荐" && it.items.isNotEmpty()
+    }
+    val recommendation = feed.sections.getOrNull(recommendationIndex)?.items
+        ?: feed.hero.takeIf { it.isNotEmpty() }
+    // 首页只保留「推荐」和「继续观看」；收藏交给底部导航，不再占用首页。
+    val continueWatching = feed.sections.firstOrNull {
+        it.title == "继续观看" && it.items.isNotEmpty()
+    }
+    val hasRecommend = !recommendation.isNullOrEmpty()
+    val continueItems = continueWatching?.items.orEmpty()
+
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val hPad = 16.dp
+        val vPad = 8.dp
+        val rowGap = 8.dp
+        val sectionGap = 12.dp
+        val titleGap = 6.dp
+        val titleHeight = 24.dp
+        val chipsHeight = if (feed.categories.isNotEmpty()) 46.dp else 0.dp
+        val sectionCount = (if (hasRecommend) 1 else 0) + 1
+        val childCount = (if (feed.categories.isNotEmpty()) 1 else 0) + sectionCount
+        // 把标题、分区间距、行间距都算进固定高度，避免最后一行被裁掉。
+        val fixed = chipsHeight + titleHeight * sectionCount + titleGap * sectionCount +
+            sectionGap * (childCount - 1) + rowGap * 2 + vPad * 2
+        val totalRows = (if (hasRecommend) 3 else 0) + 1
+        val rowHeight = ((maxHeight - fixed) / totalRows).coerceAtLeast(96.dp)
+        val cardWidth = (rowHeight * 2f / 3f).coerceAtLeast(64.dp)
+
+        Column(
+            Modifier.fillMaxSize().padding(horizontal = hPad, vertical = vPad),
+            verticalArrangement = Arrangement.spacedBy(sectionGap),
+        ) {
+            if (feed.categories.isNotEmpty()) {
+                LazyRow(
+                    Modifier.height(chipsHeight - 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     items(feed.categories) { category ->
                         Text(
                             text = category.name,
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
@@ -302,104 +338,94 @@ private fun MobileHomeContent(
                     }
                 }
             }
-        }
-        val recommendationIndex = feed.sections.indexOfFirst {
-            it.title == "推荐" && it.items.isNotEmpty()
-        }
-        val recommendation = feed.sections.getOrNull(recommendationIndex)?.items
-            ?: feed.hero.takeIf { it.isNotEmpty() }
-        if (!recommendation.isNullOrEmpty()) {
-            item { MobileRecommendationRail("推荐", recommendation, onCardClick) }
-        }
-        items(feed.sections.filterIndexed { index, _ -> index != recommendationIndex }) { section ->
-            MobilePosterRail(section.title, section.items, onCardClick)
-        }
-    }
-}
-
-@Composable
-private fun MobileRecommendationRail(
-    title: String,
-    items: List<MediaCard>,
-    onCardClick: (MediaCard) -> Unit,
-) {
-    if (items.isEmpty()) return
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = title,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        LazyHorizontalGrid(
-            rows = GridCells.Fixed(2),
-            modifier = Modifier.fillMaxWidth().height(500.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            gridItemsIndexed(items, key = { index, card -> "${card.key}:${card.id}:$index" }) { _, card ->
-                MobilePosterCard(card) { onCardClick(card) }
+            if (hasRecommend) {
+                MobileHomeSection(
+                    title = "推荐",
+                    items = recommendation!!,
+                    rows = 3,
+                    rowHeight = rowHeight,
+                    cardWidth = cardWidth,
+                    rowGap = rowGap,
+                    onCardClick = onCardClick,
+                )
             }
-        }
-    }
-}
-
-@Composable
-private fun MobilePosterRail(
-    title: String,
-    items: List<MediaCard>,
-    onCardClick: (MediaCard) -> Unit,
-) {
-    if (items.isEmpty()) return
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = title,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(items) { card ->
-                MobilePosterCard(card) { onCardClick(card) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun MobilePosterCard(card: MediaCard, onClick: () -> Unit) {
-    Column(
-        Modifier
-            .width(136.dp)
-            .clickable(onClick = onClick),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
-    ) {
-        MobileRemoteImage(
-            rawUrl = card.posterUrl,
-            contentDescription = card.title,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(190.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-        )
-        Text(
-            text = card.title.ifBlank { "未命名" },
-            fontSize = 13.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        val subtitle = card.subtitle
-        if (!subtitle.isNullOrBlank()) {
-            Text(
-                text = subtitle,
-                fontSize = 11.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            MobileHomeSection(
+                title = "继续观看",
+                items = continueItems,
+                rows = 1,
+                rowHeight = rowHeight,
+                cardWidth = cardWidth,
+                rowGap = rowGap,
+                onCardClick = onCardClick,
+                placeholder = if (continueItems.isEmpty()) "暂无观看记录" else null,
             )
         }
+    }
+}
+
+/**
+ * 首页分区：固定行数的横向网格（非分页），左右连续滑动。
+ * 每列是一个纵向 strip，避免出现「一屏一页」的跳转感。
+ */
+@Composable
+private fun MobileHomeSection(
+    title: String,
+    items: List<MediaCard>,
+    rows: Int,
+    rowHeight: Dp,
+    cardWidth: Dp,
+    rowGap: Dp,
+    onCardClick: (MediaCard) -> Unit,
+    placeholder: String? = null,
+) {
+    if (items.isEmpty() && placeholder == null) return
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = title,
+            fontSize = 17.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        if (items.isEmpty()) {
+            MobileHomePlaceholderCard(cardWidth, rowHeight, placeholder.orEmpty())
+        } else {
+            MobileHorizontalGrid(
+                items = items,
+                rows = rows,
+                rowHeight = rowHeight,
+                cardWidth = cardWidth,
+                rowGap = rowGap,
+                onCardClick = onCardClick,
+            )
+        }
+    }
+}
+
+/** 首页空态占位卡：显示 Logo 和提示文案，有真实数据后自动被替换。 */
+@Composable
+private fun MobileHomePlaceholderCard(width: Dp, height: Dp, label: String) {
+    Column(
+        Modifier
+            .width(width)
+            .height(height)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Image(
+            painter = painterResource(R.mipmap.ic_launcher),
+            contentDescription = null,
+            modifier = Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)),
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+        )
     }
 }
 
@@ -512,13 +538,26 @@ private fun MobileSearchScreen(
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(current.items) { card ->
-                        MobileMediaRow(card = card, onClick = { onCardClick(card) })
-                    }
+                BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
+                    // 4 行起步，屏幕更高时按可用高度增加行数（平板），列的宽度跟随行高。
+                    val rowGap = 8.dp
+                    val minRowHeight = 120.dp
+                    val rows = ((maxHeight + rowGap) / (minRowHeight + rowGap))
+                        .toInt()
+                        .coerceAtLeast(4)
+                    val rowHeight = ((maxHeight - rowGap * (rows - 1)) / rows)
+                        .coerceAtLeast(96.dp)
+                    val cardWidth = rowHeight * 2f / 3f
+                    MobileHorizontalGrid(
+                        items = current.items,
+                        rows = rows,
+                        rowHeight = rowHeight,
+                        cardWidth = cardWidth,
+                        rowGap = rowGap,
+                        colGap = 10.dp,
+                        showSite = true,
+                        onCardClick = onCardClick,
+                    )
                 }
             }
         }

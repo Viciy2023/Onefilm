@@ -8,6 +8,6 @@
     android:ellipsize="marquee"
     android:gravity="center"
     android:singleLine="true"
-    android:textColor="@color/selector_text"
+    android:textColor="@color/selector_text_vod"
     android:textSize="14sp"
     tools:text="20" />

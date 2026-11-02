@@ -15,8 +15,19 @@ import kotlinx.coroutines.withContext
 
 class AppHomeDataSource : HomeDataSource {
 
+    /**
+     * 磁盘缓存按接口地址隔离。
+     *
+     * <p>之前用固定的 "home" 作为 key，换接口后冷启动会先渲染上一份接口的首页，
+     * 包括它的分类列表；用户点到那些分类时，新的接口上自然找不到对应分类，
+     * 就会报「分类加载失败」。
+     */
+    private fun cacheKey(): String = "home_" + VodConfig.getUrl().orEmpty().hashCode()
+
     init {
-        HomeFeedCache.feed = DiskCache.read<HomeFeed>("home", 24 * 60 * 60_000L)
+        HomeFeedCache.feed = runCatching {
+            DiskCache.read<HomeFeed>(cacheKey(), 24 * 60 * 60_000L)
+        }.getOrNull()
     }
 
     override suspend fun load(): HomeFeed = withContext(Dispatchers.IO) {
@@ -51,7 +62,7 @@ class AppHomeDataSource : HomeDataSource {
             notice = result.msg.orEmpty(),
         ).also {
             HomeFeedCache.feed = it
-            DiskCache.write("home", it)
+            DiskCache.write(cacheKey(), it)
         }
     }
 }
