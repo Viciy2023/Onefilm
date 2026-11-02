@@ -52,12 +52,21 @@ public class Backup {
     }
 
     public void restore() {
-        AppDatabase.get().clearAllTables();
-        AppDatabase.get().getSiteDao().insertOrUpdate(getSite());
-        AppDatabase.get().getLiveDao().insertOrUpdate(getLive());
-        AppDatabase.get().getKeepDao().insertOrUpdate(getKeep());
-        AppDatabase.get().getConfigDao().insertOrUpdate(getConfig());
-        AppDatabase.get().getHistoryDao().insertOrUpdate(getHistory());
+        AppDatabase db = AppDatabase.get();
+        // 先清后插必须原子完成：中途失败/被杀不能留下一个空库。
+        db.runInTransaction(() -> {
+            androidx.sqlite.db.SupportSQLiteDatabase sqlite = db.getOpenHelper().getWritableDatabase();
+            sqlite.execSQL("DELETE FROM Site");
+            sqlite.execSQL("DELETE FROM Live");
+            sqlite.execSQL("DELETE FROM Keep");
+            sqlite.execSQL("DELETE FROM Config");
+            sqlite.execSQL("DELETE FROM History");
+            db.getSiteDao().insertOrUpdate(getSite());
+            db.getLiveDao().insertOrUpdate(getLive());
+            db.getKeepDao().insertOrUpdate(getKeep());
+            db.getConfigDao().insertOrUpdate(getConfig());
+            db.getHistoryDao().insertOrUpdate(getHistory());
+        });
         for (Map.Entry<String, ?> entry : getPrefers().entrySet()) Prefers.put(entry.getKey(), entry.getValue());
     }
 

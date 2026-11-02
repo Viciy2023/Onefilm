@@ -1,6 +1,7 @@
 package com.onefilm.android.tv.bean;
 
 import android.text.TextUtils;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,6 +22,8 @@ import java.util.List;
 
 @Entity(indices = @Index(value = {"url", "type"}, unique = true))
 public class Config {
+
+    private static final String TAG = "Config";
 
     @PrimaryKey(autoGenerate = true)
     @SerializedName("id")
@@ -89,25 +92,58 @@ public class Config {
 
     public static void delete(String url) {
         AppDatabase.get().getConfigDao().delete(url);
+        for (int type = 0; type <= 2; type++) clearPrefersIfMatch(url, type);
     }
 
     public static void delete(String url, int type) {
         AppDatabase.get().getConfigDao().delete(url, type);
+        clearPrefersIfMatch(url, type);
+    }
+
+    /** 删除配置后同步清掉 Prefers 里的兜底备份，否则下次启动会被「恢复」回来。 */
+    private static void clearPrefersIfMatch(String url, int type) {
+        try {
+            if (TextUtils.isEmpty(url)) return;
+            if (url.equals(Prefers.getString("config_" + type, ""))) Prefers.put("config_" + type, "");
+        } catch (Throwable ignored) {
+        }
     }
 
     public static Config vod() {
-        Config item = AppDatabase.get().getConfigDao().findOne(0);
-        return item == null ? create(0) : item;
+        return one(0);
     }
 
     public static Config live() {
-        Config item = AppDatabase.get().getConfigDao().findOne(1);
-        return item == null ? create(1) : item;
+        return one(1);
     }
 
     public static Config wall() {
-        Config item = AppDatabase.get().getConfigDao().findOne(2);
-        return item == null ? create(2) : item;
+        return one(2);
+    }
+
+    private static Config one(int type) {
+        Config item = AppDatabase.get().getConfigDao().findOne(type);
+        if (item != null && !item.isEmpty()) return item;
+        Config restored = restoreFromPrefers(type);
+        return restored != null ? restored : create(type);
+    }
+
+    /**
+     * 数据库被清空（Room 销毁式迁移、导入备份中途失败等）后的兜底恢复。
+     *
+     * <p>{@link #update()} 每次保存配置都会把 URL 写进 Prefers，这里把它读回来
+     * 重建一条配置记录，避免用户升级/崩溃后「接口自己没了」。
+     */
+    private static Config restoreFromPrefers(int type) {
+        try {
+            String url = Prefers.getString("config_" + type, "");
+            if (TextUtils.isEmpty(url)) return null;
+            Log.w(TAG, "restore config from prefers: type=" + type + " url=" + url);
+            return create(type, url);
+        } catch (Throwable e) {
+            Log.w(TAG, "restore config failed: type=" + type, e);
+            return null;
+        }
     }
 
     public static Config find(int id) {
@@ -285,6 +321,7 @@ public class Config {
 
     public void delete() {
         AppDatabase.get().getConfigDao().delete(getUrl(), getType());
+        clearPrefersIfMatch(getUrl(), getType());
         History.delete(getId());
         Keep.delete(getId());
     }

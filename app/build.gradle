@@ -45,6 +45,11 @@ def updateBetaUrl = localProps['onefilm.updateBetaUrl'] ?: 'https://onefilmapk.a
 // 命令行可用 -Ponefilm.versionName=... 覆盖（CI 用），不要在脚本里再写死版本。
 def appVersionName = project.findProperty('onefilm.versionName') ?: '0.1.7'
 def appVersionCode = (project.findProperty('onefilm.versionCode') ?: '8').toString().toInteger()
+// Bugly IDs: read from gradle.properties so a single place holds them.
+def buglyAppIdTv = project.findProperty('onefilm.bugly.appId.tv') ?: ''
+def buglyAppKeyTv = project.findProperty('onefilm.bugly.appKey.tv') ?: ''
+def buglyAppIdMobile = project.findProperty('onefilm.bugly.appId.mobile') ?: ''
+def buglyAppKeyMobile = project.findProperty('onefilm.bugly.appKey.mobile') ?: ''
 
 android {
     namespace = 'com.onefilm.android.tv'
@@ -71,10 +76,14 @@ android {
     productFlavors {
         leanback {
             dimension "device"
+            manifestPlaceholders = [BUGLY_APPID: buglyAppIdTv, BUGLY_APPKEY: buglyAppKeyTv]
+            buildConfigField "String", "BUGLY_APP_ID", "\"${buglyAppIdTv}\""
         }
         mobile {
             dimension "device"
             applicationIdSuffix ".mobile"
+            manifestPlaceholders = [BUGLY_APPID: buglyAppIdMobile, BUGLY_APPKEY: buglyAppKeyMobile]
+            buildConfigField "String", "BUGLY_APP_ID", "\"${buglyAppIdMobile}\""
         }
     }
 
@@ -157,6 +166,8 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     implementation project(':core')
     implementation libs.zxing.core
+    // Bugly: crashreport 4.x 已把 jar 和 so 合并发布，不要再加 nativecrashreport。
+    implementation 'com.tencent.bugly:crashreport:4.1.9.7'
     implementation libs.gson
     implementation libs.okhttp
     implementation "androidx.documentfile:documentfile:1.0.1"

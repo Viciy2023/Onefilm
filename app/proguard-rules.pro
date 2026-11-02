@@ -1,3 +1,7 @@
+# Bugly (crash reporting + analytics)
+-keep class com.tencent.bugly.** { *; }
+-dontwarn com.tencent.bugly.**
+
 # TV
 -keep class androidx.leanback.widget.** { *; }
 -keep class com.fongmi.quickjs.method.** { *; }

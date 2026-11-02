@@ -18,6 +18,7 @@ import com.onefilm.android.tv.utils.Notify;
 import com.fongmi.hook.Hook;
 import com.github.catvod.Init;
 import com.google.gson.Gson;
+import com.tencent.bugly.crashreport.CrashReport;
 
 public class App extends Application implements Application.ActivityLifecycleCallbacks {
 
@@ -85,6 +86,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         super.onCreate();
         long startupAt = android.os.SystemClock.uptimeMillis();
         installThreadGuard();
+        initBugly();
         CoreContext.INSTANCE.init(this);
         Notify.createChannel();
         registerActivityLifecycleCallbacks(this);
@@ -149,6 +151,84 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 handler.postDelayed(this, 60_000L);
             }
         }, 60_000L);
+    }
+
+    /**
+     * Bugly：崩溃上报（Java + native）与运营统计。
+     *
+     * <p>我们用的 {@code crashreport} 制品不含升级模块（没有 {@code Beta}），所以
+     * 不会和 R2 那套强制升级打架；运营统计由 SDK 的 biz 模块自动上报活跃数据。
+     *
+     * <p>AppID 来自 gradle.properties，按 flavor 通过 BuildConfig 注入。
+     */
+    private void initBugly() {
+        try {
+            CrashReport.UserStrategy strategy = new CrashReport.UserStrategy(this);
+            // 文档要求：多进程时只在主进程上报，避免 :error_activity 进程重复上报。
+            strategy.setUploadProcess(isMainProcess());
+            // 新版 SDK 不再采集 Android ID，用我们自己的安装 ID 提升设备去重精度。
+            String deviceId = buglyDeviceId();
+            if (!android.text.TextUtils.isEmpty(deviceId)) strategy.setDeviceID(deviceId);
+            // 崩溃时附带的上下文：接口地址、最后一次搜索词、进程名、ABI。
+            strategy.setCrashHandleCallback(new CrashReport.CrashHandleCallback() {
+                @Override
+                public java.util.Map<String, String> onCrashHandleStart(int crashType, String errorType, String errorMessage, String errorStack) {
+                    java.util.LinkedHashMap<String, String> map = new java.util.LinkedHashMap<>();
+                    try {
+                        map.put("config", com.onefilm.android.tv.utils.CrashContext.getConfigUrl());
+                        map.put("last_search", com.onefilm.android.tv.utils.CrashContext.getLastSearch());
+                        map.put("process", currentProcessName());
+                        map.put("abi", android.os.Build.SUPPORTED_ABIS.length > 0 ? android.os.Build.SUPPORTED_ABIS[0] : "");
+                    } catch (Throwable ignored) {
+                    }
+                    return map;
+                }
+
+                @Override
+                public byte[] onCrashHandleStart2GetExtraDatas(int crashType, String errorType, String errorMessage, String errorStack) {
+                    return null;
+                }
+            });
+            CrashReport.initCrashReport(this, BuildConfig.BUGLY_APP_ID, false, strategy);
+            // 文档警告：抓取全部线程栈可能引起崩溃，ANR 侧默认关闭。
+            CrashReport.setAllThreadStackEnable(this, true, false);
+            Log.i("OneFilm", "bugly init: " + BuildConfig.BUGLY_APP_ID + ", main=" + isMainProcess());
+        } catch (Throwable e) {
+            // 上报组件自身的问题不能影响主流程
+            Log.w("OneFilm", "bugly init failed", e);
+        }
+    }
+
+    /** Bugly 设备 ID：首次启动生成并持久化，不使用 Android ID。 */
+    private String buglyDeviceId() {
+        try {
+            String key = "bugly_device_id";
+            String id = com.github.catvod.utils.Prefers.getString(key, "");
+            if (android.text.TextUtils.isEmpty(id)) {
+                id = java.util.UUID.randomUUID().toString().replace("-", "");
+                com.github.catvod.utils.Prefers.put(key, id);
+            }
+            return id;
+        } catch (Throwable e) {
+            return "";
+        }
+    }
+
+    /** 当前进程名（读 /proc/<pid>/cmdline），失败返回空串。 */
+    private String currentProcessName() {
+        try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                new java.io.FileReader("/proc/" + android.os.Process.myPid() + "/cmdline"))) {
+            String name = reader.readLine();
+            return name == null ? "" : name.trim();
+        } catch (Throwable e) {
+            return "";
+        }
+    }
+
+    /** 当前是否主进程（进程名等于包名）。取不到时按主进程处理，宁可多报不漏报。 */
+    private boolean isMainProcess() {
+        String name = currentProcessName();
+        return name.isEmpty() || name.equals(getPackageName());
     }
 
     @Override
