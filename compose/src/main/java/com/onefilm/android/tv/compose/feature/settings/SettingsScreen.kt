@@ -74,7 +74,6 @@ import com.onefilm.android.tv.compose.bridge.ServerEventBridge
 import com.onefilm.android.tv.compose.bridge.SEARCH_THREAD_OPTIONS
 import com.onefilm.android.tv.compose.bridge.SearchSiteItem
 import com.onefilm.android.tv.compose.design.ThemeController
-import com.onefilm.android.tv.compose.navigation.TvBrandRow
 import kotlinx.coroutines.delay
 
 @Composable
@@ -144,15 +143,11 @@ fun SettingsScreen(
                     ),
                 ),
             )
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
-        TvBrandRow(
-            compact = true,
-            horizontalPadding = 0.dp,
-        )
         Column(
             Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Row(
                 Modifier.fillMaxWidth().weight(1f),
@@ -839,7 +834,7 @@ private fun ConfigBlock(
             onClick = onReload,
             modifier = Modifier
                 .width(64.dp)
-                .height(36.dp)
+                .fillMaxHeight()
                 .focusRequester(reloadFocus)
                 .focusProperties { left = rowFocus },
         )
@@ -861,33 +856,33 @@ private fun ConfigRow(
             .border(
                 2.dp,
                 if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
-                RoundedCornerShape(16.dp),
+                RoundedCornerShape(10.dp),
             )
             .clickable(onClick = onEdit)
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+            .padding(horizontal = 10.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Spacer(Modifier.width(8.dp))
+        Text(title, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.width(6.dp))
         Box(
             modifier = Modifier
                 .weight(1f)
-                .height(28.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .height(26.dp)
+                .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
                 .padding(horizontal = 8.dp),
             contentAlignment = Alignment.CenterStart,
         ) {
             Text(
                 value.ifBlank { "未配置" },
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
         Spacer(Modifier.width(4.dp))
-        Text("›", fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("›", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -902,7 +897,7 @@ private fun ConfigLoadButton(
     Box(
         modifier
             .onFocusChanged { focused = it.isFocused }
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(
                 if (focused) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.surfaceVariant,
@@ -910,14 +905,14 @@ private fun ConfigLoadButton(
             .border(
                 if (focused) 2.dp else 0.dp,
                 MaterialTheme.colorScheme.primary,
-                RoundedCornerShape(10.dp),
+                RoundedCornerShape(8.dp),
             )
             .clickable(enabled = enabled && !loading, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = if (loading) "加载中" else "加载",
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             color = if (focused) MaterialTheme.colorScheme.onPrimary
             else if (enabled) MaterialTheme.colorScheme.onSurface
             else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1006,7 +1001,7 @@ private fun SettingsDialog(
 private fun SettingBar(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Box(
         modifier
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(
                 Brush.horizontalGradient(
                     listOf(
@@ -1018,7 +1013,7 @@ private fun SettingBar(modifier: Modifier = Modifier, content: @Composable () ->
             .border(
                 1.dp,
                 MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
-                RoundedCornerShape(16.dp),
+                RoundedCornerShape(10.dp),
             ),
     ) {
         content()
@@ -1068,33 +1063,33 @@ private fun ChoiceRow(
             .border(
                 2.dp,
                 if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
-                RoundedCornerShape(16.dp),
+                RoundedCornerShape(10.dp),
             )
             .clickable {
                 draftIndex = options.indexOfFirst { it.second }
                 dialogVisible = true
             }
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             title,
-            fontSize = 15.sp,
+            fontSize = 14.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(6.dp))
         Text(
             selectedLabel,
-            fontSize = 13.sp,
+            fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = 120.dp),
+            modifier = Modifier.widthIn(max = 96.dp),
         )
         Spacer(Modifier.width(4.dp))
-        Text("›", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("›", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 
     if (dialogVisible) {
@@ -1217,57 +1212,57 @@ private fun ActionRow(
             .border(
                 2.dp,
                 if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
-                RoundedCornerShape(16.dp),
+                RoundedCornerShape(10.dp),
             )
             .clickable(onClick = onClick)
             .padding(
-                horizontal = if (compact) 12.dp else 16.dp,
-                vertical = if (compact) 3.dp else 8.dp,
+                horizontal = if (compact) 10.dp else 10.dp,
+                vertical = if (compact) 2.dp else 4.dp,
             ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             title,
-            fontSize = if (compact) 14.sp else 15.sp,
+            fontSize = if (compact) 13.sp else 14.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
         Text(
             value,
-            fontSize = if (compact) 12.sp else 13.sp,
+            fontSize = if (compact) 11.sp else 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = if (compact) 120.dp else 180.dp),
+            modifier = Modifier.widthIn(max = if (compact) 96.dp else 104.dp),
         )
-        Spacer(Modifier.width(6.dp))
-        Text("›", fontSize = if (compact) 13.sp else 15.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(4.dp))
+        Text("›", fontSize = if (compact) 13.sp else 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun InfoRow(title: String, value: String) {
     Row(
-        Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 8.dp),
+        Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             title,
-            fontSize = 15.sp,
+            fontSize = 14.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        Spacer(Modifier.width(10.dp))
+        Spacer(Modifier.width(6.dp))
         Text(
             value,
-            fontSize = 13.sp,
+            fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.End,
-            modifier = Modifier.widthIn(max = 190.dp),
+            modifier = Modifier.widthIn(max = 110.dp),
         )
     }
 }
