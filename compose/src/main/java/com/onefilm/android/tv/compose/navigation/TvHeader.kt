@@ -143,7 +143,6 @@ fun TvHeader(
         val focusManager = LocalFocusManager.current
         val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
         val navFocusRequesters = remember { mutableMapOf<String, androidx.compose.ui.focus.FocusRequester>() }
-        val categoryFocusRequesters = remember { mutableMapOf<String, androidx.compose.ui.focus.FocusRequester>() }
         val initialCategoryFocus = remember { androidx.compose.ui.focus.FocusRequester() }
         val firstNavFocus = remember { androidx.compose.ui.focus.FocusRequester() }
         var navFocusEnabled by remember { mutableStateOf(variant != TvHeaderVariant.Full) }
@@ -197,6 +196,7 @@ fun TvHeader(
         Row(
             Modifier
                 .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
                 .padding(
                     start = 48.dp,
                     top = if (variant == TvHeaderVariant.CategoryOnly) (4 * scale).dp else (2 * scale).dp,
@@ -213,24 +213,8 @@ fun TvHeader(
                 } else {
                     category.key == selectedCategoryKey && category.id == selectedCategoryId
                 }
-                // 分类行使用显式左右邻居表，快速连按也只在分类标签之间移动，
-                // 不会因为默认几何搜索逃逸到下方海报区或跳回旧分类。
-                val chipKey = "${category.key}:${category.id}:${category.name}"
-                val chipRequester = categoryFocusRequesters.getOrPut(chipKey) {
-                    if (index == 0) initialCategoryFocus else androidx.compose.ui.focus.FocusRequester()
-                }
-                val previousRequester = if (index > 0) {
-                    val prev = allCategories[index - 1]
-                    categoryFocusRequesters.getOrPut("${prev.key}:${prev.id}:${prev.name}") {
-                        androidx.compose.ui.focus.FocusRequester()
-                    }
-                } else chipRequester
-                val nextRequester = if (index < allCategories.lastIndex) {
-                    val next = allCategories[index + 1]
-                    categoryFocusRequesters.getOrPut("${next.key}:${next.id}:${next.name}") {
-                        androidx.compose.ui.focus.FocusRequester()
-                    }
-                } else chipRequester
+                // 分类行交给 Compose 的默认焦点搜索 + horizontalScroll 自动滚动，
+                // 不再维护显式的左右邻居表；所有标签始终组合，焦点一定可达。
                 TvCategoryChip(
                     category = category,
                     // 只有当前所在的分类页标签才显示漏斗；其他标签不显示
@@ -250,15 +234,15 @@ fun TvHeader(
                         if (home) navFocusEnabled = true
                     },
                     downFocus = null,
-                    leftFocus = previousRequester,
-                    rightFocus = nextRequester,
+                    leftEdge = index == 0,
+                    rightEdge = index == allCategories.lastIndex,
                     onFocusTrigger = {
                         when {
                             home && currentRoute != Routes.HOME -> onNavigate(Routes.HOME)
                             !home && !current -> onCategory(category)
                         }
                     },
-                    focusRequester = chipRequester,
+                    focusRequester = if (index == 0) initialCategoryFocus else null,
                 )
             }
         }
@@ -456,8 +440,9 @@ private fun TvCategoryChip(
     onFocused: () -> Unit = {},
     onFocusTrigger: () -> Unit = {},
     downFocus: androidx.compose.ui.focus.FocusRequester? = null,
-    leftFocus: androidx.compose.ui.focus.FocusRequester? = null,
-    rightFocus: androidx.compose.ui.focus.FocusRequester? = null,
+    /** 只锁住行首/行尾，防止快速连按在尽头把焦点甩到下方导航。 */
+    leftEdge: Boolean = false,
+    rightEdge: Boolean = false,
     focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -488,8 +473,9 @@ private fun TvCategoryChip(
             .onFocusChanged { if (it.isFocused) onFocused() }
             .focusProperties {
                 if (downFocus != null) down = downFocus
-                if (leftFocus != null) left = leftFocus
-                if (rightFocus != null) right = rightFocus
+                // 行首/行尾自锁，避免默认几何搜索在尽头甩到下方导航。
+                if (leftEdge) left = targetFocus
+                if (rightEdge) right = targetFocus
             }
             .clip(shape)
             .background(
