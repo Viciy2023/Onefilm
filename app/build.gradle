@@ -221,4 +221,24 @@ if (project.hasProperty("skipComposeMapping")) {
     tasks.configureEach {
         if (name.contains("ReleaseComposeMapping")) enabled = false
     }
+    // L8 still consumes the Compose mapping file as an input. When its producer
+    // is disabled that input is missing and the build fails, so generate empty
+    // placeholders before every L8 task runs. Registering the generator outside
+    // configureEach avoids creating tasks while another task is being configured.
+    tasks.register("generateEmptyComposeMapping") {
+        outputs.upToDateWhen { false }
+        doLast {
+            ["leanbackRelease", "mobileRelease"].each { variantDir ->
+                def variant = variantDir.substring(0, 1).toUpperCase() + variantDir.substring(1)
+                def file = file("${buildDir}/intermediates/mapping/${variantDir}/merge${variant}ComposeMapping/mapping.txt")
+                file.parentFile.mkdirs()
+                file.text = ""
+            }
+        }
+    }
+    tasks.configureEach { task ->
+        if (task.name.startsWith("l8DexDesugarLib")) {
+            task.dependsOn("generateEmptyComposeMapping")
+        }
+    }
 }
