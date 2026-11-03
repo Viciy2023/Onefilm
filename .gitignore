@@ -10,6 +10,7 @@
 
 # Local config (never commit)
 local.properties
+.r2token
 
 # Signing
 *.jks
