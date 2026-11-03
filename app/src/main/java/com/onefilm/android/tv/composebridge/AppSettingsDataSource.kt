@@ -30,11 +30,21 @@ import com.github.catvod.utils.Path
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class AppSettingsDataSource : SettingsDataSource {
 
+    @Volatile
+    private var cachedCacheSizeLabel: String = "计算中…"
+
     init {
         EventBus.getDefault().register(this)
+        Thread {
+            cachedCacheSizeLabel = runCatching {
+                FileUtil.byteCountToDisplaySize(Path.size(Path.cache()))
+            }.getOrDefault("—")
+        }.start()
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -92,7 +102,7 @@ class AppSettingsDataSource : SettingsDataSource {
         dohLabel = runCatching { Doh.objectFrom(Setting.getDoh()).getName() }.getOrNull().orEmpty(),
         themeMode = com.github.catvod.utils.Prefers.getInt("compose_theme_mode", 0),
         cacheDays = Setting.getHistoryDays(),
-        cacheSizeLabel = FileUtil.byteCountToDisplaySize(Path.size(Path.cache())),
+        cacheSizeLabel = cachedCacheSizeLabel,
         wallpaperLabel = when (Setting.getWall()) {
             0 -> "无"
             5 -> "网络壁纸"
@@ -101,6 +111,16 @@ class AppSettingsDataSource : SettingsDataSource {
         forceUpdate = Setting.getForceUpdate(),
         searchThreads = SearchSettings.threads(),
         )
+    }
+
+    override suspend fun refreshCacheSize(): String {
+        val label = runCatching {
+            withContext(Dispatchers.IO) {
+                FileUtil.byteCountToDisplaySize(Path.size(Path.cache()))
+            }
+        }.getOrDefault("—")
+        cachedCacheSizeLabel = label
+        return label
     }
 
     override fun setEngine(mpv: Boolean) {

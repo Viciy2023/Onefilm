@@ -1,6 +1,8 @@
 @file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.onefilm.android.tv.compose.feature.settings
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -44,6 +47,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
@@ -75,11 +79,14 @@ import com.onefilm.android.tv.compose.bridge.SEARCH_THREAD_OPTIONS
 import com.onefilm.android.tv.compose.bridge.SearchSiteItem
 import com.onefilm.android.tv.compose.design.ThemeController
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
     dataSource: SettingsDataSource,
     onConfigChanged: () -> Unit = {},
+    panelMode: Boolean = false,
+    onRequestClose: () -> Unit = {},
 ) {
     var snapshot by remember { mutableStateOf(dataSource.load()) }
     var editType by remember { mutableStateOf<Int?>(null) }
@@ -93,14 +100,33 @@ fun SettingsScreen(
     var blockWordsDraft by remember { mutableStateOf("") }
     var showClearCacheConfirm by remember { mutableStateOf(false) }
     var showSearchSites by remember { mutableStateOf(false) }
+    var panelPage by remember { mutableStateOf(0) }
+    BackHandler(enabled = panelMode) {
+        if (panelPage != 0) panelPage = 0 else onRequestClose()
+    }
     var configMessage by remember { mutableStateOf<String?>(null) }
     var configMessageSuccess by remember { mutableStateOf(true) }
+    var messageType by remember { mutableStateOf(0) }
+    val configRowFocus = remember { List(3) { FocusRequester() } }
     val firstSettingFocus = remember { FocusRequester() }
+    val editFieldFocus = remember { FocusRequester() }
+    val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) {
-        repeat(8) {
-            delay(100)
-            runCatching { firstSettingFocus.requestFocus() }
+        // 只请求一次初始焦点：反复请求会在用户已经向下移动后把焦点拽回第一项。
+        delay(200)
+        runCatching { configRowFocus[0].requestFocus() }
+    }
+    LaunchedEffect(panelPage) {
+        // 系统返回从二级编辑页回到列表时，把焦点还给原来的接口行。
+        if (panelPage == 0) {
+            val type = editType ?: return@LaunchedEffect
+            delay(150)
+            runCatching { configRowFocus[type].requestFocus() }
         }
+    }
+    LaunchedEffect(Unit) {
+        val label = runCatching { dataSource.refreshCacheSize() }.getOrNull().orEmpty()
+        if (label.isNotBlank()) snapshot = snapshot.copy(cacheSizeLabel = label)
     }
     LaunchedEffect(Unit) {
         ServerEventBridge.settings.collect { pushed ->
@@ -121,9 +147,11 @@ fun SettingsScreen(
         editName = dataSource.configLines(type).firstOrNull { it.current }?.name.orEmpty()
         configError = null
         qrBitmap = dataSource.qrBitmap(dataSource.configPushUrl(), 720)
+        panelPage = 1
     }
 
-    fun reportConfig(label: String, ok: Boolean, message: String) {
+    fun reportConfig(type: Int, label: String, ok: Boolean, message: String) {
+        messageType = type
         configMessageSuccess = ok
         configMessage = if (ok) {
             "${label}加载成功"
@@ -135,527 +163,513 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.background,
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-                    ),
-                ),
+            .then(
+                if (panelMode) {
+                    Modifier
+                } else {
+                    Modifier.background(
+                        Brush.verticalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.background,
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                            ),
+                        ),
+                    )
+                },
             )
             .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
-        Column(
-            Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Row(
-                Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                ConfigBlock(
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                    title = "点播接口",
-                    value = snapshot.configUrl,
-                    loading = reloadingType == 0,
-                    initialFocus = firstSettingFocus,
-                    onEdit = { openConfig(0, snapshot.configUrl) },
-                    onReload = {
-                        val url = snapshot.configUrl
-                        if (url.isNotBlank()) {
-                            reloadingType = 0
-                            dataSource.loadConfig(0, url) { ok, message ->
-                                reloadingType = null
-                                if (ok) {
-                                    onConfigChanged()
-                                    snapshot = dataSource.load()
-                                }
-                                reportConfig("点播接口", ok, message)
+        val type = editType
+        when {
+            panelPage == 1 && type != null -> ConfigEditPanel(
+                type = type,
+                name = editName,
+                onNameChange = { editName = it },
+                url = editUrl,
+                onUrlChange = { editUrl = it },
+                loading = configLoading,
+                error = configError,
+                qrBitmap = qrBitmap,
+                firstFieldFocus = editFieldFocus,
+                onSave = {
+                    configLoading = true
+                    dataSource.loadConfig(type, editUrl.trim(), editName.trim()) { ok, message ->
+                        configLoading = false
+                        if (ok) {
+                            onConfigChanged()
+                            snapshot = dataSource.load()
+                            editType = null
+                            panelPage = 0
+                            scope.launch {
+                                delay(150)
+                                runCatching { configRowFocus[type].requestFocus() }
                             }
                         } else {
-                            reportConfig("点播接口", false, "未配置接口地址")
+                            configError = message
                         }
-                    },
-                )
-                ConfigBlock(
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                    title = "直播接口",
-                    value = snapshot.liveConfigUrl,
-                    loading = reloadingType == 1,
-                    onEdit = { openConfig(1, snapshot.liveConfigUrl) },
-                    onReload = {
-                        val url = snapshot.liveConfigUrl
-                        if (url.isNotBlank()) {
-                            reloadingType = 1
-                            dataSource.loadConfig(1, url) { ok, message ->
-                                reloadingType = null
-                                if (ok) {
-                                    onConfigChanged()
-                                    snapshot = dataSource.load()
-                                }
-                                reportConfig("直播接口", ok, message)
+                    }
+                },
+                onBack = {
+                    if (!configLoading) {
+                        editType = null
+                        panelPage = 0
+                        scope.launch {
+                            delay(150)
+                            runCatching { configRowFocus[type].requestFocus() }
+                        }
+                    }
+                },
+            )
+            panelPage == 2 -> BlockWordsEditPanel(
+                value = blockWordsDraft,
+                onValueChange = { blockWordsDraft = it },
+                onSave = {
+                    dataSource.setDanmakuBlockWords(blockWordsDraft.trim())
+                    snapshot = dataSource.load()
+                    panelPage = 0
+                },
+                onBack = { panelPage = 0 },
+            )
+            else -> {
+                LazyColumn(
+                    Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+            item {
+            SettingsGroupTitle("网络接口")
+            }
+            item {
+            ConfigBlock(
+                modifier = Modifier.fillMaxWidth().height(44.dp),
+                title = "点播接口",
+                value = snapshot.configUrl,
+                loading = reloadingType == 0,
+                initialFocus = configRowFocus[0],
+                onEdit = { openConfig(0, snapshot.configUrl) },
+                onReload = {
+                    val url = snapshot.configUrl
+                    if (url.isNotBlank()) {
+                        reloadingType = 0
+                        dataSource.loadConfig(0, url) { ok, message ->
+                            if (ok) {
+                                onConfigChanged()
+                                snapshot = dataSource.load()
                             }
-                        } else {
-                            reportConfig("直播接口", false, "未配置接口地址")
+                            reportConfig(0, "点播接口", ok, message)
                         }
-                    },
-                )
-                ConfigBlock(
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                    title = "壁纸接口",
-                    value = snapshot.wallConfigUrl,
-                    loading = reloadingType == 2,
-                    onEdit = { openConfig(2, snapshot.wallConfigUrl) },
-                    onReload = {
-                        val url = snapshot.wallConfigUrl
-                        if (url.isNotBlank()) {
-                            reloadingType = 2
-                            dataSource.loadConfig(2, url) { ok, message ->
-                                reloadingType = null
-                                if (ok) {
-                                    onConfigChanged()
-                                    snapshot = dataSource.load()
-                                }
-                                reportConfig("壁纸接口", ok, message)
+                    } else {
+                        reportConfig(0, "点播接口", false, "未配置接口地址")
+                    }
+                },
+            )
+            }
+            item {
+            ConfigBlock(
+                modifier = Modifier.fillMaxWidth().height(44.dp),
+                title = "直播接口",
+                value = snapshot.liveConfigUrl,
+                loading = reloadingType == 1,
+                initialFocus = configRowFocus[1],
+                onEdit = { openConfig(1, snapshot.liveConfigUrl) },
+                onReload = {
+                    val url = snapshot.liveConfigUrl
+                    if (url.isNotBlank()) {
+                        reloadingType = 1
+                        dataSource.loadConfig(1, url) { ok, message ->
+                            if (ok) {
+                                onConfigChanged()
+                                snapshot = dataSource.load()
                             }
-                        } else {
-                            reportConfig("壁纸接口", false, "未配置接口地址")
+                            reportConfig(1, "直播接口", ok, message)
                         }
+                    } else {
+                        reportConfig(1, "直播接口", false, "未配置接口地址")
+                    }
+                },
+            )
+            }
+            item {
+            ConfigBlock(
+                modifier = Modifier.fillMaxWidth().height(44.dp),
+                title = "壁纸接口",
+                value = snapshot.wallConfigUrl,
+                loading = reloadingType == 2,
+                initialFocus = configRowFocus[2],
+                onEdit = { openConfig(2, snapshot.wallConfigUrl) },
+                onReload = {
+                    val url = snapshot.wallConfigUrl
+                    if (url.isNotBlank()) {
+                        reloadingType = 2
+                        dataSource.loadConfig(2, url) { ok, message ->
+                            if (ok) {
+                                onConfigChanged()
+                                snapshot = dataSource.load()
+                            }
+                            reportConfig(2, "壁纸接口", ok, message)
+                        }
+                    } else {
+                        reportConfig(2, "壁纸接口", false, "未配置接口地址")
+                    }
+                },
+            )
+            }
+
+            item {
+            SettingsGroupTitle("外观")
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "外观主题",
+                    subtitle = "默认简约明亮主题",
+                    options = listOf(
+                        "简约" to (snapshot.themeMode == 0),
+                        "暗黑" to (snapshot.themeMode == 1),
+                        "跟随系统" to (snapshot.themeMode == 2),
+                    ),
+                ) { index ->
+                    refresh { setThemeMode(index) }
+                    ThemeController.apply(index)
+                }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                SwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
+                    refresh { setIncognito(it) }
+                }
+            }
+            }
+
+            item {
+            SettingsGroupTitle("字幕")
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "字幕位置",
+                    subtitle = snapshot.subtitlePosition.toInt().toString(),
+                    options = listOf(-5f, 0f, 5f, 10f, 20f).map {
+                        it.toInt().toString() to (snapshot.subtitlePosition == it)
                     },
-                )
+                ) { index -> refresh { setSubtitlePosition(listOf(-5f, 0f, 5f, 10f, 20f)[index]) } }
             }
-            Row(
-                Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "外观主题",
-                        subtitle = "默认简约明亮主题",
-                        options = listOf(
-                            "简约" to (snapshot.themeMode == 0),
-                            "暗黑" to (snapshot.themeMode == 1),
-                            "跟随系统" to (snapshot.themeMode == 2),
-                        ),
-                    ) { index ->
-                        refresh { setThemeMode(index) }
-                        ThemeController.apply(index)
-                    }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() } }
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    // DoH 单独一项；播放超时已移到设置页第 8 行单独设置项。
-                    ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
-                        refresh { setIncognito(it) }
-                    }
-
-
-
-
-                }
             }
-            Row(
-                Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "字幕位置",
-                        subtitle = snapshot.subtitlePosition.toInt().toString(),
-                        options = listOf(-5f, 0f, 5f, 10f, 20f).map {
-                            it.toInt().toString() to (snapshot.subtitlePosition == it)
-                        },
-                    ) { index -> refresh { setSubtitlePosition(listOf(-5f, 0f, 5f, 10f, 20f)[index]) } }
+            item {
+            SettingsPanelRow {
+                ActionRow("字幕颜色", snapshot.subtitleColorLabel) { refresh { cycleSubtitleColor() } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "字幕描边",
+                    options = listOf(0f, 1f, 2f, 4f).map {
+                        "%.0f".format(it) to (snapshot.subtitleEdgeWidth == it)
+                    },
+                ) { index -> refresh { setSubtitleEdgeWidth(listOf(0f, 1f, 2f, 4f)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "字幕大小",
+                    subtitle = "%.1fx".format(snapshot.subtitleScale),
+                    options = listOf(0.8f, 1.0f, 1.2f, 1.5f).map {
+                        "%.1fx".format(it) to (snapshot.subtitleScale == it)
+                    },
+                ) { index -> refresh { setSubtitleScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "字幕样式",
+                    subtitle = "原始 / 系统 / 自定义",
+                    options = listOf(
+                        "原始" to (snapshot.subtitleStyle == 0),
+                        "系统" to (snapshot.subtitleStyle == 1),
+                        "自定义" to (snapshot.subtitleStyle == 2),
+                    ),
+                ) { index -> refresh { setSubtitleStyle(index) } }
+            }
+            }
 
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ActionRow("字幕颜色", snapshot.subtitleColorLabel) { refresh { cycleSubtitleColor() } }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "字幕描边",
-                        options = listOf(0f, 1f, 2f, 4f).map {
-                            "%.0f".format(it) to (snapshot.subtitleEdgeWidth == it)
-                        },
-                    ) { index -> refresh { setSubtitleEdgeWidth(listOf(0f, 1f, 2f, 4f)[index]) } }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "字幕大小",
-                        subtitle = "%.1fx".format(snapshot.subtitleScale),
-                        options = listOf(0.8f, 1.0f, 1.2f, 1.5f).map {
-                            "%.1fx".format(it) to (snapshot.subtitleScale == it)
-                        },
-                    ) { index -> refresh { setSubtitleScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
-
-
-
-
+            item {
+            SettingsGroupTitle("弹幕")
+            }
+            item {
+            SettingsPanelRow {
+                SwitchRow("显示弹幕", "加载并渲染弹幕", snapshot.danmakuShow) {
+                    refresh { setDanmakuShow(it) }
                 }
             }
-            Row(
-                Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "字幕样式",
-                        subtitle = "原始 / 系统 / 自定义",
-                        options = listOf(
-                            "原始" to (snapshot.subtitleStyle == 0),
-                            "系统" to (snapshot.subtitleStyle == 1),
-                            "自定义" to (snapshot.subtitleStyle == 2),
-                        ),
-                    ) { index -> refresh { setSubtitleStyle(index) } }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("显示弹幕", "加载并渲染弹幕", snapshot.danmakuShow) {
-                        refresh { setDanmakuShow(it) }
-                    }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "弹幕字号",
-                        options = listOf(0.8f, 1.0f, 1.2f, 1.5f).map {
-                            "%.1fx".format(it) to (snapshot.danmakuScale == it)
-                        },
-                    ) { index -> refresh { setDanmakuScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "弹幕透明度",
-                        options = listOf(0f, 0.25f, 0.5f, 0.7f).map {
-                            "${(it * 100).toInt()}%" to (snapshot.danmakuTransparency == it)
-                        },
-                    ) { index -> refresh { setDanmakuTransparency(listOf(0f, 0.25f, 0.5f, 0.7f)[index]) } }
-
-
-
-
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "弹幕字号",
+                    options = listOf(0.8f, 1.0f, 1.2f, 1.5f).map {
+                        "%.1fx".format(it) to (snapshot.danmakuScale == it)
+                    },
+                ) { index -> refresh { setDanmakuScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "弹幕透明度",
+                    options = listOf(0f, 0.25f, 0.5f, 0.7f).map {
+                        "${(it * 100).toInt()}%" to (snapshot.danmakuTransparency == it)
+                    },
+                ) { index -> refresh { setDanmakuTransparency(listOf(0f, 0.25f, 0.5f, 0.7f)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "弹幕速度",
+                    options = listOf(6000L, 8000L, 10000L).map {
+                        "${it / 1000}s" to (snapshot.danmakuDurationMs == it)
+                    },
+                ) { index -> refresh { setDanmakuDuration(listOf(6000L, 8000L, 10000L)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "滚动行数",
+                    options = listOf(4, 8, 12).map { "$it 行" to (snapshot.danmakuLines == it) },
+                ) { index -> refresh { setDanmakuLines(listOf(4, 8, 12)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ActionRow("弹幕屏蔽词", snapshot.danmakuBlockWords.ifBlank { "未设置" }) {
+                    blockWordsDraft = snapshot.danmakuBlockWords
+                    panelPage = 2
                 }
             }
-            Row(
-                Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "弹幕速度",
-                        options = listOf(6000L, 8000L, 10000L).map {
-                            "${it / 1000}s" to (snapshot.danmakuDurationMs == it)
-                        },
-                    ) { index -> refresh { setDanmakuDuration(listOf(6000L, 8000L, 10000L)[index]) } }
+            }
 
+            item {
+            SettingsGroupTitle("播放")
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "播放引擎",
+                    subtitle = "MPV 与 Exo 共用旧 PlayerManager",
+                    options = listOf("Exo" to !snapshot.engineMpv, "MPV" to snapshot.engineMpv),
+                ) { index -> refresh { setEngine(index == 1) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "后台播放",
+                    subtitle = "按 Home 后的行为",
+                    options = listOf(
+                        "关闭" to (snapshot.background == 0),
+                        "后台" to (snapshot.background == 1),
+                        "PiP" to (snapshot.background == 2),
+                    ),
+                ) { index -> refresh { setBackground(index) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "缓冲区",
+                    subtitle = "${snapshot.bufferSeconds} 秒",
+                    options = listOf(1, 2, 5, 10).map {
+                        "${it}s" to (snapshot.bufferSeconds == it)
+                    },
+                ) { index -> refresh { setBufferSeconds(listOf(1, 2, 5, 10)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "渲染方式",
+                    subtitle = "Surface / TextureView",
+                    options = listOf("Surface" to !snapshot.renderTexture, "Texture" to snapshot.renderTexture),
+                ) { index -> refresh { setRenderTexture(index == 1) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                SwitchRow("隧道解码", "需要 Surface 渲染", snapshot.tunnel) { refresh { setTunnel(it) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ActionRow(
+                    title = "Dolby Vision 输出",
+                    value = snapshot.dvPolicyLabel,
+                ) { refresh { cycleDolbyVisionPolicy() } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ActionRow("播放超时", "${snapshot.playTimeoutSeconds} 秒") { refresh { cyclePlayTimeout() } }
+            }
+            }
 
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "滚动行数",
-                        options = listOf(4, 8, 12).map { "$it 行" to (snapshot.danmakuLines == it) },
-                    ) { index -> refresh { setDanmakuLines(listOf(4, 8, 12)[index]) } }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ActionRow("弹幕屏蔽词", snapshot.danmakuBlockWords.ifBlank { "未设置" }) {
-                        blockWordsDraft = snapshot.danmakuBlockWords
-                        editBlockWords = true
-                    }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "播放引擎",
-                        subtitle = "MPV 与 Exo 共用旧 PlayerManager",
-                        options = listOf("Exo" to !snapshot.engineMpv, "MPV" to snapshot.engineMpv),
-                    ) { index -> refresh { setEngine(index == 1) } }
-
-
-
-
+            item {
+            SettingsGroupTitle("音频")
+            }
+            item {
+            SettingsPanelRow {
+                SwitchRow("音频直通", "HDMI / 功放透传", snapshot.audioPassThrough) {
+                    refresh { setAudioPassThrough(it) }
                 }
             }
-            Row(
-                Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "后台播放",
-                        subtitle = "按 Home 后的行为",
-                        options = listOf(
-                            "关闭" to (snapshot.background == 0),
-                            "后台" to (snapshot.background == 1),
-                            "PiP" to (snapshot.background == 2),
-                        ),
-                    ) { index -> refresh { setBackground(index) } }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "缓冲区",
-                        subtitle = "${snapshot.bufferSeconds} 秒",
-                        options = listOf(1, 2, 5, 10).map {
-                            "${it}s" to (snapshot.bufferSeconds == it)
-                        },
-                    ) { index -> refresh { setBufferSeconds(listOf(1, 2, 5, 10)[index]) } }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "渲染方式",
-                        subtitle = "Surface / TextureView",
-                        options = listOf("Surface" to !snapshot.renderTexture, "Texture" to snapshot.renderTexture),
-                    ) { index -> refresh { setRenderTexture(index == 1) } }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("隧道解码", "需要 Surface 渲染", snapshot.tunnel) { refresh { setTunnel(it) } }
-
-
-
-
+            }
+            item {
+            SettingsPanelRow {
+                SwitchRow("音频偏软解", "软解优先使用 Audio 解码器", snapshot.audioPrefer) {
+                    refresh { setAudioPrefer(it) }
                 }
             }
-            Row(
-                Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("音频直通", "HDMI / 功放透传", snapshot.audioPassThrough) {
-                        refresh { setAudioPassThrough(it) }
-                    }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("音频偏软解", "软解优先使用 Audio 解码器", snapshot.audioPrefer) {
-                        refresh { setAudioPrefer(it) }
-                    }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("视频偏软解", "软解优先使用 Video 解码器", snapshot.videoPrefer) {
-                        refresh { setVideoPrefer(it) }
-                    }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "搜索线程",
-                        subtitle = "并发越高越快，越占资源",
-                        options = SEARCH_THREAD_OPTIONS.map { "$it" to (snapshot.searchThreads == it) },
-                    ) { index ->
-                        refresh { setSearchThreads(SEARCH_THREAD_OPTIONS[index]) }
-                    }
+            }
+            item {
+            SettingsPanelRow {
+                SwitchRow("视频偏软解", "软解优先使用 Video 解码器", snapshot.videoPrefer) {
+                    refresh { setVideoPrefer(it) }
                 }
             }
-            Row(
-                Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    val sites = remember(snapshot.configUrl, showSearchSites) { dataSource.searchSites() }
-                    val enabledCount = sites.count { it.enabled }
-                    ActionRow(
-                        title = "参与搜索的站点",
-                        value = when {
-                            sites.isEmpty() -> "未加载"
-                            enabledCount == sites.size -> "全部 ${sites.size} 个"
-                            else -> "$enabledCount / ${sites.size}"
-                        },
-                    ) { showSearchSites = true }
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("开启预加载", "使用旧 PlayerManager 预加载", snapshot.preloadEnabled) {
-                        refresh { setPreloadEnabled(it) }
-                    }
+            }
 
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow("预加载下一集", "仅 Exo 路径生效", snapshot.preloadNext) {
-                        refresh { setPreloadNext(it) }
-                    }
-
-
-
-
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "预加载线程",
-                        options = (1..4).map { "$it" to (snapshot.preloadThreads == it) },
-                    ) { index -> refresh { setPreloadThreads(index + 1) } }
-
-
-
-
+            item {
+            SettingsGroupTitle("搜索与预加载")
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "搜索线程",
+                    subtitle = "并发越高越快，越占资源",
+                    options = SEARCH_THREAD_OPTIONS.map { "$it" to (snapshot.searchThreads == it) },
+                ) { index ->
+                    refresh { setSearchThreads(SEARCH_THREAD_OPTIONS[index]) }
                 }
             }
-            Row(
-                Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ActionRow("播放超时", "${snapshot.playTimeoutSeconds} 秒") { refresh { cyclePlayTimeout() } }
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ActionRow("重置 UA", "清空自定义") { refresh { resetUa() } }
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ActionRow(
-                        title = "Dolby Vision 输出",
-                        value = snapshot.dvPolicyLabel,
-                    ) { refresh { cycleDolbyVisionPolicy() } }
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    SwitchRow(
-                        "强制升级",
-                        "检测到新版本后自动下载并强制更新",
-                        snapshot.forceUpdate,
-                    ) { refresh { setForceUpdate(it) } }
+            }
+            item {
+            SettingsPanelRow {
+                val sites = remember(snapshot.configUrl, showSearchSites) { dataSource.searchSites() }
+                val enabledCount = sites.count { it.enabled }
+                ActionRow(
+                    title = "参与搜索的站点",
+                    value = when {
+                        sites.isEmpty() -> "未加载"
+                        enabledCount == sites.size -> "全部 ${sites.size} 个"
+                        else -> "$enabledCount / ${sites.size}"
+                    },
+                ) { showSearchSites = true }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                SwitchRow("开启预加载", "使用旧 PlayerManager 预加载", snapshot.preloadEnabled) {
+                    refresh { setPreloadEnabled(it) }
                 }
             }
-            Row(
-                Modifier.fillMaxWidth().weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "缓存大小",
-                        options = listOf(128, 256, 512, 1024).map {
-                            "$it MB" to (snapshot.preloadSizeMb == it)
-                        },
-                    ) { index -> refresh { setPreloadSizeMb(listOf(128, 256, 512, 1024)[index]) } }
-
-
-
-
+            }
+            item {
+            SettingsPanelRow {
+                SwitchRow("预加载下一集", "仅 Exo 路径生效", snapshot.preloadNext) {
+                    refresh { setPreloadNext(it) }
                 }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ChoiceRow(
-                        title = "缓存天数",
-                        options = listOf(7, 30, 60, 90).map {
-                            "${it}天" to (snapshot.cacheDays == it)
-                        },
-                    ) { index -> refresh { setCacheDays(listOf(7, 30, 60, 90)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "预加载线程",
+                    options = (1..4).map { "$it" to (snapshot.preloadThreads == it) },
+                ) { index -> refresh { setPreloadThreads(index + 1) } }
+            }
+            }
 
-
-
+            item {
+            SettingsGroupTitle("存储与维护")
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "缓存大小",
+                    options = listOf(128, 256, 512, 1024).map {
+                        "$it MB" to (snapshot.preloadSizeMb == it)
+                    },
+                ) { index -> refresh { setPreloadSizeMb(listOf(128, 256, 512, 1024)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = "缓存天数",
+                    options = listOf(7, 30, 60, 90).map {
+                        "${it}天" to (snapshot.cacheDays == it)
+                    },
+                ) { index -> refresh { setCacheDays(listOf(7, 30, 60, 90)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ActionRow("清除缓存", snapshot.cacheSizeLabel) {
+                    showClearCacheConfirm = true
                 }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    ActionRow("清除缓存", snapshot.cacheSizeLabel) {
-                        showClearCacheConfirm = true
-                    }
-
-
-
+            }
+            }
+            item {
+            SettingsPanelRow {
+                val context = LocalContext.current
+                ActionRow("导出诊断", "写入 Download") {
+                    val path = dataSource.exportDiagnostics()
+                    val message = if (path.isBlank()) "导出失败，请检查存储权限" else "已导出：$path"
+                    android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
                 }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    val context = LocalContext.current
-                    ActionRow("导出诊断", "写入 Download") {
-                        val path = dataSource.exportDiagnostics()
-                        val message = if (path.isBlank()) "导出失败，请检查存储权限" else "已导出：$path"
-                        android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
-                    }
-                }
-                SettingBar(Modifier.weight(1f).fillMaxHeight()) {
-                    InfoRow("版本", "${snapshot.version} · GPL-3.0")
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ActionRow("重置 UA", "清空自定义") { refresh { resetUa() } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                SwitchRow(
+                    "强制升级",
+                    "检测到新版本后自动下载并强制更新",
+                    snapshot.forceUpdate,
+                ) { refresh { setForceUpdate(it) } }
+            }
+            }
+
+            item {
+            SettingsGroupTitle("关于")
+            }
+            item {
+            SettingsPanelRow {
+                InfoRow("版本", "${snapshot.version} · GPL-3.0")
+            }
+            }
                 }
             }
         }
-    }
-
-    if (editBlockWords) {
-        SettingsDialog(
-            onDismiss = { editBlockWords = false },
-            width = 480.dp,
-            padding = 8.dp,
-        ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CompactTextField(
-                    value = blockWordsDraft,
-                    onValueChange = { blockWordsDraft = it },
-                    placeholder = "多个关键词用逗号分隔",
-                    compact = true,
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(Modifier.width(8.dp))
-                Button(
-                    onClick = {
-                        dataSource.setDanmakuBlockWords(blockWordsDraft.trim())
-                        snapshot = dataSource.load()
-                        editBlockWords = false
-                    },
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    modifier = Modifier.width(80.dp).height(42.dp),
-                ) { Text("保存", fontSize = 13.sp) }
-            }
         }
-    }
+
 
     if (showSearchSites) {
         SearchSitesDialog(
@@ -693,8 +707,12 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                 Button(
                     onClick = {
                         dataSource.clearCache()
-                        snapshot = dataSource.load()
+                        snapshot = dataSource.load().copy(cacheSizeLabel = "计算中…")
                         showClearCacheConfirm = false
+                        scope.launch {
+                            val label = runCatching { dataSource.refreshCacheSize() }.getOrNull().orEmpty()
+                            if (label.isNotBlank()) snapshot = snapshot.copy(cacheSizeLabel = label)
+                        }
                     },
                 ) {
                     Text("清除", fontSize = 13.sp)
@@ -705,7 +723,13 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
 
     configMessage?.let { message ->
         SettingsDialog(
-            onDismiss = { configMessage = null },
+            onDismiss = {
+                configMessage = null
+                scope.launch {
+                    delay(150)
+                    runCatching { configRowFocus[messageType].requestFocus() }
+                }
+            },
             width = 560.dp,
             padding = 20.dp,
         ) {
@@ -721,82 +745,222 @@ ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() 
                 else MaterialTheme.colorScheme.error,
             )
             Spacer(Modifier.height(16.dp))
-            Button(
-                onClick = { configMessage = null },
-                modifier = Modifier.align(Alignment.End),
-            ) {
-                Text("知道了", fontSize = 13.sp)
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                SettingsButton(
+                    text = "知道了",
+                    onClick = {
+                        configMessage = null
+                        scope.launch {
+                            delay(150)
+                            runCatching { configRowFocus[messageType].requestFocus() }
+                        }
+                    },
+                )
             }
         }
     }
+}
 
-    val type = editType
-    if (type != null) {
-        SettingsDialog(
-            onDismiss = { if (!configLoading) editType = null },
-            width = 600.dp,
-            padding = 20.dp,
-        ) {
-            qrBitmap?.let { bitmap ->
-                Image(
-                    bitmap = bitmap.asImageBitmap(),
-                    contentDescription = "配置二维码",
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.size(140.dp),
-                )
-            }
+@Composable
+private fun ConfigEditPanel(
+    type: Int,
+    name: String,
+    onNameChange: (String) -> Unit,
+    url: String,
+    onUrlChange: (String) -> Unit,
+    loading: Boolean,
+    error: String?,
+    qrBitmap: android.graphics.Bitmap?,
+    firstFieldFocus: FocusRequester,
+    onSave: () -> Unit,
+    onBack: () -> Unit,
+) {
+    LaunchedEffect(Unit) {
+        delay(120)
+        runCatching { firstFieldFocus.requestFocus() }
+    }
+    Column(
+        Modifier.fillMaxSize().padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            SettingsButton(text = "‹ 返回", onClick = onBack)
+            Spacer(Modifier.weight(1f))
+            Text(
+                when (type) {
+                    0 -> "点播接口"
+                    1 -> "直播接口"
+                    else -> "壁纸接口"
+                },
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+        CompactTextField(
+            value = name,
+            onValueChange = onNameChange,
+            placeholder = "线路名称",
+            modifier = Modifier.fillMaxWidth().focusRequester(firstFieldFocus),
+        )
+        CompactTextField(
+            value = url,
+            onValueChange = onUrlChange,
+            placeholder = "配置 URL",
+            modifier = Modifier.fillMaxWidth(),
+        )
+        qrBitmap?.let { bitmap ->
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = "配置二维码",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(160.dp).align(Alignment.CenterHorizontally),
+            )
             Text(
                 "扫码打开网页配置页",
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
             )
-            Spacer(Modifier.height(8.dp))
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CompactTextField(
-                    value = editName,
-                    onValueChange = { editName = it },
-                    placeholder = "线路名称",
-                    modifier = Modifier.weight(0.8f),
+        }
+        error?.takeIf { it.isNotBlank() }?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, fontSize = 12.sp)
+        }
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                SettingsButton(
+                    text = if (loading) "保存中…" else "保存",
+                    onClick = onSave,
+                    primary = true,
+                    enabled = !loading && url.isNotBlank(),
                 )
-                Spacer(Modifier.width(8.dp))
-                CompactTextField(
-                    value = editUrl,
-                    onValueChange = { editUrl = it },
-                    placeholder = "配置 URL",
-                    modifier = Modifier.weight(1.7f),
-                )
-                Spacer(Modifier.width(8.dp))
-                Button(
-                    enabled = !configLoading && editUrl.isNotBlank(),
-                    onClick = {
-                        configLoading = true
-                        dataSource.loadConfig(type, editUrl.trim(), editName.trim()) { ok, message ->
-                            configLoading = false
-                            if (ok) {
-                                onConfigChanged()
-                                snapshot = dataSource.load()
-                                editType = null
-                            } else {
-                                configError = message
-                            }
-                        }
-                    },
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    modifier = Modifier.width(104.dp).height(46.dp),
-                ) { Text(if (configLoading) "保存中…" else "保存", fontSize = 13.sp) }
-            }
-            configError?.let {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    it,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
+                SettingsButton(
+                    text = "取消",
+                    onClick = onBack,
+                    enabled = !loading,
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun SettingsButton(
+    text: String,
+    onClick: () -> Unit,
+    primary: Boolean = false,
+    enabled: Boolean = true,
+) {
+    var focused by remember { mutableStateOf(false) }
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                when {
+                    !enabled -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    primary -> MaterialTheme.colorScheme.onSurface
+                    focused -> MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
+                    else -> MaterialTheme.colorScheme.surfaceVariant
+                },
+            )
+            .border(
+                2.dp,
+                if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
+                RoundedCornerShape(8.dp),
+            )
+            .onFocusChanged { focused = it.isFocused }
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = text,
+            fontSize = 13.sp,
+            color = if (primary) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
+        )
+    }
+}
+
+@Composable
+private fun BlockWordsEditPanel(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSave: () -> Unit,
+    onBack: () -> Unit,
+) {
+    Column(
+        Modifier.fillMaxSize().padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            SettingsButton(text = "‹ 返回", onClick = onBack)
+            Spacer(Modifier.weight(1f))
+            Text("弹幕屏蔽词", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        }
+        CompactTextField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = "多个关键词用逗号分隔",
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            "多个关键词用逗号分隔",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SettingsButton(text = "保存", onClick = onSave, primary = true)
+            SettingsButton(text = "取消", onClick = onBack)
+        }
+    }
+}
+
+@Composable
+private fun SettingsGroupTitle(title: String) {
+    Text(
+        text = title,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(start = 2.dp, top = 4.dp),
+    )
+}
+
+@Composable
+private fun SettingsPanelRow(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    var focused by remember { mutableStateOf(false) }
+    Box(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
+            .onFocusChanged { focused = it.hasFocus }
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                if (focused) {
+                    SolidColor(MaterialTheme.colorScheme.surfaceVariant)
+                } else {
+                    Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                        ),
+                    )
+                },
+            )
+            .border(
+                if (focused) 2.dp else 1.dp,
+                if (focused) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                RoundedCornerShape(8.dp),
+            ),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        content()
     }
 }
 
@@ -853,12 +1017,20 @@ private fun ConfigRow(
         modifier
             .fillMaxSize()
             .onFocusChanged { focused = it.isFocused }
+            .background(
+                if (focused) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent,
+                RoundedCornerShape(8.dp),
+            )
             .border(
                 2.dp,
                 if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
-                RoundedCornerShape(10.dp),
+                RoundedCornerShape(8.dp),
             )
-            .clickable(onClick = onEdit)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onEdit,
+            )
             .padding(horizontal = 10.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -907,7 +1079,12 @@ private fun ConfigLoadButton(
                 MaterialTheme.colorScheme.primary,
                 RoundedCornerShape(8.dp),
             )
-            .clickable(enabled = enabled && !loading, onClick = onClick),
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                enabled = enabled && !loading,
+                onClick = onClick,
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -1021,6 +1198,92 @@ private fun SettingBar(modifier: Modifier = Modifier, content: @Composable () ->
 }
 
 @Composable
+private fun ExpandableChoiceRow(
+    title: String,
+    subtitle: String? = null,
+    options: List<Pair<String, Boolean>>,
+    onSelect: (Int) -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val firstChipFocus = remember { FocusRequester() }
+    val rowFocus = remember { FocusRequester() }
+    val scope = rememberCoroutineScope()
+    var firstComposition by remember { mutableStateOf(true) }
+    val selectedLabel = options.firstOrNull { it.second }?.first ?: "未选择"
+    LaunchedEffect(expanded) {
+        if (firstComposition) {
+            firstComposition = false
+            return@LaunchedEffect
+        }
+        delay(150)
+        runCatching {
+            if (expanded) firstChipFocus.requestFocus() else rowFocus.requestFocus()
+        }
+    }
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+                .focusRequester(rowFocus)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) { expanded = !expanded }
+                .padding(horizontal = 10.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                title,
+                fontSize = 13.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                selectedLabel,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 120.dp),
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(
+                if (expanded) "︿" else "›",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        AnimatedVisibility(expanded) {
+            FlowRow(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = 10.dp, end = 10.dp, bottom = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                options.forEachIndexed { index, (label, selected) ->
+                    SettingChip(
+                        label = label,
+                        selected = selected,
+                        focusRequester = if (index == 0) firstChipFocus else null,
+                    ) {
+                        onSelect(index)
+                        expanded = false
+                        scope.launch {
+                            delay(120)
+                            runCatching { rowFocus.requestFocus() }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun SwitchRow(
     title: String,
     subtitle: String,
@@ -1028,7 +1291,7 @@ private fun SwitchRow(
     onChange: (Boolean) -> Unit,
 ) {
     // The switch is edited in the same option dialog as ChoiceRow.
-    ChoiceRow(
+    ExpandableChoiceRow(
         title = title,
         subtitle = subtitle,
         options = listOf(
@@ -1168,13 +1431,18 @@ private fun SettingChip(
     label: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
+    focusRequester: FocusRequester? = null,
     onClick: () -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     Box(
         modifier
-            .clip(RoundedCornerShape(16.dp))
+            .then(
+                if (focusRequester != null) Modifier.focusRequester(focusRequester)
+                else Modifier,
+            )
+            .clip(RoundedCornerShape(8.dp))
             .background(
                 when {
                     selected -> MaterialTheme.colorScheme.onSurface
@@ -1182,13 +1450,23 @@ private fun SettingChip(
                     else -> MaterialTheme.colorScheme.surfaceVariant
                 },
             )
+            .border(
+                if (focused) 2.dp else 1.dp,
+                when {
+                    focused && selected -> MaterialTheme.colorScheme.background
+                    focused -> MaterialTheme.colorScheme.primary
+                    selected -> MaterialTheme.colorScheme.onSurface
+                    else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f)
+                },
+                RoundedCornerShape(8.dp),
+            )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 10.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,
-            fontSize = 14.sp,
+            fontSize = 13.sp,
             color = if (selected) MaterialTheme.colorScheme.background
             else MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
@@ -1201,55 +1479,49 @@ private fun SettingChip(
 private fun ActionRow(
     title: String,
     value: String,
-    compact: Boolean = false,
     onClick: () -> Unit,
 ) {
-    var focused by remember { mutableStateOf(false) }
     Row(
         Modifier
-            .fillMaxSize()
-            .onFocusChanged { focused = it.isFocused }
-            .border(
-                2.dp,
-                if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
-                RoundedCornerShape(10.dp),
+            .fillMaxWidth()
+            .height(44.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
             )
-            .clickable(onClick = onClick)
-            .padding(
-                horizontal = if (compact) 10.dp else 10.dp,
-                vertical = if (compact) 2.dp else 4.dp,
-            ),
+            .padding(horizontal = 10.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             title,
-            fontSize = if (compact) 13.sp else 14.sp,
+            fontSize = 13.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
         Text(
             value,
-            fontSize = if (compact) 11.sp else 12.sp,
+            fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = if (compact) 96.dp else 104.dp),
+            modifier = Modifier.widthIn(max = 120.dp),
         )
         Spacer(Modifier.width(4.dp))
-        Text("›", fontSize = if (compact) 13.sp else 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("›", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun InfoRow(title: String, value: String) {
     Row(
-        Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 4.dp),
+        Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             title,
-            fontSize = 14.sp,
+            fontSize = 13.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
@@ -1257,7 +1529,7 @@ private fun InfoRow(title: String, value: String) {
         Spacer(Modifier.width(6.dp))
         Text(
             value,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

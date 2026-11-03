@@ -29,10 +29,25 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -74,6 +89,7 @@ import com.onefilm.android.tv.compose.feature.category.CategoryFilterController
 import com.onefilm.android.tv.compose.feature.category.CategoryPreloader
 import com.onefilm.android.tv.compose.feature.config.ConfigScreen
 import com.onefilm.android.tv.compose.feature.lines.LinesScreen
+import com.onefilm.android.tv.compose.feature.settings.SettingsScreen
 import com.onefilm.android.tv.compose.navigation.OneFilmNavHost
 import com.onefilm.android.tv.compose.navigation.Routes
 import kotlinx.coroutines.delay
@@ -197,6 +213,7 @@ class ComposeMainActivity : ComponentActivity() {
                     }
                 }
                 var searchFocusToken by remember { mutableIntStateOf(0) }
+                var showSettingsPanel by remember { mutableStateOf(false) }
                 val prefetchScope = rememberCoroutineScope()
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val route = backStackEntry?.destination?.route
@@ -378,9 +395,13 @@ class ComposeMainActivity : ComponentActivity() {
                                 selectedCategoryKey = selectedCategoryKey,
                                 selectedCategoryId = selectedCategoryId,
                                 onNavigate = { target ->
-                                    navController.navigate(target) {
-                                        launchSingleTop = true
-                                        restoreState = true
+                                    if (target == Routes.SETTINGS) {
+                                        showSettingsPanel = true
+                                    } else {
+                                        navController.navigate(target) {
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
                                     }
                                 },
                                 onLive = { ComposeDependencies.liveLauncher.open(this@ComposeMainActivity) },
@@ -587,11 +608,16 @@ class ComposeMainActivity : ComponentActivity() {
                     )
                 }
                 }
+                SettingsPanelOverlay(
+                    visible = showSettingsPanel,
+                    onDismiss = { showSettingsPanel = false },
+                    onConfigChanged = { CategoryCache.clear(); homeViewModel.retry() },
+                )
                 }
                 // 返回键统一由这里处理。必须放在 NavHost 之后组合：navigation-compose 2.7.7
                 // 的 NavHost 内部自带一个 BackHandler（NavHost.kt:216，返回栈深度 > 1 时启用），
                 // 后注册的优先；放在它前面会被它抢先弹栈，表现就是“回到主页后按返回变成返回上一步”。
-                BackHandler(enabled = true) {
+                BackHandler(enabled = !showSettingsPanel) {
                     when {
                         // TV 顶部“主页”按钮只有退出语义：焦点在它上面时按返回
                         // 直接弹退出确认，不再执行回到上一页/分类页的逻辑。
@@ -632,4 +658,62 @@ private fun LegacyWallpaper() {
             }.getOrNull() ?: View(ctx)
         },
     )
+}
+
+@Composable
+private fun SettingsPanelOverlay(
+    visible: Boolean,
+    onDismiss: () -> Unit,
+    onConfigChanged: () -> Unit,
+) {
+    if (!visible) return
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false,
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false,
+        ),
+    ) {
+        var appeared by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) { appeared = true }
+        Box(Modifier.fillMaxSize()) {
+            AnimatedVisibility(
+                visible = appeared,
+                enter = fadeIn(tween(180)),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.45f))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onDismiss,
+                        ),
+                )
+            }
+            AnimatedVisibility(
+                visible = appeared,
+                enter = slideInHorizontally(tween(200)) { it } + fadeIn(tween(200)),
+                modifier = Modifier.align(Alignment.CenterEnd),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(0.4f)
+                        .clip(RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
+                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)),
+                ) {
+                    SettingsScreen(
+                        dataSource = ComposeDependencies.settingsDataSource,
+                        onConfigChanged = onConfigChanged,
+                        panelMode = true,
+                        onRequestClose = onDismiss,
+                    )
+                }
+            }
+        }
+    }
 }
