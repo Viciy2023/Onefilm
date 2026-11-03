@@ -1,5 +1,11 @@
 package com.onefilm.android.tv.compose.navigation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -188,7 +194,6 @@ fun TvHeader(
         ) {
         TvBrandRow(
             centerText = centerText,
-            compact = variant == TvHeaderVariant.CategoryOnly,
         )
 
         // 第二行：接口分类。"主页"是唯一主页入口。
@@ -199,7 +204,7 @@ fun TvHeader(
                 .horizontalScroll(rememberScrollState())
                 .padding(
                     start = 48.dp,
-                    top = if (variant == TvHeaderVariant.CategoryOnly) (4 * scale).dp else (2 * scale).dp,
+                    top = (2 * scale).dp,
                     end = 48.dp,
                     bottom = (2 * scale).dp,
                 ),
@@ -246,7 +251,11 @@ fun TvHeader(
                 )
             }
         }
-        if (variant == TvHeaderVariant.Full) {
+        AnimatedVisibility(
+            visible = variant == TvHeaderVariant.Full,
+            enter = fadeIn(tween(200)) + expandVertically(tween(200)),
+            exit = fadeOut(tween(200)) + shrinkVertically(tween(200)),
+        ) {
         // 第三行：功能导航。九项等权铺满，图标 + 文字。
         Row(
             Modifier
@@ -292,7 +301,6 @@ fun TvHeader(
 fun TvBrandRow(
     centerText: String = "",
     modifier: Modifier = Modifier,
-    compact: Boolean = false,
     horizontalPadding: androidx.compose.ui.unit.Dp = 48.dp,
 ) {
     val resolvedCenter = centerText.takeIf { it.isNotBlank() }
@@ -313,7 +321,7 @@ fun TvBrandRow(
         Row(
             Modifier.fillMaxWidth().padding(
                 horizontal = horizontalPadding,
-                vertical = ((if (compact) 2 else 6) * scale).dp,
+                vertical = (6 * scale).dp,
             ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -321,9 +329,9 @@ fun TvBrandRow(
                 Text(
                     text = "ONEFILM",
                     color = TvInk,
-                    fontSize = ((if (compact) 16 else 22) * scale).sp,
+                    fontSize = (14 * scale).sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = if (compact) 1.sp else 2.sp,
+                    letterSpacing = 1.sp,
                 )
             }
             Box(Modifier.weight(1.4f), contentAlignment = Alignment.Center) {
@@ -341,7 +349,7 @@ fun TvBrandRow(
                 Text(
                     text = "$date   $time",
                     color = TvInk,
-                    fontSize = ((if (compact) 14 else 14) * scale).sp,
+                    fontSize = (14 * scale).sp,
                     fontWeight = FontWeight.Medium,
                 )
             }

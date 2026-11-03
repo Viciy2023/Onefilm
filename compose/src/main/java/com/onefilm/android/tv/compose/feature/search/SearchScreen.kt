@@ -95,7 +95,9 @@ fun SearchScreen(
     val landing = state is SearchUiState.Idle && !hasInitialQuery
 
     Column(Modifier.fillMaxSize()) {
-        TvBrandRow(compact = true)
+        if (!landing) {
+            TvBrandRow()
+        }
         Column(
             Modifier
                 .fillMaxWidth()
