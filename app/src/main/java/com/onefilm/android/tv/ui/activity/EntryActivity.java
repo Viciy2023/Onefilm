@@ -1,7 +1,11 @@
 package com.onefilm.android.tv.ui.activity;
 
 import android.app.Activity;
+import android.app.UiModeManager;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -32,6 +36,7 @@ public class EntryActivity extends Activity {
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        disableAutoSizeOnPhone();
         super.onCreate(savedInstanceState);
         Window window = getWindow();
         window.setStatusBarColor(Color.WHITE);
@@ -83,6 +88,48 @@ public class EntryActivity extends Activity {
     private int dp(float value) {
         return Math.round(TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, value, getResources().getDisplayMetrics()));
+    }
+
+    private boolean isTvDevice() {
+        UiModeManager uiModeManager = (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+        boolean tv = uiModeManager != null
+                && uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION;
+        PackageManager pm = getPackageManager();
+        tv = tv || pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK);
+        tv = tv || !pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN);
+        return tv;
+    }
+
+    /**
+     * 手机上关闭 AutoSize 的自动适配。
+     *
+     * AutoSize 通过 ActivityLifecycleCallbacks 给每个 Activity 自动改 density：
+     * 冷启动时窗口还是竖屏宽度（例如 1440px），就会算出 1440/960 = 1.5，
+     * 远小于系统密度 3.5，导致导航、设置页等 dp/sp 元素整体缩小。
+     * 电视端保持原有行为，不受影响。用反射调用是为了让 mobile flavor（没有
+     * AutoSize 依赖）也能通过编译。
+     */
+    private void disableAutoSizeOnPhone() {
+        if (isTvDevice()) return;
+        try {
+            Class<?> configClass = Class.forName("me.jessyan.autosize.AutoSizeConfig");
+            Object config = configClass.getMethod("getInstance").invoke(null);
+            Class<?> strategyClass = Class.forName("me.jessyan.autosize.AutoAdaptStrategy");
+            Object noop = java.lang.reflect.Proxy.newProxyInstance(
+                    strategyClass.getClassLoader(),
+                    new Class<?>[]{strategyClass},
+                    (proxy, method, args) -> {
+                        Class<?> type = method.getReturnType();
+                        if (type == boolean.class) return false;
+                        if (type == int.class) return 0;
+                        if (type == long.class) return 0L;
+                        if (type == float.class) return 0f;
+                        return null;
+                    });
+            configClass.getMethod("setAutoAdaptStrategy", strategyClass).invoke(config, noop);
+        } catch (Throwable ignored) {
+            // mobile flavor 没有 AutoSize 依赖，直接跳过
+        }
     }
 
     private void routeToHome() {

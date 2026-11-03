@@ -2,6 +2,9 @@ package com.onefilm.android.tv.ui.base;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
+import android.app.UiModeManager;
+import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Bundle;
@@ -81,7 +84,30 @@ public abstract class BaseActivity extends AppCompatActivity {
         });
     }
 
+    private Boolean mIsTvDevice;
+
+    /**
+     * 只有电视/盒子才启用 AutoSize。
+     *
+     * AutoSize 会用「当前屏幕宽度 / 设计稿宽度」改写进程级 DisplayMetrics.density；
+     * 手机冷启动时窗口往往还是竖屏宽度（1080px），会算出 1.125 这种远小于系统值
+     * （2.625）的密度，导致导航、设置页等 dp/sp 元素整体缩小。手机上直接用系统
+     * 密度即可，电视端行为保持不变。
+     */
+    private boolean isTvDevice() {
+        if (mIsTvDevice != null) return mIsTvDevice;
+        UiModeManager uiModeManager = (UiModeManager) getSystemService(Context.UI_MODE_SERVICE);
+        boolean tv = uiModeManager != null
+                && uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION;
+        PackageManager pm = getPackageManager();
+        tv = tv || pm.hasSystemFeature(PackageManager.FEATURE_LEANBACK);
+        tv = tv || !pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN);
+        mIsTvDevice = tv;
+        return tv;
+    }
+
     private Resources hackResources(Resources resources) {
+        if (!isTvDevice()) return resources;
         try {
             AutoSizeCompat.autoConvertDensityOfGlobal(resources);
             return resources;
