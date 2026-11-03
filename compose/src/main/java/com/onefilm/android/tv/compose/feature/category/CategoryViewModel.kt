@@ -15,7 +15,9 @@ class CategoryViewModel(
     private val dataSource: CategoryDataSource,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<CategoryUiState>(CategoryUiState.Loading)
+    private val _state = MutableStateFlow<CategoryUiState>(
+        CategoryCache.getState(key, tid) ?: CategoryUiState.Loading,
+    )
     val state: StateFlow<CategoryUiState> = _state.asStateFlow()
 
     private val selected = linkedMapOf<String, String>()
@@ -27,6 +29,12 @@ class CategoryViewModel(
     private var loadJob: Job? = null
 
     fun retry() = load(reset = true)
+
+    /** 进入页面时调用：已有缓存内容就直接用，不重新请求，避免闪 Loading。 */
+    fun ensureLoaded() {
+        if (_state.value is CategoryUiState.Content || loading) return
+        load(reset = true)
+    }
 
     fun toggleFilter(filterKey: String, value: String, selectedNow: Boolean) {
         if (selectedNow) selected[filterKey] = value else selected.remove(filterKey)
@@ -56,11 +64,16 @@ class CategoryViewModel(
                     } else {
                         pageData.copy(items = previous.items + pageData.items)
                     }
-                    _state.value = CategoryUiState.Content(
+                    val content = CategoryUiState.Content(
                         page = merged,
                         loadingMore = false,
                         endReached = pageData.items.isEmpty(),
                     )
+                    _state.value = content
+                    // 筛选后的结果不写缓存：离开该分类再回来时应回到无筛选页面。
+                    if (selected.isEmpty()) {
+                        CategoryCache.putState(key, tid, content)
+                    }
                 }
                 .onFailure {
                     _state.value = CategoryUiState.Error()

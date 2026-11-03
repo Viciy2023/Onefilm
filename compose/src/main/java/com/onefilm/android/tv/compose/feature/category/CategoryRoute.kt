@@ -32,7 +32,7 @@ fun CategoryRoute(
         CategoryFilterController.bind(key, tid)
         onDispose { CategoryFilterController.unbind(key, tid) }
     }
-    LaunchedEffect(key, tid) { viewModel.retry() }
+    LaunchedEffect(key, tid) { viewModel.ensureLoaded() }
     CategoryScreen(
         title = title,
         state = state,

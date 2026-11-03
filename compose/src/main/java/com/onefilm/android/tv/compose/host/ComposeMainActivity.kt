@@ -15,12 +15,19 @@ import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -62,12 +69,15 @@ import com.onefilm.android.tv.compose.navigation.AdaptiveNavigation
 import com.onefilm.android.tv.compose.navigation.TvBrandState
 import com.onefilm.android.tv.compose.navigation.TvHeader
 import com.onefilm.android.tv.compose.navigation.TvHeaderVariant
+import com.onefilm.android.tv.compose.feature.category.CategoryCache
 import com.onefilm.android.tv.compose.feature.category.CategoryFilterController
+import com.onefilm.android.tv.compose.feature.category.CategoryPreloader
 import com.onefilm.android.tv.compose.feature.config.ConfigScreen
 import com.onefilm.android.tv.compose.feature.lines.LinesScreen
 import com.onefilm.android.tv.compose.navigation.OneFilmNavHost
 import com.onefilm.android.tv.compose.navigation.Routes
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class ComposeMainActivity : ComponentActivity() {
 
@@ -187,6 +197,7 @@ class ComposeMainActivity : ComponentActivity() {
                     }
                 }
                 var searchFocusToken by remember { mutableIntStateOf(0) }
+                val prefetchScope = rememberCoroutineScope()
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val route = backStackEntry?.destination?.route
                 val categoryArgs = backStackEntry?.arguments
@@ -348,14 +359,22 @@ class ComposeMainActivity : ComponentActivity() {
                             route?.startsWith("category") == true -> TvHeaderVariant.CategoryOnly
                             else -> null
                         }
-                        if (variant != null) {
+                        // 退出动画期间保留最后一次 variant，避免 header 在一帧内消失、
+                        // 把下方内容整体往上甩。
+                        var lastVariant by remember { mutableStateOf(TvHeaderVariant.Full) }
+                        if (variant != null) lastVariant = variant
+                        AnimatedVisibility(
+                            visible = variant != null,
+                            enter = fadeIn(tween(200)) + expandVertically(tween(200)),
+                            exit = fadeOut(tween(200)) + shrinkVertically(tween(200)),
+                        ) {
                             val feed = (homeState as? HomeUiState.Content)?.feed
                             TvHeader(
                                 currentRoute = route,
                                 categories = feed?.categories.orEmpty(),
                                 notice = feed?.notice,
                                 siteName = feed?.siteName,
-                                variant = variant,
+                                variant = lastVariant,
                                 selectedCategoryKey = selectedCategoryKey,
                                 selectedCategoryId = selectedCategoryId,
                                 onNavigate = { target ->
@@ -374,6 +393,20 @@ class ComposeMainActivity : ComponentActivity() {
                                     ) {
                                         CategoryFilterController.requestShow()
                                     } else {
+                                        // 预取左右相邻分类的第一页，用户切过去时直接命中缓存。
+                                        val categories = (homeState as? HomeUiState.Content)?.feed?.categories.orEmpty()
+                                        val index = categories.indexOfFirst {
+                                            it.key == category.key && it.id == category.id
+                                        }
+                                        if (index >= 0) {
+                                            listOf(index - 1, index + 1).forEach { neighbor ->
+                                                categories.getOrNull(neighbor)?.let { item ->
+                                                    prefetchScope.launch {
+                                                        CategoryPreloader.prefetch(item.key, item.id, categoryDataSource)
+                                                    }
+                                                }
+                                            }
+                                        }
                                         navController.navigate(Routes.category(category.key, category.id, category.name)) {
                                             // Replace the previous category entry so Back
                                             // always lands on the API home, not category N-1.
@@ -395,15 +428,16 @@ class ComposeMainActivity : ComponentActivity() {
                                 onBack = { showConfigDialog = false },
                                 onDone = {
                                     showConfigDialog = false
+                                    CategoryCache.clear()
                                     homeViewModel.retry()
                                 },
-                                onConfigChanged = homeViewModel::retry,
+                                onConfigChanged = { CategoryCache.clear(); homeViewModel.retry() },
                             )
                         }
                         if (showLinesDialog) {
                             LinesScreen(
                                 dataSource = ComposeDependencies.settingsDataSource,
-                                onConfigChanged = homeViewModel::retry,
+                                onConfigChanged = { CategoryCache.clear(); homeViewModel.retry() },
                                 onDone = { showLinesDialog = false },
                             )
                         }
@@ -549,7 +583,7 @@ class ComposeMainActivity : ComponentActivity() {
                                 navController.navigate(Routes.PLAYER)
                             }
                         },
-                        onConfigChanged = homeViewModel::retry,
+                        onConfigChanged = { CategoryCache.clear(); homeViewModel.retry() },
                     )
                 }
                 }
