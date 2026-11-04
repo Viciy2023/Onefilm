@@ -414,7 +414,7 @@ private fun MobileHomePlaceholderCard(width: Dp, height: Dp, label: String) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
-            painter = painterResource(R.mipmap.ic_launcher),
+            painter = painterResource(R.drawable.splash_logo),
             contentDescription = null,
             modifier = Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)),
         )
