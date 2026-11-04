@@ -28,6 +28,8 @@ fun AdaptiveNavigation(
     onNavigate: (String) -> Unit,
     showTabs: Boolean = true,
     tvHeader: (@Composable () -> Unit)? = null,
+    sidebar: (@Composable () -> Unit)? = null,
+    categoryBar: (@Composable () -> Unit)? = null,
     transparentBackground: Boolean = false,
     wallpaper: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
@@ -62,7 +64,20 @@ fun AdaptiveNavigation(
                         }
                     }
                 }
-                Box(Modifier.weight(1f).statusBarsPadding()) { content() }
+                if (sidebar != null) {
+                    Row(Modifier.weight(1f)) {
+                        sidebar()
+                        Column(Modifier.weight(1f)) {
+                            categoryBar?.invoke()
+                            Box(Modifier.weight(1f).statusBarsPadding()) { content() }
+                        }
+                    }
+                } else {
+                    Column(Modifier.weight(1f)) {
+                        categoryBar?.invoke()
+                        Box(Modifier.weight(1f).statusBarsPadding()) { content() }
+                    }
+                }
             }
         } else {
             Column(Modifier.fillMaxSize()) {

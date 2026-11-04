@@ -84,6 +84,21 @@ import com.onefilm.android.tv.compose.navigation.AdaptiveNavigation
 import com.onefilm.android.tv.compose.navigation.TvBrandState
 import com.onefilm.android.tv.compose.navigation.TvHeader
 import com.onefilm.android.tv.compose.navigation.TvHeaderVariant
+import com.onefilm.android.tv.compose.navigation.TvSidebar
+import com.onefilm.android.tv.compose.navigation.SidebarEntry
+import com.onefilm.android.tv.compose.navigation.TvCategoryBar
+import com.onefilm.android.tv.compose.navigation.TvBrandRow
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.LiveTv
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.ui.focus.FocusRequester
 import com.onefilm.android.tv.compose.feature.category.CategoryCache
 import com.onefilm.android.tv.compose.feature.category.CategoryFilterController
 import com.onefilm.android.tv.compose.feature.category.CategoryPreloader
@@ -215,6 +230,11 @@ class ComposeMainActivity : ComponentActivity() {
                 var searchFocusToken by remember { mutableIntStateOf(0) }
                 var showSettingsPanel by remember { mutableStateOf(false) }
                 val prefetchScope = rememberCoroutineScope()
+                val sidebarFirstFocus = remember { FocusRequester() }
+                LaunchedEffect(Unit) {
+                    delay(300)
+                    runCatching { sidebarFirstFocus.requestFocus() }
+                }
                 val backStackEntry by navController.currentBackStackEntryAsState()
                 val route = backStackEntry?.destination?.route
                 val categoryArgs = backStackEntry?.arguments
@@ -371,76 +391,17 @@ class ComposeMainActivity : ComponentActivity() {
                         }
                     },
                     tvHeader = {
-                        val variant = when {
-                            route?.startsWith(Routes.HOME) == true -> TvHeaderVariant.Full
-                            route?.startsWith("category") == true -> TvHeaderVariant.CategoryOnly
-                            else -> null
-                        }
-                        // 退出动画期间保留最后一次 variant，避免 header 在一帧内消失、
-                        // 把下方内容整体往上甩。
-                        var lastVariant by remember { mutableStateOf(TvHeaderVariant.Full) }
-                        if (variant != null) lastVariant = variant
-                        AnimatedVisibility(
-                            visible = variant != null,
-                            enter = fadeIn(tween(200)) + expandVertically(tween(200)),
-                            exit = fadeOut(tween(200)) + shrinkVertically(tween(200)),
-                        ) {
-                            val feed = (homeState as? HomeUiState.Content)?.feed
-                            TvHeader(
-                                currentRoute = route,
-                                categories = feed?.categories.orEmpty(),
-                                notice = feed?.notice,
-                                siteName = feed?.siteName,
-                                variant = lastVariant,
-                                selectedCategoryKey = selectedCategoryKey,
-                                selectedCategoryId = selectedCategoryId,
-                                onNavigate = { target ->
-                                    if (target == Routes.SETTINGS) {
-                                        showSettingsPanel = true
-                                    } else {
-                                        navController.navigate(target) {
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    }
-                                },
-                                onLive = { ComposeDependencies.liveLauncher.open(this@ComposeMainActivity) },
-                                onConfig = { showConfigDialog = true },
-                                onLine = { showLinesDialog = true },
-                                onNetwork = { navController.navigate(Routes.NETDISK) },
-                                onCategory = { category ->
-                                    if (route?.startsWith("category") == true &&
-                                        CategoryFilterController.matches(category.key, category.id)
-                                    ) {
-                                        CategoryFilterController.requestShow()
-                                    } else {
-                                        // 预取左右相邻分类的第一页，用户切过去时直接命中缓存。
-                                        val categories = (homeState as? HomeUiState.Content)?.feed?.categories.orEmpty()
-                                        val index = categories.indexOfFirst {
-                                            it.key == category.key && it.id == category.id
-                                        }
-                                        if (index >= 0) {
-                                            listOf(index - 1, index + 1).forEach { neighbor ->
-                                                categories.getOrNull(neighbor)?.let { item ->
-                                                    prefetchScope.launch {
-                                                        CategoryPreloader.prefetch(item.key, item.id, categoryDataSource)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        navController.navigate(Routes.category(category.key, category.id, category.name)) {
-                                            // Replace the previous category entry so Back
-                                            // always lands on the API home, not category N-1.
-                                            popUpTo(Routes.HOME) { inclusive = false }
-                                            launchSingleTop = true
-                                        }
-                                    }
-                                },
-                                hasCategoryFilters = { category ->
-                                    // 读一次版本号：分类页拿到筛选条件后图标自动出现
-                                    val version = CategoryFilterController.filtersVersion
-                                    version >= 0 && ComposeDependencies.categoryDataSource.hasFilters(category.id)
-                                },
+                        val feed = (homeState as? HomeUiState.Content)?.feed
+                        val showBrand = route?.startsWith("detail") != true &&
+                            route?.startsWith("sources") != true &&
+                            route?.startsWith("resolve") != true &&
+                            route?.startsWith("player") != true
+                        if (showBrand) {
+                            TvBrandRow(
+                                centerText = feed?.notice?.takeIf { it.isNotBlank() }
+                                    ?: feed?.siteName?.takeIf { it.isNotBlank() }
+                                    ?: "ONEFILM",
+                                horizontalPadding = 24.dp,
                             )
                         }
                         if (showConfigDialog) {
@@ -460,6 +421,141 @@ class ComposeMainActivity : ComponentActivity() {
                                 dataSource = ComposeDependencies.settingsDataSource,
                                 onConfigChanged = { CategoryCache.clear(); homeViewModel.retry() },
                                 onDone = { showLinesDialog = false },
+                            )
+                        }
+                    },
+                    sidebar = {
+                        val showSidebar = route?.startsWith("detail") != true &&
+                            route?.startsWith("sources") != true &&
+                            route?.startsWith("resolve") != true &&
+                            route?.startsWith("player") != true &&
+                            route?.startsWith("search?") != true
+                        if (showSidebar) {
+                            TvSidebar(
+                                entries = listOf(
+                                    SidebarEntry(
+                                        label = "点播",
+                                        icon = Icons.Outlined.Home,
+                                        selected = route == Routes.HOME ||
+                                            route?.startsWith("category") == true,
+                                    ) {
+                                        navController.navigate(Routes.HOME) {
+                                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    },
+                                    SidebarEntry(
+                                        label = "历史",
+                                        icon = Icons.Outlined.History,
+                                        selected = route == Routes.HISTORY,
+                                    ) {
+                                        navController.navigate(Routes.HISTORY) { launchSingleTop = true }
+                                    },
+                                    SidebarEntry(
+                                        label = "收藏",
+                                        icon = Icons.Outlined.Star,
+                                        selected = route == Routes.LIBRARY,
+                                    ) {
+                                        navController.navigate(Routes.LIBRARY) { launchSingleTop = true }
+                                    },
+                                    SidebarEntry(
+                                        label = "搜索",
+                                        icon = Icons.Outlined.Search,
+                                        selected = route == Routes.SEARCH,
+                                    ) {
+                                        navController.navigate(Routes.SEARCH) { launchSingleTop = true }
+                                    },
+                                    SidebarEntry(
+                                        label = "直播",
+                                        icon = Icons.Outlined.LiveTv,
+                                        selected = false,
+                                    ) {
+                                        ComposeDependencies.liveLauncher.open(this@ComposeMainActivity)
+                                    },
+                                    SidebarEntry(
+                                        label = "配置",
+                                        icon = Icons.Outlined.Tune,
+                                        selected = false,
+                                    ) {
+                                        showConfigDialog = true
+                                    },
+                                    SidebarEntry(
+                                        label = "线路",
+                                        icon = Icons.Outlined.SwapHoriz,
+                                        selected = false,
+                                    ) {
+                                        showLinesDialog = true
+                                    },
+                                    SidebarEntry(
+                                        label = "网盘",
+                                        icon = Icons.Outlined.Cloud,
+                                        selected = route == Routes.NETDISK,
+                                    ) {
+                                        navController.navigate(Routes.NETDISK) { launchSingleTop = true }
+                                    },
+                                    SidebarEntry(
+                                        label = "设置",
+                                        icon = Icons.Outlined.Settings,
+                                        selected = false,
+                                    ) {
+                                        showSettingsPanel = true
+                                    },
+                                ),
+                                firstFocusRequester = sidebarFirstFocus,
+                            )
+                        }
+                    },
+                    categoryBar = {
+                        val showCategory = route == Routes.HOME || route?.startsWith("category") == true
+                        if (showCategory) {
+                            val feed = (homeState as? HomeUiState.Content)?.feed
+                            TvCategoryBar(
+                                currentRoute = route,
+                                categories = feed?.categories.orEmpty(),
+                                selectedCategoryKey = selectedCategoryKey,
+                                selectedCategoryId = selectedCategoryId,
+                                onNavigate = { target ->
+                                    if (target == Routes.SETTINGS) {
+                                        showSettingsPanel = true
+                                    } else {
+                                        navController.navigate(target) {
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    }
+                                },
+                                onCategory = { category ->
+                                    if (route?.startsWith("category") == true &&
+                                        CategoryFilterController.matches(category.key, category.id)
+                                    ) {
+                                        CategoryFilterController.requestShow()
+                                    } else {
+                                        val categories = (homeState as? HomeUiState.Content)?.feed?.categories.orEmpty()
+                                        val index = categories.indexOfFirst {
+                                            it.key == category.key && it.id == category.id
+                                        }
+                                        if (index >= 0) {
+                                            listOf(index - 1, index + 1).forEach { neighbor ->
+                                                categories.getOrNull(neighbor)?.let { item ->
+                                                    prefetchScope.launch {
+                                                        CategoryPreloader.prefetch(item.key, item.id, categoryDataSource)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        navController.navigate(Routes.category(category.key, category.id, category.name)) {
+                                            popUpTo(Routes.HOME) { inclusive = false }
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                },
+                                hasCategoryFilters = { category ->
+                                    val version = CategoryFilterController.filtersVersion
+                                    version >= 0 && ComposeDependencies.categoryDataSource.hasFilters(category.id)
+                                },
+                                onHomeFocused = { home ->
+                                    TvHeaderFocusState.homeCategoryFocused = home
+                                },
                             )
                         }
                     },
@@ -631,6 +727,14 @@ class ComposeMainActivity : ComponentActivity() {
                                     popUpTo(navController.graph.startDestinationId) { inclusive = true }
                                     launchSingleTop = true
                                 }
+                            }
+                        }
+                        // 侧栏页面返回点播主页，不回到上一个侧栏页面。
+                        route == Routes.HISTORY || route == Routes.LIBRARY ||
+                            route == Routes.SEARCH || route == Routes.NETDISK -> {
+                            navController.navigate(Routes.HOME) {
+                                popUpTo(navController.graph.startDestinationId) { inclusive = false }
+                                launchSingleTop = true
                             }
                         }
                         navController.previousBackStackEntry != null -> navController.popBackStack()
