@@ -41,3 +41,6 @@ README.md.bak.*
 tools/bugly/*.jar
 buglybin/
 欧歌影视_6.0.6_clone.apk
+.mnemon/runtime/memories.json
+.mnemon/runtime/MEMORY.md
+.mnemon/runtime/USER.md
