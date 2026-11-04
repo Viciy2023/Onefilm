@@ -7,10 +7,13 @@ import androidx.annotation.NonNull;
 
 import com.fongmi.quickjs.bean.Req;
 import com.fongmi.quickjs.utils.Connect;
+import com.fongmi.quickjs.utils.JSUtil;
+import com.fongmi.quickjs.utils.Parser;
 import com.github.catvod.utils.Crypto;
 import com.github.catvod.Proxy;
 import com.github.catvod.utils.Trans;
 import com.github.catvod.utils.UriUtil;
+import com.whl.quickjs.wrapper.JSArray;
 import com.whl.quickjs.wrapper.JSFunction;
 import com.whl.quickjs.wrapper.JSMethod;
 import com.whl.quickjs.wrapper.JSObject;
@@ -36,6 +39,7 @@ public class Global {
     private final AtomicInteger timerId;
     private final QuickJSContext ctx;
     private final Timer timer;
+    private final Parser parser = new Parser();
 
     private volatile boolean destroyed;
 
@@ -93,6 +97,27 @@ public class Global {
     @JSMethod
     public String t2s(String text) {
         return Trans.t2s(false, text);
+    }
+
+    /** drpy/alist 依赖的 HTML 规则解析：取单个值。 */
+    @Keep
+    @JSMethod
+    public String pdfh(String html, String rule) {
+        return parser.parseDomForUrl(html, rule, "");
+    }
+
+    /** drpy/alist 依赖的 HTML 规则解析：取列表（返回元素 outerHtml 数组）。 */
+    @Keep
+    @JSMethod
+    public JSArray pdfa(String html, String rule) {
+        return JSUtil.toArray(ctx, parser.parseDomForArray(html, rule));
+    }
+
+    /** drpy/alist 依赖的 HTML 规则解析：按多规则拼装列表，格式为 name$url。 */
+    @Keep
+    @JSMethod
+    public JSArray pdfl(String html, String rule, String list, String url, String text) {
+        return JSUtil.toArray(ctx, parser.parseDomForList(html, rule, list, url, text));
     }
 
     @Keep

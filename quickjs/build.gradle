@@ -23,5 +23,7 @@ dependencies {
     implementation project(':catvod')
     implementation libs.quickjs.android
     implementation libs.quickjs.java
+    // JS 站点的 pdfh/pdfa/pdfl 需要 jsoup 解析 HTML 规则
+    implementation 'org.jsoup:jsoup:1.18.3'
     coreLibraryDesugaring libs.desugar
 }
