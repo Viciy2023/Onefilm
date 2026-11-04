@@ -233,14 +233,14 @@ fun SettingsScreen(
             else -> {
                 LazyColumn(
                     Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
             item {
             SettingsGroupTitle("网络接口")
             }
             item {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(44.dp),
+                modifier = Modifier.fillMaxWidth().height(34.dp),
                 title = "点播接口",
                 value = snapshot.configUrl,
                 loading = reloadingType == 0,
@@ -265,7 +265,7 @@ fun SettingsScreen(
             }
             item {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(44.dp),
+                modifier = Modifier.fillMaxWidth().height(34.dp),
                 title = "直播接口",
                 value = snapshot.liveConfigUrl,
                 loading = reloadingType == 1,
@@ -290,7 +290,7 @@ fun SettingsScreen(
             }
             item {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(44.dp),
+                modifier = Modifier.fillMaxWidth().height(34.dp),
                 title = "壁纸接口",
                 value = snapshot.wallConfigUrl,
                 loading = reloadingType == 2,
@@ -924,7 +924,7 @@ private fun SettingsGroupTitle(title: String) {
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(start = 2.dp, top = 4.dp),
+        modifier = Modifier.padding(start = 2.dp, top = 3.dp),
     )
 }
 
@@ -937,9 +937,9 @@ private fun SettingsPanelRow(
     Box(
         modifier
             .fillMaxWidth()
-            .heightIn(min = 44.dp)
+            .heightIn(min = 34.dp)
             .onFocusChanged { focused = it.hasFocus }
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(10.dp))
             .background(
                 if (focused) {
                     SolidColor(MaterialTheme.colorScheme.surfaceVariant)
@@ -956,7 +956,7 @@ private fun SettingsPanelRow(
                 if (focused) 2.dp else 1.dp,
                 if (focused) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
-                RoundedCornerShape(8.dp),
+                RoundedCornerShape(10.dp),
             ),
         contentAlignment = Alignment.CenterStart,
     ) {
@@ -1039,7 +1039,7 @@ private fun ConfigRow(
         Box(
             modifier = Modifier
                 .weight(1f)
-                .height(26.dp)
+                .height(24.dp)
                 .clip(RoundedCornerShape(8.dp))
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
                 .padding(horizontal = 8.dp),
@@ -1224,13 +1224,13 @@ private fun ExpandableChoiceRow(
         Row(
             Modifier
                 .fillMaxWidth()
-                .height(44.dp)
+                .height(34.dp)
                 .focusRequester(rowFocus)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                 ) { expanded = !expanded }
-                .padding(horizontal = 10.dp, vertical = 4.dp),
+                .padding(horizontal = 8.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -1461,7 +1461,7 @@ private fun SettingChip(
                 RoundedCornerShape(8.dp),
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -1484,13 +1484,13 @@ private fun ActionRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .height(44.dp)
+            .height(34.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
                 onClick = onClick,
             )
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .padding(horizontal = 8.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -1516,7 +1516,7 @@ private fun ActionRow(
 @Composable
 private fun InfoRow(title: String, value: String) {
     Row(
-        Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 4.dp),
+        Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
