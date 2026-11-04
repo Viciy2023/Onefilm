@@ -64,10 +64,39 @@ public class JarLoader {
     private void invokeInit(DexClassLoader loader) {
         try {
             Class<?> clz = loader.loadClass("com.github.catvod.spider.Init");
-            Method method = clz.getMethod("init", Context.class);
-            method.invoke(clz, App.get());
+            Method init = null;
+            for (Method m : clz.getMethods()) {
+                if (m.getName().equals("init")
+                        && m.getParameterCount() == 1
+                        && m.getParameterTypes()[0] == Context.class) {
+                    init = m;
+                    break;
+                }
+            }
+            if (init == null) return;
+            init.setAccessible(true);
+            if (java.lang.reflect.Modifier.isStatic(init.getModifiers())) {
+                init.invoke(null, App.get());
+            } else {
+                Object target = initInstance(clz);
+                if (target != null) init.invoke(target, App.get());
+            }
         } catch (Throwable e) {
             e.printStackTrace();
+        }
+    }
+
+    private Object initInstance(Class<?> clz) {
+        try {
+            Method get = clz.getMethod("get");
+            Object obj = get.invoke(null);
+            if (obj != null) return obj;
+        } catch (Throwable ignored) {
+        }
+        try {
+            return clz.getDeclaredConstructor().newInstance();
+        } catch (Throwable ignored) {
+            return null;
         }
     }
 

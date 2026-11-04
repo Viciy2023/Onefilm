@@ -225,7 +225,7 @@ fun PlayerControls(
     val configuration = LocalConfiguration.current
     val isTv = (configuration.uiMode and android.content.res.Configuration.UI_MODE_TYPE_MASK) ==
         android.content.res.Configuration.UI_MODE_TYPE_TELEVISION
-    var controlsVisible by remember { mutableStateOf(true) }
+    var controlsVisible by remember { mutableStateOf(!inline) }
     var position by remember { mutableLongStateOf(PlaybackSession.positionMs()) }
     var dragging by remember { mutableStateOf(false) }
     var showEpisodes by remember { mutableStateOf(false) }
@@ -478,7 +478,14 @@ fun PlayerControls(
                         Spacer(Modifier.width(2.dp))
                     }
                     Text(
-                        text = PlaybackSession.title.ifBlank { "正在播放" },
+                        text = buildString {
+                            append(PlaybackSession.title.ifBlank { "正在播放" })
+                            val episodeName = PlaybackSession.currentEpisode?.name.orEmpty()
+                            if (episodeName.isNotBlank()) {
+                                append("  ")
+                                append(episodeName)
+                            }
+                        },
                         color = Ink,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Medium,

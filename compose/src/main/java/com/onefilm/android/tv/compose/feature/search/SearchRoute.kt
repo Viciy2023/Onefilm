@@ -26,6 +26,7 @@ fun SearchRoute(
     metaDataSource: SearchMetaDataSource,
     onCardClick: (MediaCard) -> Unit,
     initialQuery: String? = null,
+    onResultVisibilityChange: (Boolean) -> Unit = {},
 ) {
     val viewModel: SearchViewModel = viewModel(
         factory = viewModelFactory { initializer { SearchViewModel(dataSource) } },
@@ -46,6 +47,9 @@ fun SearchRoute(
             metaDataSource.record(keyword)
             viewModel.search(keyword)
         }
+    }
+    LaunchedEffect(state) {
+        onResultVisibilityChange(state !is SearchUiState.Idle)
     }
     val scope = rememberCoroutineScope()
     SearchScreen(

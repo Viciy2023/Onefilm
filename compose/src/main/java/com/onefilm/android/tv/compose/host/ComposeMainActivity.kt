@@ -229,6 +229,7 @@ class ComposeMainActivity : ComponentActivity() {
                 }
                 var searchFocusToken by remember { mutableIntStateOf(0) }
                 var showSettingsPanel by remember { mutableStateOf(false) }
+                var searchResultVisible by remember { mutableStateOf(false) }
                 val prefetchScope = rememberCoroutineScope()
                 val sidebarFirstFocus = remember { FocusRequester() }
                 LaunchedEffect(Unit) {
@@ -429,7 +430,8 @@ class ComposeMainActivity : ComponentActivity() {
                             route?.startsWith("sources") != true &&
                             route?.startsWith("resolve") != true &&
                             route?.startsWith("player") != true &&
-                            route?.startsWith("search?") != true
+                            route?.startsWith("search?") != true &&
+                            !(route == Routes.SEARCH && searchResultVisible)
                         if (showSidebar) {
                             TvSidebar(
                                 entries = listOf(
@@ -585,6 +587,7 @@ class ComposeMainActivity : ComponentActivity() {
                                 dataSource = searchDataSource,
                                 metaDataSource = searchMetaDataSource,
                                 initialQuery = initialQuery,
+                                onResultVisibilityChange = { searchResultVisible = it },
                                 onCardClick = { card ->
                                     if (card.key.isNotBlank() && card.id.isNotBlank() &&
                                         !card.id.startsWith("msearch:")

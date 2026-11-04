@@ -241,7 +241,7 @@ fun SettingsScreen(
             }
             item {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(34.dp),
+                modifier = Modifier.fillMaxWidth().height(32.dp),
                 title = "点播接口",
                 value = snapshot.configUrl,
                 loading = reloadingType == 0,
@@ -266,7 +266,7 @@ fun SettingsScreen(
             }
             item {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(34.dp),
+                modifier = Modifier.fillMaxWidth().height(32.dp),
                 title = "直播接口",
                 value = snapshot.liveConfigUrl,
                 loading = reloadingType == 1,
@@ -291,7 +291,7 @@ fun SettingsScreen(
             }
             item {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(34.dp),
+                modifier = Modifier.fillMaxWidth().height(32.dp),
                 title = "壁纸接口",
                 value = snapshot.wallConfigUrl,
                 loading = reloadingType == 2,
@@ -687,20 +687,20 @@ fun SettingsScreen(
     if (showClearCacheConfirm) {
         SettingsDialog(
             onDismiss = { showClearCacheConfirm = false },
-            width = 520.dp,
-            padding = 16.dp,
+            width = 380.dp,
+            padding = 12.dp,
         ) {
-            Text("确定清除缓存？", fontSize = 15.sp)
-            Spacer(Modifier.height(10.dp))
+            Text("确定清除缓存？", fontSize = 14.sp)
+            Spacer(Modifier.height(6.dp))
             Text(
                 "将删除图片缓存和临时文件，不会删除收藏和观看记录。",
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(10.dp))
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
             ) {
                 SettingsButton(text = "取消", onClick = { showClearCacheConfirm = false })
                 SettingsButton(
@@ -729,21 +729,21 @@ fun SettingsScreen(
                     runCatching { configRowFocus[messageType].requestFocus() }
                 }
             },
-            width = 560.dp,
-            padding = 20.dp,
+            width = 360.dp,
+            padding = 12.dp,
         ) {
             Text(
                 text = if (configMessageSuccess) "加载成功" else "加载失败",
-                fontSize = 15.sp,
+                fontSize = 14.sp,
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(6.dp))
             Text(
                 text = message,
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 color = if (configMessageSuccess) MaterialTheme.colorScheme.onSurface
                 else MaterialTheme.colorScheme.error,
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
                 SettingsButton(
                     text = "知道了",
@@ -969,8 +969,7 @@ private fun ConfigBlock(
             enabled = value.isNotBlank(),
             onClick = onReload,
             modifier = Modifier
-                .width(64.dp)
-                .fillMaxHeight()
+                .width(72.dp)
                 .focusRequester(reloadFocus)
                 .focusProperties { left = rowFocus },
         )
@@ -1037,37 +1036,12 @@ private fun ConfigLoadButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var focused by remember { mutableStateOf(false) }
-    Box(
-        modifier
-            .onFocusChanged { focused = it.isFocused }
-            .clip(RoundedCornerShape(8.dp))
-            .background(
-                if (focused) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.surfaceVariant,
-            )
-            .border(
-                if (focused) 2.dp else 0.dp,
-                MaterialTheme.colorScheme.primary,
-                RoundedCornerShape(8.dp),
-            )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                enabled = enabled && !loading,
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = if (loading) "加载中" else "加载",
-            fontSize = 11.sp,
-            color = if (focused) MaterialTheme.colorScheme.onPrimary
-            else if (enabled) MaterialTheme.colorScheme.onSurface
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-        )
-    }
+    TvTagButton(
+        text = if (loading) "加载中" else "加载",
+        modifier = modifier,
+        enabled = enabled && !loading,
+        onClick = onClick,
+    )
 }
 
 @Composable
@@ -1120,7 +1094,7 @@ private fun CompactTextField(
 private fun SettingsDialog(
     onDismiss: () -> Unit,
     width: Dp,
-    padding: Dp = 24.dp,
+    padding: Dp = 12.dp,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Dialog(
@@ -1128,9 +1102,9 @@ private fun SettingsDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(12.dp),
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp,
+            tonalElevation = 2.dp,
             border = BorderStroke(
                 1.dp,
                 MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),
@@ -1533,9 +1507,9 @@ private fun SearchSitesDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(12.dp),
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp,
+            tonalElevation = 2.dp,
             border = BorderStroke(
                 1.dp,
                 MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f),

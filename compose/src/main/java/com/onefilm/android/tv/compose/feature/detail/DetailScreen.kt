@@ -358,10 +358,24 @@ private fun DetailAction(
     val shape = RoundedCornerShape(10.dp)
     Box(
         modifier
+            .height(32.dp)
             .clip(shape)
             .background(
-                if (focused) MaterialTheme.colorScheme.onSurface
-                else MaterialTheme.colorScheme.surfaceVariant,
+                if (focused) {
+                    Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.onSurface,
+                            MaterialTheme.colorScheme.onSurface,
+                        ),
+                    )
+                } else {
+                    Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                        ),
+                    )
+                },
             )
             .border(
                 if (focused) 2.dp else 1.dp,
@@ -370,12 +384,12 @@ private fun DetailAction(
                 shape,
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .padding(horizontal = 14.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,
-            fontSize = 14.sp,
+            fontSize = 13.sp,
             fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
             color = if (focused) MaterialTheme.colorScheme.background
             else MaterialTheme.colorScheme.onSurface,
@@ -391,7 +405,7 @@ private fun DetailLineChip(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
-    val shape = RoundedCornerShape(12.dp)
+    val shape = RoundedCornerShape(10.dp)
     Text(
         text = label,
         color = when {
@@ -399,7 +413,7 @@ private fun DetailLineChip(
             selected -> MaterialTheme.colorScheme.primary
             else -> MaterialTheme.colorScheme.onSurface
         },
-        fontSize = 14.sp,
+        fontSize = 13.sp,
         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
@@ -407,9 +421,24 @@ private fun DetailLineChip(
             .clip(shape)
             .background(
                 when {
-                    focused -> MaterialTheme.colorScheme.onSurface
-                    selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                    else -> MaterialTheme.colorScheme.surfaceVariant
+                    focused -> Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.onSurface,
+                            MaterialTheme.colorScheme.onSurface,
+                        ),
+                    )
+                    selected -> Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.18f),
+                        ),
+                    )
+                    else -> Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                        ),
+                    )
                 },
             )
             .border(
@@ -422,7 +451,7 @@ private fun DetailLineChip(
                 shape,
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 5.dp),
     )
 }
 
@@ -434,25 +463,45 @@ private fun EpisodeButton(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
-    val shape = RoundedCornerShape(9.dp)
+    val shape = RoundedCornerShape(10.dp)
     Box(
         Modifier
             .fillMaxWidth()
-            .height(42.dp)
+            .height(32.dp)
             .clip(shape)
             .background(
-                if (focused) MaterialTheme.colorScheme.onSurface
-                else MaterialTheme.colorScheme.surfaceVariant,
+                when {
+                    focused -> Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.onSurface,
+                            MaterialTheme.colorScheme.onSurface,
+                        ),
+                    )
+                    playing -> Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.22f),
+                        ),
+                    )
+                    else -> Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                        ),
+                    )
+                },
             )
             .border(
                 when {
                     focused -> 2.dp
-                    playing -> 1.dp
-                    else -> 0.dp
+                    playing -> 2.dp
+                    else -> 1.dp
                 },
-                if (focused) MaterialTheme.colorScheme.primary
-                else if (playing) MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                else Color.Transparent,
+                when {
+                    focused -> MaterialTheme.colorScheme.primary
+                    playing -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+                },
                 shape,
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick),
@@ -460,7 +509,11 @@ private fun EpisodeButton(
     ) {
         Text(
             text = label,
-            color = if (focused) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
+            color = when {
+                focused -> MaterialTheme.colorScheme.background
+                playing -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.onSurface
+            },
             fontSize = 13.sp,
             fontWeight = if (playing) FontWeight.SemiBold else FontWeight.Normal,
             maxLines = 1,
