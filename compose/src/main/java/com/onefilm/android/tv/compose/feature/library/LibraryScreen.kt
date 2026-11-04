@@ -37,6 +37,7 @@ import com.onefilm.android.tv.compose.bridge.LibraryData
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.design.component.AppLogoLoading
 import com.onefilm.android.tv.compose.design.component.TvPosterCard
+import com.onefilm.android.tv.compose.design.component.TvTagButton
 import kotlinx.coroutines.delay
 
 @Composable
@@ -68,38 +69,29 @@ fun LibraryScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 24.dp)) {
+    Column(
+        Modifier.fillMaxSize().padding(start = 12.dp, top = 2.dp, end = 12.dp, bottom = 12.dp),
+    ) {
         Row(
             Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = if (historyMode) "历史" else "收藏",
-                fontSize = 20.sp,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.weight(1f),
-            )
             if (historyMode) {
-                Button(
-                    onClick = { deleteMode = !deleteMode },
+                TvTagButton(
+                    text = if (deleteMode) "退出删除" else "删除记录",
                     enabled = items.isNotEmpty(),
-                ) {
-                    Text(if (deleteMode) "退出删除" else "删除记录", fontSize = 13.sp)
-                }
-                Spacer(Modifier.width(10.dp))
-                OutlinedButton(
-                    onClick = { pendingClear = true },
+                ) { deleteMode = !deleteMode }
+                Spacer(Modifier.width(8.dp))
+                TvTagButton(
+                    text = "一键删除",
                     enabled = items.isNotEmpty(),
-                ) {
-                    Text("一键删除", fontSize = 13.sp)
-                }
+                ) { pendingClear = true }
             } else {
-                Button(
-                    onClick = { deleteMode = !deleteMode },
+                TvTagButton(
+                    text = if (deleteMode) "退出删除" else "删除收藏",
                     enabled = items.isNotEmpty(),
-                ) {
-                    Text(if (deleteMode) "退出删除" else "删除收藏", fontSize = 13.sp)
-                }
+                ) { deleteMode = !deleteMode }
             }
         }
         if (deleteMode) {
@@ -157,16 +149,17 @@ fun LibraryScreen(
             title = { Text(if (historyMode) "删除观看记录" else "删除收藏") },
             text = { Text("确定删除《${card.title}》吗？") },
             confirmButton = {
-                TextButton(
+                TvTagButton(
+                    text = "删除",
                     onClick = {
                         if (historyMode) onDeleteHistory(card) else onDeleteFavorite(card)
                         pendingDelete = null
                         if (items.size <= 1) deleteMode = false
                     },
-                ) { Text("删除") }
+                )
             },
             dismissButton = {
-                TextButton(onClick = { pendingDelete = null }) { Text("取消") }
+                TvTagButton(text = "取消", onClick = { pendingDelete = null })
             },
         )
     }
@@ -182,16 +175,17 @@ fun LibraryScreen(
                 )
             },
             confirmButton = {
-                TextButton(
+                TvTagButton(
+                    text = "全部删除",
                     onClick = {
                         if (historyMode) onClearHistory() else onClearFavorites()
                         pendingClear = false
                         deleteMode = false
                     },
-                ) { Text("全部删除") }
+                )
             },
             dismissButton = {
-                TextButton(onClick = { pendingClear = false }) { Text("取消") }
+                TvTagButton(text = "取消", onClick = { pendingClear = false })
             },
         )
     }

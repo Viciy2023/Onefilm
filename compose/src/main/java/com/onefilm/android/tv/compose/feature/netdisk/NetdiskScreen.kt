@@ -54,6 +54,7 @@ import com.onefilm.android.tv.compose.bridge.NetdiskDataSource
 import com.onefilm.android.tv.compose.bridge.NetdiskDrive
 import com.onefilm.android.tv.compose.bridge.NetdiskEntry
 import com.onefilm.android.tv.compose.bridge.NetdiskPlayback
+import com.onefilm.android.tv.compose.design.component.TvTagButton
 import org.json.JSONObject
 import kotlinx.coroutines.launch
 
@@ -86,22 +87,22 @@ fun NetdiskScreen(
         loading = false
     }
 
-    Column(Modifier.fillMaxSize().padding(horizontal = 48.dp, vertical = 24.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = if (drive == null) "网盘" else drive.name,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.weight(1f))
+    Column(
+        Modifier.fillMaxSize().padding(start = 12.dp, top = 2.dp, end = 12.dp, bottom = 12.dp),
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             if (drive == null) {
-                Button(onClick = { adding = true }) { Text("添加网盘") }
+                TvTagButton(text = "添加网盘") { adding = true }
             } else {
-                TextButton(onClick = {
+                TvTagButton(text = "返回") {
                     error = null
                     if (currentPath.isBlank()) currentDrive = null
                     else currentPath = currentPath.substringBeforeLast('/', "")
-                }) { Text("返回") }
+                }
             }
         }
         Text(
@@ -163,7 +164,9 @@ fun NetdiskScreen(
                 if (drive.type == 2 && entries.size >= 100) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
                         Box(Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
-                            Button(
+                            TvTagButton(
+                                text = if (loadingMore) "加载中…" else "加载更多",
+                                enabled = !loadingMore,
                                 onClick = {
                                     if (!loadingMore) {
                                         loadingMore = true
@@ -178,8 +181,7 @@ fun NetdiskScreen(
                                         }
                                     }
                                 },
-                                enabled = !loadingMore,
-                            ) { Text(if (loadingMore) "加载中…" else "加载更多") }
+                            )
                         }
                     }
                 }
@@ -283,22 +285,11 @@ private fun DriveList(
 
 @Composable
 private fun DriveActionButton(text: String, onClick: () -> Unit) {
-    val interaction = remember { MutableInteractionSource() }
-    val focused by interaction.collectIsFocusedAsState()
-    TextButton(
-        onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
-        border = if (focused) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
-        colors = ButtonDefaults.textButtonColors(
-            containerColor = if (focused) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else Color.Transparent,
-            contentColor = if (focused) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary,
-        ),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-        interactionSource = interaction,
+    TvTagButton(
+        text = text,
         modifier = Modifier.padding(start = 4.dp),
-    ) {
-        Text(text, fontSize = 13.sp)
-    }
+        onClick = onClick,
+    )
 }
 
 @Composable
@@ -424,7 +415,7 @@ private fun DriveDialog(
                                 modifier = Modifier.weight(1f),
                             )
                             Spacer(Modifier.size(10.dp))
-                            OutlinedButton(onClick = { folderPicker.launch(null) }) { Text("选择目录") }
+                            TvTagButton(text = "选择目录", onClick = { folderPicker.launch(null) })
                         }
                     }
                     1 -> {
@@ -446,9 +437,9 @@ private fun DriveDialog(
                     Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    OutlinedButton(onClick = onDismiss) { Text("取消") }
+                    TvTagButton(text = "取消", onClick = onDismiss)
                     Spacer(Modifier.size(12.dp))
-                    Button(onClick = {
+                    TvTagButton(text = "保存", onClick = {
                         if (name.isBlank()) {
                             error = "空间名称不能为空"
                         } else if (type == 0 && localUri.isBlank()) {
@@ -481,7 +472,7 @@ private fun DriveDialog(
                                 ),
                             )
                         }
-                    }) { Text("保存") }
+                    })
                 }
             }
         }

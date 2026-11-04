@@ -56,6 +56,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.onefilm.android.tv.compose.bridge.ConfigLine
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.ServerEventBridge
+import com.onefilm.android.tv.compose.design.component.TvTagButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -222,7 +223,10 @@ fun ConfigScreen(
                         onValueChange = { url = it },
                         modifier = Modifier.weight(0.44f),
                     )
-                    Button(
+                    TvTagButton(
+                        text = if (loading) "加载中…" else "保存并加载",
+                        enabled = !loading && loadingLineKey == null,
+                        modifier = Modifier.width(126.dp),
                         onClick = {
                             if (url.isBlank()) {
                                 error = "接口 URL 不能为空"
@@ -235,16 +239,7 @@ fun ConfigScreen(
                                 }
                             }
                         },
-                        enabled = !loading && loadingLineKey == null,
-                        modifier = Modifier.height(38.dp).width(106.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                    ) {
-                        if (loading) {
-                            CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
-                        } else {
-                            Text("保存并加载", fontSize = 12.sp)
-                        }
-                    }
+                    )
                 }
                 error?.let {
                     Text(

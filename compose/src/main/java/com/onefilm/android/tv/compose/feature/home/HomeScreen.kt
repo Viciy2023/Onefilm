@@ -146,9 +146,9 @@ private fun TvPosterSection(
     LazyVerticalGrid(
         columns = GridCells.Fixed(6),
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 48.dp, vertical = 24.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         gridItemsIndexed(
             items = items,

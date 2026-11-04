@@ -74,6 +74,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
+import com.onefilm.android.tv.compose.design.component.TvTagButton
 import com.onefilm.android.tv.compose.bridge.ServerEventBridge
 import com.onefilm.android.tv.compose.bridge.SEARCH_THREAD_OPTIONS
 import com.onefilm.android.tv.compose.bridge.SearchSiteItem
@@ -701,10 +702,9 @@ fun SettingsScreen(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.End),
             ) {
-                OutlinedButton(onClick = { showClearCacheConfirm = false }) {
-                    Text("取消", fontSize = 13.sp)
-                }
-                Button(
+                SettingsButton(text = "取消", onClick = { showClearCacheConfirm = false })
+                SettingsButton(
+                    text = "清除",
                     onClick = {
                         dataSource.clearCache()
                         snapshot = dataSource.load().copy(cacheSizeLabel = "计算中…")
@@ -714,9 +714,8 @@ fun SettingsScreen(
                             if (label.isNotBlank()) snapshot = snapshot.copy(cacheSizeLabel = label)
                         }
                     },
-                ) {
-                    Text("清除", fontSize = 13.sp)
-                }
+                    primary = true,
+                )
             }
         }
     }
@@ -853,34 +852,7 @@ private fun SettingsButton(
     primary: Boolean = false,
     enabled: Boolean = true,
 ) {
-    var focused by remember { mutableStateOf(false) }
-    Box(
-        Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(
-                when {
-                    !enabled -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-                    primary -> MaterialTheme.colorScheme.onSurface
-                    focused -> MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                    else -> MaterialTheme.colorScheme.surfaceVariant
-                },
-            )
-            .border(
-                2.dp,
-                if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
-                RoundedCornerShape(8.dp),
-            )
-            .onFocusChanged { focused = it.isFocused }
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = text,
-            fontSize = 13.sp,
-            color = if (primary) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-        )
-    }
+    TvTagButton(text = text, enabled = enabled, onClick = onClick)
 }
 
 @Composable
@@ -1728,28 +1700,5 @@ private fun SiteToggleRow(
 
 @Composable
 private fun DialogAction(label: String, onClick: () -> Unit) {
-    var focused by remember { mutableStateOf(false) }
-    Box(
-        Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(
-                if (focused) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.surfaceVariant,
-            )
-            .border(
-                2.dp,
-                if (focused) MaterialTheme.colorScheme.primary else Color.Transparent,
-                RoundedCornerShape(10.dp),
-            )
-            .onFocusChanged { focused = it.isFocused }
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-    ) {
-        Text(
-            label,
-            fontSize = 14.sp,
-            color = if (focused) MaterialTheme.colorScheme.onPrimary
-            else MaterialTheme.colorScheme.onSurface,
-        )
-    }
+    TvTagButton(text = label, onClick = onClick)
 }
