@@ -192,8 +192,22 @@ class ComposeMainActivity : ComponentActivity() {
         }
     }
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(com.github.catvod.utils.LocaleManager.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.onefilm.android.tv.compose.bridge.LanguageBridge.current =
+            { com.github.catvod.utils.LocaleManager.get() }
+        com.onefilm.android.tv.compose.bridge.LanguageBridge.labelOf =
+            { com.github.catvod.utils.LocaleManager.label(it) }
+        com.onefilm.android.tv.compose.bridge.LanguageBridge.tags =
+            { com.github.catvod.utils.LocaleManager.TAGS.toList() }
+        com.onefilm.android.tv.compose.bridge.LanguageBridge.apply = { tag ->
+            com.github.catvod.utils.LocaleManager.set(tag)
+            recreate()
+        }
         handleExternalIntent(intent)
         val isTv = packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
             (resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) ==

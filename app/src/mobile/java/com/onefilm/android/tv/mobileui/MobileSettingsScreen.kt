@@ -176,6 +176,24 @@ fun MobileSettingsScreen(
             }
         }
         item {
+            val languageTags = com.onefilm.android.tv.compose.bridge.LanguageBridge.tags()
+            val languageCurrent = com.onefilm.android.tv.compose.bridge.LanguageBridge.current()
+            MobileSettingRow(
+                "界面语言",
+                com.onefilm.android.tv.compose.bridge.LanguageBridge.labelOf(languageCurrent),
+            ) {
+                choose(
+                    "界面语言",
+                    languageTags.map { com.onefilm.android.tv.compose.bridge.LanguageBridge.labelOf(it) },
+                    languageTags.indexOf(languageCurrent).coerceAtLeast(0),
+                ) { index ->
+                    languageTags.getOrNull(index)?.let {
+                        com.onefilm.android.tv.compose.bridge.LanguageBridge.apply(it)
+                    }
+                }
+            }
+        }
+        item {
             MobileSettingRow("壁纸切换", snapshot.wallpaperLabel) {
                 dataSource.cycleWallpaper()
                 refresh()

@@ -320,6 +320,23 @@ fun SettingsScreen(
             }
             item {
             SettingsPanelRow {
+                val languageTags = com.onefilm.android.tv.compose.bridge.LanguageBridge.tags()
+                val languageCurrent = com.onefilm.android.tv.compose.bridge.LanguageBridge.current()
+                ExpandableChoiceRow(
+                    title = "界面语言",
+                    subtitle = com.onefilm.android.tv.compose.bridge.LanguageBridge.labelOf(languageCurrent),
+                    options = languageTags.map {
+                        com.onefilm.android.tv.compose.bridge.LanguageBridge.labelOf(it) to (it == languageCurrent)
+                    },
+                ) { index ->
+                    languageTags.getOrNull(index)?.let {
+                        com.onefilm.android.tv.compose.bridge.LanguageBridge.apply(it)
+                    }
+                }
+            }
+            }
+            item {
+            SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = "外观主题",
                     subtitle = "默认简约明亮主题",
