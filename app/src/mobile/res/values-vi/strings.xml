@@ -1,0 +1,187 @@
+<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+
+    <!-- App -->
+    <string name="app_keep">Giữ lại</string>
+    <string name="app_history">Lịch sử</string>
+
+    <!-- Nav -->
+    <string name="nav_vod">Phim</string>
+    <string name="nav_live">Trực tiếp</string>
+    <string name="nav_setting">Cài đặt</string>
+
+    <!-- Menu -->
+    <string name="menu_sync">Đồng bộ</string>
+    <string name="menu_delete">Xoá</string>
+    <string name="menu_search">Tìm kiếm</string>
+    <string name="menu_site">Trang</string>
+    <string name="menu_reset">Đặt lại</string>
+
+    <!-- Vod -->
+    <string name="vod_home">Trang chủ</string>
+
+    <!-- Detail -->
+    <string name="detail_flag">Kênh</string>
+    <string name="detail_episode">Tập</string>
+    <string name="detail_quality">Chất lượng</string>
+    <string name="detail_content">Tóm tắt</string>
+    <string name="detail_search">Đang tìm <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_favorite_add">Thêm vào yêu thích</string>
+    <string name="detail_favorite_added">Đã thêm vào yêu thích</string>
+
+    <!-- Device -->
+    <string name="device_select">Chọn thiết bị</string>
+    <string name="device_offline">Thiết bị ngoại tuyến</string>
+    <string name="device_scan">Quét mã QR để liên kết</string>
+
+    <!-- Control -->
+    <string name="control_speed">Tốc độ</string>
+    <string name="control_scale">Tỉ lệ</string>
+    <string name="control_track">Bản</string>
+    <string name="control_other">Khác</string>
+
+    <!-- Dialog -->
+    <string name="dialog_delete_record">Xoá tất cả bản ghi?</string>
+    <string name="dialog_delete_keep">Tất cả bản ghi giữ lại sẽ bị xoá.</string>
+    <string name="dialog_delete_history">Tất cả lịch sử sẽ bị xoá.</string>
+
+    <!-- Timer -->
+    <string name="timer_5">5 phút</string>
+    <string name="timer_15">15 phút</string>
+    <string name="timer_30">30 phút</string>
+    <string name="timer_60">1 giờ</string>
+    <string name="timer_delay">Thêm 5 phút</string>
+    <string name="timer_cancel">Huỷ hẹn giờ</string>
+
+    <!-- Hint -->
+    <string name="shortcut">Đã thêm lối tắt.</string>
+
+    <string-array name="select_background">
+        <item>Tắt</item>
+        <item>Bật</item>
+        <item>PiP</item>
+    </string-array>
+
+    <!-- Mobile App -->
+    <string name="mobile_app_brand">OneFilm</string>
+    <string name="mobile_tab_home">Trang chủ</string>
+    <string name="mobile_tab_library">Yêu thích</string>
+    <string name="mobile_home_empty">Không có nội dung</string>
+    <string name="mobile_home_recommend">Đề xuất</string>
+    <string name="mobile_home_continue">Tiếp tục xem</string>
+    <string name="mobile_home_continue_empty">Chưa có lịch sử xem</string>
+    <string name="mobile_search_hint">Tìm phim, chương trình hoặc diễn viên</string>
+    <string name="mobile_search_clear">Xoá</string>
+    <string name="mobile_search_idle">Nhập từ khoá để bắt đầu tìm kiếm</string>
+    <string name="mobile_search_empty">Không có kết quả cho “%1$s”</string>
+    <string name="mobile_search_result_count">%1$d kết quả</string>
+    <string name="mobile_search_searching">Đang tìm</string>
+    <string name="mobile_library_history">Lịch sử</string>
+    <string name="mobile_library_empty">Chưa có gì ở đây</string>
+    <string name="mobile_library_swipe_hint">Vuốt sang trái hoặc phải trên mục để xoá</string>
+    <string name="mobile_unnamed">Chưa đặt tên</string>
+    <string name="mobile_live_desc">Mở danh sách kênh và chọn kênh để xem</string>
+    <string name="mobile_live_open">Mở trực tiếp</string>
+    <string name="mobile_retry">Thử lại</string>
+    <string name="mobile_back">‹ Quay lại</string>
+    <string name="mobile_category">Danh mục</string>
+    <string name="mobile_filter">Bộ lọc</string>
+    <string name="mobile_category_load_failed">Tải danh mục thất bại</string>
+
+    <!-- Mobile Settings -->
+    <string name="mobile_settings_section_api">Cấu hình API</string>
+    <string name="mobile_settings_vod_api">API VOD</string>
+    <string name="mobile_settings_live_api">API trực tiếp</string>
+    <string name="mobile_settings_wall_api">API hình nền</string>
+    <string name="mobile_settings_section_appearance">Giao diện</string>
+    <string name="mobile_settings_theme">Chủ đề</string>
+    <string name="mobile_settings_theme_minimal">Tối giản</string>
+    <string name="mobile_settings_theme_dark">Tối</string>
+    <string name="mobile_settings_theme_system">Theo hệ thống</string>
+    <string name="mobile_settings_language">Ngôn ngữ</string>
+    <string name="mobile_settings_wallpaper">Hình nền</string>
+    <string name="mobile_settings_follow_config">Theo cấu hình</string>
+    <string name="mobile_settings_incognito">Chế độ ẩn danh</string>
+    <string name="mobile_settings_incognito_desc">Không ghi lịch sử hay bộ nhớ đệm</string>
+    <string name="mobile_settings_section_subtitle">Phụ đề</string>
+    <string name="mobile_settings_subtitle_position">Vị trí</string>
+    <string name="mobile_settings_subtitle_color">Màu</string>
+    <string name="mobile_settings_subtitle_edge">Viền</string>
+    <string name="mobile_settings_subtitle_size">Cỡ</string>
+    <string name="mobile_settings_subtitle_style">Kiểu</string>
+    <string name="mobile_settings_style_original">Gốc</string>
+    <string name="mobile_settings_style_system">Hệ thống</string>
+    <string name="mobile_settings_style_custom">Tuỳ chỉnh</string>
+    <string name="mobile_settings_section_danmaku">Danmaku</string>
+    <string name="mobile_settings_danmaku_show">Hiện danmaku</string>
+    <string name="mobile_settings_danmaku_show_desc">Tải và hiển thị danmaku</string>
+    <string name="mobile_settings_danmaku_size">Cỡ chữ</string>
+    <string name="mobile_settings_danmaku_alpha">Độ mờ</string>
+    <string name="mobile_settings_danmaku_speed">Tốc độ</string>
+    <string name="mobile_settings_danmaku_lines">Số dòng cuộn</string>
+    <string name="mobile_settings_danmaku_lines_value">%1$d dòng</string>
+    <string name="mobile_settings_danmaku_block">Từ khoá chặn</string>
+    <string name="mobile_settings_danmaku_block_desc">Phân tách từ khoá bằng dấu phẩy</string>
+    <string name="mobile_settings_not_set">Chưa đặt</string>
+    <string name="mobile_settings_section_playback">Phát lại</string>
+    <string name="mobile_settings_play_timeout">Thời gian chờ phát</string>
+    <string name="mobile_settings_play_engine">Công cụ phát</string>
+    <string name="mobile_settings_background">Phát nền</string>
+    <string name="mobile_settings_background_off">Tắt</string>
+    <string name="mobile_settings_background_bg">Nền</string>
+    <string name="mobile_settings_buffer">Bộ đệm</string>
+    <string name="mobile_settings_seconds_value">%1$d giây</string>
+    <string name="mobile_settings_render_mode">Chế độ kết xuất</string>
+    <string name="mobile_settings_tunnel">Phát qua tunnel</string>
+    <string name="mobile_settings_tunnel_desc">Cần kết xuất Surface</string>
+    <string name="mobile_settings_audio_passthrough">Truyền âm thanh</string>
+    <string name="mobile_settings_audio_passthrough_desc">Truyền HDMI / âm ly</string>
+    <string name="mobile_settings_audio_soft">Ưu tiên âm thanh phần mềm</string>
+    <string name="mobile_settings_audio_soft_desc">Giải mã phần mềm ưu tiên bộ giải mã âm thanh</string>
+    <string name="mobile_settings_video_soft">Ưu tiên hình ảnh phần mềm</string>
+    <string name="mobile_settings_video_soft_desc">Giải mã phần mềm ưu tiên bộ giải mã hình ảnh</string>
+    <string name="mobile_settings_dv_output">Xuất Dolby Vision</string>
+    <string name="mobile_settings_search_threads">Luồng tìm kiếm</string>
+    <string name="mobile_settings_search_sites">Trang tìm kiếm</string>
+    <string name="mobile_settings_manage">Nhấn để quản lý</string>
+    <string name="mobile_settings_section_cache">Tải trước và bộ nhớ đệm</string>
+    <string name="mobile_settings_preload">Bật tải trước</string>
+    <string name="mobile_settings_preload_desc">Tải trước bằng PlayerManager</string>
+    <string name="mobile_settings_preload_next">Tải trước tập tiếp theo</string>
+    <string name="mobile_settings_preload_next_desc">Chỉ áp dụng cho Exo</string>
+    <string name="mobile_settings_preload_threads">Luồng tải trước</string>
+    <string name="mobile_settings_cache_size">Kích thước bộ nhớ đệm</string>
+    <string name="mobile_settings_cache_days">Số ngày lưu đệm</string>
+    <string name="mobile_settings_days_value">%1$d ngày</string>
+    <string name="mobile_settings_clear_cache">Xoá bộ nhớ đệm</string>
+    <string name="mobile_settings_export">Xuất chẩn đoán</string>
+    <string name="mobile_settings_export_desc">Ghi vào Download</string>
+    <string name="mobile_settings_export_failed">Xuất thất bại, hãy kiểm tra quyền lưu trữ</string>
+    <string name="mobile_settings_export_ok">Đã xuất vào %1$s</string>
+    <string name="mobile_settings_section_update">Cập nhật</string>
+    <string name="mobile_settings_force_update">Buộc cập nhật</string>
+    <string name="mobile_settings_force_update_desc">Tự động tải và áp dụng phiên bản mới</string>
+    <string name="mobile_settings_reset_ua">Đặt lại UA</string>
+    <string name="mobile_settings_reset_ua_desc">Xoá giá trị tuỳ chỉnh</string>
+    <string name="mobile_settings_section_about">Thông tin</string>
+    <string name="mobile_settings_version">Phiên bản</string>
+    <string name="mobile_settings_load_failed">Tải thất bại</string>
+    <string name="mobile_settings_enter_url">Nhập URL API</string>
+    <string name="mobile_settings_line_name_hint">Tên kênh (tuỳ chọn)</string>
+    <string name="mobile_settings_url_hint">Nhập URL API</string>
+    <string name="mobile_settings_loading">Đang tải…</string>
+    <string name="mobile_settings_save_load">Lưu và tải</string>
+    <string name="mobile_settings_cancel">Huỷ</string>
+    <string name="mobile_settings_save">Lưu</string>
+    <string name="mobile_settings_done">Xong</string>
+    <string name="mobile_settings_sites_selected">Đã chọn %1$d / %2$d</string>
+    <string name="mobile_settings_select_all">Chọn tất cả</string>
+    <string name="mobile_settings_select_none">Bỏ chọn tất cả</string>
+    <string name="mobile_settings_sites_empty">API này không có trang tìm kiếm</string>
+    <string name="mobile_settings_clear_cache_confirm">Xoá bộ nhớ đệm?</string>
+    <string name="mobile_settings_clear_cache_desc">Bộ nhớ đệm hình ảnh và tệp tạm sẽ bị xoá. Yêu thích và lịch sử vẫn được giữ.</string>
+    <string name="mobile_settings_clear">Xoá</string>
+    <string name="mobile_settings_current">Hiện tại</string>
+    <string name="mobile_settings_load">Tải</string>
+    <string name="mobile_settings_repo_lines">Kênh trong kho</string>
+
+</resources>

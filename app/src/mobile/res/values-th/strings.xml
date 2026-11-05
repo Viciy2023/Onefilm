@@ -1,0 +1,187 @@
+<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+
+    <!-- App -->
+    <string name="app_keep">เก็บไว้</string>
+    <string name="app_history">ประวัติ</string>
+
+    <!-- Nav -->
+    <string name="nav_vod">ภาพยนตร์</string>
+    <string name="nav_live">ถ่ายทอดสด</string>
+    <string name="nav_setting">ตั้งค่า</string>
+
+    <!-- Menu -->
+    <string name="menu_sync">ซิงค์</string>
+    <string name="menu_delete">ลบ</string>
+    <string name="menu_search">ค้นหา</string>
+    <string name="menu_site">เว็บ</string>
+    <string name="menu_reset">รีเซ็ต</string>
+
+    <!-- Vod -->
+    <string name="vod_home">หน้าแรก</string>
+
+    <!-- Detail -->
+    <string name="detail_flag">สาย</string>
+    <string name="detail_episode">ตอน</string>
+    <string name="detail_quality">คุณภาพ</string>
+    <string name="detail_content">เรื่องย่อ</string>
+    <string name="detail_search">กำลังค้นหา <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_favorite_add">เพิ่มในรายการโปรด</string>
+    <string name="detail_favorite_added">เพิ่มในรายการโปรดแล้ว</string>
+
+    <!-- Device -->
+    <string name="device_select">เลือกอุปกรณ์</string>
+    <string name="device_offline">อุปกรณ์ออฟไลน์</string>
+    <string name="device_scan">โปรดสแกนคิวอาร์โค้ดเพื่อผูก</string>
+
+    <!-- Control -->
+    <string name="control_speed">ความเร็ว</string>
+    <string name="control_scale">อัตราส่วน</string>
+    <string name="control_track">แทร็ก</string>
+    <string name="control_other">อื่น ๆ</string>
+
+    <!-- Dialog -->
+    <string name="dialog_delete_record">ลบรายการทั้งหมด?</string>
+    <string name="dialog_delete_keep">รายการที่เก็บไว้ทั้งหมดจะถูกลบ</string>
+    <string name="dialog_delete_history">ประวัติทั้งหมดจะถูกลบ</string>
+
+    <!-- Timer -->
+    <string name="timer_5">5 นาที</string>
+    <string name="timer_15">15 นาที</string>
+    <string name="timer_30">30 นาที</string>
+    <string name="timer_60">1 ชั่วโมง</string>
+    <string name="timer_delay">เพิ่ม 5 นาที</string>
+    <string name="timer_cancel">ยกเลิกตัวจับเวลา</string>
+
+    <!-- Hint -->
+    <string name="shortcut">เพิ่มทางลัดแล้ว</string>
+
+    <string-array name="select_background">
+        <item>ปิด</item>
+        <item>เปิด</item>
+        <item>PiP</item>
+    </string-array>
+
+    <!-- Mobile App -->
+    <string name="mobile_app_brand">OneFilm</string>
+    <string name="mobile_tab_home">หน้าแรก</string>
+    <string name="mobile_tab_library">รายการโปรด</string>
+    <string name="mobile_home_empty">ไม่มีเนื้อหา</string>
+    <string name="mobile_home_recommend">แนะนำ</string>
+    <string name="mobile_home_continue">ดูต่อ</string>
+    <string name="mobile_home_continue_empty">ยังไม่มีประวัติการรับชม</string>
+    <string name="mobile_search_hint">ค้นหาหนัง รายการ หรือนักแสดง</string>
+    <string name="mobile_search_clear">ล้าง</string>
+    <string name="mobile_search_idle">ป้อนคำค้นเพื่อเริ่มค้นหา</string>
+    <string name="mobile_search_empty">ไม่พบผลลัพธ์สำหรับ “%1$s”</string>
+    <string name="mobile_search_result_count">%1$d ผลลัพธ์</string>
+    <string name="mobile_search_searching">กำลังค้นหา</string>
+    <string name="mobile_library_history">ประวัติ</string>
+    <string name="mobile_library_empty">ยังไม่มีอะไรที่นี่</string>
+    <string name="mobile_library_swipe_hint">ปัดซ้ายหรือขวาบนรายการเพื่อลบ</string>
+    <string name="mobile_unnamed">ไม่มีชื่อ</string>
+    <string name="mobile_live_desc">เปิดรายการช่องและเลือกช่องเพื่อรับชม</string>
+    <string name="mobile_live_open">เปิดถ่ายทอดสด</string>
+    <string name="mobile_retry">ลองใหม่</string>
+    <string name="mobile_back">‹ ย้อนกลับ</string>
+    <string name="mobile_category">หมวดหมู่</string>
+    <string name="mobile_filter">ตัวกรอง</string>
+    <string name="mobile_category_load_failed">โหลดหมวดหมู่ไม่สำเร็จ</string>
+
+    <!-- Mobile Settings -->
+    <string name="mobile_settings_section_api">การตั้งค่า API</string>
+    <string name="mobile_settings_vod_api">API VOD</string>
+    <string name="mobile_settings_live_api">API ถ่ายทอดสด</string>
+    <string name="mobile_settings_wall_api">API วอลเปเปอร์</string>
+    <string name="mobile_settings_section_appearance">รูปลักษณ์</string>
+    <string name="mobile_settings_theme">ธีม</string>
+    <string name="mobile_settings_theme_minimal">มินิมอล</string>
+    <string name="mobile_settings_theme_dark">มืด</string>
+    <string name="mobile_settings_theme_system">ตามระบบ</string>
+    <string name="mobile_settings_language">ภาษา</string>
+    <string name="mobile_settings_wallpaper">วอลเปเปอร์</string>
+    <string name="mobile_settings_follow_config">ตามการตั้งค่า</string>
+    <string name="mobile_settings_incognito">โหมดไม่ระบุตัวตน</string>
+    <string name="mobile_settings_incognito_desc">ไม่บันทึกประวัติหรือแคช</string>
+    <string name="mobile_settings_section_subtitle">คำบรรยาย</string>
+    <string name="mobile_settings_subtitle_position">ตำแหน่ง</string>
+    <string name="mobile_settings_subtitle_color">สี</string>
+    <string name="mobile_settings_subtitle_edge">ขอบ</string>
+    <string name="mobile_settings_subtitle_size">ขนาด</string>
+    <string name="mobile_settings_subtitle_style">สไตล์</string>
+    <string name="mobile_settings_style_original">ต้นฉบับ</string>
+    <string name="mobile_settings_style_system">ระบบ</string>
+    <string name="mobile_settings_style_custom">กำหนดเอง</string>
+    <string name="mobile_settings_section_danmaku">คอมเมนต์ลอย</string>
+    <string name="mobile_settings_danmaku_show">แสดงคอมเมนต์ลอย</string>
+    <string name="mobile_settings_danmaku_show_desc">โหลดและแสดงคอมเมนต์ลอย</string>
+    <string name="mobile_settings_danmaku_size">ขนาดตัวอักษร</string>
+    <string name="mobile_settings_danmaku_alpha">ความทึบ</string>
+    <string name="mobile_settings_danmaku_speed">ความเร็ว</string>
+    <string name="mobile_settings_danmaku_lines">จำนวนแถวที่เลื่อน</string>
+    <string name="mobile_settings_danmaku_lines_value">%1$d แถว</string>
+    <string name="mobile_settings_danmaku_block">คำที่ถูกบล็อก</string>
+    <string name="mobile_settings_danmaku_block_desc">คั่นคำด้วยจุลภาค</string>
+    <string name="mobile_settings_not_set">ยังไม่ได้ตั้ง</string>
+    <string name="mobile_settings_section_playback">การเล่น</string>
+    <string name="mobile_settings_play_timeout">เวลาหมดอายุการเล่น</string>
+    <string name="mobile_settings_play_engine">เอนจินเล่น</string>
+    <string name="mobile_settings_background">เล่นเบื้องหลัง</string>
+    <string name="mobile_settings_background_off">ปิด</string>
+    <string name="mobile_settings_background_bg">พื้นหลัง</string>
+    <string name="mobile_settings_buffer">บัฟเฟอร์</string>
+    <string name="mobile_settings_seconds_value">%1$d วินาที</string>
+    <string name="mobile_settings_render_mode">โหมดเรนเดอร์</string>
+    <string name="mobile_settings_tunnel">เล่นผ่านทันเนล</string>
+    <string name="mobile_settings_tunnel_desc">ต้องใช้การเรนเดอร์ Surface</string>
+    <string name="mobile_settings_audio_passthrough">ส่งผ่านเสียง</string>
+    <string name="mobile_settings_audio_passthrough_desc">ส่งผ่าน HDMI / เครื่องขยายเสียง</string>
+    <string name="mobile_settings_audio_soft">เลือกใช้เสียงแบบซอฟต์แวร์</string>
+    <string name="mobile_settings_audio_soft_desc">การถอดรหัสซอฟต์แวร์จะใช้ตัวถอดรหัสเสียงก่อน</string>
+    <string name="mobile_settings_video_soft">เลือกใช้วิดีโอแบบซอฟต์แวร์</string>
+    <string name="mobile_settings_video_soft_desc">การถอดรหัสซอฟต์แวร์จะใช้ตัวถอดรหัสวิดีโอก่อน</string>
+    <string name="mobile_settings_dv_output">เอาต์พุต Dolby Vision</string>
+    <string name="mobile_settings_search_threads">เธรดค้นหา</string>
+    <string name="mobile_settings_search_sites">เว็บที่ค้นหา</string>
+    <string name="mobile_settings_manage">แตะเพื่อจัดการ</string>
+    <string name="mobile_settings_section_cache">โหลดล่วงหน้าและแคช</string>
+    <string name="mobile_settings_preload">เปิดโหลดล่วงหน้า</string>
+    <string name="mobile_settings_preload_desc">โหลดล่วงหน้าด้วย PlayerManager</string>
+    <string name="mobile_settings_preload_next">โหลดตอนถัดไปล่วงหน้า</string>
+    <string name="mobile_settings_preload_next_desc">มีผลกับ Exo เท่านั้น</string>
+    <string name="mobile_settings_preload_threads">เธรดโหลดล่วงหน้า</string>
+    <string name="mobile_settings_cache_size">ขนาดแคช</string>
+    <string name="mobile_settings_cache_days">จำนวนวันแคช</string>
+    <string name="mobile_settings_days_value">%1$d วัน</string>
+    <string name="mobile_settings_clear_cache">ล้างแคช</string>
+    <string name="mobile_settings_export">ส่งออกรายงานวินิจฉัย</string>
+    <string name="mobile_settings_export_desc">เขียนไปยัง Download</string>
+    <string name="mobile_settings_export_failed">ส่งออกไม่สำเร็จ โปรดตรวจสอบสิทธิ์พื้นที่จัดเก็บ</string>
+    <string name="mobile_settings_export_ok">ส่งออกไปยัง %1$s แล้ว</string>
+    <string name="mobile_settings_section_update">อัปเดต</string>
+    <string name="mobile_settings_force_update">บังคับอัปเดต</string>
+    <string name="mobile_settings_force_update_desc">ดาวน์โหลดและใช้เวอร์ชันใหม่โดยอัตโนมัติ</string>
+    <string name="mobile_settings_reset_ua">รีเซ็ต UA</string>
+    <string name="mobile_settings_reset_ua_desc">ล้างค่ากำหนดเอง</string>
+    <string name="mobile_settings_section_about">เกี่ยวกับ</string>
+    <string name="mobile_settings_version">เวอร์ชัน</string>
+    <string name="mobile_settings_load_failed">โหลดไม่สำเร็จ</string>
+    <string name="mobile_settings_enter_url">ป้อน URL ของ API</string>
+    <string name="mobile_settings_line_name_hint">ชื่อสาย (ไม่บังคับ)</string>
+    <string name="mobile_settings_url_hint">ป้อน URL ของ API</string>
+    <string name="mobile_settings_loading">กำลังโหลด…</string>
+    <string name="mobile_settings_save_load">บันทึกและโหลด</string>
+    <string name="mobile_settings_cancel">ยกเลิก</string>
+    <string name="mobile_settings_save">บันทึก</string>
+    <string name="mobile_settings_done">เสร็จ</string>
+    <string name="mobile_settings_sites_selected">เลือก %1$d / %2$d</string>
+    <string name="mobile_settings_select_all">เลือกทั้งหมด</string>
+    <string name="mobile_settings_select_none">ไม่เลือกเลย</string>
+    <string name="mobile_settings_sites_empty">API นี้ไม่มีเว็บที่ค้นหาได้</string>
+    <string name="mobile_settings_clear_cache_confirm">ล้างแคช?</string>
+    <string name="mobile_settings_clear_cache_desc">แคชรูปภาพและไฟล์ชั่วคราวจะถูกลบ รายการโปรดและประวัติยังคงอยู่</string>
+    <string name="mobile_settings_clear">ล้าง</string>
+    <string name="mobile_settings_current">ปัจจุบัน</string>
+    <string name="mobile_settings_load">โหลด</string>
+    <string name="mobile_settings_repo_lines">สายในคลัง</string>
+
+</resources>
