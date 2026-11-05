@@ -1,5 +1,6 @@
 package com.onefilm.android.tv.compose.feature.player
 
+
 import android.app.Activity
 import android.app.PictureInPictureParams
 import android.content.Context
@@ -102,6 +103,8 @@ import com.onefilm.android.tv.compose.bridge.DlnaDevice
 import com.onefilm.android.tv.compose.design.component.AppLogoLoading
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import com.onefilm.android.tv.compose.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * 全屏播放器的按键状态。Activity 在控件隐藏时直接消费确认/左右键，
@@ -145,7 +148,7 @@ fun VideoSurface(modifier: Modifier = Modifier) {
     }
     if (legacy == null || player == null) {
         Box(modifier.background(Color.Black), contentAlignment = Alignment.Center) {
-            Text("暂无播放内容", color = Ink)
+            Text(stringResource(R.string.player_empty), color = Ink)
         }
         return
     }
@@ -284,11 +287,20 @@ fun PlayerControls(
         }
     }
 
+    val resContext = LocalContext.current
+
     fun seekWithHint(deltaMs: Long) {
         PlaybackSession.seekBy(deltaMs)
         val target = (PlaybackSession.positionMs() + deltaMs).coerceAtLeast(0L)
-        val action = if (deltaMs > 0) "快进" else "快退"
-        seekHint = "$action ${kotlin.math.abs(deltaMs) / 1000} 秒 · ${formatTime(target)}"
+        val action = resContext.getString(
+            if (deltaMs > 0) R.string.player_forward else R.string.player_rewind
+        )
+        seekHint = resContext.getString(
+            R.string.player_seek_hint,
+            action,
+            kotlin.math.abs(deltaMs) / 1000,
+            formatTime(target),
+        )
     }
 
     SideEffect {
@@ -438,7 +450,7 @@ fun PlayerControls(
                 AppLogoLoading(size = 64.dp)
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "哎呀！正在加载中呢，你等等呀！",
+                    text = stringResource(R.string.player_loading_hint),
                     color = Ink,
                     fontSize = 13.sp,
                 )
@@ -456,7 +468,7 @@ fun PlayerControls(
             ) {
                 Text(message, color = Ink, fontSize = 12.sp)
                 Spacer(Modifier.width(8.dp))
-                TextAction("重试") { PlaybackSession.retry() }
+                TextAction(stringResource(R.string.detail_retry)) { PlaybackSession.retry() }
             }
         }
 
@@ -479,7 +491,7 @@ fun PlayerControls(
                     }
                     Text(
                         text = buildString {
-                            append(PlaybackSession.title.ifBlank { "正在播放" })
+                            append(PlaybackSession.title.ifBlank { stringResource(R.string.player_playing) })
                             val episodeName = PlaybackSession.currentEpisode?.name.orEmpty()
                             if (episodeName.isNotBlank()) {
                                 append("  ")
@@ -585,13 +597,13 @@ fun PlayerControls(
             PanelScrim(onDismiss = { showEpisodes = false }) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "选集 · ${PlaybackSession.queue.size} 集",
+                        text = stringResource(R.string.player_episodes, PlaybackSession.queue.size),
                         color = Ink,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                     )
                     Spacer(Modifier.weight(1f))
-                    TextAction("关闭") { showEpisodes = false }
+                    TextAction(stringResource(R.string.common_close)) { showEpisodes = false }
                 }
                 Spacer(Modifier.height(12.dp))
                 LazyVerticalGrid(
@@ -707,7 +719,7 @@ fun InlinePlayer(onExpand: () -> Unit, modifier: Modifier = Modifier) {
         )
         if (focused) {
             Text(
-                text = "按确认全屏",
+                text = stringResource(R.string.player_confirm_fullscreen),
                 color = Color.White,
                 fontSize = 12.sp,
                 modifier = Modifier

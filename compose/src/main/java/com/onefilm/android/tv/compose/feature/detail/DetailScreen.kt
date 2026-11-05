@@ -1,5 +1,6 @@
 package com.onefilm.android.tv.compose.feature.detail
 
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -65,6 +66,8 @@ import com.onefilm.android.tv.compose.design.component.AppLogoLoading
 import com.onefilm.android.tv.compose.design.component.RemoteImage
 import com.onefilm.android.tv.compose.feature.player.InlinePlayer
 import kotlinx.coroutines.delay
+import com.onefilm.android.tv.compose.R
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun DetailScreen(
@@ -82,7 +85,7 @@ fun DetailScreen(
 ) {
     when (state) {
         DetailUiState.Loading -> DetailContent(
-            info = previewDetailInfo(previewTitle, previewPoster),
+            info = previewDetailInfo(previewTitle, previewPoster, stringResource(R.string.detail_unnamed)),
             onBack = onBack,
             onPlay = onPlay,
             favorite = favorite,
@@ -93,7 +96,7 @@ fun DetailScreen(
             loading = true,
         )
         is DetailUiState.Error -> DetailContent(
-            info = previewDetailInfo(previewTitle, previewPoster),
+            info = previewDetailInfo(previewTitle, previewPoster, stringResource(R.string.detail_unnamed)),
             onBack = onBack,
             onPlay = onPlay,
             favorite = favorite,
@@ -101,7 +104,7 @@ fun DetailScreen(
             playingUrl = null,
             onExpandPlayer = onExpandPlayer,
             playingEpisodeUrl = null,
-            errorMessage = "详情加载失败，请重试",
+            errorMessage = stringResource(R.string.detail_load_failed),
             onRetry = onRetry,
         )
         is DetailUiState.Content -> DetailContent(
@@ -117,10 +120,10 @@ fun DetailScreen(
     }
 }
 
-private fun previewDetailInfo(title: String?, posterUrl: String?): DetailInfo = DetailInfo(
+private fun previewDetailInfo(title: String?, posterUrl: String?, fallbackTitle: String): DetailInfo = DetailInfo(
     key = "",
     id = "",
-    title = title.orEmpty().ifBlank { "影片详情" },
+    title = title.orEmpty().ifBlank { fallbackTitle },
     posterUrl = posterUrl,
     description = null,
     year = null,
@@ -199,7 +202,7 @@ private fun DetailContent(
                     ) {
                         Text(errorMessage, color = Color.White, fontSize = 14.sp)
                         Spacer(Modifier.height(8.dp))
-                        Button(onClick = onRetry) { Text("重试") }
+                        Button(onClick = onRetry) { Text(stringResource(R.string.detail_retry)) }
                     }
                 } else if (playingUrl != null) {
                     if (inlineReady) {
@@ -224,7 +227,7 @@ private fun DetailContent(
                             .background(Brush.verticalGradient(listOf(Color(0x22000000), Color(0xAA000000)))),
                     )
                     Text(
-                        text = "点击播放",
+                        text = stringResource(R.string.detail_click_play),
                         color = Color.White,
                         fontSize = 16.sp,
                         modifier = Modifier
@@ -238,16 +241,16 @@ private fun DetailContent(
 
             Column(Modifier.weight(0.60f).fillMaxHeight()) {
                 Text(
-                    text = info.title.ifBlank { "未命名" },
+                    text = info.title.ifBlank { stringResource(R.string.detail_unnamed) },
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 val meta = buildList {
-                    if (!info.sourceName.isNullOrBlank()) add("来源：${info.sourceName}")
-                    if (!info.year.isNullOrBlank()) add("年份：${info.year}")
-                    if (!info.area.isNullOrBlank()) add("地区：${info.area}")
+                    if (!info.sourceName.isNullOrBlank()) add(stringResource(R.string.detail_source, info.sourceName))
+                    if (!info.year.isNullOrBlank()) add(stringResource(R.string.detail_year, info.year))
+                    if (!info.area.isNullOrBlank()) add(stringResource(R.string.detail_area, info.area))
                     if (!info.remarks.isNullOrBlank()) add(info.remarks.orEmpty())
                 }.joinToString("    ")
                 if (meta.isNotBlank()) {
@@ -265,15 +268,15 @@ private fun DetailContent(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     info.actor?.let {
-                        Text("演员：$it", fontSize = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(stringResource(R.string.detail_actor, it), fontSize = 14.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                     info.director?.let {
-                        Text("导演：$it", fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(stringResource(R.string.detail_director, it), fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     val address = selectedFlag?.episodes?.firstOrNull()?.url ?: info.playUrl
                     if (!address.isNullOrBlank()) {
                         Text(
-                            "播放地址：$address",
+                            stringResource(R.string.detail_play_url, address),
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 2,
@@ -282,7 +285,7 @@ private fun DetailContent(
                     }
                     info.description?.let {
                         Text(
-                            "内容简介：$it",
+                            stringResource(R.string.detail_content, it),
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 6,
@@ -293,13 +296,13 @@ private fun DetailContent(
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     DetailAction(
-                        label = if (reversed) "正序" else "倒序",
+                        label = if (reversed) stringResource(R.string.detail_asc_order) else stringResource(R.string.detail_desc_order),
                         modifier = Modifier.focusRequester(firstActionFocus),
                     ) {
                         reversed = !reversed
                     }
                     DetailAction(
-                        label = if (favorite) "已收藏" else "加入收藏",
+                        label = if (favorite) stringResource(R.string.detail_favorited) else stringResource(R.string.detail_add_favorite),
                         active = favorite,
                         onClick = onToggleFavorite,
                     )
@@ -309,14 +312,14 @@ private fun DetailContent(
 
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("线路", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(52.dp))
+            Text(stringResource(R.string.detail_lines), fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(52.dp))
             LazyRow(
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 itemsIndexed(info.flags) { index, flag ->
                     DetailLineChip(
-                        label = flag.name.ifBlank { "默认线路" },
+                        label = flag.name.ifBlank { stringResource(R.string.detail_default_line) },
                         selected = index == selectedFlagIndex ||
                             (!manualFlagSelection && index == playingFlagIndex),
                         onClick = {
@@ -337,7 +340,7 @@ private fun DetailContent(
         ) {
             itemsIndexed(visibleEpisodes) { _, episode ->
                 EpisodeButton(
-                    label = episode.name.ifBlank { "未命名" },
+                    label = episode.name.ifBlank { stringResource(R.string.detail_unnamed) },
                     playing = playingEpisodeUrl != null && episode.url == playingEpisodeUrl,
                     onClick = { onPlay(selectedFlag?.name, episode.url) },
                 )

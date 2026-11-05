@@ -2,6 +2,7 @@
 
 package com.onefilm.android.tv.compose.feature.category
 
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -59,6 +60,8 @@ import com.onefilm.android.tv.compose.bridge.CategoryFilterGroup
 import com.onefilm.android.tv.compose.bridge.CategoryPage
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.design.component.TvPosterCard
+import com.onefilm.android.tv.compose.R
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun CategoryScreen(
@@ -85,7 +88,7 @@ fun CategoryScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(state.message, style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(12.dp))
-                Button(onClick = onRetry) { Text("重试") }
+                Button(onClick = onRetry) { Text(stringResource(R.string.detail_retry)) }
             }
         }
         is CategoryUiState.Content -> CategoryContent(

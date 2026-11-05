@@ -1,5 +1,6 @@
 package com.onefilm.android.tv.compose.feature.player
 
+
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -16,6 +17,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import com.onefilm.android.tv.compose.R
+import androidx.compose.ui.res.stringResource
 
 /** 弹幕开关与渲染：真实调用旧 DanmakuApi 搜索并加载弹幕文件。 */
 object DanmakuController {
@@ -29,7 +32,7 @@ object DanmakuController {
         private set
     var loading by mutableStateOf(false)
         private set
-    var status by mutableStateOf("默认")
+    var statusRes by mutableIntStateOf(R.string.common_default)
         private set
     var densityLines by mutableIntStateOf(8)
         private set
@@ -119,14 +122,14 @@ object DanmakuController {
     fun updateEnabled(value: Boolean) {
         enabled = value
         view?.setEnabled(value)
-        status = if (value) "开" else "关"
+        statusRes = if (value) R.string.common_on else R.string.common_off
     }
 
     fun toggle(context: Context, key: String, dataSource: DanmakuDataSource) {
         enabled = !enabled
         view?.setEnabled(enabled)
         if (enabled && loadedKey != key) load(context, key, dataSource)
-        if (!enabled) status = "关"
+        if (!enabled) statusRes = R.string.common_off
     }
 
     fun ensureLoaded(context: Context, key: String, dataSource: DanmakuDataSource) {
@@ -137,17 +140,17 @@ object DanmakuController {
     private fun load(context: Context, key: String, dataSource: DanmakuDataSource) {
         if (loading) return
         if (loadedKey == key && xml != null) {
-            status = "开"
+            statusRes = R.string.common_on
             return
         }
         val episode = PlaybackSession.currentEpisode
         val name = PlaybackSession.title
         if (name.isBlank() || episode == null) {
-            status = "无源"
+            statusRes = R.string.player_no_source
             return
         }
         loading = true
-        status = "加载中"
+        statusRes = R.string.settings_loading
         scope.launch {
             val sources = runCatching { dataSource.search(name, episode.name) }.getOrDefault(emptyList())
             val content = sources.firstOrNull()?.let { source ->
@@ -157,12 +160,12 @@ object DanmakuController {
             if (content.isNullOrBlank()) {
                 enabled = false
                 view?.setEnabled(false)
-                status = "无源"
+                statusRes = R.string.player_no_source
                 return@launch
             }
             xml = content
             loadedKey = key
-            status = "开"
+            statusRes = R.string.common_on
             view?.let { target ->
                 runCatching { target.setItems(parseFiltered(content)) }
                 target.setEnabled(true)

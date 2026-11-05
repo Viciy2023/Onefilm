@@ -1,5 +1,6 @@
 package com.onefilm.android.tv.compose.feature.lines
 
+
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.rememberCoroutineScope
@@ -48,6 +49,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.onefilm.android.tv.compose.bridge.ConfigLine
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import kotlinx.coroutines.delay
+import com.onefilm.android.tv.compose.R
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun LinesScreen(
@@ -89,7 +92,7 @@ fun LinesScreen(
         ) {
             Column(Modifier.padding(horizontal = 10.dp, vertical = 10.dp)) {
                 Text(
-                    text = if (depotName.isBlank()) "线路" else "仓库：$depotName",
+                    text = if (depotName.isBlank()) stringResource(R.string.detail_lines) else stringResource(R.string.lines_depot, depotName),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -112,7 +115,7 @@ fun LinesScreen(
                 ) {
                     if (lines.isEmpty()) {
                         Text(
-                            text = if (depotName.isBlank()) "暂无线路，请先在配置弹窗中添加。" else "该仓库没有可选线路",
+                            text = if (depotName.isBlank()) stringResource(R.string.lines_empty_hint) else stringResource(R.string.lines_no_line),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 14.sp,
                             modifier = Modifier.padding(vertical = 16.dp),
@@ -251,11 +254,11 @@ private fun LineRow(
                 modifier = Modifier.weight(1f),
             )
             if (line.current) {
-                Text("当前", color = MaterialTheme.colorScheme.primary, fontSize = 11.sp)
+                Text(stringResource(R.string.common_current), color = MaterialTheme.colorScheme.primary, fontSize = 11.sp)
                 Spacer(Modifier.width(6.dp))
             }
             if (line.type == 1) {
-                Text("直播", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                Text(stringResource(R.string.nav_live), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                 Spacer(Modifier.width(6.dp))
             }
         }
@@ -282,7 +285,7 @@ private fun LineRow(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "删除",
+                text = stringResource(R.string.common_delete),
                 fontSize = 12.sp,
                 color = when {
                     deleteFocused -> MaterialTheme.colorScheme.onError

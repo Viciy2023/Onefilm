@@ -1,5 +1,6 @@
 package com.onefilm.android.tv.compose.feature.player
 
+
 import android.app.Activity
 import android.app.PictureInPictureParams
 import android.content.Context
@@ -103,6 +104,8 @@ import com.onefilm.android.tv.compose.bridge.DlnaDevice
 import com.onefilm.android.tv.compose.design.component.AppLogoLoading
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import com.onefilm.android.tv.compose.R
+import androidx.compose.ui.res.stringResource
 
 /**
  * 播放器渲染组件（进度条、菜单行、按钮、弹窗）。
@@ -269,7 +272,7 @@ internal fun MenuRow(
             var menuRequesterAssigned = false
             val visibleEntries = entries.take(visible)
             val firstEnabledIndex = visibleEntries.indexOfFirst { it.enabled }
-            val nextEpisodeIndex = visibleEntries.indexOfFirst { it.enabled && it.label.startsWith("下集") }
+            val nextEpisodeIndex = visibleEntries.indexOfFirst { it.enabled && it.label.startsWith(stringResource(R.string.player_next_ep)) }
             val defaultIndex = if (nextEpisodeIndex >= 0) nextEpisodeIndex else firstEnabledIndex
             visibleEntries.forEachIndexed { index, entry ->
                 val requester = if (!menuRequesterAssigned && index == defaultIndex) {
@@ -281,7 +284,7 @@ internal fun MenuRow(
                 MenuText(entry, widths[index], requester)
             }
             if (hasOverflow) {
-                MenuText(PlayerMenuEntry("更多") { onMore(entries.drop(visible)) }, moreWidth)
+                MenuText(PlayerMenuEntry(stringResource(R.string.common_more)) { onMore(entries.drop(visible)) }, moreWidth)
             }
             Spacer(Modifier.weight(1f))
             IconAction(
@@ -400,14 +403,14 @@ internal fun DlnaPopup(
                 .padding(10.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("投屏设备", color = Ink, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.cast_device), color = Ink, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.weight(1f))
-                TextAction("关闭", onClick = onDismiss)
+                TextAction(stringResource(R.string.settings_off), onClick = onDismiss)
             }
             Spacer(Modifier.height(6.dp))
             when {
-                loading -> Text("正在搜索设备…", color = InkDim, fontSize = 12.sp)
-                devices.isEmpty() -> Text("未发现投屏设备", color = InkDim, fontSize = 12.sp)
+                loading -> Text(stringResource(R.string.cast_searching), color = InkDim, fontSize = 12.sp)
+                devices.isEmpty() -> Text(stringResource(R.string.cast_none), color = InkDim, fontSize = 12.sp)
                 else -> devices.forEach { device ->
                     FlatTile(
                         text = device.name.ifBlank { device.id },
@@ -441,9 +444,9 @@ internal fun OverflowPopup(
                 .padding(8.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("更多", color = Ink, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.common_more), color = Ink, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 Spacer(Modifier.weight(1f))
-                TextAction("关闭", onClick = onDismiss)
+                TextAction(stringResource(R.string.settings_off), onClick = onDismiss)
             }
             Spacer(Modifier.height(6.dp))
             LazyVerticalGrid(

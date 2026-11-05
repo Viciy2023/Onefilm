@@ -1,6 +1,7 @@
 @file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package com.onefilm.android.tv.compose.feature.settings
 
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
@@ -81,6 +82,8 @@ import com.onefilm.android.tv.compose.bridge.SearchSiteItem
 import com.onefilm.android.tv.compose.design.ThemeController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.onefilm.android.tv.compose.R
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun SettingsScreen(
@@ -112,6 +115,7 @@ fun SettingsScreen(
     val firstSettingFocus = remember { FocusRequester() }
     val editFieldFocus = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
+    val resContext = LocalContext.current
     LaunchedEffect(Unit) {
         // 只请求一次初始焦点：反复请求会在用户已经向下移动后把焦点拽回第一项。
         delay(200)
@@ -155,9 +159,9 @@ fun SettingsScreen(
         messageType = type
         configMessageSuccess = ok
         configMessage = if (ok) {
-            "${label}加载成功"
+            resContext.getString(R.string.settings_load_ok, label)
         } else {
-            "${label}加载失败：${message.ifBlank { "请检查地址和网络" }}"
+            resContext.getString(R.string.settings_load_fail, label, message.ifBlank { resContext.getString(R.string.settings_check_url) })
         }
     }
 
@@ -237,12 +241,12 @@ fun SettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
             item {
-            SettingsGroupTitle("网络接口")
+            SettingsGroupTitle(stringResource(R.string.settings_network))
             }
             item {
             ConfigBlock(
                 modifier = Modifier.fillMaxWidth().height(32.dp),
-                title = "点播接口",
+                title = stringResource(R.string.settings_vod_url),
                 value = snapshot.configUrl,
                 loading = reloadingType == 0,
                 initialFocus = configRowFocus[0],
@@ -256,10 +260,10 @@ fun SettingsScreen(
                                 onConfigChanged()
                                 snapshot = dataSource.load()
                             }
-                            reportConfig(0, "点播接口", ok, message)
+                            reportConfig(0, resContext.getString(R.string.settings_vod_url), ok, message)
                         }
                     } else {
-                        reportConfig(0, "点播接口", false, "未配置接口地址")
+                        reportConfig(0, resContext.getString(R.string.settings_vod_url), false, resContext.getString(R.string.settings_no_config_url))
                     }
                 },
             )
@@ -267,7 +271,7 @@ fun SettingsScreen(
             item {
             ConfigBlock(
                 modifier = Modifier.fillMaxWidth().height(32.dp),
-                title = "直播接口",
+                title = stringResource(R.string.settings_live_url),
                 value = snapshot.liveConfigUrl,
                 loading = reloadingType == 1,
                 initialFocus = configRowFocus[1],
@@ -281,10 +285,10 @@ fun SettingsScreen(
                                 onConfigChanged()
                                 snapshot = dataSource.load()
                             }
-                            reportConfig(1, "直播接口", ok, message)
+                            reportConfig(1, resContext.getString(R.string.settings_live_url), ok, message)
                         }
                     } else {
-                        reportConfig(1, "直播接口", false, "未配置接口地址")
+                        reportConfig(1, resContext.getString(R.string.settings_live_url), false, resContext.getString(R.string.settings_no_config_url))
                     }
                 },
             )
@@ -292,7 +296,7 @@ fun SettingsScreen(
             item {
             ConfigBlock(
                 modifier = Modifier.fillMaxWidth().height(32.dp),
-                title = "壁纸接口",
+                title = stringResource(R.string.settings_wall_url),
                 value = snapshot.wallConfigUrl,
                 loading = reloadingType == 2,
                 initialFocus = configRowFocus[2],
@@ -306,24 +310,24 @@ fun SettingsScreen(
                                 onConfigChanged()
                                 snapshot = dataSource.load()
                             }
-                            reportConfig(2, "壁纸接口", ok, message)
+                            reportConfig(2, resContext.getString(R.string.settings_wall_url), ok, message)
                         }
                     } else {
-                        reportConfig(2, "壁纸接口", false, "未配置接口地址")
+                        reportConfig(2, resContext.getString(R.string.settings_wall_url), false, resContext.getString(R.string.settings_no_config_url))
                     }
                 },
             )
             }
 
             item {
-            SettingsGroupTitle("外观")
+            SettingsGroupTitle(stringResource(R.string.settings_appearance))
             }
             item {
             SettingsPanelRow {
                 val languageTags = com.onefilm.android.tv.compose.bridge.LanguageBridge.tags()
                 val languageCurrent = com.onefilm.android.tv.compose.bridge.LanguageBridge.current()
                 ExpandableChoiceRow(
-                    title = "界面语言",
+                    title = stringResource(R.string.settings_language_title),
                     subtitle = com.onefilm.android.tv.compose.bridge.LanguageBridge.labelOf(languageCurrent),
                     options = languageTags.map {
                         com.onefilm.android.tv.compose.bridge.LanguageBridge.labelOf(it) to (it == languageCurrent)
@@ -338,12 +342,12 @@ fun SettingsScreen(
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "外观主题",
-                    subtitle = "默认简约明亮主题",
+                    title = stringResource(R.string.settings_theme_title),
+                    subtitle = stringResource(R.string.settings_theme_default_hint),
                     options = listOf(
-                        "简约" to (snapshot.themeMode == 0),
-                        "暗黑" to (snapshot.themeMode == 1),
-                        "跟随系统" to (snapshot.themeMode == 2),
+                        stringResource(R.string.settings_theme_light) to (snapshot.themeMode == 0),
+                        stringResource(R.string.settings_theme_dark) to (snapshot.themeMode == 1),
+                        stringResource(R.string.settings_theme_system) to (snapshot.themeMode == 2),
                     ),
                 ) { index ->
                     refresh { setThemeMode(index) }
@@ -353,29 +357,29 @@ fun SettingsScreen(
             }
             item {
             SettingsPanelRow {
-                ActionRow("壁纸切换", snapshot.wallpaperLabel) { refresh { cycleWallpaper() } }
+                ActionRow(stringResource(R.string.settings_wall_switch), snapshot.wallpaperLabel) { refresh { cycleWallpaper() } }
             }
             }
             item {
             SettingsPanelRow {
-                ActionRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) { refresh { cycleDoh() } }
+                ActionRow("DoH", snapshot.dohLabel.ifBlank { stringResource(R.string.settings_follow_config) }) { refresh { cycleDoh() } }
             }
             }
             item {
             SettingsPanelRow {
-                SwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
+                SwitchRow(stringResource(R.string.settings_incognito), stringResource(R.string.settings_no_history), snapshot.incognito) {
                     refresh { setIncognito(it) }
                 }
             }
             }
 
             item {
-            SettingsGroupTitle("字幕")
+            SettingsGroupTitle(stringResource(R.string.settings_subtitle))
             }
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "字幕位置",
+                    title = stringResource(R.string.settings_subtitle_position),
                     subtitle = snapshot.subtitlePosition.toInt().toString(),
                     options = listOf(-5f, 0f, 5f, 10f, 20f).map {
                         it.toInt().toString() to (snapshot.subtitlePosition == it)
@@ -385,13 +389,13 @@ fun SettingsScreen(
             }
             item {
             SettingsPanelRow {
-                ActionRow("字幕颜色", snapshot.subtitleColorLabel) { refresh { cycleSubtitleColor() } }
+                ActionRow(stringResource(R.string.settings_subtitle_color), snapshot.subtitleColorLabel) { refresh { cycleSubtitleColor() } }
             }
             }
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "字幕描边",
+                    title = stringResource(R.string.settings_subtitle_outline),
                     options = listOf(0f, 1f, 2f, 4f).map {
                         "%.0f".format(it) to (snapshot.subtitleEdgeWidth == it)
                     },
@@ -401,7 +405,7 @@ fun SettingsScreen(
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "字幕大小",
+                    title = stringResource(R.string.settings_subtitle_size),
                     subtitle = "%.1fx".format(snapshot.subtitleScale),
                     options = listOf(0.8f, 1.0f, 1.2f, 1.5f).map {
                         "%.1fx".format(it) to (snapshot.subtitleScale == it)
@@ -412,23 +416,23 @@ fun SettingsScreen(
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "字幕样式",
-                    subtitle = "原始 / 系统 / 自定义",
+                    title = stringResource(R.string.settings_subtitle_style),
+                    subtitle = stringResource(R.string.settings_style_choices),
                     options = listOf(
-                        "原始" to (snapshot.subtitleStyle == 0),
-                        "系统" to (snapshot.subtitleStyle == 1),
-                        "自定义" to (snapshot.subtitleStyle == 2),
+                        stringResource(R.string.settings_original) to (snapshot.subtitleStyle == 0),
+                        stringResource(R.string.settings_system) to (snapshot.subtitleStyle == 1),
+                        stringResource(R.string.settings_custom) to (snapshot.subtitleStyle == 2),
                     ),
                 ) { index -> refresh { setSubtitleStyle(index) } }
             }
             }
 
             item {
-            SettingsGroupTitle("弹幕")
+            SettingsGroupTitle(stringResource(R.string.settings_danmaku))
             }
             item {
             SettingsPanelRow {
-                SwitchRow("显示弹幕", "加载并渲染弹幕", snapshot.danmakuShow) {
+                SwitchRow(stringResource(R.string.settings_danmaku_show), stringResource(R.string.settings_load_danmaku), snapshot.danmakuShow) {
                     refresh { setDanmakuShow(it) }
                 }
             }
@@ -436,7 +440,7 @@ fun SettingsScreen(
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "弹幕字号",
+                    title = stringResource(R.string.settings_danmaku_size),
                     options = listOf(0.8f, 1.0f, 1.2f, 1.5f).map {
                         "%.1fx".format(it) to (snapshot.danmakuScale == it)
                     },
@@ -446,7 +450,7 @@ fun SettingsScreen(
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "弹幕透明度",
+                    title = stringResource(R.string.settings_danmaku_opacity),
                     options = listOf(0f, 0.25f, 0.5f, 0.7f).map {
                         "${(it * 100).toInt()}%" to (snapshot.danmakuTransparency == it)
                     },
@@ -456,7 +460,7 @@ fun SettingsScreen(
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "弹幕速度",
+                    title = stringResource(R.string.settings_danmaku_speed),
                     options = listOf(6000L, 8000L, 10000L).map {
                         "${it / 1000}s" to (snapshot.danmakuDurationMs == it)
                     },
@@ -466,14 +470,14 @@ fun SettingsScreen(
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "滚动行数",
-                    options = listOf(4, 8, 12).map { "$it 行" to (snapshot.danmakuLines == it) },
+                    title = stringResource(R.string.settings_scroll_lines),
+                    options = listOf(4, 8, 12).map { stringResource(R.string.settings_rows, it) to (snapshot.danmakuLines == it) },
                 ) { index -> refresh { setDanmakuLines(listOf(4, 8, 12)[index]) } }
             }
             }
             item {
             SettingsPanelRow {
-                ActionRow("弹幕屏蔽词", snapshot.danmakuBlockWords.ifBlank { "未设置" }) {
+                ActionRow(stringResource(R.string.settings_danmaku_block), snapshot.danmakuBlockWords.ifBlank { stringResource(R.string.settings_not_set) }) {
                     blockWordsDraft = snapshot.danmakuBlockWords
                     panelPage = 2
                 }
@@ -481,13 +485,13 @@ fun SettingsScreen(
             }
 
             item {
-            SettingsGroupTitle("播放")
+            SettingsGroupTitle(stringResource(R.string.settings_playback))
             }
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "播放引擎",
-                    subtitle = "MPV 与 Exo 共用旧 PlayerManager",
+                    title = stringResource(R.string.settings_player_engine),
+                    subtitle = stringResource(R.string.settings_mpv_legacy),
                     options = listOf("Exo" to !snapshot.engineMpv, "MPV" to snapshot.engineMpv),
                 ) { index -> refresh { setEngine(index == 1) } }
             }
@@ -495,11 +499,11 @@ fun SettingsScreen(
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "后台播放",
-                    subtitle = "按 Home 后的行为",
+                    title = stringResource(R.string.settings_background_play),
+                    subtitle = stringResource(R.string.settings_home_behavior),
                     options = listOf(
-                        "关闭" to (snapshot.background == 0),
-                        "后台" to (snapshot.background == 1),
+                        stringResource(R.string.settings_off) to (snapshot.background == 0),
+                        stringResource(R.string.settings_background) to (snapshot.background == 1),
                         "PiP" to (snapshot.background == 2),
                     ),
                 ) { index -> refresh { setBackground(index) } }
@@ -508,8 +512,8 @@ fun SettingsScreen(
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "缓冲区",
-                    subtitle = "${snapshot.bufferSeconds} 秒",
+                    title = stringResource(R.string.settings_buffer),
+                    subtitle = stringResource(R.string.settings_seconds, snapshot.bufferSeconds),
                     options = listOf(1, 2, 5, 10).map {
                         "${it}s" to (snapshot.bufferSeconds == it)
                     },
@@ -519,7 +523,7 @@ fun SettingsScreen(
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "渲染方式",
+                    title = stringResource(R.string.settings_render_mode),
                     subtitle = "Surface / TextureView",
                     options = listOf("Surface" to !snapshot.renderTexture, "Texture" to snapshot.renderTexture),
                 ) { index -> refresh { setRenderTexture(index == 1) } }
@@ -527,56 +531,56 @@ fun SettingsScreen(
             }
             item {
             SettingsPanelRow {
-                SwitchRow("隧道解码", "需要 Surface 渲染", snapshot.tunnel) { refresh { setTunnel(it) } }
+                SwitchRow(stringResource(R.string.settings_tunnel), stringResource(R.string.settings_need_surface), snapshot.tunnel) { refresh { setTunnel(it) } }
             }
             }
             item {
             SettingsPanelRow {
                 ActionRow(
-                    title = "Dolby Vision 输出",
+                    title = stringResource(R.string.settings_dv_output),
                     value = snapshot.dvPolicyLabel,
                 ) { refresh { cycleDolbyVisionPolicy() } }
             }
             }
             item {
             SettingsPanelRow {
-                ActionRow("播放超时", "${snapshot.playTimeoutSeconds} 秒") { refresh { cyclePlayTimeout() } }
+                ActionRow(stringResource(R.string.settings_play_timeout), stringResource(R.string.settings_seconds, snapshot.playTimeoutSeconds)) { refresh { cyclePlayTimeout() } }
             }
             }
 
             item {
-            SettingsGroupTitle("音频")
+            SettingsGroupTitle(stringResource(R.string.settings_audio))
             }
             item {
             SettingsPanelRow {
-                SwitchRow("音频直通", "HDMI / 功放透传", snapshot.audioPassThrough) {
+                SwitchRow(stringResource(R.string.settings_audio_passthrough), stringResource(R.string.settings_hdmi_passthrough), snapshot.audioPassThrough) {
                     refresh { setAudioPassThrough(it) }
                 }
             }
             }
             item {
             SettingsPanelRow {
-                SwitchRow("音频偏软解", "软解优先使用 Audio 解码器", snapshot.audioPrefer) {
+                SwitchRow(stringResource(R.string.settings_audio_soft), stringResource(R.string.settings_soft_audio_hint), snapshot.audioPrefer) {
                     refresh { setAudioPrefer(it) }
                 }
             }
             }
             item {
             SettingsPanelRow {
-                SwitchRow("视频偏软解", "软解优先使用 Video 解码器", snapshot.videoPrefer) {
+                SwitchRow(stringResource(R.string.settings_video_soft), stringResource(R.string.settings_soft_video_hint), snapshot.videoPrefer) {
                     refresh { setVideoPrefer(it) }
                 }
             }
             }
 
             item {
-            SettingsGroupTitle("搜索与预加载")
+            SettingsGroupTitle(stringResource(R.string.settings_search))
             }
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "搜索线程",
-                    subtitle = "并发越高越快，越占资源",
+                    title = stringResource(R.string.settings_search_threads),
+                    subtitle = stringResource(R.string.settings_threads_hint),
                     options = SEARCH_THREAD_OPTIONS.map { "$it" to (snapshot.searchThreads == it) },
                 ) { index ->
                     refresh { setSearchThreads(SEARCH_THREAD_OPTIONS[index]) }
@@ -588,10 +592,10 @@ fun SettingsScreen(
                 val sites = remember(snapshot.configUrl, showSearchSites) { dataSource.searchSites() }
                 val enabledCount = sites.count { it.enabled }
                 ActionRow(
-                    title = "参与搜索的站点",
+                    title = stringResource(R.string.settings_search_sites),
                     value = when {
-                        sites.isEmpty() -> "未加载"
-                        enabledCount == sites.size -> "全部 ${sites.size} 个"
+                        sites.isEmpty() -> stringResource(R.string.settings_not_loaded)
+                        enabledCount == sites.size -> stringResource(R.string.settings_all_count, sites.size)
                         else -> "$enabledCount / ${sites.size}"
                     },
                 ) { showSearchSites = true }
@@ -599,14 +603,14 @@ fun SettingsScreen(
             }
             item {
             SettingsPanelRow {
-                SwitchRow("开启预加载", "使用旧 PlayerManager 预加载", snapshot.preloadEnabled) {
+                SwitchRow(stringResource(R.string.settings_enable_preload), stringResource(R.string.settings_legacy_preload_hint), snapshot.preloadEnabled) {
                     refresh { setPreloadEnabled(it) }
                 }
             }
             }
             item {
             SettingsPanelRow {
-                SwitchRow("预加载下一集", "仅 Exo 路径生效", snapshot.preloadNext) {
+                SwitchRow(stringResource(R.string.settings_preload_next), stringResource(R.string.settings_exo_only), snapshot.preloadNext) {
                     refresh { setPreloadNext(it) }
                 }
             }
@@ -614,19 +618,19 @@ fun SettingsScreen(
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "预加载线程",
+                    title = stringResource(R.string.settings_preload_threads),
                     options = (1..4).map { "$it" to (snapshot.preloadThreads == it) },
                 ) { index -> refresh { setPreloadThreads(index + 1) } }
             }
             }
 
             item {
-            SettingsGroupTitle("存储与维护")
+            SettingsGroupTitle(stringResource(R.string.settings_storage))
             }
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "缓存大小",
+                    title = stringResource(R.string.settings_cache_size),
                     options = listOf(128, 256, 512, 1024).map {
                         "$it MB" to (snapshot.preloadSizeMb == it)
                     },
@@ -636,16 +640,16 @@ fun SettingsScreen(
             item {
             SettingsPanelRow {
                 ExpandableChoiceRow(
-                    title = "缓存天数",
+                    title = stringResource(R.string.settings_cache_days),
                     options = listOf(7, 30, 60, 90).map {
-                        "${it}天" to (snapshot.cacheDays == it)
+                        stringResource(R.string.settings_days, it) to (snapshot.cacheDays == it)
                     },
                 ) { index -> refresh { setCacheDays(listOf(7, 30, 60, 90)[index]) } }
             }
             }
             item {
             SettingsPanelRow {
-                ActionRow("清除缓存", snapshot.cacheSizeLabel) {
+                ActionRow(stringResource(R.string.settings_cache_clear), snapshot.cacheSizeLabel) {
                     showClearCacheConfirm = true
                 }
             }
@@ -653,34 +657,34 @@ fun SettingsScreen(
             item {
             SettingsPanelRow {
                 val context = LocalContext.current
-                ActionRow("导出诊断", "写入 Download") {
+                ActionRow(stringResource(R.string.settings_export_diag), stringResource(R.string.settings_write_download)) {
                     val path = dataSource.exportDiagnostics()
-                    val message = if (path.isBlank()) "导出失败，请检查存储权限" else "已导出：$path"
+                    val message = if (path.isBlank()) resContext.getString(R.string.settings_export_failed) else resContext.getString(R.string.settings_exported, path)
                     android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
                 }
             }
             }
             item {
             SettingsPanelRow {
-                ActionRow("重置 UA", "清空自定义") { refresh { resetUa() } }
+                ActionRow(stringResource(R.string.settings_reset_ua), stringResource(R.string.settings_clear_custom)) { refresh { resetUa() } }
             }
             }
             item {
             SettingsPanelRow {
                 SwitchRow(
-                    "强制升级",
-                    "检测到新版本后自动下载并强制更新",
+                    stringResource(R.string.settings_force_update),
+                    stringResource(R.string.settings_force_update_hint),
                     snapshot.forceUpdate,
                 ) { refresh { setForceUpdate(it) } }
             }
             }
 
             item {
-            SettingsGroupTitle("关于")
+            SettingsGroupTitle(stringResource(R.string.settings_about))
             }
             item {
             SettingsPanelRow {
-                InfoRow("版本", "${snapshot.version} · GPL-3.0")
+                InfoRow(stringResource(R.string.settings_version_title), "${snapshot.version} · GPL-3.0")
             }
             }
                 }
@@ -707,10 +711,10 @@ fun SettingsScreen(
             width = 380.dp,
             padding = 12.dp,
         ) {
-            Text("确定清除缓存？", fontSize = 14.sp)
+            Text(stringResource(R.string.settings_clear_cache_confirm), fontSize = 14.sp)
             Spacer(Modifier.height(6.dp))
             Text(
-                "将删除图片缓存和临时文件，不会删除收藏和观看记录。",
+                stringResource(R.string.settings_clear_cache_hint),
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -719,12 +723,12 @@ fun SettingsScreen(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
             ) {
-                SettingsButton(text = "取消", onClick = { showClearCacheConfirm = false })
+                SettingsButton(text = stringResource(R.string.settings_cancel), onClick = { showClearCacheConfirm = false })
                 SettingsButton(
-                    text = "清除",
+                    text = stringResource(R.string.settings_clear),
                     onClick = {
                         dataSource.clearCache()
-                        snapshot = dataSource.load().copy(cacheSizeLabel = "计算中…")
+                        snapshot = dataSource.load().copy(cacheSizeLabel = resContext.getString(R.string.settings_calculating))
                         showClearCacheConfirm = false
                         scope.launch {
                             val label = runCatching { dataSource.refreshCacheSize() }.getOrNull().orEmpty()
@@ -750,7 +754,7 @@ fun SettingsScreen(
             padding = 12.dp,
         ) {
             Text(
-                text = if (configMessageSuccess) "加载成功" else "加载失败",
+                text = if (configMessageSuccess) stringResource(R.string.settings_loaded) else stringResource(R.string.settings_load_failed),
                 fontSize = 14.sp,
             )
             Spacer(Modifier.height(6.dp))
@@ -763,7 +767,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(10.dp))
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
                 SettingsButton(
-                    text = "知道了",
+                    text = stringResource(R.string.settings_got_it),
                     onClick = {
                         configMessage = null
                         scope.launch {
@@ -800,13 +804,13 @@ private fun ConfigEditPanel(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            SettingsButton(text = "‹ 返回", onClick = onBack)
+            SettingsButton(text = stringResource(R.string.settings_back), onClick = onBack)
             Spacer(Modifier.weight(1f))
             Text(
                 when (type) {
-                    0 -> "点播接口"
-                    1 -> "直播接口"
-                    else -> "壁纸接口"
+                    0 -> stringResource(R.string.settings_vod_url)
+                    1 -> stringResource(R.string.settings_live_url)
+                    else -> stringResource(R.string.settings_wall_url)
                 },
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
@@ -815,24 +819,24 @@ private fun ConfigEditPanel(
         CompactTextField(
             value = name,
             onValueChange = onNameChange,
-            placeholder = "线路名称",
+            placeholder = stringResource(R.string.settings_line_name),
             modifier = Modifier.fillMaxWidth().focusRequester(firstFieldFocus),
         )
         CompactTextField(
             value = url,
             onValueChange = onUrlChange,
-            placeholder = "配置 URL",
+            placeholder = stringResource(R.string.settings_config_url),
             modifier = Modifier.fillMaxWidth(),
         )
         qrBitmap?.let { bitmap ->
             Image(
                 bitmap = bitmap.asImageBitmap(),
-                contentDescription = "配置二维码",
+                contentDescription = stringResource(R.string.settings_config_qr),
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(160.dp).align(Alignment.CenterHorizontally),
             )
             Text(
-                "扫码打开网页配置页",
+                stringResource(R.string.settings_scan_hint),
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -847,13 +851,13 @@ private fun ConfigEditPanel(
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 SettingsButton(
-                    text = if (loading) "保存中…" else "保存",
+                    text = if (loading) stringResource(R.string.settings_saving) else stringResource(R.string.settings_save),
                     onClick = onSave,
                     primary = true,
                     enabled = !loading && url.isNotBlank(),
                 )
                 SettingsButton(
-                    text = "取消",
+                    text = stringResource(R.string.settings_cancel),
                     onClick = onBack,
                     enabled = !loading,
                 )
@@ -884,24 +888,24 @@ private fun BlockWordsEditPanel(
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            SettingsButton(text = "‹ 返回", onClick = onBack)
+            SettingsButton(text = stringResource(R.string.settings_back), onClick = onBack)
             Spacer(Modifier.weight(1f))
-            Text("弹幕屏蔽词", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.settings_danmaku_block), fontSize = 14.sp, fontWeight = FontWeight.Bold)
         }
         CompactTextField(
             value = value,
             onValueChange = onValueChange,
-            placeholder = "多个关键词用逗号分隔",
+            placeholder = stringResource(R.string.settings_keywords_hint),
             modifier = Modifier.fillMaxWidth(),
         )
         Text(
-            "多个关键词用逗号分隔",
+            stringResource(R.string.settings_keywords_hint),
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SettingsButton(text = "保存", onClick = onSave, primary = true)
-            SettingsButton(text = "取消", onClick = onBack)
+            SettingsButton(text = stringResource(R.string.settings_save), onClick = onSave, primary = true)
+            SettingsButton(text = stringResource(R.string.settings_cancel), onClick = onBack)
         }
     }
 }
@@ -1034,7 +1038,7 @@ private fun ConfigRow(
             contentAlignment = Alignment.CenterStart,
         ) {
             Text(
-                value.ifBlank { "未配置" },
+                value.ifBlank { stringResource(R.string.settings_not_configured) },
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -1054,7 +1058,7 @@ private fun ConfigLoadButton(
     modifier: Modifier = Modifier,
 ) {
     TvTagButton(
-        text = if (loading) "加载中" else "加载",
+        text = if (loading) stringResource(R.string.settings_loading) else stringResource(R.string.settings_load),
         modifier = modifier,
         enabled = enabled && !loading,
         onClick = onClick,
@@ -1172,7 +1176,7 @@ private fun ExpandableChoiceRow(
     val rowFocus = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
     var firstComposition by remember { mutableStateOf(true) }
-    val selectedLabel = options.firstOrNull { it.second }?.first ?: "未选择"
+    val selectedLabel = options.firstOrNull { it.second }?.first ?: stringResource(R.string.settings_not_selected)
     LaunchedEffect(expanded) {
         if (firstComposition) {
             firstComposition = false
@@ -1258,8 +1262,8 @@ private fun SwitchRow(
         title = title,
         subtitle = subtitle,
         options = listOf(
-            "关闭" to !checked,
-            "开启" to checked,
+            stringResource(R.string.settings_off) to !checked,
+            stringResource(R.string.settings_on) to checked,
         ),
     ) { index -> onChange(index == 1) }
 }
@@ -1275,7 +1279,7 @@ private fun ChoiceRow(
     var dialogVisible by remember { mutableStateOf(false) }
     var draftIndex by remember { mutableIntStateOf(options.indexOfFirst { it.second }) }
     val firstOptionFocus = remember { FocusRequester() }
-    val selectedLabel = options.firstOrNull { it.second }?.first ?: "未选择"
+    val selectedLabel = options.firstOrNull { it.second }?.first ?: stringResource(R.string.settings_not_selected)
     LaunchedEffect(dialogVisible) {
         if (dialogVisible) {
             delay(80)
@@ -1539,39 +1543,39 @@ private fun SearchSitesDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "参与搜索的站点",
+                        stringResource(R.string.settings_search_sites),
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Bold,
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        "已选 ${states.count { it.value }} / ${sites.size}",
+                        stringResource(R.string.settings_selected_count, states.count { it.value }, sites.size),
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.weight(1f))
-                    DialogAction("全选") {
+                    DialogAction(stringResource(R.string.settings_select_all)) {
                         sites.forEach { states[it.key] = true }
                         onAll(true)
                     }
                     Spacer(Modifier.width(8.dp))
-                    DialogAction("全不选") {
+                    DialogAction(stringResource(R.string.settings_select_none)) {
                         sites.forEach { states[it.key] = false }
                         onAll(false)
                     }
                     Spacer(Modifier.width(8.dp))
-                    DialogAction("完成", onDismiss)
+                    DialogAction(stringResource(R.string.settings_done), onDismiss)
                 }
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "取消勾选的站点不会参与搜索，可随时恢复。",
+                    stringResource(R.string.settings_search_sites_hint),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(8.dp))
                 if (sites.isEmpty()) {
                     Text(
-                        "当前接口没有可搜索的站点",
+                        stringResource(R.string.settings_no_search_site),
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 20.dp, bottom = 8.dp),
