@@ -1,6 +1,8 @@
 package com.onefilm.android.tv.compose.feature.player
 
+import android.content.Context
 import androidx.media3.common.Player
+import com.onefilm.android.tv.compose.R
 
 /**
  * 播放器菜单项：纯数据 + 动作，不依赖 Compose，便于单独维护和后续补测试。
@@ -28,22 +30,24 @@ class PlayerMenuActions(
 )
 
 /** 构建全屏播放器的菜单行（顺序与 0.1.7 保持一致）。 */
-fun buildPlayerMenu(actions: PlayerMenuActions): List<PlayerMenuEntry> = buildList {
-    add(PlayerMenuEntry("上集", actions.onPrevious != null) { actions.onPrevious?.invoke() })
-    add(PlayerMenuEntry("下集", actions.onNext != null) { actions.onNext?.invoke() })
-    add(PlayerMenuEntry("重播") { PlaybackSession.replay() })
-    add(PlayerMenuEntry("刷新") { PlaybackSession.refresh() })
-    add(PlayerMenuEntry("选集", PlaybackSession.queue.size > 1) { actions.onOpenEpisodes() })
+fun buildPlayerMenu(actions: PlayerMenuActions, context: Context): List<PlayerMenuEntry> = buildList {
+    fun s(id: Int, vararg args: Any): String = context.getString(id, *args)
+    val defaultLabel = s(R.string.common_default)
+    add(PlayerMenuEntry(s(R.string.player_prev_ep), actions.onPrevious != null) { actions.onPrevious?.invoke() })
+    add(PlayerMenuEntry(s(R.string.player_next_ep), actions.onNext != null) { actions.onNext?.invoke() })
+    add(PlayerMenuEntry(s(R.string.player_replay)) { PlaybackSession.replay() })
+    add(PlayerMenuEntry(s(R.string.player_refresh)) { PlaybackSession.refresh() })
+    add(PlayerMenuEntry(s(R.string.player_select_episode), PlaybackSession.queue.size > 1) { actions.onOpenEpisodes() })
     add(
         PlayerMenuEntry(
-            "片头 ${formatTime(PlaybackSession.openingMs)}",
+            s(R.string.player_opening, formatTime(PlaybackSession.openingMs)),
             onClick = { PlaybackSession.markOpening() },
             onLongClick = { PlaybackSession.clearOpening() },
         ),
     )
     add(
         PlayerMenuEntry(
-            "片尾 ${formatTime(PlaybackSession.endingMs)}",
+            s(R.string.player_ending, formatTime(PlaybackSession.endingMs)),
             onClick = { PlaybackSession.markEnding() },
             onLongClick = { PlaybackSession.clearEnding() },
         ),
@@ -51,32 +55,32 @@ fun buildPlayerMenu(actions: PlayerMenuActions): List<PlayerMenuEntry> = buildLi
     add(PlayerMenuEntry("${PlaybackSession.speed}x") { PlaybackSession.cycleSpeed() })
     add(
         PlayerMenuEntry(
-            if (PlaybackSession.repeatMode == Player.REPEAT_MODE_ONE) "循环 开" else "循环 关",
+            if (PlaybackSession.repeatMode == Player.REPEAT_MODE_ONE) s(R.string.player_loop_on) else s(R.string.player_loop_off),
         ) { PlaybackSession.toggleRepeat() },
     )
-    add(PlayerMenuEntry(if (actions.danmakuOn) "弹幕 开" else "弹幕 关") { actions.onToggleDanmaku() })
-    add(PlayerMenuEntry("画中画") { actions.onPip() })
-    add(PlayerMenuEntry("投屏") { actions.onDlna() })
-    add(PlayerMenuEntry("画面 ${PlaybackSession.resizeLabel}") { PlaybackSession.cycleResizeMode() })
-    add(PlayerMenuEntry("引擎 ${if (PlaybackSession.engineMpv) "MPV" else "Exo"}") {
+    add(PlayerMenuEntry(if (actions.danmakuOn) s(R.string.player_danmaku_on) else s(R.string.player_danmaku_off)) { actions.onToggleDanmaku() })
+    add(PlayerMenuEntry(s(R.string.player_pip)) { actions.onPip() })
+    add(PlayerMenuEntry(s(R.string.player_cast)) { actions.onDlna() })
+    add(PlayerMenuEntry(s(R.string.player_resize, PlaybackSession.resizeLabel)) { PlaybackSession.cycleResizeMode() })
+    add(PlayerMenuEntry(s(R.string.player_engine, if (PlaybackSession.engineMpv) "MPV" else "Exo")) {
         PlaybackSession.setEngine(!PlaybackSession.engineMpv)
     })
-    add(PlayerMenuEntry("解码 ${PlaybackSession.decodeLabel}") { PlaybackSession.toggleDecode() })
-    add(PlayerMenuEntry("渲染 ${PlaybackSession.renderLabel}") { PlaybackSession.toggleRenderMode() })
-    add(PlayerMenuEntry("字幕 ${PlaybackSession.subtitleLabel}") { PlaybackSession.cycleSubtitle() })
-    add(PlayerMenuEntry("字幕大小 %.1fx".format(PlaybackSession.subtitleScale)) {
+    add(PlayerMenuEntry(s(R.string.player_decode, PlaybackSession.decodeLabel)) { PlaybackSession.toggleDecode() })
+    add(PlayerMenuEntry(s(R.string.player_render, PlaybackSession.renderLabel)) { PlaybackSession.toggleRenderMode() })
+    add(PlayerMenuEntry(s(R.string.player_subtitle, PlaybackSession.subtitleLabel.ifBlank { defaultLabel })) { PlaybackSession.cycleSubtitle() })
+    add(PlayerMenuEntry(s(R.string.player_subtitle_size, PlaybackSession.subtitleScale)) {
         PlaybackSession.cycleSubtitleScale()
     })
-    add(PlayerMenuEntry("字幕位置 ${PlaybackSession.subtitlePosition.toInt()}") {
+    add(PlayerMenuEntry(s(R.string.player_subtitle_pos, PlaybackSession.subtitlePosition.toInt())) {
         PlaybackSession.cycleSubtitlePosition()
     })
-    add(PlayerMenuEntry("字幕颜色 ${PlaybackSession.subtitleColor}") {
+    add(PlayerMenuEntry(s(R.string.player_subtitle_color, PlaybackSession.subtitleColor)) {
         PlaybackSession.cycleSubtitleColor()
     })
-    add(PlayerMenuEntry("音轨 ${PlaybackSession.audioLabel}") { PlaybackSession.cycleAudio() })
-    add(PlayerMenuEntry("视轨 ${PlaybackSession.videoLabel}") { PlaybackSession.cycleVideo() })
-    add(PlayerMenuEntry("字幕偏移 ${PlaybackSession.textOffsetMs}ms") { PlaybackSession.shiftTextOffset(100L) })
-    add(PlayerMenuEntry("音画偏移 ${PlaybackSession.audioOffsetMs}ms") { PlaybackSession.shiftAudioOffset(100L) })
+    add(PlayerMenuEntry(s(R.string.player_audio_track, PlaybackSession.audioLabel.ifBlank { defaultLabel })) { PlaybackSession.cycleAudio() })
+    add(PlayerMenuEntry(s(R.string.player_video_track, PlaybackSession.videoLabel.ifBlank { defaultLabel })) { PlaybackSession.cycleVideo() })
+    add(PlayerMenuEntry(s(R.string.player_subtitle_offset, PlaybackSession.textOffsetMs)) { PlaybackSession.shiftTextOffset(100L) })
+    add(PlayerMenuEntry(s(R.string.player_av_offset, PlaybackSession.audioOffsetMs)) { PlaybackSession.shiftAudioOffset(100L) })
 }
 
 /** 时间格式化：菜单与进度标签共用。 */

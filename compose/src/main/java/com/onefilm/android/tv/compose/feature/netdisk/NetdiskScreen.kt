@@ -42,6 +42,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.onefilm.android.tv.compose.R
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -74,6 +77,7 @@ fun NetdiskScreen(
     var page by remember { mutableStateOf(1) }
     var loadingMore by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val drive = currentDrive
     LaunchedEffect(drive?.id, currentPath) {
@@ -83,7 +87,7 @@ fun NetdiskScreen(
         error = null
         runCatching { dataSource.listEntries(drive, currentPath, 1) }
             .onSuccess { entries = it }
-            .onFailure { error = it.message ?: "读取网盘失败" }
+            .onFailure { error = it.message ?: context.getString(R.string.netdisk_read_failed) }
         loading = false
     }
 
@@ -96,9 +100,9 @@ fun NetdiskScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (drive == null) {
-                TvTagButton(text = "添加网盘") { adding = true }
+                TvTagButton(text = stringResource(R.string.netdisk_add)) { adding = true }
             } else {
-                TvTagButton(text = "返回") {
+                TvTagButton(text = stringResource(R.string.common_back)) {
                     error = null
                     if (currentPath.isBlank()) currentDrive = null
                     else currentPath = currentPath.substringBeforeLast('/', "")
@@ -106,7 +110,7 @@ fun NetdiskScreen(
             }
         }
         Text(
-            text = if (drive == null) "添加 WebDAV 或 Alist 网页，浏览网盘中的影片。"
+            text = if (drive == null) stringResource(R.string.netdisk_add_hint)
             else currentPath.ifBlank { "/" },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
@@ -136,7 +140,7 @@ fun NetdiskScreen(
                 com.onefilm.android.tv.compose.design.component.AppLoadingState()
             }
             entries.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("此目录为空", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.netdisk_empty_dir), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             else -> LazyVerticalGrid(
                 columns = GridCells.Fixed(5),
@@ -155,7 +159,7 @@ fun NetdiskScreen(
                             scope.launch {
                                 runCatching { dataSource.resolve(drive, entry) }
                                     .onSuccess { onPlay(it, entry) }
-                                    .onFailure { error = it.message ?: "解析文件失败" }
+                                    .onFailure { error = it.message ?: context.getString(R.string.netdisk_parse_failed) }
                                 loading = false
                             }
                         }
@@ -165,7 +169,7 @@ fun NetdiskScreen(
                     item(span = { GridItemSpan(maxLineSpan) }) {
                         Box(Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
                             TvTagButton(
-                                text = if (loadingMore) "加载中…" else "加载更多",
+                                text = if (loadingMore) stringResource(R.string.settings_loading) else stringResource(R.string.netdisk_load_more),
                                 enabled = !loadingMore,
                                 onClick = {
                                     if (!loadingMore) {
@@ -176,7 +180,7 @@ fun NetdiskScreen(
                                                     entries = entries + it
                                                     page += 1
                                                 }
-                                                .onFailure { error = it.message ?: "加载更多失败" }
+                                                .onFailure { error = it.message ?: context.getString(R.string.netdisk_load_more_failed) }
                                             loadingMore = false
                                         }
                                     }
@@ -222,7 +226,7 @@ private fun DriveList(
 ) {
     if (drives.isEmpty()) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("还没有网盘配置，点击右上角「添加网盘」。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.netdisk_no_config), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         return
     }
@@ -268,16 +272,16 @@ private fun DriveList(
                     ) { Text(if (drive.type == 1) "DAV" else "AL", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
                     Spacer(Modifier.size(14.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(drive.name.ifBlank { "未命名网盘" }, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text(drive.name.ifBlank { stringResource(R.string.netdisk_unnamed) }, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                         Text(
-                            if (drive.type == 1) "WebDAV" else "Alist 网页",
+                            if (drive.type == 1) stringResource(R.string.netdisk_type_webdav) else stringResource(R.string.netdisk_type_alist),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 13.sp,
                         )
                     }
                 }
-                DriveActionButton("编辑") { onEdit(drive) }
-                DriveActionButton("删除") { onDelete(drive) }
+                DriveActionButton(stringResource(R.string.netdisk_edit)) { onEdit(drive) }
+                DriveActionButton(stringResource(R.string.common_delete)) { onDelete(drive) }
             }
         }
     }
@@ -386,7 +390,7 @@ private fun DriveDialog(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(0 to "本地目录", 1 to "WebDAV", 2 to "Alist 网页").forEach { (value, label) ->
+                    listOf(0 to stringResource(R.string.netdisk_local_dir), 1 to stringResource(R.string.netdisk_type_webdav), 2 to stringResource(R.string.netdisk_type_alist)).forEach { (value, label) ->
                         val selected = type == value
                         Text(
                             text = label,
@@ -400,14 +404,14 @@ private fun DriveDialog(
                         )
                     }
                 }
-                FieldRow("空间名称") {
-                    CompactField(name, "例如：家庭 NAS", { name = it })
+                FieldRow(stringResource(R.string.netdisk_space_name)) {
+                    CompactField(name, stringResource(R.string.netdisk_name_hint), { name = it })
                 }
                 when (type) {
-                    0 -> FieldRow("本地目录") {
+                    0 -> FieldRow(stringResource(R.string.netdisk_local_dir)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = localUri.ifBlank { "未选择目录" },
+                                text = localUri.ifBlank { stringResource(R.string.netdisk_no_dir) },
                                 fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
@@ -415,19 +419,19 @@ private fun DriveDialog(
                                 modifier = Modifier.weight(1f),
                             )
                             Spacer(Modifier.size(10.dp))
-                            TvTagButton(text = "选择目录", onClick = { folderPicker.launch(null) })
+                            TvTagButton(text = stringResource(R.string.netdisk_select_dir), onClick = { folderPicker.launch(null) })
                         }
                     }
                     1 -> {
-                        FieldRow("WebDAV 地址") { CompactField(url, "https://example.com/dav/", { url = it }) }
-                        FieldRow("初始路径") { CompactField(initPath, "可选，例如 media", { initPath = it }) }
-                        FieldRow("用户名") { CompactField(username, "可选", { username = it }) }
-                        FieldRow("密码") { CompactField(password, "可选", { password = it }) }
+                        FieldRow(stringResource(R.string.netdisk_webdav_url)) { CompactField(url, "https://example.com/dav/", { url = it }) }
+                        FieldRow(stringResource(R.string.netdisk_init_path)) { CompactField(initPath, stringResource(R.string.netdisk_init_path_hint), { initPath = it }) }
+                        FieldRow(stringResource(R.string.netdisk_username)) { CompactField(username, stringResource(R.string.netdisk_optional), { username = it }) }
+                        FieldRow(stringResource(R.string.netdisk_password)) { CompactField(password, stringResource(R.string.netdisk_optional), { password = it }) }
                     }
                     else -> {
-                        FieldRow("Alist 地址") { CompactField(url, "https://alist.example.com/", { url = it }) }
-                        FieldRow("初始路径") { CompactField(initPath, "可选，例如 media", { initPath = it }) }
-                        FieldRow("密码") { CompactField(password, "可选", { password = it }) }
+                        FieldRow(stringResource(R.string.netdisk_alist_url)) { CompactField(url, "https://alist.example.com/", { url = it }) }
+                        FieldRow(stringResource(R.string.netdisk_init_path)) { CompactField(initPath, stringResource(R.string.netdisk_init_path_hint), { initPath = it }) }
+                        FieldRow(stringResource(R.string.netdisk_password)) { CompactField(password, stringResource(R.string.netdisk_optional), { password = it }) }
                     }
                 }
                 error?.let {
@@ -437,15 +441,15 @@ private fun DriveDialog(
                     Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TvTagButton(text = "取消", onClick = onDismiss)
+                    TvTagButton(text = stringResource(R.string.settings_cancel), onClick = onDismiss)
                     Spacer(Modifier.size(12.dp))
-                    TvTagButton(text = "保存", onClick = {
+                    TvTagButton(text = stringResource(R.string.settings_save), onClick = {
                         if (name.isBlank()) {
-                            error = "空间名称不能为空"
+                            error = context.getString(R.string.netdisk_name_required)
                         } else if (type == 0 && localUri.isBlank()) {
-                            error = "请选择本地目录"
+                            error = context.getString(R.string.netdisk_dir_required)
                         } else if (type != 0 && url.isBlank()) {
-                            error = "网盘地址不能为空"
+                            error = context.getString(R.string.netdisk_url_required)
                         } else {
                             val json = JSONObject().apply {
                                 when (type) {

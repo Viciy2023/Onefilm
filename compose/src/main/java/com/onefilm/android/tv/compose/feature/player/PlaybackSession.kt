@@ -14,6 +14,7 @@ import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
+import com.onefilm.android.tv.compose.R
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import com.onefilm.android.tv.compose.bridge.LegacyPlayer
 import com.onefilm.android.tv.compose.bridge.LegacyPlayerListener
@@ -44,6 +45,9 @@ object PlaybackSession {
     private var audioIndex = 0
     private var videoIndex = 0
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    private fun str(id: Int, vararg args: Any): String =
+        appContext?.getString(id, *args).orEmpty()
 
     var historyStore: PlaybackHistoryStore? = null
     var siteKey: String = ""
@@ -88,11 +92,11 @@ object PlaybackSession {
         private set
     var engineMpv by mutableStateOf(false)
         private set
-    var subtitleLabel by mutableStateOf("默认")
+    var subtitleLabel by mutableStateOf(str(R.string.common_default))
         private set
-    var audioLabel by mutableStateOf("默认")
+    var audioLabel by mutableStateOf(str(R.string.common_default))
         private set
-    var videoLabel by mutableStateOf("默认")
+    var videoLabel by mutableStateOf(str(R.string.common_default))
         private set
     var textOffsetMs by mutableLongStateOf(0L)
         private set
@@ -142,12 +146,12 @@ object PlaybackSession {
 
         override fun onPlayerError(playerError: PlaybackException) {
             isBuffering = false
-            val message = playerError.message ?: "播放失败"
+            val message = playerError.message ?: str(R.string.player_play_failed)
             // 同源自动重试：最多 2 次，每次间隔 1.5 秒；仍失败才把错误交给 UI。
             if (autoRetryLeft > 0 && currentUrl != null) {
                 autoRetryLeft--
                 val attempt = AUTO_RETRY_MAX - autoRetryLeft
-                error = "$message（自动重试 $attempt/$AUTO_RETRY_MAX）"
+                error = str(R.string.player_auto_retry, message, attempt, AUTO_RETRY_MAX)
                 val token = ++autoRetryToken
                 scope.launch {
                     delay(1_500L)
@@ -236,13 +240,13 @@ object PlaybackSession {
         softwareDecode = legacy?.decodeText()?.contains("软") == true
     }
 
-    val decodeLabel: String get() = legacy?.decodeText() ?: if (softwareDecode) "软解" else "硬解"
+    val decodeLabel: String get() = legacy?.decodeText() ?: if (softwareDecode) str(R.string.player_decode_sw) else str(R.string.player_decode_hw)
     val renderLabel: String get() = if (textureRender) "Texture" else "Surface"
     val resizeLabel: String
         get() = when (resizeMode) {
-            AspectRatioFrameLayout.RESIZE_MODE_ZOOM -> "裁剪"
-            AspectRatioFrameLayout.RESIZE_MODE_FILL -> "拉伸"
-            else -> "适应"
+            AspectRatioFrameLayout.RESIZE_MODE_ZOOM -> str(R.string.player_resize_crop)
+            AspectRatioFrameLayout.RESIZE_MODE_FILL -> str(R.string.player_resize_stretch)
+            else -> str(R.string.player_resize_fit)
         }
 
     fun toggleRenderMode() {
@@ -261,7 +265,7 @@ object PlaybackSession {
     fun cycleSubtitle() {
         val tracks = legacy?.tracks()?.filter { it.type == C.TRACK_TYPE_TEXT }.orEmpty()
         if (tracks.isEmpty()) {
-            subtitleLabel = "无字幕"
+            subtitleLabel = str(R.string.player_no_subtitle)
             return
         }
         if (!subtitleOff) {
@@ -269,7 +273,7 @@ object PlaybackSession {
             if (selected != null) {
                 legacy?.selectTrack(selected.copy(selected = false))
                 subtitleOff = true
-                subtitleLabel = "关"
+                subtitleLabel = str(R.string.common_off)
                 return
             }
         }
@@ -281,7 +285,7 @@ object PlaybackSession {
 
     val subtitleScale: Float get() = legacy?.subtitleScale() ?: 1f
     val subtitlePosition: Float get() = legacy?.subtitlePosition() ?: 0f
-    val subtitleColor: String get() = legacy?.subtitleColorLabel() ?: "白"
+    val subtitleColor: String get() = legacy?.subtitleColorLabel() ?: str(R.string.player_color_white)
     fun cycleSubtitleScale() { legacy?.cycleSubtitleScale() }
     fun cycleSubtitlePosition() { legacy?.cycleSubtitlePosition() }
     fun cycleSubtitleColor() { legacy?.cycleSubtitleColor() }
@@ -289,7 +293,7 @@ object PlaybackSession {
     fun cycleAudio() {
         val tracks = legacy?.tracks()?.filter { it.type == C.TRACK_TYPE_AUDIO }.orEmpty()
         if (tracks.isEmpty()) {
-            audioLabel = "无音轨"
+            audioLabel = str(R.string.player_no_audio_track)
             return
         }
         audioIndex = (audioIndex + 1) % tracks.size
@@ -301,7 +305,7 @@ object PlaybackSession {
     fun cycleVideo() {
         val tracks = legacy?.tracks()?.filter { it.type == C.TRACK_TYPE_VIDEO }.orEmpty()
         if (tracks.isEmpty()) {
-            videoLabel = "无视轨"
+            videoLabel = str(R.string.player_no_video_track)
             return
         }
         videoIndex = (videoIndex + 1) % tracks.size
@@ -323,11 +327,11 @@ object PlaybackSession {
     private fun refreshTrackLabels() {
         val tracks = legacy?.tracks().orEmpty()
         val selectedText = tracks.firstOrNull { it.type == C.TRACK_TYPE_TEXT && it.selected }
-        subtitleLabel = selectedText?.name ?: "关"
+        subtitleLabel = selectedText?.name ?: str(R.string.common_off)
         val selectedAudio = tracks.firstOrNull { it.type == C.TRACK_TYPE_AUDIO && it.selected }
-        audioLabel = selectedAudio?.name ?: "默认"
+        audioLabel = selectedAudio?.name ?: str(R.string.common_default)
         val selectedVideo = tracks.firstOrNull { it.type == C.TRACK_TYPE_VIDEO && it.selected }
-        videoLabel = selectedVideo?.name ?: "默认"
+        videoLabel = selectedVideo?.name ?: str(R.string.common_default)
     }
 
     fun setQueue(
@@ -365,7 +369,7 @@ object PlaybackSession {
         queue = next.second
         currentIndex = currentIndex.coerceIn(0, (next.second.size - 1).coerceAtLeast(0))
         autoRetryLeft = AUTO_RETRY_MAX
-        error = "线路不可用，正在切换到「${next.first}」"
+        error = str(R.string.player_line_unavailable, next.first)
         scope.launch { playEpisode(ctx, currentIndex, resolver) }
         return true
     }
@@ -404,7 +408,7 @@ object PlaybackSession {
         scope.launch {
             val resolved = resolver.resolve(key, flag, item.url)
             if (resolved.isNullOrBlank()) {
-                error = "选集地址解析失败"
+                error = str(R.string.player_episode_resolve_failed)
                 return@launch
             }
             currentIndex = index

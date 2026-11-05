@@ -356,6 +356,7 @@ fun PlayerControls(
                 }
             },
         ),
+        resContext,
     )
 
     LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, showDlna) {
