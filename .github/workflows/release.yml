@@ -93,6 +93,15 @@ jobs:
             -PskipComposeMapping \
             --no-daemon --console=plain
 
+      - name: Upload R8 mapping artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: r8-mapping-v${{ inputs.version }}
+          path: |
+            app/build/outputs/mapping/leanbackRelease/mapping.txt
+            app/build/outputs/mapping/mobileRelease/mapping.txt
+          if-no-files-found: warn
+
       - name: Upload GitHub Release assets
         uses: softprops/action-gh-release@v2
         with:
