@@ -112,10 +112,23 @@ jobs:
             app/build/outputs/apk/leanback/release/OneFilm-TV-*.apk
             app/build/outputs/apk/mobile/release/OneFilm-Mobile-*.apk
 
-      # Bugly 符号表：上传工具 jar 按约定不入库（.gitignore），所以本步骤在 CI
-      # 会因找不到 jar 而跳过。发版成功后在本机执行：
-      #   .\tools\upload-bugly-mapping.ps1 -Version <version>
-      # 从本流水线的 r8-mapping artifact 读取 mapping 并上传，保证与线上 APK 一致。
+      - name: Fetch Bugly upload tool
+        shell: bash
+        env:
+          BUGLY_TOOL_URL: ${{ vars.BUGLY_TOOL_URL }}
+        run: |
+          url="${BUGLY_TOOL_URL:-https://onefilmapk.alibabagroup.de5.net/tools/buglyqq-upload-symbol.jar}"
+          mkdir -p tools/bugly
+          if curl -fsSL --retry 3 --retry-delay 2 -o tools/bugly/buglyqq-upload-symbol.jar "$url"; then
+            echo "Bugly tool ready: $(stat -c%s tools/bugly/buglyqq-upload-symbol.jar) bytes"
+          else
+            echo "::warning::Bugly 上传工具未提供（$url），本次跳过符号表上传"
+            rm -f tools/bugly/buglyqq-upload-symbol.jar
+          fi
+
+      # Bugly 符号表：上传工具 jar 按约定不入库（.gitignore），本步骤从 R2 的
+      # tools/buglyqq-upload-symbol.jar 拉取；取到后下面的发布脚本会自动上传，
+      # 取不到则只跳过 Bugly，不影响 APK 发布。可用仓库变量 BUGLY_TOOL_URL 覆盖地址。
       - name: Publish APKs + update manifest to R2
         shell: pwsh
         env:
