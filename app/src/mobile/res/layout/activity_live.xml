@@ -10,7 +10,7 @@
         android:id="@+id/video"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/live_background"
+        android:background="@color/black"
         android:clickable="true"
         android:focusable="true">
 
@@ -19,8 +19,8 @@
             style="@style/Player.Live"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/live_background"
-            app:shutter_background_color="@color/live_background"
+            android:background="@color/black"
+            app:shutter_background_color="@color/black"
             app:surface_type="texture_view" />
 
         <include
