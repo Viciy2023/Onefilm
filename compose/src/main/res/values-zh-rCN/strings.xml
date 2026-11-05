@@ -20,4 +20,20 @@
     <string name="category_home">主页</string>
     <string name="category_unnamed">未命名</string>
     <string name="category_filter">去筛选</string>
+
+    <!-- Search -->
+    <string name="search_history">搜索历史</string>
+    <string name="search_clear">清空</string>
+    <string name="search_history_empty">暂无搜索历史</string>
+    <string name="search_hint">输入要搜索的影片、剧集、演员</string>
+    <string name="search_action">搜索</string>
+    <string name="search_remote">远程搜索</string>
+    <string name="search_delete">删除</string>
+    <string name="search_keyboard_hint">字母只填入搜索框；输入完整关键字后点「搜索」。</string>
+    <string name="search_hot">热门搜索</string>
+    <string name="search_match_result">匹配结果</string>
+    <string name="search_matching">正在匹配，输入完整片名后可点「搜索」。</string>
+    <string name="search_title">搜索</string>
+    <string name="search_show_all">全部显示</string>
+    <string name="search_no_result">没有找到「%1$s」相关结果</string>
 </resources>

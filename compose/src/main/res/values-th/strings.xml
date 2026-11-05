@@ -20,4 +20,20 @@
     <string name="category_home">หน้าแรก</string>
     <string name="category_unnamed">ไม่มีชื่อ</string>
     <string name="category_filter">ตัวกรอง</string>
+
+    <!-- Search -->
+    <string name="search_history">ประวัติการค้นหา</string>
+    <string name="search_clear">ล้าง</string>
+    <string name="search_history_empty">ยังไม่มีประวัติการค้นหา</string>
+    <string name="search_hint">ป้อนชื่อหนัง ซีรีส์ หรือนักแสดง</string>
+    <string name="search_action">ค้นหา</string>
+    <string name="search_remote">ค้นหาทางไกล</string>
+    <string name="search_delete">ลบ</string>
+    <string name="search_keyboard_hint">ตัวอักษรจะถูกใส่ในช่องค้นหาเท่านั้น กดค้นหาหลังป้อนคำค้นครบ</string>
+    <string name="search_hot">ค้นยอดนิยม</string>
+    <string name="search_match_result">ผลลัพธ์ที่ตรงกัน</string>
+    <string name="search_matching">กำลังจับคู่… กดค้นหาหลังป้อนชื่อเรื่องครบ</string>
+    <string name="search_title">ค้นหา</string>
+    <string name="search_show_all">แสดงทั้งหมด</string>
+    <string name="search_no_result">ไม่พบผลลัพธ์สำหรับ “%1$s”</string>
 </resources>

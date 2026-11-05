@@ -61,8 +61,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.onefilm.android.tv.compose.R
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.bridge.SearchRank
 import com.onefilm.android.tv.compose.design.component.TvPosterCard
@@ -215,11 +217,11 @@ private fun HistoryPanel(
 ) {
     Panel(modifier) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("搜索历史", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.search_history), fontSize = 13.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.weight(1f))
             if (history.isNotEmpty()) {
                 Text(
-                    "清空",
+                    stringResource(R.string.search_clear),
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = 13.sp,
                     modifier = Modifier.clickable(onClick = onClearHistory).padding(8.dp),
@@ -228,7 +230,7 @@ private fun HistoryPanel(
         }
         Spacer(Modifier.height(8.dp))
         if (history.isEmpty()) {
-            Text("暂无搜索历史", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+            Text(stringResource(R.string.search_history_empty), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
         } else {
             Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
@@ -278,7 +280,7 @@ private fun SearchCenterPanel(
                 Box(contentAlignment = Alignment.CenterStart) {
                     if (query.isEmpty()) {
                         Text(
-                            "输入要搜索的影片、剧集、演员",
+                            stringResource(R.string.search_hint),
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -292,10 +294,10 @@ private fun SearchCenterPanel(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            TvTagButton(text = "搜索", modifier = Modifier.weight(1f)) { onSearch(query) }
-            TvTagButton(text = "远程搜索", modifier = Modifier.weight(1f)) { onSearch(query) }
-            TvTagButton(text = "清空", modifier = Modifier.weight(1f)) { onClear() }
-            TvTagButton(text = "删除", modifier = Modifier.weight(1f)) { onDelete() }
+            TvTagButton(text = stringResource(R.string.search_action), modifier = Modifier.weight(1f)) { onSearch(query) }
+            TvTagButton(text = stringResource(R.string.search_remote), modifier = Modifier.weight(1f)) { onSearch(query) }
+            TvTagButton(text = stringResource(R.string.search_clear), modifier = Modifier.weight(1f)) { onClear() }
+            TvTagButton(text = stringResource(R.string.search_delete), modifier = Modifier.weight(1f)) { onDelete() }
         }
         Spacer(Modifier.height(6.dp))
         AlphabetGrid(
@@ -305,7 +307,7 @@ private fun SearchCenterPanel(
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            text = "字母只填入搜索框；输入完整关键字后点「搜索」。",
+            text = stringResource(R.string.search_keyboard_hint),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
         )
@@ -388,7 +390,7 @@ private fun DynamicRightPanel(
 ) {
     Panel(modifier) {
         Text(
-            text = if (query.isBlank()) "热门搜索" else "匹配结果",
+            text = if (query.isBlank()) stringResource(R.string.search_hot) else stringResource(R.string.search_match_result),
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
         )
@@ -400,7 +402,7 @@ private fun DynamicRightPanel(
             if (query.isNotBlank()) {
                 if (suggestions.isEmpty()) {
                     Text(
-                        "正在匹配，输入完整片名后可点「搜索」。",
+                        stringResource(R.string.search_matching),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                     )
@@ -524,7 +526,7 @@ private fun SearchResults(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "搜索",
+                    text = stringResource(R.string.search_title),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                 )
@@ -541,7 +543,7 @@ private fun SearchResults(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 SiteButton(
-                    text = "全部显示",
+                    text = stringResource(R.string.search_show_all),
                     selected = selectedSite == null,
                     focusEnabled = !restoringCard,
                     onClick = { selectedSite = null },
@@ -565,7 +567,7 @@ private fun SearchResults(
                 is SearchUiState.Empty -> Box(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
-                ) { Text("没有找到“${state.keyword}”相关结果", fontSize = 13.sp) }
+                ) { Text(stringResource(R.string.search_no_result, state.keyword), fontSize = 13.sp) }
                 is SearchUiState.Error -> Box(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,

@@ -20,4 +20,20 @@
     <string name="category_home">Home</string>
     <string name="category_unnamed">Untitled</string>
     <string name="category_filter">Filter</string>
+
+    <!-- Search -->
+    <string name="search_history">Search history</string>
+    <string name="search_clear">Clear</string>
+    <string name="search_history_empty">No search history</string>
+    <string name="search_hint">Movie, series or actor</string>
+    <string name="search_action">Search</string>
+    <string name="search_remote">Remote search</string>
+    <string name="search_delete">Delete</string>
+    <string name="search_keyboard_hint">Letters only fill the search box; press Search after entering the full keyword.</string>
+    <string name="search_hot">Trending</string>
+    <string name="search_match_result">Matches</string>
+    <string name="search_matching">Matching… press Search after entering the full title.</string>
+    <string name="search_title">Search</string>
+    <string name="search_show_all">Show all</string>
+    <string name="search_no_result">No results for “%1$s”</string>
 </resources>

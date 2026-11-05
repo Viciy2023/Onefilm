@@ -20,4 +20,20 @@
     <string name="category_home">Trang chủ</string>
     <string name="category_unnamed">Chưa đặt tên</string>
     <string name="category_filter">Bộ lọc</string>
+
+    <!-- Search -->
+    <string name="search_history">Lịch sử tìm kiếm</string>
+    <string name="search_clear">Xoá</string>
+    <string name="search_history_empty">Chưa có lịch sử tìm kiếm</string>
+    <string name="search_hint">Nhập phim, series hoặc diễn viên</string>
+    <string name="search_action">Tìm kiếm</string>
+    <string name="search_remote">Tìm từ xa</string>
+    <string name="search_delete">Xoá</string>
+    <string name="search_keyboard_hint">Chữ cái chỉ điền vào ô tìm kiếm; nhấn Tìm kiếm sau khi nhập đủ từ khoá.</string>
+    <string name="search_hot">Tìm kiếm phổ biến</string>
+    <string name="search_match_result">Kết quả khớp</string>
+    <string name="search_matching">Đang so khớp… nhấn Tìm kiếm sau khi nhập đủ tên phim.</string>
+    <string name="search_title">Tìm kiếm</string>
+    <string name="search_show_all">Hiện tất cả</string>
+    <string name="search_no_result">Không tìm thấy kết quả cho “%1$s”</string>
 </resources>
