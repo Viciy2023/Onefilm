@@ -430,4 +430,9 @@
 
     <string name="live_source_empty">直播源加载失败，请更换直播接口或切换线路</string>
 
+    <string name="auto_root_name">壹影</string>
+    <string name="auto_vod">点播</string>
+    <string name="auto_live">直播</string>
+    <string name="playback_preparing">正在准备播放</string>
+    <string name="entry_loading">正在加载，请稍候！</string>
 </resources>

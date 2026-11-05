@@ -1,5 +1,8 @@
 package com.onefilm.android.tv.composebridge
 
+import android.content.Context
+import com.onefilm.android.tv.compose.R
+
 import androidx.media3.common.DolbyVisionOutputPolicy
 import com.onefilm.android.tv.App
 import com.onefilm.android.tv.api.config.LiveConfig
@@ -33,10 +36,10 @@ import org.greenrobot.eventbus.ThreadMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class AppSettingsDataSource : SettingsDataSource {
+class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
 
     @Volatile
-    private var cachedCacheSizeLabel: String = "计算中…"
+    private var cachedCacheSizeLabel: String = context.getString(R.string.settings_calculating)
 
     init {
         EventBus.getDefault().register(this)
@@ -57,10 +60,10 @@ class AppSettingsDataSource : SettingsDataSource {
     private var wallLoading = false
 
     private val subtitleColors = listOf(
-        "白" to SubtitleSetting.SUBTITLE_COLOR_WHITE,
-        "黄" to SubtitleSetting.SUBTITLE_COLOR_YELLOW,
-        "青" to SubtitleSetting.SUBTITLE_COLOR_CYAN,
-        "绿" to SubtitleSetting.SUBTITLE_COLOR_GREEN,
+        context.getString(R.string.player_color_white) to SubtitleSetting.SUBTITLE_COLOR_WHITE,
+        context.getString(R.string.player_color_yellow) to SubtitleSetting.SUBTITLE_COLOR_YELLOW,
+        context.getString(R.string.player_color_cyan) to SubtitleSetting.SUBTITLE_COLOR_CYAN,
+        context.getString(R.string.player_color_green) to SubtitleSetting.SUBTITLE_COLOR_GREEN,
     )
 
     override fun load(): SettingsSnapshot {
@@ -81,7 +84,7 @@ class AppSettingsDataSource : SettingsDataSource {
         subtitlePosition = SubtitleSetting.getPosition(),
         subtitleColorLabel = subtitleColors.firstOrNull {
             it.second == SubtitleSetting.getTextBaseColor()
-        }?.first ?: "自定义",
+        }?.first ?: context.getString(R.string.settings_custom),
         subtitleEdgeWidth = SubtitleSetting.getEdgeWidth(),
         danmakuBlockWords = com.github.catvod.utils.Prefers.getString("compose_danmaku_block_words"),
         danmakuShow = DanmakuSetting.isShow(),
@@ -104,9 +107,9 @@ class AppSettingsDataSource : SettingsDataSource {
         cacheDays = Setting.getHistoryDays(),
         cacheSizeLabel = cachedCacheSizeLabel,
         wallpaperLabel = when (Setting.getWall()) {
-            0 -> "无"
-            5 -> "网络壁纸"
-            else -> "纯色 ${Setting.getWall()}"
+            0 -> context.getString(R.string.settings_wall_none)
+            5 -> context.getString(R.string.settings_wall_network)
+            else -> context.getString(R.string.settings_wall_solid, Setting.getWall())
         },
         forceUpdate = Setting.getForceUpdate(),
         searchThreads = SearchSettings.threads(),
@@ -497,8 +500,8 @@ class AppSettingsDataSource : SettingsDataSource {
     }
 
     private fun dolbyLabel(mode: Int): String = when (mode) {
-        DolbyVisionOutputPolicy.ASSUME_SUPPORTED -> "强制支持"
-        DolbyVisionOutputPolicy.ASSUME_UNSUPPORTED -> "强制不支持"
-        else -> "自动"
+        DolbyVisionOutputPolicy.ASSUME_SUPPORTED -> context.getString(R.string.settings_dv_force_on)
+        DolbyVisionOutputPolicy.ASSUME_UNSUPPORTED -> context.getString(R.string.settings_dv_force_off)
+        else -> context.getString(R.string.settings_dv_auto)
     }
 }

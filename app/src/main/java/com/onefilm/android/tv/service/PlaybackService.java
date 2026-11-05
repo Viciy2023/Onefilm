@@ -123,7 +123,7 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
         Notification notification = new NotificationCompat.Builder(this, com.onefilm.android.tv.utils.Notify.DEFAULT)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle("OneFilm")
-                .setContentText("正在准备播放")
+                .setContentText(getString(com.onefilm.android.tv.R.string.playback_preparing))
                 .setContentIntent(pending)
                 .setOngoing(true)
                 .build();

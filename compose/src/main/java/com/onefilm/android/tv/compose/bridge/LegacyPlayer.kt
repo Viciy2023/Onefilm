@@ -37,6 +37,8 @@ interface LegacyPlayer {
     fun setEngine(mpv: Boolean)
     fun setRender(mode: Int)
     fun toggleDecode()
+    /** 是否走软解；与展示文案无关，供逻辑判断。 */
+    fun isSoftwareDecode(): Boolean = false
     fun decodeText(): String
     fun tracks(): List<LegacyTrack>
     fun selectTrack(track: LegacyTrack)

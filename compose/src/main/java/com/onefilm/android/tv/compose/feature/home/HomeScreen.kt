@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
 import com.onefilm.android.tv.compose.bridge.HomeCategory
+import com.onefilm.android.tv.compose.bridge.HomeSection
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.design.component.HeroBanner
 import com.onefilm.android.tv.compose.design.component.PosterItem
@@ -230,10 +231,11 @@ private fun HomeContent(
                 CategoryRail(feed.categories, onCategoryClick)
             }
         }
-        feed.sections.forEachIndexed { index, section ->
-            item(key = "section:$index:${section.title}") {
+        for ((index, section) in feed.sections.withIndex()) {
+            item(key = "section:$index:${section.key ?: section.title}") {
+                val sectionTitle = section.displayTitle()
                 SectionRow(
-                    title = section.title,
+                    title = sectionTitle,
                     items = section.items.map { it.toPosterItem() },
                     onItemClick = { item ->
                         onCardClick(
@@ -265,7 +267,7 @@ private fun TvHomeContent(
     state: HomeUiState.Content,
     onCardClick: (MediaCard) -> Unit,
 ) {
-    val section = state.feed.sections.firstOrNull { it.title == "推荐" && it.items.isNotEmpty() }
+    val section = state.feed.sections.firstOrNull { it.key == "recommend" && it.items.isNotEmpty() }
         ?: state.feed.sections.firstOrNull { it.items.isNotEmpty() }
         ?: return
     TvPosterSection(section.items, onCardClick)
@@ -352,4 +354,13 @@ private fun StatusMessage(message: String, onRetry: () -> Unit) {
             Button(onClick = onRetry) { Text(stringResource(R.string.detail_retry)) }
         }
     }
+}
+
+/** 首页分区标题：合成分区按稳定 key 取本地化文案，接口分区沿用后端标题。 */
+@Composable
+private fun HomeSection.displayTitle(): String = when (key) {
+    "history" -> stringResource(R.string.home_section_history)
+    "favorites" -> stringResource(R.string.home_section_favorites)
+    "recommend" -> stringResource(R.string.home_section_recommend)
+    else -> title
 }

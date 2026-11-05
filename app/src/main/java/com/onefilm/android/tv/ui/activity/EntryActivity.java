@@ -66,7 +66,7 @@ public class EntryActivity extends Activity {
         bottom.addView(progress, new LinearLayout.LayoutParams(dp(260), dp(6)));
 
         TextView hint = new TextView(this);
-        hint.setText("正在加载，请稍候！");
+        hint.setText(getString(com.onefilm.android.tv.R.string.entry_loading));
         hint.setTextColor(0xFF737373);
         hint.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
         hint.setGravity(Gravity.CENTER);

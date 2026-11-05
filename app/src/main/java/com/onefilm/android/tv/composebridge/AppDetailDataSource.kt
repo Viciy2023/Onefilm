@@ -26,7 +26,7 @@ class AppDetailDataSource : DetailDataSource {
             val info = DetailInfo(
                 key = key,
                 id = id,
-                title = vod.name.orEmpty().ifBlank { "未命名" },
+                title = vod.name.orEmpty().ifBlank { "" },
                 posterUrl = vod.pic.orEmpty().ifBlank { null },
                 description = vod.content.orEmpty().ifBlank { null },
                 year = vod.year.orEmpty().ifBlank { null },

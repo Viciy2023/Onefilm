@@ -189,7 +189,7 @@ object PlaybackSession {
         }
 
         override fun onDecodeChanged() {
-            softwareDecode = legacy?.decodeText()?.contains("软") == true
+            softwareDecode = legacy?.isSoftwareDecode() == true
         }
 
         override fun onError(message: String) {
@@ -246,7 +246,7 @@ object PlaybackSession {
 
     fun toggleDecode() {
         legacy?.toggleDecode()
-        softwareDecode = legacy?.decodeText()?.contains("软") == true
+        softwareDecode = legacy?.isSoftwareDecode() == true
     }
 
     val decodeLabel: String get() = legacy?.decodeText() ?: if (softwareDecode) str(R.string.player_decode_sw) else str(R.string.player_decode_hw)

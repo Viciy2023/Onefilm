@@ -440,4 +440,9 @@
 
     <string name="live_source_empty">Live source unavailable. Change the live config or switch lines.</string>
 
+    <string name="auto_root_name">OneFilm</string>
+    <string name="auto_vod">On demand</string>
+    <string name="auto_live">Live</string>
+    <string name="playback_preparing">Preparing playback</string>
+    <string name="entry_loading">Loading, please wait!</string>
 </resources>

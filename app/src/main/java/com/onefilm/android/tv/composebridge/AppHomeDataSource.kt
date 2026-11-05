@@ -47,12 +47,12 @@ class AppHomeDataSource : HomeDataSource {
         CategoryFilterStore.put(result.types)
         val sections = buildList {
             HomeFeedMapper.fromHistory(History.get()).takeIf { it.isNotEmpty() }?.let {
-                add(HomeSection("继续观看", it))
+                add(HomeSection("", it, key = "history"))
             }
             HomeFeedMapper.fromKeeps(Keep.getVod()).takeIf { it.isNotEmpty() }?.let {
-                add(HomeSection("收藏", it))
+                add(HomeSection("", it, key = "favorites"))
             }
-            if (vods.isNotEmpty()) add(HomeSection("推荐", vods))
+            if (vods.isNotEmpty()) add(HomeSection("", vods, key = "recommend"))
         }
         HomeFeed(
             hero = hero,

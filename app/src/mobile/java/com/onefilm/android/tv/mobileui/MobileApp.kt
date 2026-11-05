@@ -288,13 +288,13 @@ private fun MobileHomeContent(
 ) {
     val feed = state.feed
     val recommendationIndex = feed.sections.indexOfFirst {
-        it.title == "推荐" && it.items.isNotEmpty()
+        it.key == "recommend" && it.items.isNotEmpty()
     }
     val recommendation = feed.sections.getOrNull(recommendationIndex)?.items
         ?: feed.hero.takeIf { it.isNotEmpty() }
     // 首页只保留「推荐」和「继续观看」；收藏交给底部导航，不再占用首页。
     val continueWatching = feed.sections.firstOrNull {
-        it.title == "继续观看" && it.items.isNotEmpty()
+        it.key == "history" && it.items.isNotEmpty()
     }
     val hasRecommend = !recommendation.isNullOrEmpty()
     val continueItems = continueWatching?.items.orEmpty()

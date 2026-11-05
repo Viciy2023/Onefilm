@@ -439,4 +439,9 @@
 
     <string name="live_source_empty">แหล่งถ่ายทอดสดไม่พร้อมใช้งาน โปรดเปลี่ยนการตั้งค่าหรือสลับสาย</string>
 
+    <string name="auto_root_name">OneFilm</string>
+    <string name="auto_vod">ตามต้องการ</string>
+    <string name="auto_live">ถ่ายทอดสด</string>
+    <string name="playback_preparing">กำลังเตรียมเล่น</string>
+    <string name="entry_loading">กำลังโหลด โปรดรอสักครู่!</string>
 </resources>

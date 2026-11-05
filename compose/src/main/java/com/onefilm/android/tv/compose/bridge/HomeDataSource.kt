@@ -12,7 +12,7 @@ data class MediaCard(
     val siteName: String? = null,
 ) : Serializable
 
-data class HomeSection(val title: String, val items: List<MediaCard>) : Serializable
+data class HomeSection(val title: String, val items: List<MediaCard>, val key: String? = null) : Serializable
 
 data class HomeCategory(val key: String, val id: String, val name: String) : Serializable
 

@@ -1,5 +1,8 @@
 package com.onefilm.android.tv.composebridge
 
+import android.content.Context
+import com.onefilm.android.tv.compose.R
+
 import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
@@ -24,7 +27,7 @@ import java.net.URLDecoder
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
-class AppNetdiskDataSource : NetdiskDataSource {
+class AppNetdiskDataSource(private val context: Context) : NetdiskDataSource {
 
     private val gson = Gson()
     private val client = OkHttpClient.Builder()
@@ -78,7 +81,7 @@ class AppNetdiskDataSource : NetdiskDataSource {
                     if (direct != null) NetdiskPlayback(direct)
                     else NetdiskPlayback(alistFileUrl(config, entry.path))
                 }
-                else -> throw IllegalStateException("不支持的网盘类型")
+                else -> throw IllegalStateException(context.getString(R.string.netdisk_err_type))
             }
         }
 
@@ -86,15 +89,15 @@ class AppNetdiskDataSource : NetdiskDataSource {
         val config = config(drive)
         val context = App.get()
         val treeUri = config.get("uri")?.asString.orEmpty()
-        if (treeUri.isBlank()) throw IllegalStateException("本地目录未选择")
+        if (treeUri.isBlank()) throw IllegalStateException(context.getString(R.string.netdisk_err_no_local_dir))
         val folder = if (path.isBlank()) {
             DocumentFile.fromTreeUri(context, Uri.parse(treeUri))
         } else {
             DocumentFile.fromSingleUri(context, Uri.parse(path))
-        } ?: throw IllegalStateException("无法打开本地目录")
+        } ?: throw IllegalStateException(context.getString(R.string.netdisk_err_open_local_dir))
         return folder.listFiles().map { file ->
             NetdiskEntry(
-                name = file.name.orEmpty().ifBlank { "未命名" },
+                name = file.name.orEmpty().ifBlank { context.getString(R.string.detail_unnamed) },
                 path = file.uri.toString(),
                 isDirectory = file.isDirectory,
                 fileUrl = if (file.isFile) file.uri.toString() else null,
@@ -106,7 +109,7 @@ class AppNetdiskDataSource : NetdiskDataSource {
         val config = config(drive)
         val base = config.get("url")?.asString.orEmpty().trimEnd('/')
         val root = config.get("initPath")?.asString.orEmpty().trim('/')
-        if (base.isBlank()) throw IllegalStateException("WebDAV 地址为空")
+        if (base.isBlank()) throw IllegalStateException(context.getString(R.string.netdisk_err_webdav_url))
         val fullPath = joinPath(root, path)
         val url = if (fullPath.isBlank()) "$base/" else "$base/${encodePath(fullPath)}"
         val body = """<?xml version="1.0" encoding="utf-8" ?>
@@ -121,7 +124,7 @@ class AppNetdiskDataSource : NetdiskDataSource {
             .build()
         val response = client.newCall(request).execute()
         response.use {
-            if (!it.isSuccessful) throw IllegalStateException("WebDAV 返回 ${it.code}")
+            if (!it.isSuccessful) throw IllegalStateException(context.getString(R.string.netdisk_err_webdav_code, it.code))
             val text = it.body?.string().orEmpty()
             return parseWebDav(text, base, root, path)
         }
@@ -173,7 +176,7 @@ class AppNetdiskDataSource : NetdiskDataSource {
         val config = config(drive)
         val base = config.get("url")?.asString.orEmpty().trimEnd('/')
         val root = config.get("initPath")?.asString.orEmpty().trim('/')
-        if (base.isBlank()) throw IllegalStateException("Alist 地址为空")
+        if (base.isBlank()) throw IllegalStateException(context.getString(R.string.netdisk_err_alist_url))
         val fullPath = "/" + joinPath(root, path)
         val payload = JsonObject().apply {
             addProperty("path", if (fullPath == "") "/" else fullPath)
@@ -188,10 +191,10 @@ class AppNetdiskDataSource : NetdiskDataSource {
             .build()
         val response = client.newCall(request).execute()
         response.use {
-            if (!it.isSuccessful) throw IllegalStateException("Alist 返回 ${it.code}")
+            if (!it.isSuccessful) throw IllegalStateException(context.getString(R.string.netdisk_err_alist_code, it.code))
             val rootJson = JsonParser.parseString(it.body?.string().orEmpty()).asJsonObject
             if (rootJson.get("code")?.asInt != 200) {
-                throw IllegalStateException(rootJson.get("message")?.asString ?: "Alist 请求失败")
+                throw IllegalStateException(rootJson.get("message")?.asString ?: context.getString(R.string.netdisk_err_alist_failed))
             }
             val data = rootJson.getAsJsonObject("data") ?: return emptyList()
             val files = data.getAsJsonArray("files") ?: data.getAsJsonArray("content")
@@ -228,13 +231,13 @@ class AppNetdiskDataSource : NetdiskDataSource {
             .build()
         val response = client.newCall(request).execute()
         response.use {
-            if (!it.isSuccessful) throw IllegalStateException("Alist 返回 ${it.code}")
+            if (!it.isSuccessful) throw IllegalStateException(context.getString(R.string.netdisk_err_alist_code, it.code))
             val rootJson = JsonParser.parseString(it.body?.string().orEmpty()).asJsonObject
             if (rootJson.get("code")?.asInt != 200) {
-                throw IllegalStateException(rootJson.get("message")?.asString ?: "无法获取文件地址")
+                throw IllegalStateException(rootJson.get("message")?.asString ?: context.getString(R.string.netdisk_err_file_url))
             }
             return rootJson.getAsJsonObject("data")?.get("raw_url")?.asString
-                ?: throw IllegalStateException("Alist 未返回 raw_url")
+                ?: throw IllegalStateException(context.getString(R.string.netdisk_err_raw_url))
         }
     }
 

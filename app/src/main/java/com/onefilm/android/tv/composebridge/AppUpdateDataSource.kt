@@ -25,7 +25,7 @@ class AppUpdateDataSource : UpdateDataSource {
             val result = if (info != null && UpdateManifest.isNewer(info)) {
                 UpdateInfo(
                     version = info.version,
-                    notes = info.notes.ifBlank { "发现新版本，建议更新后再使用。" },
+                    notes = info.notes.orEmpty(),
                     url = info.url,
                     force = Setting.getForceUpdate(),
                 )

@@ -13,7 +13,7 @@ object HomeFeedMapper {
         MediaCard(
             key = siteKey,
             id = vod.id.orEmpty(),
-            title = vod.name.orEmpty().ifBlank { "未命名" },
+            title = vod.name.orEmpty().ifBlank { "" },
             subtitle = vod.remarks.orEmpty().ifBlank { null },
             posterUrl = vod.pic.orEmpty().ifBlank { null },
             siteName = runCatching { VodConfig.get().getSite(siteKey).name }.getOrNull(),
@@ -25,7 +25,7 @@ object HomeFeedMapper {
         MediaCard(
             key = item.siteKey.orEmpty(),
             id = item.vodId.orEmpty(),
-            title = item.vodName.orEmpty().ifBlank { "未命名" },
+            title = item.vodName.orEmpty().ifBlank { "" },
             subtitle = item.vodRemarks.orEmpty().ifBlank { null },
             posterUrl = item.vodPic.orEmpty().ifBlank { null },
             progress = progress,
@@ -37,7 +37,7 @@ object HomeFeedMapper {
         MediaCard(
             key = parts.getOrNull(0).orEmpty(),
             id = parts.getOrNull(1).orEmpty(),
-            title = item.vodName.orEmpty().ifBlank { "未命名" },
+            title = item.vodName.orEmpty().ifBlank { "" },
             subtitle = item.siteName.orEmpty().ifBlank { null },
             posterUrl = item.vodPic.orEmpty().ifBlank { null },
         )

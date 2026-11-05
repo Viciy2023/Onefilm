@@ -1,6 +1,8 @@
 package com.onefilm.android.tv.composebridge
 
+import android.content.Context
 import com.onefilm.android.tv.App
+import com.onefilm.android.tv.compose.R
 import com.onefilm.android.tv.bean.Word
 import com.onefilm.android.tv.compose.bridge.SearchMetaDataSource
 import com.onefilm.android.tv.compose.bridge.SearchRank
@@ -12,7 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.URLEncoder
 
-class AppSearchMetaDataSource : SearchMetaDataSource {
+class AppSearchMetaDataSource(private val context: Context) : SearchMetaDataSource {
 
     override fun history(): List<String> = runCatching {
         App.gson().fromJson<List<String>>(
@@ -27,9 +29,9 @@ class AppSearchMetaDataSource : SearchMetaDataSource {
 
     override suspend fun refreshRankings(): List<SearchRank> = withContext(Dispatchers.IO) {
         listOf(
-            "电视榜" to 3,
-            "电影榜" to 2,
-            "综艺榜" to 4,
+            context.getString(R.string.search_rank_tv) to 3,
+            context.getString(R.string.search_rank_movie) to 2,
+            context.getString(R.string.search_rank_variety) to 4,
         ).mapNotNull { (title, cat) ->
             runCatching {
                 val url = "https://api.web.360kan.com/v1/rank?cat=$cat"

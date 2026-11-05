@@ -439,4 +439,9 @@
 
     <string name="live_source_empty">Nguồn trực tiếp không khả dụng. Hãy đổi cấu hình hoặc chuyển kênh.</string>
 
+    <string name="auto_root_name">OneFilm</string>
+    <string name="auto_vod">Theo yêu cầu</string>
+    <string name="auto_live">Trực tiếp</string>
+    <string name="playback_preparing">Đang chuẩn bị phát</string>
+    <string name="entry_loading">Đang tải, vui lòng đợi!</string>
 </resources>

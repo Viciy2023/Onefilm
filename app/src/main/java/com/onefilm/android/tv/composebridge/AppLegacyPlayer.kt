@@ -1,7 +1,9 @@
 package com.onefilm.android.tv.composebridge
 
-import android.content.ComponentName
 import android.content.Context
+import com.onefilm.android.tv.compose.R
+
+import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Handler
@@ -172,7 +174,9 @@ class AppLegacyPlayer : LegacyPlayer {
         manager?.toggleDecode()
     }
 
-    override fun decodeText(): String = manager?.decodeText ?: "硬解"
+    override fun isSoftwareDecode(): Boolean = manager?.decodeText?.contains("软") == true
+
+    override fun decodeText(): String = if (isSoftwareDecode()) context.getString(R.string.player_decode_sw) else context.getString(R.string.player_decode_hw)
 
     override fun tracks(): List<LegacyTrack> {
         val tracks = manager?.currentTracks ?: return emptyList()
@@ -183,7 +187,7 @@ class AppLegacyPlayer : LegacyPlayer {
                 result.add(
                     LegacyTrack(
                         type = group.type,
-                        name = format.label ?: format.language ?: format.id ?: "轨道 ${i + 1}",
+                        name = format.label ?: format.language ?: format.id ?: context.getString(R.string.player_track_name, i + 1),
                         format = TrackUtil.describeFormat(format),
                         selected = group.isTrackSelected(i),
                     ),
@@ -247,7 +251,7 @@ class AppLegacyPlayer : LegacyPlayer {
     private var subtitleColorIndex = 0
 
     override fun subtitleColorLabel(): String {
-        return listOf("白", "黄", "青", "绿")[subtitleColorIndex % 4]
+        return listOf(R.string.player_color_white, R.string.player_color_yellow, R.string.player_color_cyan, R.string.player_color_green).let { ids -> context.getString(ids[subtitleColorIndex % 4]) }
     }
 
     override fun cycleSubtitleColor() {
