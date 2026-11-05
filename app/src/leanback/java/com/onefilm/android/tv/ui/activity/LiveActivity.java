@@ -87,6 +87,8 @@ public class LiveActivity extends LivePlaybackActivity implements GroupAdapter.O
     private Clock mClock;
     private View mOldView;
     private View mFocus2;
+    /** 进入直播后是否已经自动展示过频道列表；避免 EPG 等数据重复回调时又把列表弹出来。 */
+    private boolean entryListShown;
     private Runnable mR0;
     private Runnable mR2;
     private Runnable mR4;
@@ -222,6 +224,11 @@ public class LiveActivity extends LivePlaybackActivity implements GroupAdapter.O
         mViewModel.parseXml(live);
         setGroup(live);
         setWidth(live);
+        // 进入直播后先展示频道组与频道列表，5 秒无操作再由 setUITimer() 收起。
+        if (!entryListShown) {
+            entryListShown = true;
+            mBinding.recycler.postDelayed(this::showUI, 300);
+        }
     }
 
     /** 切到直播源列表里的下一条；已试过一轮则返回 false。 */
@@ -789,6 +796,7 @@ public class LiveActivity extends LivePlaybackActivity implements GroupAdapter.O
     public void setLive(Live item) {
         if (item.isSelected()) item.getGroups().clear();
         liveFallbackAttempts = 0;
+        entryListShown = false;
         LiveConfig.get().setHome(item);
         player().reset();
         player().clear();

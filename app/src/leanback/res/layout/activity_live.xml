@@ -38,7 +38,7 @@
 
         <include
             android:id="@+id/progress"
-            layout="@layout/view_progress"
+            layout="@layout/view_progress_live"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
@@ -48,10 +48,7 @@
         android:id="@+id/recycler"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="12dp"
         android:background="@drawable/shape_live_list"
-        android:elevation="8dp"
         android:orientation="horizontal"
         android:visibility="gone"
         tools:visibility="visible">
@@ -62,7 +59,8 @@
             android:layout_height="match_parent"
             android:clipChildren="false"
             android:clipToPadding="false"
-            android:padding="12dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
             tools:itemCount="5"
             tools:listitem="@layout/adapter_group" />
 
@@ -73,7 +71,8 @@
             android:clipChildren="false"
             android:translationX="-12dp"
             android:clipToPadding="false"
-            android:padding="12dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
             tools:itemCount="5"
             tools:listitem="@layout/adapter_channel" />
 
@@ -83,7 +82,8 @@
             android:layout_height="match_parent"
             android:clipChildren="false"
             android:clipToPadding="false"
-            android:padding="12dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
             tools:itemCount="5"
             tools:listitem="@layout/adapter_epg_data" />
 
