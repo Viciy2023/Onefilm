@@ -36,10 +36,12 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.onefilm.android.tv.compose.R
 import com.onefilm.android.tv.compose.bridge.HomeCategory
 import kotlinx.coroutines.delay
 
@@ -58,7 +60,7 @@ fun TvCategoryBar(
     hasCategoryFilters: (HomeCategory) -> Boolean,
     onHomeFocused: (Boolean) -> Unit,
 ) {
-    val allCategories = listOf(HomeCategory("", "", "主页")) + categories
+    val allCategories = listOf(HomeCategory("", "", stringResource(R.string.category_home))) + categories
     val initialFocus = remember { FocusRequester() }
     var categoryFocusSeen by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -179,7 +181,7 @@ private fun TvCategoryChip(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = category.name.ifBlank { "未命名" },
+            text = category.name.ifBlank { stringResource(R.string.category_unnamed) },
             color = foreground,
             fontSize = 13.sp,
             fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Normal,
@@ -190,7 +192,7 @@ private fun TvCategoryChip(
             Spacer(Modifier.width(4.dp))
             Icon(
                 imageVector = Icons.Filled.FilterList,
-                contentDescription = "可筛选",
+                contentDescription = stringResource(R.string.category_filter),
                 tint = foreground.copy(alpha = if (highlighted) 0.85f else 0.65f),
                 modifier = Modifier.size(13.dp),
             )

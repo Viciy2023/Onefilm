@@ -4,4 +4,20 @@
     <string name="home_welcome_body">Hãy cấu hình nguồn trong「Cấu hình」ở thanh bên trái.\nChúc bạn xem phim vui vẻ!</string>
     <string name="home_action_config">Mở cấu hình</string>
     <string name="home_action_retry">Thử lại</string>
+
+    <!-- Sidebar -->
+    <string name="nav_vod">Phim</string>
+    <string name="nav_history">Lịch sử</string>
+    <string name="nav_favorites">Yêu thích</string>
+    <string name="nav_search">Tìm kiếm</string>
+    <string name="nav_live">Trực tiếp</string>
+    <string name="nav_config">Cấu hình</string>
+    <string name="nav_lines">Kênh</string>
+    <string name="nav_netdisk">Ổ mạng</string>
+    <string name="nav_settings">Cài đặt</string>
+
+    <!-- Category bar -->
+    <string name="category_home">Trang chủ</string>
+    <string name="category_unnamed">Chưa đặt tên</string>
+    <string name="category_filter">Bộ lọc</string>
 </resources>

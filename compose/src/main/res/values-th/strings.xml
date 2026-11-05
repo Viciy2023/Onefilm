@@ -4,4 +4,20 @@
     <string name="home_welcome_body">ตั้งค่าแหล่งใน「การตั้งค่า」ที่แถบด้านซ้าย\nขอให้มีความสุขกับการดูหนัง!</string>
     <string name="home_action_config">เปิดการตั้งค่า</string>
     <string name="home_action_retry">ลองใหม่</string>
+
+    <!-- Sidebar -->
+    <string name="nav_vod">ภาพยนตร์</string>
+    <string name="nav_history">ประวัติ</string>
+    <string name="nav_favorites">รายการโปรด</string>
+    <string name="nav_search">ค้นหา</string>
+    <string name="nav_live">ถ่ายทอดสด</string>
+    <string name="nav_config">การตั้งค่า</string>
+    <string name="nav_lines">สาย</string>
+    <string name="nav_netdisk">คลาวด์ดิสก์</string>
+    <string name="nav_settings">ตั้งค่า</string>
+
+    <!-- Category bar -->
+    <string name="category_home">หน้าแรก</string>
+    <string name="category_unnamed">ไม่มีชื่อ</string>
+    <string name="category_filter">ตัวกรอง</string>
 </resources>

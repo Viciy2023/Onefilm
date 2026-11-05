@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -55,6 +56,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.onefilm.android.tv.compose.R
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -451,7 +453,7 @@ class ComposeMainActivity : ComponentActivity() {
                             TvSidebar(
                                 entries = listOf(
                                     SidebarEntry(
-                                        label = "点播",
+                                        label = stringResource(R.string.nav_vod),
                                         icon = Icons.Outlined.Home,
                                         selected = route == Routes.HOME ||
                                             route?.startsWith("category") == true,
@@ -462,56 +464,56 @@ class ComposeMainActivity : ComponentActivity() {
                                         }
                                     },
                                     SidebarEntry(
-                                        label = "历史",
+                                        label = stringResource(R.string.nav_history),
                                         icon = Icons.Outlined.History,
                                         selected = route == Routes.HISTORY,
                                     ) {
                                         navController.navigate(Routes.HISTORY) { launchSingleTop = true }
                                     },
                                     SidebarEntry(
-                                        label = "收藏",
+                                        label = stringResource(R.string.nav_favorites),
                                         icon = Icons.Outlined.Star,
                                         selected = route == Routes.LIBRARY,
                                     ) {
                                         navController.navigate(Routes.LIBRARY) { launchSingleTop = true }
                                     },
                                     SidebarEntry(
-                                        label = "搜索",
+                                        label = stringResource(R.string.nav_search),
                                         icon = Icons.Outlined.Search,
                                         selected = route == Routes.SEARCH,
                                     ) {
                                         navController.navigate(Routes.SEARCH) { launchSingleTop = true }
                                     },
                                     SidebarEntry(
-                                        label = "直播",
+                                        label = stringResource(R.string.nav_live),
                                         icon = Icons.Outlined.LiveTv,
                                         selected = false,
                                     ) {
                                         ComposeDependencies.liveLauncher.open(this@ComposeMainActivity)
                                     },
                                     SidebarEntry(
-                                        label = "配置",
+                                        label = stringResource(R.string.nav_config),
                                         icon = Icons.Outlined.Tune,
                                         selected = false,
                                     ) {
                                         showConfigDialog = true
                                     },
                                     SidebarEntry(
-                                        label = "线路",
+                                        label = stringResource(R.string.nav_lines),
                                         icon = Icons.Outlined.SwapHoriz,
                                         selected = false,
                                     ) {
                                         showLinesDialog = true
                                     },
                                     SidebarEntry(
-                                        label = "网盘",
+                                        label = stringResource(R.string.nav_netdisk),
                                         icon = Icons.Outlined.Cloud,
                                         selected = route == Routes.NETDISK,
                                     ) {
                                         navController.navigate(Routes.NETDISK) { launchSingleTop = true }
                                     },
                                     SidebarEntry(
-                                        label = "设置",
+                                        label = stringResource(R.string.nav_settings),
                                         icon = Icons.Outlined.Settings,
                                         selected = false,
                                     ) {
