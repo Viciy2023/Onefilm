@@ -4,16 +4,12 @@
 
     <solid android:color="@color/live_surface" />
 
-    <corners android:radius="16dp" />
-
-    <stroke
-        android:width="2dp"
-        android:color="@color/live_text_dark" />
+    <corners android:radius="12dp" />
 
     <padding
-        android:bottom="12dp"
+        android:bottom="5dp"
         android:left="12dp"
         android:right="12dp"
-        android:top="12dp" />
+        android:top="5dp" />
 
 </shape>
