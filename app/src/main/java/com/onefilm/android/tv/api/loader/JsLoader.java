@@ -17,7 +17,7 @@ public class JsLoader {
     private static final long RETAIN_GRACE_MS = 20_000L;
 
     /** 单站点释放的保护窗口：刚被取用过的引擎先不销毁（可能在跑详情/播放）。 */
-    private static final long RELEASE_GRACE_MS = 5_000L;
+    private static final long RELEASE_GRACE_MS = 500L;
 
     private static final java.util.concurrent.atomic.AtomicInteger INIT_FAILURES = new java.util.concurrent.atomic.AtomicInteger();
 

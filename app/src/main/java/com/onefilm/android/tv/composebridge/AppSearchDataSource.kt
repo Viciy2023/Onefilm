@@ -123,12 +123,14 @@ class AppSearchDataSource : SearchDataSource {
             // 避开“用户此刻正好点开该站点详情”的竞态。
             if (!timedOut) timeoutCounts.remove(site.key)
             // 超时的站点其调用可能还在跑（init 未完成），此时不能回收，否则会把引擎掐断。
+            // 回收放到多线程池里并行执行：destroy() 本身要几十到几百毫秒，
+            // 用单线程调度器排队会跟不上引擎创建速度，导致搜索期峰值偏高。
             if (isJs && !timedOut) {
                 val siteKey = site.key
-                Task.schedule({
+                Task.execute {
                     val ok = runCatching { BaseLoader.get().releaseJs(siteKey) }.getOrDefault(false)
                     dbg("release site=$siteKey ok=$ok")
-                }, 8, TimeUnit.SECONDS)
+                }
             }
             dbg("site=${site.key} js=${site.api?.contains(".js") == true} vods=${vods?.size}")
             val doneCount = completed.incrementAndGet()
