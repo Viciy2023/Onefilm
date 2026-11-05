@@ -113,8 +113,8 @@ jobs:
           # In-app updates must download from R2, so the APKs go to the bucket
           # together with the manifest that points at them.
           $apks = @(
-            Get-ChildItem app/build/outputs/apk/leanback/release -Filter "OneFilm-TV-$env:VERSION_NAME-*.apk" -ErrorAction SilentlyContinue
-            Get-ChildItem app/build/outputs/apk/mobile/release -Filter "OneFilm-Mobile-$env:VERSION_NAME-*.apk" -ErrorAction SilentlyContinue
+            Get-ChildItem app/build/outputs/apk/leanback/release -Filter "OneFilm-TV-v$env:VERSION_NAME-*.apk" -ErrorAction SilentlyContinue
+            Get-ChildItem app/build/outputs/apk/mobile/release -Filter "OneFilm-Mobile-v$env:VERSION_NAME-*.apk" -ErrorAction SilentlyContinue
           )
           if ($apks.Count -eq 0) { throw "no APK found for version $env:VERSION_NAME" }
           $maps = @(
