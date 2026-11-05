@@ -1,0 +1,442 @@
+<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+
+    <!-- App -->
+    <string name="app_name">OneFilm</string>
+
+    <!-- Live -->
+    <string name="live_pass">ข้าม</string>
+    <string name="live_refresh">รีเฟรช</string>
+    <string name="live_line">สาย <xliff:g name="name">%s</xliff:g></string>
+
+    <!-- Detail -->
+    <string name="detail_title"><xliff:g name="name">%s</xliff:g> : <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_site">แหล่ง: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_year">ปี: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_area">ภูมิภาค: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_type">ประเภท: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_director">ผู้กำกับ: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_actor">นักแสดง: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_content">เรื่องย่อ: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_desc">เรื่องย่อ</string>
+
+    <!-- Keep -->
+    <string name="keep">เก็บ</string>
+    <string name="keep_add">เพิ่มแล้ว</string>
+    <string name="keep_del">ลบแล้ว</string>
+
+    <!-- Play -->
+    <string name="play">เล่น</string>
+    <string name="pause">หยุดชั่วคราว</string>
+    <string name="play_op">OP</string>
+    <string name="play_ed">ED</string>
+    <string name="play_exo">EXO</string>
+    <string name="play_mpv">MPV</string>
+    <string name="play_other">อื่น ๆ</string>
+    <string name="play_next">ตอนถัดไป</string>
+    <string name="play_prev">ตอนก่อน</string>
+    <string name="play_stop">หยุด</string>
+    <string name="play_repeat">วนซ้ำ</string>
+    <string name="play_forward">→</string>
+    <string name="play_backward">←</string>
+    <string name="play_speed">ความเร็ว</string>
+    <string name="play_speed_hint">ความเร็ว <xliff:g name="speed">%1$s</xliff:g></string>
+    <string name="play_reset">รีเซ็ต</string>
+    <string name="play_replay">เล่นอีกครั้ง</string>
+    <string name="play_decode">ฮาร์ดแวร์</string>
+    <string name="play_timer">ตัวจับเวลา</string>
+    <string name="play_edition">เวอร์ชัน</string>
+    <string name="play_chapter">ตอน</string>
+    <string name="play_scale">ค่าเริ่มต้น</string>
+    <string name="play_config">การตั้งค่า</string>
+    <string name="play_change">เปลี่ยน</string>
+    <string name="play_invert">กลับสี</string>
+    <string name="play_across">ข้าม</string>
+    <string name="play_reverse">ย้อนกลับ</string>
+    <string name="play_track_text">คำบรรยาย</string>
+    <string name="play_track_audio">เสียง</string>
+    <string name="play_track_video">ภาพ</string>
+    <string name="play_forward_hint">เปลี่ยนเป็นการเล่นปกติแล้ว</string>
+    <string name="play_backward_hint">เปลี่ยนเป็นการเล่นย้อนกลับแล้ว</string>
+    <string name="play_ready">พร้อมเล่น: <xliff:g name="name">%s</xliff:g></string>
+    <string name="play_switch_flag">กำลังเปลี่ยนแหล่งเล่นเป็น <xliff:g name="name">%s</xliff:g></string>
+    <string name="play_switch_site">กำลังเปลี่ยนแหล่งเป็น <xliff:g name="name">%s</xliff:g></string>
+    <string name="play_switch_parse">กำลังเปลี่ยนตัวแยกเป็น <xliff:g name="name">%s</xliff:g></string>
+
+    <!-- Playback Setting -->
+    <string name="setting_tab_offset">ออฟเซต</string>
+    <string name="setting_effect_basic">พื้นฐาน</string>
+    <string name="setting_effect_scene">ฉาก</string>
+    <string name="setting_effect_custom">กำหนดเอง</string>
+    <string name="setting_preset_original">ต้นฉบับ</string>
+
+    <!-- Speed Setting -->
+    <string name="speed_setting">ตั้งค่าความเร็ว</string>
+    <string name="speed_setting_reset">รีเซ็ต</string>
+    <string name="speed_setting_current">ความเร็วเล่น</string>
+    <string name="speed_setting_long_press">ความเร็วกดค้าง</string>
+    <string name="speed_setting_quick">เลือกเร็ว</string>
+    <string name="speed_setting_skip_silence">ข้ามช่วงเงียบ</string>
+
+    <!-- Audio Setting -->
+    <string name="audio_setting">ตั้งค่าเสียง</string>
+    <string name="audio_effect_compare">เปรียบเทียบ</string>
+    <string name="audio_effect_reset">รีเซ็ต</string>
+    <string name="audio_effect_tab_preset">เอฟเฟกต์</string>
+    <string name="audio_effect_tab_equalizer">ปรับแต่ง</string>
+    <string name="audio_effect_tab_advanced">ขั้นสูง</string>
+    <string name="audio_offset">ออฟเซตเสียง</string>
+    <string name="audio_effect_category_tone">โทนเสียง</string>
+    <string name="audio_effect_category_genre">แนวเพลง</string>
+    <string name="audio_effect_natural">เป็นธรรมชาติ</string>
+    <string name="audio_effect_vocal">เสียงร้อง</string>
+    <string name="audio_effect_cinema">โรงภาพยนตร์</string>
+    <string name="audio_effect_bass">เบส</string>
+    <string name="audio_effect_treble">แหลม</string>
+    <string name="audio_effect_pop">ป็อป</string>
+    <string name="audio_effect_rock">ร็อก</string>
+    <string name="audio_effect_dance">แดนซ์</string>
+    <string name="audio_effect_electronic">อิเล็กทรอนิก</string>
+    <string name="audio_effect_hiphop">ฮิปฮอป</string>
+    <string name="audio_effect_jazz">แจ๊ส</string>
+    <string name="audio_effect_classical">คลาสสิก</string>
+    <string name="audio_effect_custom">กำหนดเอง</string>
+    <string name="audio_effect_stability">ระดับเสียงคงที่</string>
+    <string name="audio_effect_stability_summary">ลดการเปลี่ยนแปลงระดับเสียงภายในวิดีโอ</string>
+    <string name="audio_effect_boost">เพิ่มระดับเสียง</string>
+    <string name="audio_effect_dialogue">เพิ่มเสียงพูด</string>
+    <string name="audio_effect_balance">สมดุลช่องเสียง</string>
+    <string name="audio_effect_headroom">เฮดรูม / พรีแอมป์</string>
+    <string name="audio_effect_loudness">สมดุลความดัง</string>
+    <string name="audio_effect_loudness_summary">ปรับความดังเฉลี่ยให้เท่ากันระหว่างวิดีโอ</string>
+    <string name="audio_effect_center_gain">เกนช่องกลาง</string>
+    <string name="audio_channel_mode">โหมดช่องเสียง</string>
+    <string name="audio_channel_auto">อัตโนมัติ</string>
+    <string name="audio_channel_stereo">สเตอริโอ</string>
+    <string name="audio_channel_mono">โมโน</string>
+    <string name="audio_channel_reverse">สลับช่อง</string>
+    <string name="audio_effect_balance_center">กลาง</string>
+    <string name="audio_effect_balance_left">L %1$d%%</string>
+    <string name="audio_effect_balance_right">R %1$d%%</string>
+
+    <!-- Video Setting -->
+    <string name="video_setting">ตั้งค่าภาพ</string>
+    <string name="video_effect_compare">เปรียบเทียบ</string>
+    <string name="video_effect_reset">รีเซ็ต</string>
+    <string name="video_effect_tab_preset">เอฟเฟกต์</string>
+    <string name="video_effect_tab_adjust">ปรับแต่ง</string>
+    <string name="video_effect_category_boost">เพิ่มความคมชัด</string>
+    <string name="video_effect_category_tone">สไตล์</string>
+    <string name="video_effect_natural">เป็นธรรมชาติ</string>
+    <string name="video_effect_vivid">สดใส</string>
+    <string name="video_effect_clear">ชัดเจน</string>
+    <string name="video_effect_bright">สว่าง</string>
+    <string name="video_effect_cinema">โรงภาพยนตร์</string>
+    <string name="video_effect_soft">นุ่มนวล</string>
+    <string name="video_effect_warm">โทนอุ่น</string>
+    <string name="video_effect_cool">โทนเย็น</string>
+    <string name="video_effect_comfort">ถนอมสายตา</string>
+    <string name="video_effect_anime">อนิเมะ</string>
+    <string name="video_effect_sport">กีฬา</string>
+    <string name="video_effect_game">เกม</string>
+    <string name="video_effect_custom">กำหนดเอง</string>
+    <string name="video_effect_saturation">ความอิ่มสี</string>
+    <string name="video_effect_contrast">คอนทราสต์</string>
+    <string name="video_effect_brightness">ความสว่าง</string>
+    <string name="video_effect_gamma">แกมมา</string>
+    <string name="video_effect_hue">เฉดสี</string>
+    <string name="video_effect_temperature">อุณหภูมิสี</string>
+    <string name="video_effect_sharpness">ความคมชัด</string>
+    <string name="video_effect_shadow">เงามืด</string>
+
+    <!-- Subtitle Setting -->
+    <string name="subtitle_setting">ตั้งค่าคำบรรยาย</string>
+    <string name="subtitle_search_api_title">Assrt</string>
+    <string name="subtitle_search_token_hint">โทเคน</string>
+    <string name="subtitle_reset">รีเซ็ต</string>
+    <string name="subtitle_tab_appearance">รูปลักษณ์</string>
+    <string name="subtitle_tab_adjust">ปรับแต่ง</string>
+    <string name="subtitle_tab_advanced">ขั้นสูง</string>
+    <string name="subtitle_offset">ออฟเซตคำบรรยาย</string>
+    <string name="subtitle_size">ขนาด</string>
+    <string name="subtitle_position">ตำแหน่ง</string>
+    <string name="subtitle_style">สไตล์</string>
+    <string name="playback_font">แบบอักษร</string>
+    <string name="playback_font_default">ค่าเริ่มต้นของระบบ</string>
+    <string name="playback_font_import">นำเข้าแบบอักษร</string>
+    <string name="playback_font_imported">นำเข้าแบบอักษรแล้ว: %1$s</string>
+    <string name="playback_font_import_failed">นำเข้าแบบอักษรไม่สำเร็จ</string>
+    <string name="playback_font_load_failed">โหลดแบบอักษรไม่สำเร็จ</string>
+    <string name="subtitle_style_original">ต้นฉบับ</string>
+    <string name="subtitle_style_system">ระบบ</string>
+    <string name="subtitle_style_custom">กำหนดเอง</string>
+    <string name="subtitle_system_setting">ตั้งค่าคำบรรยายของระบบ</string>
+    <string name="subtitle_text_color">สีตัวอักษร</string>
+    <string name="subtitle_text_opacity">ความโปร่งใสตัวอักษร</string>
+    <string name="subtitle_edge_style">สไตล์ขอบ</string>
+    <string name="subtitle_edge_none">ไม่มี</string>
+    <string name="subtitle_edge_outline">เส้นขอบ</string>
+    <string name="subtitle_edge_shadow">เงา</string>
+    <string name="subtitle_edge_color">สีขอบ</string>
+    <string name="subtitle_edge_opacity">ความโปร่งใสขอบ</string>
+    <string name="subtitle_edge_width">ความหนาขอบ</string>
+    <string name="subtitle_shadow_strength">ความเข้มเงา</string>
+    <string name="subtitle_background">พื้นหลัง</string>
+    <string name="subtitle_background_opacity">ความโปร่งใสพื้นหลัง</string>
+    <string name="subtitle_secondary_track">คำบรรยายรอง</string>
+    <string name="subtitle_secondary_default">ค่าเริ่มต้น</string>
+    <string name="subtitle_secondary_off">ปิด</string>
+    <string name="subtitle_secondary_auto">อัตโนมัติ</string>
+    <string name="subtitle_secondary_select">เลือก</string>
+    <string name="subtitle_secondary_track_select">คำบรรยายรอง</string>
+    <string name="subtitle_secondary_position">ตำแหน่งคำบรรยายรอง</string>
+    <string name="subtitle_color_white">ขาว</string>
+    <string name="subtitle_color_yellow">เหลือง</string>
+    <string name="subtitle_color_cyan">ฟ้าน้ำเงิน</string>
+    <string name="subtitle_color_green">เขียว</string>
+    <string name="subtitle_color_orange">ส้ม</string>
+    <string name="subtitle_color_pink">ชมพู</string>
+    <string name="subtitle_color_red">แดง</string>
+    <string name="subtitle_color_blue">น้ำเงิน</string>
+    <string name="subtitle_color_black">ดำ</string>
+    <string name="subtitle_color_gray">เทา</string>
+    <string name="subtitle_color_transparent">โปร่งใส</string>
+    <string name="subtitle_background_dim">ดำจาง</string>
+
+    <!-- Danmaku Setting -->
+    <string name="danmaku">แด้นมากุ</string>
+    <string name="danmaku_select">เลือกแด้นมากุ</string>
+    <string name="danmaku_setting">ตั้งค่าแด้นมากุ</string>
+    <string name="danmaku_text_size">ขนาดตัวอักษร</string>
+    <string name="danmaku_transparency">ความทึบ</string>
+    <string name="danmaku_text_bold">ตัวหนา</string>
+    <string name="danmaku_style_mode">สไตล์ตัวอักษร</string>
+    <string name="danmaku_style_none">ไม่มี</string>
+    <string name="danmaku_style_shadow">เงา</string>
+    <string name="danmaku_style_stroke">เส้นขอบ</string>
+    <string name="danmaku_style_projection">เงาทอด</string>
+    <string name="danmaku_shadow_transparency">ความทึบเงา</string>
+    <string name="danmaku_stroke_width">ความหนาเส้นขอบ</string>
+    <string name="danmaku_projection_offset_x">ออฟเซตเงา X</string>
+    <string name="danmaku_projection_offset_y">ออฟเซตเงา Y</string>
+    <string name="danmaku_projection_transparency">ความทึบเงาทอด</string>
+    <string name="danmaku_color_mode">โหมดสี</string>
+    <string name="danmaku_color_default">ค่าเริ่มต้น</string>
+    <string name="danmaku_color_colorful">หลากสี</string>
+    <string name="danmaku_color_gradient">ไล่ระดับ</string>
+    <string name="danmaku_color_override_hint">สีต้นฉบับจะถูกเพิกเฉย</string>
+    <string name="danmaku_auto">อัตโนมัติ</string>
+    <string name="danmaku_duration">ระยะเวลาเลื่อน</string>
+    <string name="danmaku_fixed_duration">ระยะเวลาคงที่</string>
+    <string name="danmaku_time_offset">ออฟเซตเวลา</string>
+    <string name="danmaku_max_on_screen">สูงสุดบนหน้าจอ</string>
+    <string name="danmaku_scroll_area_ratio">พื้นที่เลื่อน</string>
+    <string name="danmaku_max_scroll_lines">จำนวนแถวเลื่อนสูงสุด</string>
+    <string name="danmaku_max_top_lines">จำนวนแถวบนสูงสุด</string>
+    <string name="danmaku_max_bottom_lines">จำนวนแถวล่างสูงสุด</string>
+    <string name="danmaku_line_spacing">ระยะห่างบรรทัด</string>
+    <string name="danmaku_scroll_gap_ratio">ระยะห่างแถว</string>
+    <string name="danmaku_show_scroll">เลื่อน</string>
+    <string name="danmaku_show_top">ปักหมุดบน</string>
+    <string name="danmaku_show_bottom">ปักหมุดล่าง</string>
+    <string name="danmaku_show_reverse">เลื่อนย้อน</string>
+    <string name="danmaku_show_positioned">ระบุตำแหน่ง</string>
+    <string name="danmaku_show_subtitle">ประเภทคำบรรยาย</string>
+    <string name="danmaku_show_special">ประเภทพิเศษ</string>
+    <string name="danmaku_section_appearance">รูปลักษณ์</string>
+    <string name="danmaku_section_display">การแสดงผล</string>
+    <string name="danmaku_section_timing">เวลา</string>
+    <string name="danmaku_section_density">ความหนาแน่น</string>
+    <string name="danmaku_reset">รีเซ็ต</string>
+
+    <!-- Parse -->
+    <string name="parse">แยกข้อมูล</string>
+    <string name="parse_god">ขั้นสูง</string>
+    <string name="parse_from">แยกจาก: <xliff:g name="name">%s</xliff:g></string>
+
+    <!-- Push -->
+    <string name="push">ส่ง</string>
+
+    <!-- Setting -->
+    <string name="setting_vod">ภาพยนตร์</string>
+    <string name="setting_live">ถ่ายทอดสด</string>
+    <string name="setting_wall">วอลเปเปอร์</string>
+    <string name="setting_player">ตั้งค่าเครื่องเล่น</string>
+    <string name="setting_danmaku">ตั้งค่าแด้นมากุ</string>
+    <string name="setting_incognito">โหมดไม่ระบุตัวตน</string>
+    <string name="setting_theme_color">สีธีม</string>
+    <string name="setting_auto">อัตโนมัติ</string>
+    <string name="setting_custom">กำหนดเอง</string>
+    <string name="setting_size">ขนาดภาพ</string>
+    <string name="setting_doh">DoH</string>
+    <string name="setting_proxy">พร็อกซี</string>
+    <string name="setting_cache">แคช</string>
+    <string name="setting_backup">สำรอง</string>
+    <string name="setting_restore">กู้คืน</string>
+    <string name="setting_version">เวอร์ชัน</string>
+    <string name="setting_choose">เลือก</string>
+    <string name="setting_off">ปิด</string>
+    <string name="setting_on">เปิด</string>
+
+    <!-- Backup & Restore -->
+    <string name="restore_select">เลือกไฟล์สำรอง</string>
+    <string name="restore_success">กู้คืนสำเร็จ</string>
+    <string name="restore_fail">กู้คืนล้มเหลว</string>
+    <string name="backup_success">สำรองสำเร็จ</string>
+    <string name="backup_fail">สำรองล้มเหลว</string>
+
+    <!-- Player -->
+    <string name="player">เครื่องเล่น</string>
+    <string name="player_engine">เอนจิน</string>
+    <string name="player_debug">ดีบัก</string>
+    <string name="player_render">เอาต์พุตภาพ</string>
+    <string name="player_scale">อัตราส่วน</string>
+    <string name="player_libass">libass</string>
+    <string name="player_background">เล่นเบื้องหลัง</string>
+    <string name="player_audio_pass_through">ส่งเสียงผ่านตรง</string>
+    <string name="player_audio_decode">ถอดรหัสเสียงด้วยซอฟต์แวร์</string>
+    <string name="player_video_decode">ถอดรหัสภาพด้วยซอฟต์แวร์</string>
+    <string name="player_dolby_vision_output">Dolby Vision</string>
+    <string name="player_aac_track">เลือกแทร็ก aac ก่อน</string>
+    <string name="player_adblock">ลบโฆษณา</string>
+    <string name="player_tunnel">โหมด Tunnel</string>
+    <string name="player_buffer">เวลาบัฟเฟอร์</string>
+    <string name="player_decode_setting">ตั้งค่าการถอดรหัส</string>
+    <string name="player_preload_setting">ตั้งค่าการโหลดล่วงหน้า</string>
+    <string name="player_preload">โหลดล่วงหน้า</string>
+    <string name="player_preload_next">โหลดตอนถัดไปล่วงหน้า</string>
+    <string name="player_preload_threads">เธรดโหลดล่วงหน้า</string>
+    <string name="player_preload_threads_value">%1$d เธรด</string>
+    <string name="player_preload_size">ขนาดโหลดล่วงหน้า</string>
+    <string name="player_preload_time">เวลาโหลดล่วงหน้า</string>
+    <string name="player_preload_time_value">%1$d วินาที</string>
+    <string name="player_mpv_conf">mpv.conf</string>
+    <string name="player_mpv_gpu_next">gpu-next</string>
+    <string name="player_mpv_vulkan">vulkan</string>
+    <string name="player_mpv_conf_priority_hint">การตั้งค่าในแอปจะถูกใช้ก่อน; เปิดวิดีโอใหม่เพื่อให้มีผล</string>
+    <string name="player_mpv_conf_conflict_hint">การตั้งค่าในแอปจะทับค่า: %1$s</string>
+    <string name="player_mpv_conf_import_success">นำเข้า mpv.conf แล้ว</string>
+    <string name="player_mpv_conf_import_failed">นำเข้า mpv.conf ไม่สำเร็จ</string>
+    <string name="player_mpv_conf_save_failed">บันทึก mpv.conf ไม่สำเร็จ</string>
+    <string name="player_ua">User-Agent</string>
+
+    <!-- Danmaku -->
+    <string name="danmaku_load">โหลดแด้นมากุ</string>
+    <string name="danmaku_api">API ค้นหา</string>
+    <string name="danmaku_auto_load">ค้นหาอัตโนมัติ</string>
+    <string name="danmaku_spider_first">ใช้สไปเดอร์ก่อน</string>
+
+    <!-- Search -->
+    <string name="search_keyword">คำค้นหา…</string>
+    <string name="search_record">ประวัติ</string>
+    <string name="search_suggest">แนะนำ</string>
+    <string name="search_hot">ยอดนิยม</string>
+
+    <!-- Dialog -->
+    <string name="dialog_edit">แก้ไข</string>
+    <string name="dialog_import">นำเข้า</string>
+    <string name="dialog_positive">ตกลง</string>
+    <string name="dialog_negative">ยกเลิก</string>
+    <string name="dialog_select_edition">เลือกเวอร์ชัน</string>
+    <string name="dialog_select_chapter">เลือกตอน</string>
+    <string name="dialog_config_hint">กรุณากรอกการตั้งค่า…</string>
+    <string name="dialog_config_name">กรุณากรอกชื่อ…</string>
+    <string name="dialog_config_url">กรุณากรอก URL…</string>
+
+    <!-- Error -->
+    <string name="error_config_get">ดึงการตั้งค่าไม่สำเร็จ</string>
+    <string name="error_file_open">เปิดไฟล์ไม่สำเร็จ</string>
+    <string name="error_play_next">นี่คือตอนสุดท้าย!</string>
+    <string name="error_play_prev">นี่คือตอนแรก!</string>
+    <string name="error_play_parse">แยก URL ไม่สำเร็จ</string>
+    <string name="error_play_drm">อุปกรณ์ไม่รองรับ DRM ที่ต้องการ</string>
+    <string name="error_play_url">โหลด URL ไม่สำเร็จ</string>
+    <string name="error_play_flag">ไม่มีข้อมูลแหล่งเล่น</string>
+    <string name="error_play_timeout">หมดเวลา</string><string name="error_audio_effect_unsupported">ไม่สามารถปรับเสียงในโหมดเล่นปัจจุบันได้</string>
+    <string name="error_audio_effect_tunnel">ไม่สามารถปรับเสียงในโหมด Tunnel ได้</string>
+    <string name="error_audio_effect_passthrough">ไม่สามารถปรับเสียงเมื่อส่งเสียงผ่านตรง</string>
+    <string name="error_audio_effect_apply">ใช้การตั้งค่าเสียงไม่สำเร็จ</string>
+    <string name="error_video_effect_unsupported">ไม่สามารถปรับภาพในโหมดเล่นปัจจุบันได้</string>
+    <string name="error_video_effect_decode">ต้องใช้การถอดรหัสภาพด้วยฮาร์ดแวร์</string>
+    <string name="error_video_effect_drm">ไม่สามารถปรับภาพกับวิดีโอ DRM ได้</string>
+    <string name="error_video_effect_tunnel">ไม่สามารถปรับภาพในโหมด Tunnel ได้</string>
+    <string name="error_video_effect_dolby_vision_passthrough">ไม่สามารถปรับภาพเมื่อส่ง Dolby Vision ผ่านตรง</string>
+    <string name="error_play_tvbus">รหัสข้อผิดพลาด: <xliff:g name="name">%s</xliff:g></string>
+    <string name="error_detail">ไม่มีข้อมูลการเล่น</string>
+    <string name="error_empty">ยังไม่มีอะไรที่นี่ 👀</string>
+
+    <!-- Update -->
+    <string name="update_version">เวอร์ชันใหม่ <xliff:g name="name">%s</xliff:g></string>
+    <string name="update_check">กำลังตรวจสอบอัปเดต…</string>
+    <string name="update_confirm">อัปเดต</string>
+
+    <!-- Crash -->
+    <string name="crash_info">เกิดข้อผิดพลาดที่ไม่คาดคิด\nขออภัยในความไม่สะดวก</string>
+    <string name="crash_restart">รีสตาร์ทแอป</string>
+    <string name="crash_details">รายละเอียดข้อผิดพลาด</string>
+    <string name="crash_details_title">รายละเอียดข้อผิดพลาด</string>
+    <string name="crash_details_close">ปิด</string>
+
+    <!-- Hint -->
+    <string name="copied">คัดลอกแล้ว</string>
+
+    <!-- UNIT -->
+    <string name="all">ทั้งหมด</string>
+    <string name="yes">ใช่</string>
+    <string name="none">ไม่มี</string>
+    <string name="times">ครั้ง</string>
+    <string name="lines">บรรทัด</string>
+
+    <string-array name="select_decode">
+        <item>ซอฟต์แวร์</item>
+        <item>ฮาร์ดแวร์</item>
+    </string-array>
+
+    <string-array name="select_dolby_vision_output">
+        <item>อัตโนมัติ</item>
+        <item>เปิด</item>
+        <item>ปิด</item>
+    </string-array>
+
+    <string-array name="select_engine">
+        <item>EXO</item>
+        <item>MPV</item>
+    </string-array>
+
+    <string-array name="select_render">
+        <item>Surface</item>
+        <item>Texture</item>
+    </string-array>
+
+    <string-array name="select_size">
+        <item>เล็ก</item>
+        <item>กลาง</item>
+        <item>ใหญ่</item>
+        <item>ใหญ่มาก</item>
+    </string-array>
+
+    <string-array name="select_scale">
+        <item>ค่าเริ่มต้น</item>
+        <item>16:9</item>
+        <item>4:3</item>
+        <item>เต็มจอ</item>
+        <item>ซูม</item>
+    </string-array>
+
+    <string-array name="audio_effect_stability_levels">
+        <item>ปิด</item>
+        <item>เล็กน้อย</item>
+        <item>นุ่มนวล</item>
+        <item>มาตรฐาน</item>
+        <item>ชัดเจน</item>
+        <item>แรง</item>
+    </string-array>
+
+    <string-array name="select_track">
+        <item>เลือกแทร็กเสียง</item>
+        <item>เลือกแทร็กภาพ</item>
+        <item>เลือกแทร็กคำบรรยาย</item>
+    </string-array>
+
+    <string name="live_source_empty">แหล่งถ่ายทอดสดไม่พร้อมใช้งาน โปรดเปลี่ยนการตั้งค่าหรือสลับสาย</string>
+
+</resources>

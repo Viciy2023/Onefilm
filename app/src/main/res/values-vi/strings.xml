@@ -1,0 +1,442 @@
+<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+
+    <!-- App -->
+    <string name="app_name">OneFilm</string>
+
+    <!-- Live -->
+    <string name="live_pass">Bỏ qua</string>
+    <string name="live_refresh">Làm mới</string>
+    <string name="live_line">Kênh <xliff:g name="name">%s</xliff:g></string>
+
+    <!-- Detail -->
+    <string name="detail_title"><xliff:g name="name">%s</xliff:g> : <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_site">Nguồn: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_year">Năm: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_area">Khu vực: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_type">Thể loại: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_director">Đạo diễn: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_actor">Diễn viên: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_content">Giới thiệu: <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_desc">Giới thiệu</string>
+
+    <!-- Keep -->
+    <string name="keep">Lưu</string>
+    <string name="keep_add">Đã thêm</string>
+    <string name="keep_del">Đã xoá</string>
+
+    <!-- Play -->
+    <string name="play">Phát</string>
+    <string name="pause">Tạm dừng</string>
+    <string name="play_op">Mở đầu</string>
+    <string name="play_ed">Kết thúc</string>
+    <string name="play_exo">EXO</string>
+    <string name="play_mpv">MPV</string>
+    <string name="play_other">Khác</string>
+    <string name="play_next">Tập sau</string>
+    <string name="play_prev">Tập trước</string>
+    <string name="play_stop">Dừng</string>
+    <string name="play_repeat">Lặp lại</string>
+    <string name="play_forward">→</string>
+    <string name="play_backward">←</string>
+    <string name="play_speed">Tốc độ</string>
+    <string name="play_speed_hint">Tốc độ <xliff:g name="speed">%1$s</xliff:g></string>
+    <string name="play_reset">Đặt lại</string>
+    <string name="play_replay">Phát lại</string>
+    <string name="play_decode">Cứng</string>
+    <string name="play_timer">Hẹn giờ</string>
+    <string name="play_edition">Bản</string>
+    <string name="play_chapter">Chương</string>
+    <string name="play_scale">Mặc định</string>
+    <string name="play_config">Cấu hình</string>
+    <string name="play_change">Đổi</string>
+    <string name="play_invert">Đảo</string>
+    <string name="play_across">Xuyên</string>
+    <string name="play_reverse">Ngược</string>
+    <string name="play_track_text">Phụ đề</string>
+    <string name="play_track_audio">Âm thanh</string>
+    <string name="play_track_video">Hình ảnh</string>
+    <string name="play_forward_hint">Đã chuyển phát thường</string>
+    <string name="play_backward_hint">Đã chuyển phát ngược</string>
+    <string name="play_ready">Sẵn sàng phát: <xliff:g name="name">%s</xliff:g></string>
+    <string name="play_switch_flag">Đang chuyển nguồn phát sang <xliff:g name="name">%s</xliff:g></string>
+    <string name="play_switch_site">Đang chuyển trang sang <xliff:g name="name">%s</xliff:g></string>
+    <string name="play_switch_parse">Đang chuyển bộ phân tích sang <xliff:g name="name">%s</xliff:g></string>
+
+    <!-- Playback Setting -->
+    <string name="setting_tab_offset">Độ lệch</string>
+    <string name="setting_effect_basic">Cơ bản</string>
+    <string name="setting_effect_scene">Cảnh</string>
+    <string name="setting_effect_custom">Tuỳ chỉnh</string>
+    <string name="setting_preset_original">Gốc</string>
+
+    <!-- Speed Setting -->
+    <string name="speed_setting">Cài đặt tốc độ</string>
+    <string name="speed_setting_reset">Đặt lại</string>
+    <string name="speed_setting_current">Tốc độ phát</string>
+    <string name="speed_setting_long_press">Tốc độ nhấn giữ</string>
+    <string name="speed_setting_quick">Chọn nhanh</string>
+    <string name="speed_setting_skip_silence">Bỏ qua khoảng lặng</string>
+
+    <!-- Audio Setting -->
+    <string name="audio_setting">Cài đặt âm thanh</string>
+    <string name="audio_effect_compare">So sánh</string>
+    <string name="audio_effect_reset">Đặt lại</string>
+    <string name="audio_effect_tab_preset">Hiệu ứng</string>
+    <string name="audio_effect_tab_equalizer">Điều chỉnh</string>
+    <string name="audio_effect_tab_advanced">Nâng cao</string>
+    <string name="audio_offset">Độ lệch âm thanh</string>
+    <string name="audio_effect_category_tone">Âm sắc</string>
+    <string name="audio_effect_category_genre">Thể loại</string>
+    <string name="audio_effect_natural">Tự nhiên</string>
+    <string name="audio_effect_vocal">Giọng hát</string>
+    <string name="audio_effect_cinema">Điện ảnh</string>
+    <string name="audio_effect_bass">Âm trầm</string>
+    <string name="audio_effect_treble">Âm cao</string>
+    <string name="audio_effect_pop">Pop</string>
+    <string name="audio_effect_rock">Rock</string>
+    <string name="audio_effect_dance">Dance</string>
+    <string name="audio_effect_electronic">Điện tử</string>
+    <string name="audio_effect_hiphop">Hip-hop</string>
+    <string name="audio_effect_jazz">Jazz</string>
+    <string name="audio_effect_classical">Cổ điển</string>
+    <string name="audio_effect_custom">Tuỳ chỉnh</string>
+    <string name="audio_effect_stability">Âm lượng ổn định</string>
+    <string name="audio_effect_stability_summary">Giảm thay đổi âm lượng trong video</string>
+    <string name="audio_effect_boost">Tăng âm lượng</string>
+    <string name="audio_effect_dialogue">Tăng giọng nói</string>
+    <string name="audio_effect_balance">Cân bằng kênh</string>
+    <string name="audio_effect_headroom">Dự phòng / tiền khuếch đại</string>
+    <string name="audio_effect_loudness">Cân bằng độ to</string>
+    <string name="audio_effect_loudness_summary">Cân bằng âm lượng trung bình giữa các video</string>
+    <string name="audio_effect_center_gain">Khuếch đại kênh giữa</string>
+    <string name="audio_channel_mode">Chế độ kênh</string>
+    <string name="audio_channel_auto">Tự động</string>
+    <string name="audio_channel_stereo">Stereo</string>
+    <string name="audio_channel_mono">Mono</string>
+    <string name="audio_channel_reverse">Đảo kênh</string>
+    <string name="audio_effect_balance_center">Giữa</string>
+    <string name="audio_effect_balance_left">L %1$d%%</string>
+    <string name="audio_effect_balance_right">R %1$d%%</string>
+
+    <!-- Video Setting -->
+    <string name="video_setting">Cài đặt hình ảnh</string>
+    <string name="video_effect_compare">So sánh</string>
+    <string name="video_effect_reset">Đặt lại</string>
+    <string name="video_effect_tab_preset">Hiệu ứng</string>
+    <string name="video_effect_tab_adjust">Điều chỉnh</string>
+    <string name="video_effect_category_boost">Tăng cường</string>
+    <string name="video_effect_category_tone">Phong cách</string>
+    <string name="video_effect_natural">Tự nhiên</string>
+    <string name="video_effect_vivid">Sống động</string>
+    <string name="video_effect_clear">Trong trẻo</string>
+    <string name="video_effect_bright">Sáng</string>
+    <string name="video_effect_cinema">Điện ảnh</string>
+    <string name="video_effect_soft">Mềm</string>
+    <string name="video_effect_warm">Ấm</string>
+    <string name="video_effect_cool">Lạnh</string>
+    <string name="video_effect_comfort">Dễ chịu</string>
+    <string name="video_effect_anime">Anime</string>
+    <string name="video_effect_sport">Thể thao</string>
+    <string name="video_effect_game">Trò chơi</string>
+    <string name="video_effect_custom">Tuỳ chỉnh</string>
+    <string name="video_effect_saturation">Độ bão hoà</string>
+    <string name="video_effect_contrast">Độ tương phản</string>
+    <string name="video_effect_brightness">Độ sáng</string>
+    <string name="video_effect_gamma">Gamma</string>
+    <string name="video_effect_hue">Sắc thái</string>
+    <string name="video_effect_temperature">Nhiệt độ màu</string>
+    <string name="video_effect_sharpness">Độ nét</string>
+    <string name="video_effect_shadow">Nâng vùng tối</string>
+
+    <!-- Subtitle Setting -->
+    <string name="subtitle_setting">Cài đặt phụ đề</string>
+    <string name="subtitle_search_api_title">Assrt</string>
+    <string name="subtitle_search_token_hint">Token</string>
+    <string name="subtitle_reset">Đặt lại</string>
+    <string name="subtitle_tab_appearance">Hiển thị</string>
+    <string name="subtitle_tab_adjust">Điều chỉnh</string>
+    <string name="subtitle_tab_advanced">Nâng cao</string>
+    <string name="subtitle_offset">Độ lệch phụ đề</string>
+    <string name="subtitle_size">Cỡ chữ</string>
+    <string name="subtitle_position">Vị trí</string>
+    <string name="subtitle_style">Kiểu</string>
+    <string name="playback_font">Phông chữ</string>
+    <string name="playback_font_default">Mặc định hệ thống</string>
+    <string name="playback_font_import">Nhập phông chữ</string>
+    <string name="playback_font_imported">Đã nhập phông: %1$s</string>
+    <string name="playback_font_import_failed">Không nhập được phông chữ</string>
+    <string name="playback_font_load_failed">Không tải được phông chữ</string>
+    <string name="subtitle_style_original">Gốc</string>
+    <string name="subtitle_style_system">Hệ thống</string>
+    <string name="subtitle_style_custom">Tuỳ chỉnh</string>
+    <string name="subtitle_system_setting">Cài đặt phụ đề hệ thống</string>
+    <string name="subtitle_text_color">Màu chữ</string>
+    <string name="subtitle_text_opacity">Độ trong suốt chữ</string>
+    <string name="subtitle_edge_style">Kiểu viền</string>
+    <string name="subtitle_edge_none">Không</string>
+    <string name="subtitle_edge_outline">Viền nét</string>
+    <string name="subtitle_edge_shadow">Bóng đổ</string>
+    <string name="subtitle_edge_color">Màu viền</string>
+    <string name="subtitle_edge_opacity">Độ trong suốt viền</string>
+    <string name="subtitle_edge_width">Độ dày viền</string>
+    <string name="subtitle_shadow_strength">Độ mạnh bóng</string>
+    <string name="subtitle_background">Nền</string>
+    <string name="subtitle_background_opacity">Độ trong suốt nền</string>
+    <string name="subtitle_secondary_track">Phụ đề phụ</string>
+    <string name="subtitle_secondary_default">Mặc định</string>
+    <string name="subtitle_secondary_off">Tắt</string>
+    <string name="subtitle_secondary_auto">Tự động</string>
+    <string name="subtitle_secondary_select">Chọn</string>
+    <string name="subtitle_secondary_track_select">Phụ đề phụ</string>
+    <string name="subtitle_secondary_position">Vị trí phụ đề phụ</string>
+    <string name="subtitle_color_white">Trắng</string>
+    <string name="subtitle_color_yellow">Vàng</string>
+    <string name="subtitle_color_cyan">Xanh lơ</string>
+    <string name="subtitle_color_green">Xanh lá</string>
+    <string name="subtitle_color_orange">Cam</string>
+    <string name="subtitle_color_pink">Hồng</string>
+    <string name="subtitle_color_red">Đỏ</string>
+    <string name="subtitle_color_blue">Xanh dương</string>
+    <string name="subtitle_color_black">Đen</string>
+    <string name="subtitle_color_gray">Xám</string>
+    <string name="subtitle_color_transparent">Trong suốt</string>
+    <string name="subtitle_background_dim">Đen mờ</string>
+
+    <!-- Danmaku Setting -->
+    <string name="danmaku">Bình luận bay</string>
+    <string name="danmaku_select">Chọn bình luận bay</string>
+    <string name="danmaku_setting">Cài đặt bình luận bay</string>
+    <string name="danmaku_text_size">Tỉ lệ chữ</string>
+    <string name="danmaku_transparency">Độ mờ</string>
+    <string name="danmaku_text_bold">In đậm</string>
+    <string name="danmaku_style_mode">Kiểu chữ</string>
+    <string name="danmaku_style_none">Không</string>
+    <string name="danmaku_style_shadow">Bóng đổ</string>
+    <string name="danmaku_style_stroke">Viền</string>
+    <string name="danmaku_style_projection">Đổ bóng</string>
+    <string name="danmaku_shadow_transparency">Độ mờ bóng</string>
+    <string name="danmaku_stroke_width">Độ dày viền</string>
+    <string name="danmaku_projection_offset_x">Lệch đổ bóng X</string>
+    <string name="danmaku_projection_offset_y">Lệch đổ bóng Y</string>
+    <string name="danmaku_projection_transparency">Độ mờ đổ bóng</string>
+    <string name="danmaku_color_mode">Chế độ màu</string>
+    <string name="danmaku_color_default">Mặc định</string>
+    <string name="danmaku_color_colorful">Nhiều màu</string>
+    <string name="danmaku_color_gradient">Chuyển sắc</string>
+    <string name="danmaku_color_override_hint">Màu gốc sẽ bị bỏ qua</string>
+    <string name="danmaku_auto">Tự động</string>
+    <string name="danmaku_duration">Thời gian cuộn</string>
+    <string name="danmaku_fixed_duration">Thời gian cố định</string>
+    <string name="danmaku_time_offset">Lệch thời gian</string>
+    <string name="danmaku_max_on_screen">Tối đa trên màn hình</string>
+    <string name="danmaku_scroll_area_ratio">Vùng cuộn</string>
+    <string name="danmaku_max_scroll_lines">Số dòng cuộn tối đa</string>
+    <string name="danmaku_max_top_lines">Số dòng trên tối đa</string>
+    <string name="danmaku_max_bottom_lines">Số dòng dưới tối đa</string>
+    <string name="danmaku_line_spacing">Khoảng cách dòng</string>
+    <string name="danmaku_scroll_gap_ratio">Khoảng cách hàng</string>
+    <string name="danmaku_show_scroll">Cuộn</string>
+    <string name="danmaku_show_top">Ghim trên</string>
+    <string name="danmaku_show_bottom">Ghim dưới</string>
+    <string name="danmaku_show_reverse">Cuộn ngược</string>
+    <string name="danmaku_show_positioned">Định vị</string>
+    <string name="danmaku_show_subtitle">Loại phụ đề</string>
+    <string name="danmaku_show_special">Loại đặc biệt</string>
+    <string name="danmaku_section_appearance">Hiển thị</string>
+    <string name="danmaku_section_display">Trình bày</string>
+    <string name="danmaku_section_timing">Thời gian</string>
+    <string name="danmaku_section_density">Mật độ</string>
+    <string name="danmaku_reset">Đặt lại</string>
+
+    <!-- Parse -->
+    <string name="parse">Phân tích</string>
+    <string name="parse_god">Cao cấp</string>
+    <string name="parse_from">Phân tích từ: <xliff:g name="name">%s</xliff:g></string>
+
+    <!-- Push -->
+    <string name="push">Đẩy</string>
+
+    <!-- Setting -->
+    <string name="setting_vod">Phim</string>
+    <string name="setting_live">Trực tiếp</string>
+    <string name="setting_wall">Hình nền</string>
+    <string name="setting_player">Cài đặt trình phát</string>
+    <string name="setting_danmaku">Cài đặt bình luận bay</string>
+    <string name="setting_incognito">Chế độ ẩn danh</string>
+    <string name="setting_theme_color">Màu chủ đề</string>
+    <string name="setting_auto">Tự động</string>
+    <string name="setting_custom">Tuỳ chỉnh</string>
+    <string name="setting_size">Cỡ ảnh</string>
+    <string name="setting_doh">DoH</string>
+    <string name="setting_proxy">Proxy</string>
+    <string name="setting_cache">Bộ nhớ đệm</string>
+    <string name="setting_backup">Sao lưu</string>
+    <string name="setting_restore">Phục hồi</string>
+    <string name="setting_version">Phiên bản</string>
+    <string name="setting_choose">Chọn</string>
+    <string name="setting_off">Tắt</string>
+    <string name="setting_on">Bật</string>
+
+    <!-- Backup & Restore -->
+    <string name="restore_select">Chọn bản sao lưu</string>
+    <string name="restore_success">Phục hồi thành công</string>
+    <string name="restore_fail">Phục hồi thất bại</string>
+    <string name="backup_success">Sao lưu thành công</string>
+    <string name="backup_fail">Sao lưu thất bại</string>
+
+    <!-- Player -->
+    <string name="player">Trình phát</string>
+    <string name="player_engine">Bộ máy</string>
+    <string name="player_debug">Gỡ lỗi</string>
+    <string name="player_render">Xuất hình</string>
+    <string name="player_scale">Tỉ lệ</string>
+    <string name="player_libass">libass</string>
+    <string name="player_background">Phát nền</string>
+    <string name="player_audio_pass_through">Truyền thẳng âm thanh</string>
+    <string name="player_audio_decode">Giải mã âm thanh bằng phần mềm</string>
+    <string name="player_video_decode">Giải mã hình ảnh bằng phần mềm</string>
+    <string name="player_dolby_vision_output">Dolby Vision</string>
+    <string name="player_aac_track">Ưu tiên kênh aac</string>
+    <string name="player_adblock">Loại bỏ quảng cáo</string>
+    <string name="player_tunnel">Chế độ tunnel</string>
+    <string name="player_buffer">Thời gian đệm</string>
+    <string name="player_decode_setting">Cài đặt giải mã</string>
+    <string name="player_preload_setting">Cài đặt tải trước</string>
+    <string name="player_preload">Tải trước</string>
+    <string name="player_preload_next">Tải trước tập sau</string>
+    <string name="player_preload_threads">Luồng tải trước</string>
+    <string name="player_preload_threads_value">%1$d luồng</string>
+    <string name="player_preload_size">Dung lượng tải trước</string>
+    <string name="player_preload_time">Thời gian tải trước</string>
+    <string name="player_preload_time_value">%1$d giây</string>
+    <string name="player_mpv_conf">mpv.conf</string>
+    <string name="player_mpv_gpu_next">gpu-next</string>
+    <string name="player_mpv_vulkan">vulkan</string>
+    <string name="player_mpv_conf_priority_hint">Cài đặt trong ứng dụng được ưu tiên; mở lại video để áp dụng.</string>
+    <string name="player_mpv_conf_conflict_hint">Cài đặt trong ứng dụng sẽ ghi đè: %1$s</string>
+    <string name="player_mpv_conf_import_success">Đã nhập mpv.conf</string>
+    <string name="player_mpv_conf_import_failed">Không nhập được mpv.conf</string>
+    <string name="player_mpv_conf_save_failed">Không lưu được mpv.conf</string>
+    <string name="player_ua">User-Agent</string>
+
+    <!-- Danmaku -->
+    <string name="danmaku_load">Tải bình luận bay</string>
+    <string name="danmaku_api">API tìm kiếm</string>
+    <string name="danmaku_auto_load">Tự động tìm</string>
+    <string name="danmaku_spider_first">Ưu tiên spider</string>
+
+    <!-- Search -->
+    <string name="search_keyword">Từ khoá…</string>
+    <string name="search_record">Lịch sử</string>
+    <string name="search_suggest">Gợi ý</string>
+    <string name="search_hot">Phổ biến</string>
+
+    <!-- Dialog -->
+    <string name="dialog_edit">Sửa</string>
+    <string name="dialog_import">Nhập</string>
+    <string name="dialog_positive">OK</string>
+    <string name="dialog_negative">Huỷ</string>
+    <string name="dialog_select_edition">Chọn bản</string>
+    <string name="dialog_select_chapter">Chọn chương</string>
+    <string name="dialog_config_hint">Vui lòng nhập cấu hình…</string>
+    <string name="dialog_config_name">Vui lòng nhập tên…</string>
+    <string name="dialog_config_url">Vui lòng nhập URL…</string>
+
+    <!-- Error -->
+    <string name="error_config_get">Không lấy được cấu hình</string>
+    <string name="error_file_open">Không mở được tệp</string>
+    <string name="error_play_next">Đây là tập cuối!</string>
+    <string name="error_play_prev">Đây là tập đầu!</string>
+    <string name="error_play_parse">Không phân tích được URL</string>
+    <string name="error_play_drm">Thiết bị không hỗ trợ DRM yêu cầu</string>
+    <string name="error_play_url">Không tải được URL</string>
+    <string name="error_play_flag">Không có dữ liệu nguồn phát</string>
+    <string name="error_play_timeout">Hết thời gian chờ</string><string name="error_audio_effect_unsupported">Không thể chỉnh âm thanh ở chế độ phát hiện tại</string>
+    <string name="error_audio_effect_tunnel">Không thể chỉnh âm thanh ở chế độ tunnel</string>
+    <string name="error_audio_effect_passthrough">Không thể chỉnh âm thanh khi truyền thẳng</string>
+    <string name="error_audio_effect_apply">Không áp dụng được cài đặt âm thanh</string>
+    <string name="error_video_effect_unsupported">Không thể chỉnh hình ảnh ở chế độ phát hiện tại</string>
+    <string name="error_video_effect_decode">Cần giải mã hình ảnh bằng phần cứng</string>
+    <string name="error_video_effect_drm">Không thể chỉnh hình ảnh với video DRM</string>
+    <string name="error_video_effect_tunnel">Không thể chỉnh hình ảnh ở chế độ tunnel</string>
+    <string name="error_video_effect_dolby_vision_passthrough">Không thể chỉnh hình ảnh khi truyền thẳng Dolby Vision</string>
+    <string name="error_play_tvbus">Mã lỗi: <xliff:g name="name">%s</xliff:g></string>
+    <string name="error_detail">Không có dữ liệu phát</string>
+    <string name="error_empty">Chưa có gì ở đây 👀</string>
+
+    <!-- Update -->
+    <string name="update_version">Phiên bản mới <xliff:g name="name">%s</xliff:g></string>
+    <string name="update_check">Đang kiểm tra cập nhật…</string>
+    <string name="update_confirm">Cập nhật</string>
+
+    <!-- Crash -->
+    <string name="crash_info">Đã xảy ra lỗi không mong muốn.\nXin lỗi vì sự bất tiện.</string>
+    <string name="crash_restart">Khởi động lại</string>
+    <string name="crash_details">Chi tiết lỗi</string>
+    <string name="crash_details_title">Chi tiết lỗi</string>
+    <string name="crash_details_close">Đóng</string>
+
+    <!-- Hint -->
+    <string name="copied">Đã sao chép</string>
+
+    <!-- UNIT -->
+    <string name="all">Tất cả</string>
+    <string name="yes">Có</string>
+    <string name="none">Không</string>
+    <string name="times">lần</string>
+    <string name="lines">dòng</string>
+
+    <string-array name="select_decode">
+        <item>Phần mềm</item>
+        <item>Phần cứng</item>
+    </string-array>
+
+    <string-array name="select_dolby_vision_output">
+        <item>Tự động</item>
+        <item>Bật</item>
+        <item>Tắt</item>
+    </string-array>
+
+    <string-array name="select_engine">
+        <item>EXO</item>
+        <item>MPV</item>
+    </string-array>
+
+    <string-array name="select_render">
+        <item>Surface</item>
+        <item>Texture</item>
+    </string-array>
+
+    <string-array name="select_size">
+        <item>Nhỏ</item>
+        <item>Vừa</item>
+        <item>Lớn</item>
+        <item>Rất lớn</item>
+    </string-array>
+
+    <string-array name="select_scale">
+        <item>Mặc định</item>
+        <item>16:9</item>
+        <item>4:3</item>
+        <item>Lấp đầy</item>
+        <item>Phóng to</item>
+    </string-array>
+
+    <string-array name="audio_effect_stability_levels">
+        <item>Tắt</item>
+        <item>Nhẹ</item>
+        <item>Mềm</item>
+        <item>Tiêu chuẩn</item>
+        <item>Rõ rệt</item>
+        <item>Mạnh</item>
+    </string-array>
+
+    <string-array name="select_track">
+        <item>Chọn kênh âm thanh</item>
+        <item>Chọn kênh hình ảnh</item>
+        <item>Chọn kênh phụ đề</item>
+    </string-array>
+
+    <string name="live_source_empty">Nguồn trực tiếp không khả dụng. Hãy đổi cấu hình hoặc chuyển kênh.</string>
+
+</resources>
