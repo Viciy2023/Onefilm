@@ -24,6 +24,26 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class AppSearchDataSource : SearchDataSource {
 
+    /** 单站点搜索的执行线程池：卡死的线程可以被放弃，而不阻塞整轮搜索。 */
+    private val siteExecutor = java.util.concurrent.Executors.newCachedThreadPool { runnable ->
+        Thread(runnable, "search-site").apply { isDaemon = true }
+    }
+
+    /** 本次进程内已确认会卡死的站点，后续搜索直接跳过，避免线程持续堆积。 */
+    private val blockedSites: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
+    /** 各站点的连续超时次数：连续 2 次才判定为卡死，避免偶发慢站被永久跳过。 */
+    private val timeoutCounts: java.util.concurrent.ConcurrentHashMap<String, Int> = java.util.concurrent.ConcurrentHashMap()
+
+    /** JS 源单站超时：QuickJS 引擎初始化 + 加载模块本身就较重，5 秒不够。 */
+    private val JS_SITE_TIMEOUT_MS = 15_000L
+
+    /** Python 源单站超时：Chaquopy 首次调用要加载解释器与依赖，明显更慢。 */
+    private val PY_SITE_TIMEOUT_MS = 25_000L
+
+    /** jar（csp_*）源单站超时：要加载 dex/so。 */
+    private val JAR_SITE_TIMEOUT_MS = 20_000L
+
     private val cache = ConcurrentHashMap<String, List<MediaCard>>()
 
     override fun search(keyword: String, page: Int): Flow<SearchProgress> = channelFlow {
@@ -63,11 +83,37 @@ class AppSearchDataSource : SearchDataSource {
         val items = ArrayList<MediaCard>()
 
         suspend fun runSite(site: Site, timeoutMs: Long) {
+            if (blockedSites.contains(site.key)) {
+                dbg("skip-blocked site=${site.key}")
+                completed.incrementAndGet()
+                return
+            }
+            // 个别源的 JS 是阻塞式原生调用或死循环，协程取消撤不掉它。
+            // 放到线程池 + Future.get(超时) 才能保证本轮一定往下走；
+            // 超时站点记入 blockedSites，本次进程内不再重试，避免线程持续堆积。
+            val future = siteExecutor.submit(java.util.concurrent.Callable {
+                SiteApi.searchContent(site, key, false, page.toString()).list
+            })
+            val isJs = site.api?.contains(".js") == true
+            val api = site.api ?: ""
+            val effectiveTimeout = when {
+                isJs -> JS_SITE_TIMEOUT_MS
+                api.contains(".py") -> PY_SITE_TIMEOUT_MS
+                api.startsWith("csp_") -> JAR_SITE_TIMEOUT_MS
+                else -> timeoutMs
+            }
+            var timedOut = false
             val vods = try {
-                withTimeoutOrNull(timeoutMs) {
-                    SiteApi.searchContent(site, key, false, page.toString()).list
-                }
+                future.get(effectiveTimeout, TimeUnit.MILLISECONDS)
+            } catch (e: java.util.concurrent.TimeoutException) {
+                timedOut = true
+                future.cancel(true)
+                val strikes = (timeoutCounts.merge(site.key, 1) { a, b -> a + b } ?: 1)
+                if (strikes >= 2) blockedSites.add(site.key)
+                dbg("timeout site=${site.key} ms=$effectiveTimeout strikes=$strikes")
+                null
             } catch (e: CancellationException) {
+                future.cancel(true)
                 throw e
             } catch (e: Throwable) {
                 null // 失败即跳过，本轮不重试
@@ -75,7 +121,9 @@ class AppSearchDataSource : SearchDataSource {
             // 方案 B：JS 站点本轮只用这一次，搜索返回后释放其引擎，
             // 避免 80+ 个 QuickJS 运行时同时常驻。延迟 8 秒释放（大于 JsLoader 内 5 秒保护窗口），
             // 避开“用户此刻正好点开该站点详情”的竞态。
-            if (site.api?.contains(".js") == true) {
+            if (!timedOut) timeoutCounts.remove(site.key)
+            // 超时的站点其调用可能还在跑（init 未完成），此时不能回收，否则会把引擎掐断。
+            if (isJs && !timedOut) {
                 val siteKey = site.key
                 Task.schedule({
                     val ok = runCatching { BaseLoader.get().releaseJs(siteKey) }.getOrDefault(false)
