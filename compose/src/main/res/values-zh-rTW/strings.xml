@@ -1,0 +1,7 @@
+<resources>
+    <!-- Home empty state -->
+    <string name="home_welcome_title">歡迎使用壹影</string>
+    <string name="home_welcome_body">請在左側邊欄的「設定」中完成介面設定，\n祝您觀影愉快！</string>
+    <string name="home_action_config">前往設定</string>
+    <string name="home_action_retry">重試</string>
+</resources>

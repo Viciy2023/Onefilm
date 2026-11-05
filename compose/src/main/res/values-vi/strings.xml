@@ -1,0 +1,7 @@
+<resources>
+    <!-- Home empty state -->
+    <string name="home_welcome_title">Chào mừng đến với OneFilm</string>
+    <string name="home_welcome_body">Hãy cấu hình nguồn trong「Cấu hình」ở thanh bên trái.\nChúc bạn xem phim vui vẻ!</string>
+    <string name="home_action_config">Mở cấu hình</string>
+    <string name="home_action_retry">Thử lại</string>
+</resources>

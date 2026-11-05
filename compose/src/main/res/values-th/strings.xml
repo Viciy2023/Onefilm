@@ -1,0 +1,7 @@
+<resources>
+    <!-- Home empty state -->
+    <string name="home_welcome_title">ยินดีต้อนรับสู่ OneFilm</string>
+    <string name="home_welcome_body">ตั้งค่าแหล่งใน「การตั้งค่า」ที่แถบด้านซ้าย\nขอให้มีความสุขกับการดูหนัง!</string>
+    <string name="home_action_config">เปิดการตั้งค่า</string>
+    <string name="home_action_retry">ลองใหม่</string>
+</resources>

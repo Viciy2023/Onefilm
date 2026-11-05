@@ -47,6 +47,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -125,7 +126,7 @@ private fun TvEmptyState(
             )
             Spacer(Modifier.height(18.dp))
             Text(
-                text = "欢迎使用壹影",
+                text = stringResource(R.string.home_welcome_title),
                 fontSize = 40.sp,
                 lineHeight = 52.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -134,7 +135,7 @@ private fun TvEmptyState(
             )
             Spacer(Modifier.height(20.dp))
             Text(
-                text = "请在左侧边栏的「配置」中完成接口配置，\n祝您观影愉快！",
+                text = stringResource(R.string.home_welcome_body),
                 fontSize = 20.sp,
                 lineHeight = 34.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -143,11 +144,14 @@ private fun TvEmptyState(
             Spacer(Modifier.height(36.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                 EmptyTagAction(
-                    label = "前往配置",
+                    label = stringResource(R.string.home_action_config),
                     onClick = onOpenConfig,
                     focusRequester = firstActionFocus,
                 )
-                EmptyTagAction(label = "重试", onClick = onRetry)
+                EmptyTagAction(
+                    label = stringResource(R.string.home_action_retry),
+                    onClick = onRetry,
+                )
             }
         }
     }

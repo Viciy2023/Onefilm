@@ -1,0 +1,7 @@
+<resources>
+    <!-- Home empty state -->
+    <string name="home_welcome_title">Welcome to OneFilm</string>
+    <string name="home_welcome_body">Set up your sources in Config on the left sidebar.\nEnjoy your movies!</string>
+    <string name="home_action_config">Open Config</string>
+    <string name="home_action_retry">Retry</string>
+</resources>
