@@ -52,12 +52,13 @@ public class JsLoader {
                 spider = loader.spider(api, BaseLoader.get().dex(jar));
                 spider.siteKey = key;
                 spider.init(App.get(), ext);
+                com.onefilm.android.tv.utils.SearchDebug.log("init-ok site=" + key);
                 return spider;
             } catch (Throwable e) {
                 // init 失败时引擎可能已经建好（QuickJS 上下文 + 定时器线程），
                 // 必须销毁，否则每次失败都会泄漏约 7MB native 内存。
                 INIT_FAILURES.incrementAndGet();
-                e.printStackTrace();
+                com.onefilm.android.tv.utils.SearchDebug.log("init-failed site=" + key + " api=" + api, e);
                 if (spider != null) {
                     try {
                         spider.destroy();

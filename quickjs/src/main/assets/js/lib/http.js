@@ -30,3 +30,19 @@ function defineGlobalAlias(name) {
 }
 
 ['global', 'window', 'self'].forEach(defineGlobalAlias);
+
+// drpy 兼容：部分源的 init / 预处理 会直接调用全局 pd（TVBox 会注入该函数）。
+// drpy 语义：取第一个匹配元素，再把结果按 base_url 拼成绝对地址。
+// 定义在 http.js 里，函数体内的 pdfh / joinUrl 在调用时解析，因此不受后面的宿主注入顺序影响。
+if (typeof globalThis.pd !== 'function') {
+    globalThis.pd = function (html, parse, base_url) {
+        try {
+            if (!html || parse === undefined || parse === null || !String(parse).trim()) return '';
+            const value = pdfh(html, String(parse).trim());
+            if (!value) return '';
+            return base_url ? joinUrl(base_url, value) : value;
+        } catch (e) {
+            return '';
+        }
+    };
+}

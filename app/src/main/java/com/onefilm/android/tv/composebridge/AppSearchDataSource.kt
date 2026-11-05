@@ -161,10 +161,7 @@ class AppSearchDataSource : SearchDataSource {
 
     /** 临时诊断：写文件，避免被 logcat 缓冲区冲掉。 */
     private fun dbg(msg: String) {
-        runCatching {
-            val file = java.io.File(com.onefilm.android.tv.App.get().getExternalFilesDir(null), "search-debug.log")
-            file.appendText("${System.currentTimeMillis()} $msg\n")
-        }
+        com.onefilm.android.tv.utils.SearchDebug.log(msg)
     }
 
     private companion object {
