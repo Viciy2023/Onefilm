@@ -86,12 +86,12 @@ jobs:
             -Ponefilm.versionName="$VERSION_NAME" \
             -Ponefilm.versionCode="$VERSION_CODE" \
             -PskipComposeMapping \
-            --no-daemon --console=plain
+            --no-daemon --console=plain --no-watch-fs
           ./gradlew :app:assembleMobileRelease \
             -Ponefilm.versionName="$VERSION_NAME" \
             -Ponefilm.versionCode="$VERSION_CODE" \
             -PskipComposeMapping \
-            --no-daemon --console=plain
+            --no-daemon --console=plain --no-watch-fs
 
       - name: Upload R8 mapping artifacts
         uses: actions/upload-artifact@v4
