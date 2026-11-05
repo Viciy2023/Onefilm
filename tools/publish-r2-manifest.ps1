@@ -161,6 +161,7 @@ if ([string]::IsNullOrWhiteSpace($Token) -and -not [string]::IsNullOrWhiteSpace(
 }
 if ([string]::IsNullOrWhiteSpace($Token)) { throw "R2_API_TOKEN or R2_TOKEN_FILE is required" }
 
+$TempDir = if ($env:TEMP -and (Test-Path $env:TEMP)) { $env:TEMP } elseif ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { [System.IO.Path]::GetTempPath() }
 $curl = if (Get-Command curl.exe -ErrorAction SilentlyContinue) { "curl.exe" } else { "curl" }
 $objectsApi = "https://api.cloudflare.com/client/v4/accounts/$AccountId/r2/buckets/$Bucket/objects"
 
@@ -175,14 +176,14 @@ foreach ($u in $uploads) {
     -H "Content-Type: application/vnd.android.package-archive" `
     -H "Cache-Control: public, max-age=31536000, immutable" `
     --data-binary "@$($u.Path)" `
-    -o "$env:TEMP/onefilm-apk-upload.json" `
+    -o "$TempDir/onefilm-apk-upload.json" `
     -w "HTTP=%{http_code}`n" `
     "$objectsApi/$($u.Key)"
   if ($LASTEXITCODE -ne 0) { throw "APK upload failed: $($u.Name) (curl exit $LASTEXITCODE)" }
 
   # R2 answers a single-PUT with JSON metadata; a plain GET would stream the
   # whole object back, so validate from the PUT response instead.
-  $resp = Get-Content "$env:TEMP/onefilm-apk-upload.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+  $resp = Get-Content "$TempDir/onefilm-apk-upload.json" -Raw -Encoding UTF8 | ConvertFrom-Json
   if (-not $resp.success) { throw "APK upload rejected: $($u.Name)" }
   $remoteSize = [int64]$resp.result.size
   $remoteEtag = ([string]$resp.result.etag).Trim('"').ToLowerInvariant()
@@ -201,7 +202,7 @@ foreach ($mapping in $MappingFiles) {
   if ($mappingItem.Length -le 0) { throw "mapping file is empty: $mapping" }
   # Both flavors ship a file called mapping.txt; prefix the key with the flavor.
   $flavor = $mappingItem.Directory.Name -replace 'Release$', ''
-  $gzPath = Join-Path $env:TEMP ("onefilm-{0}-mapping.txt.gz" -f $flavor)
+  $gzPath = Join-Path $TempDir ("onefilm-{0}-mapping.txt.gz" -f $flavor)
   if (Test-Path $gzPath) { Remove-Item $gzPath -Force }
   $src = [IO.File]::OpenRead($mappingItem.FullName)
   try {
@@ -219,11 +220,11 @@ foreach ($mapping in $MappingFiles) {
     -H "Content-Type: application/gzip" `
     -H "Cache-Control: no-store" `
     --data-binary "@$gzPath" `
-    -o "$env:TEMP/onefilm-mapping-upload.json" `
+    -o "$TempDir/onefilm-mapping-upload.json" `
     -w "HTTP=%{http_code}`n" `
     "$objectsApi/$($mappingKey)"
   if ($LASTEXITCODE -ne 0) { throw "mapping upload failed: $flavor (curl exit $LASTEXITCODE)" }
-  $mappingResp = Get-Content "$env:TEMP/onefilm-mapping-upload.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+  $mappingResp = Get-Content "$TempDir/onefilm-mapping-upload.json" -Raw -Encoding UTF8 | ConvertFrom-Json
   if (-not $mappingResp.success) { throw "mapping upload rejected: $flavor" }
   if ([int64]$mappingResp.result.size -ne $gzSize) { throw "mapping size mismatch: $flavor" }
   Write-Host ("  verified {0} size={1:N0}" -f $mappingKey, $gzSize)
@@ -266,7 +267,7 @@ if (-not $SkipBuglySymbol -and -not $DryRun -and $MappingFiles.Count -gt 0) {
 }
 
 # MANIFEST must NOT be cached: clients need the newest version immediately.
-$tmp = Join-Path $env:TEMP "onefilm-update-manifest.json"
+$tmp = Join-Path $TempDir "onefilm-update-manifest.json"
 [IO.File]::WriteAllText($tmp, $json, (New-Object System.Text.UTF8Encoding($false)))
 & $curl -sS --max-time 120 -X PUT `
   -H "Authorization: Bearer $Token" `
@@ -316,11 +317,11 @@ if ($PruneOldApks) {
     $deleteUrl = "$objectsApi/" + [Uri]::EscapeDataString([string]$s.key)
     & $curl -sS --max-time 120 -X DELETE `
       -H "Authorization: Bearer $Token" `
-      -o "$env:TEMP/onefilm-apk-delete.json" `
+      -o "$TempDir/onefilm-apk-delete.json" `
       -w "HTTP=%{http_code}`n" `
       $deleteUrl
     if ($LASTEXITCODE -ne 0) { throw "delete failed: $($s.key) (curl exit $LASTEXITCODE)" }
-    $resp = Get-Content "$env:TEMP/onefilm-apk-delete.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+    $resp = Get-Content "$TempDir/onefilm-apk-delete.json" -Raw -Encoding UTF8 | ConvertFrom-Json
     if (-not $resp.success) { throw "delete rejected by R2: $($s.key)" }
   }
   if ($stale.Count -gt 0) { Write-Host "prune done" }
@@ -352,11 +353,11 @@ if ($PruneOldMappings) {
     $deleteUrl = "$objectsApi/" + [Uri]::EscapeDataString([string]$s.key)
     & $curl -sS --max-time 120 -X DELETE `
       -H "Authorization: Bearer $Token" `
-      -o "$env:TEMP/onefilm-mapping-delete.json" `
+      -o "$TempDir/onefilm-mapping-delete.json" `
       -w "HTTP=%{http_code}`n" `
       $deleteUrl
     if ($LASTEXITCODE -ne 0) { throw "delete failed: $($s.key) (curl exit $LASTEXITCODE)" }
-    $resp = Get-Content "$env:TEMP/onefilm-mapping-delete.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+    $resp = Get-Content "$TempDir/onefilm-mapping-delete.json" -Raw -Encoding UTF8 | ConvertFrom-Json
     if (-not $resp.success) { throw "delete rejected by R2: $($s.key)" }
   }
   if ($staleMaps.Count -gt 0) { Write-Host "mapping prune done" }
