@@ -9,5 +9,5 @@ sealed interface CategoryUiState {
         val loadingMore: Boolean = false,
         val endReached: Boolean = false,
     ) : CategoryUiState
-    data class Error(val message: String = "分类加载失败，请重试") : CategoryUiState
+    data class Error(val message: String = "") : CategoryUiState
 }

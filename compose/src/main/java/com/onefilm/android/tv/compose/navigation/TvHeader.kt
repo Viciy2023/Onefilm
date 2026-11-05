@@ -77,6 +77,8 @@ import com.onefilm.android.tv.compose.bridge.HomeCategory
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
+import com.onefilm.android.tv.compose.R
 
 private val TvInk = Color(0xFF1C1C1E)
 
@@ -92,7 +94,7 @@ object TvBrandState {
 }
 
 object TvNavState {
-    var lastLabel by mutableStateOf("历史")
+    var lastLabel by mutableStateOf("")
 }
 
 data class TvNavEntry(
@@ -129,14 +131,14 @@ fun TvHeader(
         ?: siteName?.takeIf { it.isNotBlank() }
         ?: "ONEFILM"
     val entries = listOf(
-        TvNavEntry("历史", Icons.Outlined.History, route = Routes.HISTORY) { onNavigate(Routes.HISTORY) },
-        TvNavEntry("收藏", Icons.Outlined.Star, route = Routes.LIBRARY) { onNavigate(Routes.LIBRARY) },
-        TvNavEntry("搜索", Icons.Outlined.Search, route = Routes.SEARCH) { onNavigate(Routes.SEARCH) },
-        TvNavEntry("直播", Icons.Outlined.LiveTv) { onLive() },
-        TvNavEntry("配置", Icons.Outlined.Tune) { onConfig() },
-        TvNavEntry("线路", Icons.Outlined.SwapHoriz) { onLine() },
-        TvNavEntry("网盘", Icons.Outlined.Cloud) { onNetwork() },
-        TvNavEntry("设置", Icons.Outlined.Settings, route = Routes.SETTINGS) { onNavigate(Routes.SETTINGS) },
+        TvNavEntry(stringResource(R.string.nav_history), Icons.Outlined.History, route = Routes.HISTORY) { onNavigate(Routes.HISTORY) },
+        TvNavEntry(stringResource(R.string.nav_favorites), Icons.Outlined.Star, route = Routes.LIBRARY) { onNavigate(Routes.LIBRARY) },
+        TvNavEntry(stringResource(R.string.nav_search), Icons.Outlined.Search, route = Routes.SEARCH) { onNavigate(Routes.SEARCH) },
+        TvNavEntry(stringResource(R.string.nav_live), Icons.Outlined.LiveTv) { onLive() },
+        TvNavEntry(stringResource(R.string.nav_config), Icons.Outlined.Tune) { onConfig() },
+        TvNavEntry(stringResource(R.string.nav_lines), Icons.Outlined.SwapHoriz) { onLine() },
+        TvNavEntry(stringResource(R.string.nav_netdisk), Icons.Outlined.Cloud) { onNetwork() },
+        TvNavEntry(stringResource(R.string.nav_settings), Icons.Outlined.Settings, route = Routes.SETTINGS) { onNavigate(Routes.SETTINGS) },
     )
 
     BoxWithConstraints(
@@ -275,7 +277,7 @@ fun TvHeader(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             entries.forEach { entry ->
-                val focusRequester = if (entry.label == "历史") firstNavFocus else navFocusRequesters.getOrPut(entry.label) {
+                val focusRequester = if (entry.route == Routes.HISTORY) firstNavFocus else navFocusRequesters.getOrPut(entry.label) {
                     androidx.compose.ui.focus.FocusRequester()
                 }
                 TvNavTab(
@@ -517,7 +519,7 @@ private fun TvCategoryChip(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = category.name.ifBlank { "未命名" },
+            text = category.name.ifBlank { stringResource(R.string.detail_unnamed) },
             color = foreground,
             fontSize = (14 * scale).sp,
             fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Normal,
@@ -529,7 +531,7 @@ private fun TvCategoryChip(
             Spacer(Modifier.width((4 * scale).dp))
             Icon(
                 imageVector = Icons.Filled.FilterList,
-                contentDescription = "可筛选",
+                contentDescription = stringResource(R.string.common_filterable),
                 tint = foreground.copy(alpha = if (highlighted) 0.85f else 0.65f),
                 modifier = Modifier.size((13 * scale).dp),
             )

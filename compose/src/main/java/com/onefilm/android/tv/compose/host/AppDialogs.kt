@@ -41,6 +41,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
+import com.onefilm.android.tv.compose.R
 
 /**
  * 退出确认使用独立的小卡片，而不是平台默认 AlertDialog。
@@ -80,7 +82,7 @@ fun ExitAppDialog(
                     Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
                 ) {
                     Text(
-                        text = "退出壹影",
+                        text = stringResource(R.string.app_exit_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -89,7 +91,7 @@ fun ExitAppDialog(
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = "退出后将停止当前播放，确定要关闭应用吗？",
+                        text = stringResource(R.string.app_exit_message),
                         fontSize = 14.sp,
                         lineHeight = 20.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -100,14 +102,14 @@ fun ExitAppDialog(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         DialogAction(
-                            label = "取消",
+                            label = stringResource(R.string.settings_cancel),
                             focusRequester = cancelFocus,
                             primary = false,
                             modifier = Modifier.weight(1f),
                             onClick = onDismiss,
                         )
                         DialogAction(
-                            label = "退出",
+                            label = stringResource(R.string.app_exit_confirm),
                             primary = true,
                             modifier = Modifier.weight(1f),
                             onClick = onConfirm,
@@ -157,15 +159,14 @@ fun StorageIntroDialog(
                     Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
                 ) {
                     Text(
-                        text = "存储权限",
+                        text = stringResource(R.string.app_permission_title),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = "壹影需要“所有文件访问”权限来做缓存、下载更新包和导入本地配置。" +
-                            "你可以先跳过，部分功能会受限，之后可在系统设置里重新授权。",
+                        text = stringResource(R.string.app_permission_message),
                         fontSize = 14.sp,
                         lineHeight = 20.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -176,14 +177,14 @@ fun StorageIntroDialog(
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         DialogAction(
-                            label = "暂不",
+                            label = stringResource(R.string.app_permission_later),
                             focusRequester = dismissFocus,
                             primary = false,
                             modifier = Modifier.weight(1f),
                             onClick = onDismiss,
                         )
                         DialogAction(
-                            label = "去授权",
+                            label = stringResource(R.string.app_permission_grant),
                             primary = true,
                             modifier = Modifier.weight(1f),
                             onClick = onGrant,
@@ -240,7 +241,7 @@ fun UpdatePromptDialog(
             ) {
                 Column(Modifier.padding(horizontal = 20.dp, vertical = 18.dp)) {
                     Text(
-                        text = "发现新版本 · $version",
+                        text = stringResource(R.string.app_update_title, version),
                         fontSize = 20.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -248,7 +249,7 @@ fun UpdatePromptDialog(
                     if (force) {
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "当前已启用强制升级，更新完成后才能继续使用。",
+                            text = stringResource(R.string.app_update_force),
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.error,
                         )
@@ -285,7 +286,7 @@ fun UpdatePromptDialog(
                     ) {
                         if (!force) {
                             DialogAction(
-                                label = "稍后",
+                                label = stringResource(R.string.app_update_later),
                                 focusRequester = cancelFocus,
                                 enabled = !downloading,
                                 modifier = Modifier.weight(1f),
@@ -293,7 +294,7 @@ fun UpdatePromptDialog(
                             )
                         }
                         DialogAction(
-                            label = if (downloading) "下载中 $progress%" else "立即更新",
+                            label = if (downloading) stringResource(R.string.app_update_downloading, progress) else stringResource(R.string.app_update_now),
                             focusRequester = if (force) confirmFocus else null,
                             enabled = !downloading,
                             primary = true,

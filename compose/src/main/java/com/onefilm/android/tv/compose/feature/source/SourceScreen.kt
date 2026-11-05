@@ -30,6 +30,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.onefilm.android.tv.compose.bridge.SourceDataSource
 import com.onefilm.android.tv.compose.bridge.SourceItem
+import androidx.compose.ui.res.stringResource
+import com.onefilm.android.tv.compose.R
 
 @Composable
 fun SourceRoute(
@@ -54,7 +56,7 @@ fun SourceRoute(
             .padding(16.dp),
     ) {
         Text(
-            text = "‹ 来源：$title",
+            text = stringResource(R.string.source_back, title),
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier
                 .clip(RoundedCornerShape(16.dp))
@@ -64,13 +66,13 @@ fun SourceRoute(
         Spacer(Modifier.height(12.dp))
         when {
             failed -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("来源加载失败", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.source_load_failed), style = MaterialTheme.typography.bodyLarge)
             }
             items == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 com.onefilm.android.tv.compose.design.component.AppLoadingState()
             }
             items.isNullOrEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("没有找到其他站点来源", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.source_no_other), style = MaterialTheme.typography.bodyLarge)
             }
             else -> LazyColumn(
                 contentPadding = PaddingValues(vertical = 8.dp),
@@ -87,7 +89,7 @@ fun SourceRoute(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text(item.siteName.ifBlank { "未知站点" }, style = MaterialTheme.typography.titleMedium)
+                            Text(item.siteName.ifBlank { stringResource(R.string.source_unknown_site) }, style = MaterialTheme.typography.titleMedium)
                             item.subtitle?.let {
                                 Text(
                                     text = it,

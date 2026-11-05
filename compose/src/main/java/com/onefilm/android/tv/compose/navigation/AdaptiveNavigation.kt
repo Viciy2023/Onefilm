@@ -20,6 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.onefilm.android.tv.compose.R
 
 @Composable
 fun AdaptiveNavigation(
@@ -35,11 +37,11 @@ fun AdaptiveNavigation(
     content: @Composable () -> Unit,
 ) {
     val items = listOf(
-        Routes.HOME to "首页",
-        Routes.SEARCH to "搜索",
-        Routes.LIBRARY to "收藏",
-        Routes.LIVE to "直播",
-        Routes.SETTINGS to "设置",
+        Routes.HOME to stringResource(R.string.nav_home),
+        Routes.SEARCH to stringResource(R.string.nav_search),
+        Routes.LIBRARY to stringResource(R.string.nav_favorites),
+        Routes.LIVE to stringResource(R.string.nav_live),
+        Routes.SETTINGS to stringResource(R.string.nav_settings),
     )
     Surface(
         modifier = Modifier.fillMaxSize(),

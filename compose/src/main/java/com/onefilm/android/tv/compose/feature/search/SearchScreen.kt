@@ -71,6 +71,7 @@ import com.onefilm.android.tv.compose.design.component.TvPosterCard
 import com.onefilm.android.tv.compose.design.component.TvTagButton
 import com.onefilm.android.tv.compose.navigation.TvBrandRow
 import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
 
 private object SearchFocusState {
     var query: String? = null
@@ -571,7 +572,7 @@ private fun SearchResults(
                 is SearchUiState.Error -> Box(
                     Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
-                ) { Text(state.message, fontSize = 13.sp, color = MaterialTheme.colorScheme.error) }
+                ) { Text(state.message.ifBlank { stringResource(R.string.search_load_failed) }, fontSize = 13.sp, color = MaterialTheme.colorScheme.error) }
                 is SearchUiState.Content -> LazyVerticalGrid(
                     columns = GridCells.Fixed(5),
                     modifier = Modifier.fillMaxSize(),

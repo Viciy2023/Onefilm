@@ -51,6 +51,7 @@ import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import kotlinx.coroutines.delay
 import com.onefilm.android.tv.compose.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun LinesScreen(
@@ -244,7 +245,7 @@ private fun LineRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = if (loading) "加载中…" else line.name.ifBlank { line.url },
+                text = if (loading) stringResource(R.string.settings_loading) else line.name.ifBlank { line.url },
                 fontSize = 13.sp,
                 fontWeight = if (line.current) FontWeight.SemiBold else FontWeight.Medium,
                 color = if (enabled) MaterialTheme.colorScheme.onSurface

@@ -59,6 +59,9 @@ import com.onefilm.android.tv.compose.bridge.ServerEventBridge
 import com.onefilm.android.tv.compose.design.component.TvTagButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.onefilm.android.tv.compose.R
 
 @Composable
 fun ConfigScreen(
@@ -75,6 +78,7 @@ fun ConfigScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var lines by remember { mutableStateOf(dataSource.allConfigLines()) }
     val firstLineFocus = remember { FocusRequester() }
+    val resContext = LocalContext.current
     val pushUrl = remember { dataSource.configPushUrl() }
     val qrBitmap = remember(pushUrl) {
         if (pushUrl.isBlank()) null else dataSource.qrBitmap(pushUrl, 640)
@@ -118,7 +122,7 @@ fun ConfigScreen(
         ) {
             Column(Modifier.padding(horizontal = 8.dp, vertical = 8.dp)) {
                 Text(
-                    text = "壹影提示：第1次使用点配置点储存权限再点确定，或者手机浏览器直接访问 ${pushUrl.ifBlank { "（推送服务未启动）" }}",
+                    text = stringResource(R.string.config_tip, pushUrl.ifBlank { stringResource(R.string.config_push_off) }),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp,
                     maxLines = 2,
@@ -138,11 +142,11 @@ fun ConfigScreen(
                         qrBitmap?.let {
                             Image(
                                 bitmap = it.asImageBitmap(),
-                                contentDescription = "配置二维码",
+                                contentDescription = stringResource(R.string.config_qr_desc),
                                 contentScale = ContentScale.Fit,
                                 modifier = Modifier.fillMaxSize(),
                             )
-                        } ?: Text("二维码生成失败", fontSize = 14.sp)
+                        } ?: Text(stringResource(R.string.config_qr_failed), fontSize = 14.sp)
                     }
                     Spacer(Modifier.width(10.dp))
                     Box(
@@ -159,7 +163,7 @@ fun ConfigScreen(
                     ) {
                         if (lines.isEmpty()) {
                             Text(
-                                "暂无已配置线路",
+                                stringResource(R.string.config_no_lines),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 14.sp,
                             )
@@ -213,23 +217,23 @@ fun ConfigScreen(
                 ) {
                     CompactInput(
                         value = name,
-                        hint = "线路名称",
+                        hint = stringResource(R.string.config_line_name),
                         onValueChange = { name = it },
                         modifier = Modifier.weight(0.34f),
                     )
                     CompactInput(
                         value = url,
-                        hint = "接口 URL",
+                        hint = stringResource(R.string.config_interface_url),
                         onValueChange = { url = it },
                         modifier = Modifier.weight(0.44f),
                     )
                     TvTagButton(
-                        text = if (loading) "加载中…" else "保存并加载",
+                        text = if (loading) stringResource(R.string.settings_loading) else stringResource(R.string.config_save_and_load),
                         enabled = !loading && loadingLineKey == null,
                         modifier = Modifier.width(126.dp),
                         onClick = {
                             if (url.isBlank()) {
-                                error = "接口 URL 不能为空"
+                                error = resContext.getString(R.string.config_url_required)
                             } else {
                                 loading = true
                                 error = null
@@ -349,7 +353,7 @@ private fun ConfigLineRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = if (loading) "加载中…" else line.name.ifBlank { line.url },
+                text = if (loading) stringResource(R.string.settings_loading) else line.name.ifBlank { line.url },
                 fontSize = 13.sp,
                 fontWeight = if (line.current) FontWeight.SemiBold else FontWeight.Medium,
                 color = if (enabled) MaterialTheme.colorScheme.onSurface
@@ -359,16 +363,16 @@ private fun ConfigLineRow(
                 modifier = Modifier.weight(1f),
             )
             if (line.type == 1) {
-                Text("直播", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.config_live_tag), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Spacer(Modifier.width(6.dp))
             }
             when (line.kind) {
                 2 -> {
-                    Text("多仓", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.config_multi_repo), fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(6.dp))
                 }
                 1 -> {
-                    Text("单仓", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.config_single_repo), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(6.dp))
                 }
             }
@@ -396,7 +400,7 @@ private fun ConfigLineRow(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "删除",
+                text = stringResource(R.string.common_delete),
                 fontSize = 12.sp,
                 color = when {
                     deleteFocused -> MaterialTheme.colorScheme.onError

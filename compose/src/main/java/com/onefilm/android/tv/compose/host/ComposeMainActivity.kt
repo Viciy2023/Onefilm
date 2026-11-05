@@ -111,6 +111,7 @@ import com.onefilm.android.tv.compose.navigation.OneFilmNavHost
 import com.onefilm.android.tv.compose.navigation.Routes
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
 
 class ComposeMainActivity : ComponentActivity() {
 
@@ -373,7 +374,7 @@ class ComposeMainActivity : ComponentActivity() {
                                 },
                                 onError = { message ->
                                     updateProgress = -1
-                                    updateError = message.ifBlank { "下载失败，请稍后重试。" }
+                                    updateError = message.ifBlank { getString(R.string.app_update_failed) }
                                 },
                             )
                         },
@@ -705,7 +706,7 @@ class ComposeMainActivity : ComponentActivity() {
                             com.onefilm.android.tv.compose.feature.netdisk.NetdiskScreen(
                                 dataSource = ComposeDependencies.netdiskDataSource,
                             ) { playback, entry ->
-                                val name = entry.name.ifBlank { "网盘视频" }
+                                val name = entry.name.ifBlank { getString(R.string.netdisk_video_name) }
                                 PlaybackSession.setQueue(
                                     key = "_netdisk",
                                     id = entry.path,

@@ -19,6 +19,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.onefilm.android.tv.compose.R
 
 @Composable
 fun PosterCard(
@@ -40,7 +42,7 @@ fun PosterCard(
         ) {
             if (posterUrl.isNullOrBlank()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("无海报", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.common_no_poster), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 RemoteImage(
@@ -53,7 +55,7 @@ fun PosterCard(
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            text = title.ifBlank { "未命名" },
+            text = title.ifBlank { stringResource(R.string.detail_unnamed) },
             style = MaterialTheme.typography.titleMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

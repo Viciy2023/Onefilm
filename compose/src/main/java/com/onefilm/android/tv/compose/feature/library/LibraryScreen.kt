@@ -39,6 +39,8 @@ import com.onefilm.android.tv.compose.design.component.AppLogoLoading
 import com.onefilm.android.tv.compose.design.component.TvPosterCard
 import com.onefilm.android.tv.compose.design.component.TvTagButton
 import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
+import com.onefilm.android.tv.compose.R
 
 @Composable
 fun LibraryScreen(
@@ -79,24 +81,24 @@ fun LibraryScreen(
         ) {
             if (historyMode) {
                 TvTagButton(
-                    text = if (deleteMode) "退出删除" else "删除记录",
+                    text = if (deleteMode) stringResource(R.string.library_exit_delete) else stringResource(R.string.library_delete_records),
                     enabled = items.isNotEmpty(),
                 ) { deleteMode = !deleteMode }
                 Spacer(Modifier.width(8.dp))
                 TvTagButton(
-                    text = "一键删除",
+                    text = stringResource(R.string.library_delete_all),
                     enabled = items.isNotEmpty(),
                 ) { pendingClear = true }
             } else {
                 TvTagButton(
-                    text = if (deleteMode) "退出删除" else "删除收藏",
+                    text = if (deleteMode) stringResource(R.string.library_exit_delete) else stringResource(R.string.library_delete_favorites),
                     enabled = items.isNotEmpty(),
                 ) { deleteMode = !deleteMode }
             }
         }
         if (deleteMode) {
             Text(
-                text = if (historyMode) "按确定键删除当前选中记录" else "按确定键删除当前选中收藏",
+                text = if (historyMode) stringResource(R.string.library_hint_delete_record) else stringResource(R.string.library_hint_delete_favorite),
                 color = MaterialTheme.colorScheme.primary,
                 fontSize = 13.sp,
                 modifier = Modifier.padding(top = 8.dp),
@@ -106,12 +108,12 @@ fun LibraryScreen(
             data == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     AppLogoLoading(size = 84.dp)
-                    Text("哎呀！正在加载中呢，你等等呀！", fontSize = 13.sp)
+                    Text(stringResource(R.string.player_loading_hint), fontSize = 13.sp)
                 }
             }
             items.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    if (historyMode) "暂无观看记录" else "暂无收藏内容",
+                    if (historyMode) stringResource(R.string.library_empty_history) else stringResource(R.string.library_empty_favorites),
                     style = MaterialTheme.typography.bodyLarge,
                     fontSize = 13.sp,
                 )
@@ -146,11 +148,11 @@ fun LibraryScreen(
     pendingDelete?.let { card ->
         AlertDialog(
             onDismissRequest = { pendingDelete = null },
-            title = { Text(if (historyMode) "删除观看记录" else "删除收藏") },
-            text = { Text("确定删除《${card.title}》吗？") },
+            title = { Text(if (historyMode) stringResource(R.string.library_delete_history_title) else stringResource(R.string.library_delete_favorites)) },
+            text = { Text(stringResource(R.string.library_confirm_delete, card.title)) },
             confirmButton = {
                 TvTagButton(
-                    text = "删除",
+                    text = stringResource(R.string.common_delete),
                     onClick = {
                         if (historyMode) onDeleteHistory(card) else onDeleteFavorite(card)
                         pendingDelete = null
@@ -159,7 +161,7 @@ fun LibraryScreen(
                 )
             },
             dismissButton = {
-                TvTagButton(text = "取消", onClick = { pendingDelete = null })
+                TvTagButton(text = stringResource(R.string.settings_cancel), onClick = { pendingDelete = null })
             },
         )
     }
@@ -167,16 +169,16 @@ fun LibraryScreen(
     if (pendingClear) {
         AlertDialog(
             onDismissRequest = { pendingClear = false },
-            title = { Text(if (historyMode) "一键删除观看记录" else "删除全部收藏") },
+            title = { Text(if (historyMode) stringResource(R.string.library_delete_all_history_title) else stringResource(R.string.library_delete_all_favorites_title)) },
             text = {
                 Text(
-                    if (historyMode) "确定删除全部观看记录吗？删除后无法恢复。"
-                    else "确定删除全部收藏吗？删除后无法恢复。",
+                    if (historyMode) stringResource(R.string.library_confirm_delete_all_history)
+                    else stringResource(R.string.library_confirm_delete_all_favorites),
                 )
             },
             confirmButton = {
                 TvTagButton(
-                    text = "全部删除",
+                    text = stringResource(R.string.library_delete_all_confirm),
                     onClick = {
                         if (historyMode) onClearHistory() else onClearFavorites()
                         pendingClear = false
@@ -185,7 +187,7 @@ fun LibraryScreen(
                 )
             },
             dismissButton = {
-                TvTagButton(text = "取消", onClick = { pendingClear = false })
+                TvTagButton(text = stringResource(R.string.settings_cancel), onClick = { pendingClear = false })
             },
         )
     }

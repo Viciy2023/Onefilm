@@ -63,6 +63,7 @@ import com.onefilm.android.tv.compose.design.component.TvPosterCard
 import com.onefilm.android.tv.compose.navigation.TvHeaderFocusState
 import com.onefilm.android.tv.compose.design.component.SectionRow
 import com.onefilm.android.tv.compose.R
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun HomeScreen(
@@ -83,7 +84,7 @@ fun HomeScreen(
             onRetry = onRetry,
             firstActionFocus = firstActionFocus,
         )
-        is HomeUiState.Error -> StatusMessage(state.message, onRetry)
+        is HomeUiState.Error -> StatusMessage(state.message.ifBlank { stringResource(R.string.home_load_failed) }, onRetry)
         is HomeUiState.Content ->
             if (isTv) TvHomeContent(state, onCardClick) else HomeContent(state, onCardClick, onCategoryClick)
     }
@@ -305,7 +306,7 @@ private fun CategoryRail(
 ) {
     Column {
         Text(
-            text = "分类",
+            text = stringResource(R.string.home_category),
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
@@ -318,7 +319,7 @@ private fun CategoryRail(
                 key = { index, category -> "${category.key}:${category.id}:$index" },
             ) { _, category ->
                 Text(
-                    text = category.name.ifBlank { "未命名" },
+                    text = category.name.ifBlank { stringResource(R.string.detail_unnamed) },
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier
                         .clip(RoundedCornerShape(18.dp))
@@ -348,7 +349,7 @@ private fun StatusMessage(message: String, onRetry: () -> Unit) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(message, style = MaterialTheme.typography.bodyLarge)
             Spacer(Modifier.height(12.dp))
-            Button(onClick = onRetry) { Text("重试") }
+            Button(onClick = onRetry) { Text(stringResource(R.string.detail_retry)) }
         }
     }
 }

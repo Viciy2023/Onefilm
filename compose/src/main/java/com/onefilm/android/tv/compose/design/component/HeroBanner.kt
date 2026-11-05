@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.onefilm.android.tv.compose.R
 
 @Composable
 fun HeroBanner(
@@ -62,7 +64,7 @@ fun HeroBanner(
                 .padding(24.dp),
         ) {
             Text(
-                text = title.ifBlank { "未命名" },
+                text = title.ifBlank { stringResource(R.string.detail_unnamed) },
                 style = MaterialTheme.typography.displayLarge,
                 color = Color.White,
                 maxLines = 2,
@@ -78,8 +80,8 @@ fun HeroBanner(
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onPlay) { Text("播放") }
-                OutlinedButton(onClick = onDetails) { Text("详情") }
+                Button(onClick = onPlay) { Text(stringResource(R.string.common_play)) }
+                OutlinedButton(onClick = onDetails) { Text(stringResource(R.string.detail_screen_title)) }
             }
         }
     }

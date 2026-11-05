@@ -77,6 +77,9 @@ object PlaybackSession {
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    /** 当前 error 是否为"可自愈"的中间态（同源重试/线路切换），详情页据此跳过站点回退。 */
+    var errorTransient by mutableStateOf(false)
+        private set
     // 播放失败时自动重试（同源、同一地址），最多 2 次；成功或换集后重置。
     private var autoRetryLeft = AUTO_RETRY_MAX
     private var autoRetryToken = 0
@@ -146,11 +149,13 @@ object PlaybackSession {
 
         override fun onPlayerError(playerError: PlaybackException) {
             isBuffering = false
+            errorTransient = false
             val message = playerError.message ?: str(R.string.player_play_failed)
             // 同源自动重试：最多 2 次，每次间隔 1.5 秒；仍失败才把错误交给 UI。
             if (autoRetryLeft > 0 && currentUrl != null) {
                 autoRetryLeft--
                 val attempt = AUTO_RETRY_MAX - autoRetryLeft
+                errorTransient = true
                 error = str(R.string.player_auto_retry, message, attempt, AUTO_RETRY_MAX)
                 val token = ++autoRetryToken
                 scope.launch {
@@ -160,7 +165,11 @@ object PlaybackSession {
                 return
             }
             // 同源两次重试仍失败：如果详情页提供了其它线路，自动切下一条。
-            if (alternatives.size > 1 && lineSwitchUsed < alternatives.size - 1 && tryNextLine()) return
+            if (alternatives.size > 1 && lineSwitchUsed < alternatives.size - 1) {
+                errorTransient = true
+                if (tryNextLine()) return
+                errorTransient = false
+            }
             error = message
         }
 

@@ -26,6 +26,8 @@ import com.onefilm.android.tv.compose.bridge.SourceDataSource
 import com.onefilm.android.tv.compose.bridge.SourceItem
 import com.onefilm.android.tv.compose.design.component.FocusableSurface
 import kotlinx.coroutines.withTimeoutOrNull
+import androidx.compose.ui.res.stringResource
+import com.onefilm.android.tv.compose.R
 
 /**
  * 欧歌式聚合入口：榜单/推荐卡片只有片名和海报时，
@@ -69,41 +71,41 @@ fun ResolveRoute(
             .padding(20.dp),
     ) {
         Text(
-            text = "‹ 来源：$title",
+            text = stringResource(R.string.source_back, title),
             style = MaterialTheme.typography.headlineMedium,
         )
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             if (loading) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     com.onefilm.android.tv.compose.design.component.AppLoadingState(
-                        text = "正在聚合《$title》的片源…",
+                        text = stringResource(R.string.source_aggregating, title),
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "从全部可搜索站点中查找，找到后自动进入详情",
+                        stringResource(R.string.source_aggregate_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("没有找到可播放片源", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.source_none_playable), style = MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "可以重试，或直接进入搜索页手动选择",
+                        stringResource(R.string.source_retry_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(18.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         FocusableSurface(onClick = { retryTick++ }) {
-                            Text("重试", modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
+                            Text(stringResource(R.string.detail_retry), modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
                         }
                         FocusableSurface(onClick = onSearch) {
-                            Text("去搜索", modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
+                            Text(stringResource(R.string.source_go_search), modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
                         }
                         FocusableSurface(onClick = onBack) {
-                            Text("返回", modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
+                            Text(stringResource(R.string.common_back), modifier = Modifier.padding(horizontal = 22.dp, vertical = 12.dp))
                         }
                     }
                 }

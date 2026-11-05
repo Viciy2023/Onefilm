@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.R
+import androidx.compose.ui.res.stringResource
 
 /** 统一加载状态：应用 LOGO 匀速旋转（不依赖系统动画时长设置）。 */
 @Composable
@@ -43,7 +44,7 @@ fun AppLogoLoading(
     }
     Image(
         painter = painterResource(R.drawable.app_logo),
-        contentDescription = "加载中",
+        contentDescription = stringResource(R.string.app_loading_desc),
         modifier = modifier
             .size(size * 0.5f)
             .clip(CircleShape)
@@ -53,7 +54,7 @@ fun AppLogoLoading(
 
 @Composable
 fun AppLoadingState(
-    text: String = "哎呀！正在加载中呢，你等等呀！",
+    text: String = stringResource(R.string.player_loading_hint),
     modifier: Modifier = Modifier,
 ) {
     Column(modifier, horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {

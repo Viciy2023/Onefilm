@@ -62,6 +62,7 @@ import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.design.component.TvPosterCard
 import com.onefilm.android.tv.compose.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun CategoryScreen(
@@ -86,7 +87,7 @@ fun CategoryScreen(
         }
         is CategoryUiState.Error -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(state.message, style = MaterialTheme.typography.bodyLarge)
+                Text(state.message.ifBlank { stringResource(R.string.category_load_failed) }, style = MaterialTheme.typography.bodyLarge)
                 Spacer(Modifier.height(12.dp))
                 Button(onClick = onRetry) { Text(stringResource(R.string.detail_retry)) }
             }

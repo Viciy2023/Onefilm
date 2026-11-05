@@ -16,7 +16,7 @@ sealed interface SearchUiState {
         val total: Int = 0,
     ) : SearchUiState
     data class Empty(val keyword: String) : SearchUiState
-    data class Error(val message: String = "搜索失败，请重试") : SearchUiState
+    data class Error(val message: String = "") : SearchUiState
 }
 
 class SearchViewModel(

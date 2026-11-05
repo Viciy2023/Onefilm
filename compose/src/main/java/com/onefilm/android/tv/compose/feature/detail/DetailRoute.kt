@@ -59,7 +59,7 @@ fun DetailRoute(
     // 同源重试、线路切换都失败后，再尝试同名的其他站点（最多 2 次）。
     LaunchedEffect(PlaybackSession.error, key, id) {
         val message = PlaybackSession.error ?: return@LaunchedEffect
-        if (message.contains("自动重试") || message.contains("正在切换")) return@LaunchedEffect
+        if (PlaybackSession.errorTransient) return@LaunchedEffect
         val source = searchDataSource ?: return@LaunchedEffect
         val switch = onSwitchSite ?: return@LaunchedEffect
         val info = (state as? DetailUiState.Content)?.info ?: return@LaunchedEffect

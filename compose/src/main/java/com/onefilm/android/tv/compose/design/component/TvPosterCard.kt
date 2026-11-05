@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.res.stringResource
+import com.onefilm.android.tv.compose.R
 
 /** TV 端统一海报卡片：2:3 海报 + 底部标题/评分 + 焦点放大与白色细环。 */
 @Composable
@@ -128,7 +130,7 @@ fun TvPosterCard(
                 verticalArrangement = Arrangement.Bottom,
             ) {
                 Text(
-                    text = title.ifBlank { "未命名" },
+                    text = title.ifBlank { stringResource(R.string.detail_unnamed) },
                     color = Color.White,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
