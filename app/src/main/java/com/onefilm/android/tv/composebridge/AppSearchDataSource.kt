@@ -2,10 +2,12 @@ package com.onefilm.android.tv.composebridge
 
 import com.onefilm.android.tv.api.SiteApi
 import com.onefilm.android.tv.api.config.VodConfig
+import com.onefilm.android.tv.api.loader.BaseLoader
 import com.onefilm.android.tv.bean.Site
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.bridge.SearchDataSource
 import com.onefilm.android.tv.compose.bridge.SearchProgress
+import com.onefilm.android.tv.utils.Task
 import com.github.catvod.utils.Trans
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -17,6 +19,7 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 class AppSearchDataSource : SearchDataSource {
@@ -69,6 +72,17 @@ class AppSearchDataSource : SearchDataSource {
             } catch (e: Throwable) {
                 null // 失败即跳过，本轮不重试
             }
+            // 方案 B：JS 站点本轮只用这一次，搜索返回后释放其引擎，
+            // 避免 80+ 个 QuickJS 运行时同时常驻。延迟 8 秒释放（大于 JsLoader 内 5 秒保护窗口），
+            // 避开“用户此刻正好点开该站点详情”的竞态。
+            if (site.api?.contains(".js") == true) {
+                val siteKey = site.key
+                Task.schedule({
+                    val ok = runCatching { BaseLoader.get().releaseJs(siteKey) }.getOrDefault(false)
+                    dbg("release site=$siteKey ok=$ok")
+                }, 8, TimeUnit.SECONDS)
+            }
+            dbg("site=${site.key} js=${site.api?.contains(".js") == true} vods=${vods?.size}")
             val doneCount = completed.incrementAndGet()
             if (vods.isNullOrEmpty()) return
             val snapshot: List<MediaCard>
@@ -82,10 +96,24 @@ class AppSearchDataSource : SearchDataSource {
         }
 
         // 一、普通源并行，结果先出来。
+        val jsTotal = sites.count { it.api?.contains(".js") == true }
+        dbg("search start keyword=$key sites=${sites.size} js=$jsTotal threads=${SearchSettings.threads()}")
         val jobs = light.map { site ->
             launch(Dispatchers.IO) { semaphore.withPermit { runSite(site, SITE_TIMEOUT_MS) } }
         }
-        jobs.forEach { it.join() }
+        // 个别源的 JS 调用是阻塞的、不响应协程取消，join 可能永远挂住（表现为计数停在 25x/26x）。
+        // 加总超时兜底，保证后续回收与 done 一定执行。
+        val lightDone = withTimeoutOrNull(LIGHT_TOTAL_TIMEOUT_MS) {
+            jobs.forEach { it.join() }
+            true
+        } ?: false
+        dbg("light done=$lightDone completed=${completed.get()}/${sites.size} js=$jsTotal")
+
+        // 普通（JS）源已全部跑完，立刻回收引擎：95 个 QuickJS 运行时约 600MB，
+        // 是 2GB 设备上最大的常驻开销；后面的重型源都是 csp_* jar 类，不需要 JS 引擎。
+        trimJsEngines()
+        // 20 秒宽限期内的引擎会在这次补刀里释放。
+        Task.schedule({ trimJsEngines() }, 25, TimeUnit.SECONDS)
 
         // 二、网盘 / GoProxy 源最后串行跑。
         // 这类源首次使用要下载并加载 libwexproxy.so（约 10MB），并发会让设备直接 SIGSEGV，
@@ -114,11 +142,37 @@ class AppSearchDataSource : SearchDataSource {
             DiskCache.write("search_${cacheKey.hashCode()}", sorted)
         }
         send(SearchProgress(sorted, true, sites.size, sites.size))
+        // 兜底再回收一次：覆盖重型源阶段又被建出来的引擎（通常为 0）。
+        trimJsEngines()
+    }
+
+    /** 回收聚合搜索期间创建的 JS 引擎，只保留首页站点；被回收站点在下次使用时按需重建。 */
+    private fun trimJsEngines() {
+        Task.execute {
+            runCatching {
+                val keep = HashSet<String>()
+                val homeKey = VodConfig.get().getHome().key
+                if (!homeKey.isNullOrBlank()) keep.add(homeKey)
+                val released = BaseLoader.get().retainJs(keep)
+                dbg("trim released=$released initFailures=${com.onefilm.android.tv.api.loader.JsLoader.initFailures()}")
+            }
+        }
+    }
+
+    /** 临时诊断：写文件，避免被 logcat 缓冲区冲掉。 */
+    private fun dbg(msg: String) {
+        runCatching {
+            val file = java.io.File(com.onefilm.android.tv.App.get().getExternalFilesDir(null), "search-debug.log")
+            file.appendText("${System.currentTimeMillis()} $msg\n")
+        }
     }
 
     private companion object {
         /** 普通源单站超时。 */
         const val SITE_TIMEOUT_MS = 5_000L
+
+        /** 普通源整体兜底超时：个别源的 JS 调用是阻塞的，join 可能永远不返回。 */
+        const val LIGHT_TOTAL_TIMEOUT_MS = 120_000L
 
         /** 网盘 / GoProxy 源单站超时：要算上下载 + 加载 so 的时间。 */
         const val HEAVY_TIMEOUT_MS = 12_000L

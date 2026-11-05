@@ -142,9 +142,20 @@ public class Spider extends com.github.catvod.crawler.Spider {
 
     private void releaseJS() throws Exception {
         submit(() -> {
-            if (global != null) global.destroy();
-            if (jsObject != null) jsObject.release();
-            if (ctx != null) ctx.destroy();
+            // 任何一步失败都不能影响后续的 ctx.destroy()，否则 QuickJS 上下文会泄漏
+            // （单个约 7MB，一次聚合搜索能泄漏数百 MB）。
+            try {
+                if (global != null) global.destroy();
+            } catch (Throwable ignored) {
+            }
+            try {
+                if (jsObject != null) jsObject.release();
+            } catch (Throwable ignored) {
+            }
+            try {
+                if (ctx != null) ctx.destroy();
+            } catch (Throwable ignored) {
+            }
             return null;
         }).get();
     }

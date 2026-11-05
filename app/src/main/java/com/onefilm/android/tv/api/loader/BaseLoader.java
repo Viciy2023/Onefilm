@@ -13,6 +13,7 @@ import com.github.catvod.utils.Crypto;
 
 import org.json.JSONObject;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -62,6 +63,19 @@ public class BaseLoader {
             if (pyLoader != null) pyLoader.clear();
             jsLoader.clear();
         });
+    }
+
+    /**
+     * 聚合搜索结束后回收闲置的 JS 引擎，只保留 keepKeys 中的站点（以及最近使用的站点）。
+     * 被回收的站点在下次使用时由 {@link JsLoader#getSpider} 按需重建。
+     */
+    public int retainJs(Collection<String> keepKeys) {
+        return jsLoader.retain(keepKeys);
+    }
+
+    /** 释放单个站点的 JS 引擎（搜索返回后调用），下次使用时自动重建。 */
+    public boolean releaseJs(String key) {
+        return jsLoader.release(key);
     }
 
     public Spider getSpider(String key, String api, String ext, String jar) {
