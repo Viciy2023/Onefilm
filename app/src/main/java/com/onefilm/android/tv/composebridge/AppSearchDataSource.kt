@@ -84,7 +84,6 @@ class AppSearchDataSource : SearchDataSource {
 
         suspend fun runSite(site: Site, timeoutMs: Long) {
             if (blockedSites.contains(site.key)) {
-                dbg("skip-blocked site=${site.key}")
                 completed.incrementAndGet()
                 return
             }
@@ -110,7 +109,6 @@ class AppSearchDataSource : SearchDataSource {
                 future.cancel(true)
                 val strikes = (timeoutCounts.merge(site.key, 1) { a, b -> a + b } ?: 1)
                 if (strikes >= 2) blockedSites.add(site.key)
-                dbg("timeout site=${site.key} ms=$effectiveTimeout strikes=$strikes")
                 null
             } catch (e: CancellationException) {
                 future.cancel(true)
@@ -118,21 +116,16 @@ class AppSearchDataSource : SearchDataSource {
             } catch (e: Throwable) {
                 null // 失败即跳过，本轮不重试
             }
-            // 方案 B：JS 站点本轮只用这一次，搜索返回后释放其引擎，
-            // 避免 80+ 个 QuickJS 运行时同时常驻。延迟 8 秒释放（大于 JsLoader 内 5 秒保护窗口），
-            // 避开“用户此刻正好点开该站点详情”的竞态。
+            // 方案 B：JS 站点本轮只用这一次，搜索返回后立即释放其引擎，
+            // 避免 80+ 个 QuickJS 运行时同时常驻。
             if (!timedOut) timeoutCounts.remove(site.key)
             // 超时的站点其调用可能还在跑（init 未完成），此时不能回收，否则会把引擎掐断。
             // 回收放到多线程池里并行执行：destroy() 本身要几十到几百毫秒，
             // 用单线程调度器排队会跟不上引擎创建速度，导致搜索期峰值偏高。
             if (isJs && !timedOut) {
                 val siteKey = site.key
-                Task.execute {
-                    val ok = runCatching { BaseLoader.get().releaseJs(siteKey) }.getOrDefault(false)
-                    dbg("release site=$siteKey ok=$ok")
-                }
+                Task.execute { runCatching { BaseLoader.get().releaseJs(siteKey) } }
             }
-            dbg("site=${site.key} js=${site.api?.contains(".js") == true} vods=${vods?.size}")
             val doneCount = completed.incrementAndGet()
             if (vods.isNullOrEmpty()) return
             val snapshot: List<MediaCard>
@@ -146,18 +139,14 @@ class AppSearchDataSource : SearchDataSource {
         }
 
         // 一、普通源并行，结果先出来。
-        val jsTotal = sites.count { it.api?.contains(".js") == true }
-        dbg("search start keyword=$key sites=${sites.size} js=$jsTotal threads=${SearchSettings.threads()}")
         val jobs = light.map { site ->
             launch(Dispatchers.IO) { semaphore.withPermit { runSite(site, SITE_TIMEOUT_MS) } }
         }
         // 个别源的 JS 调用是阻塞的、不响应协程取消，join 可能永远挂住（表现为计数停在 25x/26x）。
         // 加总超时兜底，保证后续回收与 done 一定执行。
-        val lightDone = withTimeoutOrNull(LIGHT_TOTAL_TIMEOUT_MS) {
+        withTimeoutOrNull(LIGHT_TOTAL_TIMEOUT_MS) {
             jobs.forEach { it.join() }
-            true
-        } ?: false
-        dbg("light done=$lightDone completed=${completed.get()}/${sites.size} js=$jsTotal")
+        }
 
         // 普通（JS）源已全部跑完，立刻回收引擎：95 个 QuickJS 运行时约 600MB，
         // 是 2GB 设备上最大的常驻开销；后面的重型源都是 csp_* jar 类，不需要 JS 引擎。
@@ -203,15 +192,9 @@ class AppSearchDataSource : SearchDataSource {
                 val keep = HashSet<String>()
                 val homeKey = VodConfig.get().getHome().key
                 if (!homeKey.isNullOrBlank()) keep.add(homeKey)
-                val released = BaseLoader.get().retainJs(keep)
-                dbg("trim released=$released initFailures=${com.onefilm.android.tv.api.loader.JsLoader.initFailures()}")
+                BaseLoader.get().retainJs(keep)
             }
         }
-    }
-
-    /** 临时诊断：写文件，避免被 logcat 缓冲区冲掉。 */
-    private fun dbg(msg: String) {
-        com.onefilm.android.tv.utils.SearchDebug.log(msg)
     }
 
     private companion object {

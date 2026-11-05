@@ -19,8 +19,6 @@ public class JsLoader {
     /** 单站点释放的保护窗口：刚被取用过的引擎先不销毁（可能在跑详情/播放）。 */
     private static final long RELEASE_GRACE_MS = 500L;
 
-    private static final java.util.concurrent.atomic.AtomicInteger INIT_FAILURES = new java.util.concurrent.atomic.AtomicInteger();
-
     private final ConcurrentHashMap<String, Spider> spiders;
     private final ConcurrentHashMap<String, Long> lastAccess;
     private final Loader loader;
@@ -52,13 +50,11 @@ public class JsLoader {
                 spider = loader.spider(api, BaseLoader.get().dex(jar));
                 spider.siteKey = key;
                 spider.init(App.get(), ext);
-                com.onefilm.android.tv.utils.SearchDebug.log("init-ok site=" + key);
                 return spider;
             } catch (Throwable e) {
                 // init 失败时引擎可能已经建好（QuickJS 上下文 + 定时器线程），
                 // 必须销毁，否则每次失败都会泄漏约 7MB native 内存。
-                INIT_FAILURES.incrementAndGet();
-                com.onefilm.android.tv.utils.SearchDebug.log("init-failed site=" + key + " api=" + api, e);
+                android.util.Log.w("JsLoader", "init failed: " + key, e);
                 if (spider != null) {
                     try {
                         spider.destroy();
@@ -68,11 +64,6 @@ public class JsLoader {
                 return new SpiderNull();
             }
         });
-    }
-
-    /** 累计的 JS 引擎初始化失败次数（用于诊断内存泄漏与源兼容性）。 */
-    public static int initFailures() {
-        return INIT_FAILURES.get();
     }
 
     public Object[] proxy(Map<String, String> params) throws Exception {
