@@ -3,13 +3,14 @@
     上传单个文件到 R2（Cloudflare REST API），用于放置发版辅助工具。
 
 .DESCRIPTION
-    需要 R2_ACCOUNT_ID / R2_BUCKET / R2_API_TOKEN 三个环境变量，
-    或在命令行显式传入。Token 需要该 bucket 的编辑权限。
+    凭据与目标桶按以下优先级解析：
+      1. 命令行参数 -AccountId / -Bucket / -Token
+      2. 环境变量 R2_ACCOUNT_ID / R2_BUCKET / R2_API_TOKEN / R2_TOKEN_FILE
+      3. 仓库根目录的 .r2token（仅 Token，已加入 .gitignore）
+      4. 本项目的默认账号与桶（onefilmapk）
 
 .EXAMPLE
-    $env:R2_ACCOUNT_ID = "<account-id>"
-    $env:R2_BUCKET = "onefilmapk"
-    $env:R2_API_TOKEN = "<token>"
+    # 全部使用默认凭据与目标
     .\tools\upload-r2-file.ps1 -Path .\tools\bugly\buglyqq-upload-symbol.jar -Key tools/buglyqq-upload-symbol.jar
 #>
 [CmdletBinding()]
@@ -19,15 +20,28 @@ param(
     [string]$AccountId = $env:R2_ACCOUNT_ID,
     [string]$Bucket = $env:R2_BUCKET,
     [string]$Token = $env:R2_API_TOKEN,
+    [string]$TokenFile = $env:R2_TOKEN_FILE,
     [string]$ContentType = 'application/octet-stream'
 )
 
 $ErrorActionPreference = 'Stop'
 
+$root = Split-Path -Parent $PSScriptRoot
+if (-not $AccountId) { $AccountId = '681f9c10831c4c44e403ca40d723e587' }
+if (-not $Bucket) { $Bucket = 'onefilmapk' }
+
+function Read-TokenFromFile([string]$file) {
+    if (-not $file -or -not (Test-Path $file)) { return $null }
+    $match = [regex]::Match((Get-Content $file -Raw), '[A-Za-z0-9_\-]{35,80}')
+    if ($match.Success) { return $match.Value }
+    return $null
+}
+
+if (-not $Token) { $Token = Read-TokenFromFile $TokenFile }
+if (-not $Token) { $Token = Read-TokenFromFile (Join-Path $root '.r2token') }
+
 if (-not (Test-Path $Path)) { Write-Host "错误：文件不存在 $Path" -ForegroundColor Red; exit 1 }
-if (-not $AccountId) { Write-Host "错误：缺少 R2_ACCOUNT_ID" -ForegroundColor Red; exit 1 }
-if (-not $Bucket) { Write-Host "错误：缺少 R2_BUCKET" -ForegroundColor Red; exit 1 }
-if (-not $Token) { Write-Host "错误：缺少 R2_API_TOKEN" -ForegroundColor Red; exit 1 }
+if (-not $Token) { Write-Host "错误：没有可用 Token（参数 / 环境变量 / .r2token 都没有）" -ForegroundColor Red; exit 1 }
 
 $file = Get-Item $Path
 $escapedKey = ($Key -split '/' | ForEach-Object { [Uri]::EscapeDataString($_) }) -join '/'
