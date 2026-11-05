@@ -232,6 +232,7 @@ class ComposeMainActivity : ComponentActivity() {
                 var searchResultVisible by remember { mutableStateOf(false) }
                 val prefetchScope = rememberCoroutineScope()
                 val sidebarFirstFocus = remember { FocusRequester() }
+                val emptyActionFocus = remember { FocusRequester() }
                 LaunchedEffect(Unit) {
                     delay(300)
                     runCatching { sidebarFirstFocus.requestFocus() }
@@ -504,6 +505,7 @@ class ComposeMainActivity : ComponentActivity() {
                                     },
                                 ),
                                 firstFocusRequester = sidebarFirstFocus,
+                                rightFocusRequester = if (homeState is HomeUiState.Empty) emptyActionFocus else null,
                             )
                         }
                     },
@@ -569,6 +571,8 @@ class ComposeMainActivity : ComponentActivity() {
                                 state = homeState,
                                 isTv = isTv,
                                 onRetry = homeViewModel::retry,
+                                onOpenConfig = { showConfigDialog = true },
+                                firstActionFocus = emptyActionFocus,
                                 onCardClick = { card ->
                                     if (card.title.isNotBlank()) {
                                         navController.navigate(Routes.search(card.title))

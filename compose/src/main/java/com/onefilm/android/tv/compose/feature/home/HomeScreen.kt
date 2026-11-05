@@ -2,7 +2,9 @@ package com.onefilm.android.tv.compose.feature.home
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -38,7 +40,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.dp
@@ -49,6 +61,7 @@ import com.onefilm.android.tv.compose.design.component.PosterItem
 import com.onefilm.android.tv.compose.design.component.TvPosterCard
 import com.onefilm.android.tv.compose.navigation.TvHeaderFocusState
 import com.onefilm.android.tv.compose.design.component.SectionRow
+import com.onefilm.android.tv.compose.R
 
 @Composable
 fun HomeScreen(
@@ -56,16 +69,131 @@ fun HomeScreen(
     onRetry: () -> Unit,
     onCardClick: (MediaCard) -> Unit,
     onCategoryClick: (HomeCategory) -> Unit = {},
+    onOpenConfig: () -> Unit = {},
+    firstActionFocus: FocusRequester? = null,
     isTv: Boolean = false,
 ) {
     when (state) {
         HomeUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             com.onefilm.android.tv.compose.design.component.AppLoadingState()
         }
-        HomeUiState.Empty -> StatusMessage("暂无内容", onRetry)
+        HomeUiState.Empty -> TvEmptyState(
+            onOpenConfig = onOpenConfig,
+            onRetry = onRetry,
+            firstActionFocus = firstActionFocus,
+        )
         is HomeUiState.Error -> StatusMessage(state.message, onRetry)
         is HomeUiState.Content ->
             if (isTv) TvHomeContent(state, onCardClick) else HomeContent(state, onCardClick, onCategoryClick)
+    }
+}
+
+/**
+ * 未配置接口时的引导页：直接铺在主页面背景上，不使用弹窗/卡片容器。
+ *
+ * - LOGO 作为整页背景水印（30% 透明度）；
+ * - 标题 40sp、正文 20sp/34sp 行高，适配电视观看距离；
+ * - 两个动作复用「接口分类标签」样式（18dp 圆角 + surface 底色 + 扁高度），
+ *   焦点态叠加 2dp 主色描边与缩放，保证遥控器可见性。
+ */
+@Composable
+private fun TvEmptyState(
+    onOpenConfig: () -> Unit,
+    onRetry: () -> Unit,
+    firstActionFocus: FocusRequester? = null,
+) {
+    Box(Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(R.drawable.app_logo),
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .fillMaxSize()
+                .alpha(0.12f),
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(horizontal = 48.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = "ONEFILM",
+                style = MaterialTheme.typography.bodyMedium.copy(letterSpacing = 6.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            )
+            Spacer(Modifier.height(18.dp))
+            Text(
+                text = "欢迎使用壹影",
+                fontSize = 40.sp,
+                lineHeight = 52.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(20.dp))
+            Text(
+                text = "请在左侧边栏的「配置」中完成接口配置，\n祝您观影愉快！",
+                fontSize = 20.sp,
+                lineHeight = 34.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Spacer(Modifier.height(36.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                EmptyTagAction(
+                    label = "前往配置",
+                    onClick = onOpenConfig,
+                    focusRequester = firstActionFocus,
+                )
+                EmptyTagAction(label = "重试", onClick = onRetry)
+            }
+        }
+    }
+}
+
+/** 与「接口分类标签」保持一致的扁按钮。 */
+@Composable
+private fun EmptyTagAction(
+    label: String,
+    onClick: () -> Unit,
+    focusRequester: FocusRequester? = null,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val shape = RoundedCornerShape(18.dp)
+    val scale by animateFloatAsState(
+        targetValue = if (focused) 1.06f else 1f,
+        animationSpec = tween(durationMillis = 150),
+        label = "emptyActionScale",
+    )
+    Box(
+        modifier = Modifier
+            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
+            .scale(scale)
+            .clip(shape)
+            .background(
+                if (focused) MaterialTheme.colorScheme.surfaceVariant
+                else MaterialTheme.colorScheme.surface,
+            )
+            .border(
+                width = if (focused) 2.dp else 1.dp,
+                color = if (focused) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outline.copy(alpha = 0.35f),
+                shape = shape,
+            )
+            .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+            .semantics(mergeDescendants = true) { contentDescription = label }
+            .padding(horizontal = 26.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }
 

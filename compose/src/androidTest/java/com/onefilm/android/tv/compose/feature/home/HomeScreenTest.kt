@@ -44,14 +44,22 @@ class HomeScreenTest {
     }
 
     @Test
-    fun empty_showsMessageAndRetry() {
+    fun empty_showsWelcomeAndActions() {
         var retried = false
+        var openedConfig = false
         compose.setContent {
             OneFilmTheme {
-                HomeScreen(HomeUiState.Empty, onRetry = { retried = true }, onCardClick = {})
+                HomeScreen(
+                    state = HomeUiState.Empty,
+                    onRetry = { retried = true },
+                    onCardClick = {},
+                    onOpenConfig = { openedConfig = true },
+                )
             }
         }
-        compose.onNodeWithText("暂无内容").assertIsDisplayed()
+        compose.onNodeWithText("欢迎使用壹影").assertIsDisplayed()
+        compose.onNodeWithText("前往配置").performClick()
+        assertTrue(openedConfig)
         compose.onNodeWithText("重试").performClick()
         assertTrue(retried)
     }

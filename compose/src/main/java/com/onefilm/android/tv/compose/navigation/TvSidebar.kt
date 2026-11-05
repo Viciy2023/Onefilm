@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -51,6 +52,7 @@ fun TvSidebar(
     entries: List<SidebarEntry>,
     modifier: Modifier = Modifier,
     firstFocusRequester: FocusRequester? = null,
+    rightFocusRequester: FocusRequester? = null,
 ) {
     Column(
         modifier
@@ -64,6 +66,7 @@ fun TvSidebar(
             SidebarButton(
                 entry = entry,
                 focusRequester = if (index == 0) firstFocusRequester else null,
+                rightFocusRequester = rightFocusRequester,
             )
         }
     }
@@ -73,6 +76,7 @@ fun TvSidebar(
 private fun SidebarButton(
     entry: SidebarEntry,
     focusRequester: FocusRequester? = null,
+    rightFocusRequester: FocusRequester? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
@@ -90,6 +94,9 @@ private fun SidebarButton(
             .then(
                 if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier,
             )
+            .focusProperties {
+                if (rightFocusRequester != null) right = rightFocusRequester
+            }
             .clip(shape)
             .background(
                 if (highlighted) {
