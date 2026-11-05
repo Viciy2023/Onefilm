@@ -22,7 +22,7 @@ class AppHomeDataSource : HomeDataSource {
      * 包括它的分类列表；用户点到那些分类时，新的接口上自然找不到对应分类，
      * 就会报「分类加载失败」。
      */
-    private fun cacheKey(): String = "home_" + VodConfig.getUrl().orEmpty().hashCode()
+    private fun cacheKey(): String = "home_" + VodConfig.getUrl().orEmpty().hashCode() + "_" + com.github.catvod.utils.LocaleManager.get()
 
     init {
         HomeFeedCache.feed = runCatching {

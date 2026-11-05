@@ -27,6 +27,7 @@ class MobileComposeActivity : ComponentActivity() {
             { com.github.catvod.utils.LocaleManager.TAGS.toList() }
         com.onefilm.android.tv.compose.bridge.LanguageBridge.apply = { tag ->
             com.github.catvod.utils.LocaleManager.set(tag)
+            com.onefilm.android.tv.compose.bridge.HomeFeedCache.feed = null
             recreate()
         }
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT

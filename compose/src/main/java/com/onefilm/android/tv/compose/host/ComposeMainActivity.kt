@@ -209,6 +209,7 @@ class ComposeMainActivity : ComponentActivity() {
             { com.github.catvod.utils.LocaleManager.TAGS.toList() }
         com.onefilm.android.tv.compose.bridge.LanguageBridge.apply = { tag ->
             com.github.catvod.utils.LocaleManager.set(tag)
+            com.onefilm.android.tv.compose.bridge.HomeFeedCache.feed = null
             recreate()
         }
         handleExternalIntent(intent)

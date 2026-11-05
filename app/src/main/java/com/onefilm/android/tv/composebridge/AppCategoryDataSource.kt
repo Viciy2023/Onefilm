@@ -18,7 +18,7 @@ class AppCategoryDataSource : CategoryDataSource {
         page: Int,
         selected: Map<String, String>,
     ): CategoryPage = withContext(Dispatchers.IO) {
-        val cacheKey = "category_${key}_${tid}_${page}_${selected.hashCode()}"
+        val cacheKey = "category_${key}_${tid}_${page}_${selected.hashCode()}_${com.github.catvod.utils.LocaleManager.get()}"
         DiskCache.read<CategoryPage>(cacheKey)?.let { cached ->
             if (cached.filters.isNotEmpty()) {
                 CategoryFilterStore.putGroups(tid, cached.filters)

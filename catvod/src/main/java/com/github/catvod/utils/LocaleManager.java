@@ -27,6 +27,9 @@ public final class LocaleManager {
 
     private static final String KEY = "ui_language";
 
+    /** 繁体判断的缓存；切换语言时置空，避免每次 s2t 都读一次 SharedPreferences。 */
+    private static volatile Boolean traditionalCache;
+
     private LocaleManager() {
     }
 
@@ -37,6 +40,26 @@ public final class LocaleManager {
 
     public static void set(String tag) {
         Prefers.put(KEY, tag == null ? SYSTEM : tag);
+        traditionalCache = null;
+    }
+
+    /**
+     * 当前界面是否使用繁体中文。
+     *
+     * <p>Trans 用它决定要不要做简繁转换。必须按「界面语言」判断，而不是
+     * {@link Locale#getDefault()}：后者是进程级全局状态，一旦被 wrap() 改成
+     * zh-TW 就不会自己恢复，会导致切回简体后依然全量转繁。
+     */
+    public static boolean isTraditional() {
+        Boolean cached = traditionalCache;
+        if (cached != null) return cached;
+        String tag = get();
+        boolean value;
+        if (ZH_TW.equals(tag)) value = true;
+        else if (!TextUtils.isEmpty(tag)) value = false;
+        else value = "TW".equals(Locale.getDefault().getCountry());
+        traditionalCache = value;
+        return value;
     }
 
     /** 每个 Activity 在 attachBaseContext 中调用。 */
