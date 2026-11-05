@@ -1,3 +1,5 @@
+**简体中文** · [繁體中文](README.zh-TW.md) · [English](README.en.md) · [Tiếng Việt](README.vi.md) · [ไทย](README.th.md)
+
 # 壹影 OneFilm
 
 > **把电视，变成全家人的私人影院。**
