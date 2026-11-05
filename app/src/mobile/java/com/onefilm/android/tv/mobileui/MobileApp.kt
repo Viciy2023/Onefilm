@@ -54,6 +54,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -81,12 +82,12 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private enum class MobileTab(val label: String) {
-    HOME("首页"),
-    SEARCH("搜索"),
-    LIBRARY("收藏"),
-    LIVE("直播"),
-    SETTINGS("设置"),
+private enum class MobileTab(val labelRes: Int) {
+    HOME(R.string.mobile_tab_home),
+    SEARCH(R.string.menu_search),
+    LIBRARY(R.string.mobile_tab_library),
+    LIVE(R.string.nav_live),
+    SETTINGS(R.string.nav_setting),
 }
 
 @Composable
@@ -153,7 +154,8 @@ fun MobileApp() {
     ) {
         MobileTopBar(
             title = categoryTarget?.name
-                ?: if (tab == MobileTab.HOME) "壹影" else tab.label,
+                ?: if (tab == MobileTab.HOME) stringResource(R.string.mobile_app_brand)
+                else stringResource(tab.labelRes),
         )
         Box(Modifier.weight(1f)) {
             val category = categoryTarget
@@ -245,7 +247,7 @@ private fun MobileBottomBar(selected: MobileTab, onSelect: (MobileTab) -> Unit) 
     ) {
         MobileTab.entries.forEach { tab ->
             Text(
-                text = tab.label,
+                text = stringResource(tab.labelRes),
                 color = if (tab == selected) MaterialTheme.colorScheme.onPrimary
                 else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp,
@@ -272,7 +274,7 @@ private fun MobileHomeScreen(
 ) {
     when (state) {
         HomeUiState.Loading -> MobileLoading()
-        HomeUiState.Empty -> MobileStatus("暂无内容", onRetry)
+        HomeUiState.Empty -> MobileStatus(stringResource(R.string.mobile_home_empty), onRetry)
         is HomeUiState.Error -> MobileStatus(state.message, onRetry)
         is HomeUiState.Content -> MobileHomeContent(state, onCardClick, onCategoryClick)
     }
@@ -340,7 +342,7 @@ private fun MobileHomeContent(
             }
             if (hasRecommend) {
                 MobileHomeSection(
-                    title = "推荐",
+                    title = stringResource(R.string.mobile_home_recommend),
                     items = recommendation!!,
                     rows = 3,
                     rowHeight = rowHeight,
@@ -350,14 +352,14 @@ private fun MobileHomeContent(
                 )
             }
             MobileHomeSection(
-                title = "继续观看",
+                title = stringResource(R.string.mobile_home_continue),
                 items = continueItems,
                 rows = 1,
                 rowHeight = rowHeight,
                 cardWidth = cardWidth,
                 rowGap = rowGap,
                 onCardClick = onCardClick,
-                placeholder = if (continueItems.isEmpty()) "暂无观看记录" else null,
+                placeholder = if (continueItems.isEmpty()) stringResource(R.string.mobile_home_continue_empty) else null,
             )
         }
     }
@@ -479,7 +481,7 @@ private fun MobileSearchScreen(
                     ) {
                         if (query.isEmpty()) {
                             Text(
-                                "搜索电影、剧集、演员",
+                                stringResource(R.string.mobile_search_hint),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 fontSize = 14.sp,
                             )
@@ -492,7 +494,7 @@ private fun MobileSearchScreen(
                 onClick = { submit() },
                 modifier = Modifier.height(44.dp),
                 contentPadding = PaddingValues(horizontal = 18.dp, vertical = 0.dp),
-            ) { Text("搜索") }
+            ) { Text(stringResource(R.string.menu_search)) }
         }
 
         if (history.isNotEmpty()) {
@@ -523,18 +525,19 @@ private fun MobileSearchScreen(
                         MobileSearchHistory.clear(context)
                         history = emptyList()
                     },
-                ) { Text("清空", fontSize = 12.sp) }
+                ) { Text(stringResource(R.string.mobile_search_clear), fontSize = 12.sp) }
             }
         }
 
         when (val current = state) {
-            SearchUiState.Idle -> MobileHint("输入关键词，开始聚合搜索")
+            SearchUiState.Idle -> MobileHint(stringResource(R.string.mobile_search_idle))
             SearchUiState.Loading -> MobileLoading()
-            is SearchUiState.Empty -> MobileHint("没有找到「${current.keyword}」")
+            is SearchUiState.Empty -> MobileHint(stringResource(R.string.mobile_search_empty, current.keyword))
             is SearchUiState.Error -> MobileHint(current.message)
             is SearchUiState.Content -> {
                 Text(
-                    "找到 ${current.items.size} 个结果" + if (!current.done) " · 搜索中" else "",
+                    stringResource(R.string.mobile_search_result_count, current.items.size) +
+                        if (!current.done) " · " + stringResource(R.string.mobile_search_searching) else "",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -581,7 +584,7 @@ private fun MobileLibraryScreen(
             Modifier.fillMaxWidth().padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            listOf("收藏", "历史").forEachIndexed { index, label ->
+            listOf(stringResource(R.string.mobile_tab_library), stringResource(R.string.mobile_library_history)).forEachIndexed { index, label ->
                 TextButton(onClick = { onTabChange(index) }) {
                     Text(
                         label,
@@ -593,10 +596,10 @@ private fun MobileLibraryScreen(
         if (data == null) {
             MobileLoading()
         } else if (items.isEmpty()) {
-            MobileHint("这里还没有内容")
+            MobileHint(stringResource(R.string.mobile_library_empty))
         } else {
             Text(
-                text = "向左或向右滑动条目可删除",
+                text = stringResource(R.string.mobile_library_swipe_hint),
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 6.dp),
@@ -641,7 +644,7 @@ private fun MobileSwipeDeleteRow(
         contentAlignment = Alignment.CenterStart,
     ) {
         Text(
-            text = "删除",
+            text = stringResource(R.string.menu_delete),
             color = MaterialTheme.colorScheme.onError,
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
@@ -702,7 +705,7 @@ private fun MobileMediaRow(
         )
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                text = card.title.ifBlank { "未命名" },
+                text = card.title.ifBlank { stringResource(R.string.mobile_unnamed) },
                 fontSize = 15.sp,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -736,11 +739,11 @@ private fun MobileLiveScreen(onOpen: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("直播", fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.nav_live), fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(8.dp))
-        Text("打开直播频道列表，选择频道开始观看", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.mobile_live_desc), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(16.dp))
-        Button(onClick = onOpen) { Text("打开直播") }
+        Button(onClick = onOpen) { Text(stringResource(R.string.mobile_live_open)) }
     }
 }
 
@@ -767,6 +770,6 @@ private fun MobileStatus(text: String, onRetry: () -> Unit) {
     ) {
         Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(12.dp))
-        Button(onClick = onRetry) { Text("重试") }
+        Button(onClick = onRetry) { Text(stringResource(R.string.mobile_retry)) }
     }
 }

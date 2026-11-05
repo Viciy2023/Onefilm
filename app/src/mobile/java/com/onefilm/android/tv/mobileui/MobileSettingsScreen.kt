@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -47,6 +48,7 @@ import com.onefilm.android.tv.compose.bridge.SEARCH_THREAD_OPTIONS
 import com.onefilm.android.tv.compose.bridge.SearchSiteItem
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.design.ThemeController
+import com.onefilm.android.tv.R
 import com.github.catvod.utils.Prefers
 
 private data class MobileChoice(
@@ -117,7 +119,7 @@ fun MobileSettingsScreen(
                 onConfigChanged()
                 refresh()
             } else {
-                configError = message.ifBlank { "加载失败" }
+                configError = message.ifBlank { context.getString(R.string.mobile_settings_load_failed) }
             }
         }
         if (depot) dataSource.selectDepotLine(url, name, done)
@@ -126,7 +128,7 @@ fun MobileSettingsScreen(
 
     fun saveNew(type: Int) {
         if (configDraft.isBlank()) {
-            configError = "请输入接口地址"
+            configError = context.getString(R.string.mobile_settings_enter_url)
             return
         }
         configBusy = true
@@ -139,7 +141,7 @@ fun MobileSettingsScreen(
                 onConfigChanged()
                 refresh()
             } else {
-                configError = message.ifBlank { "加载失败" }
+                configError = message.ifBlank { context.getString(R.string.mobile_settings_load_failed) }
             }
         }
     }
@@ -152,38 +154,45 @@ fun MobileSettingsScreen(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 20.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        item { MobileSectionTitle("接口配置") }
+        item { MobileSectionTitle(stringResource(R.string.mobile_settings_section_api)) }
         item {
-            MobileSettingRow("点播接口", snapshot.configUrl) { openConfig(0) }
+            MobileSettingRow(stringResource(R.string.mobile_settings_vod_api), snapshot.configUrl) { openConfig(0) }
         }
         item {
-            MobileSettingRow("直播接口", liveUrl) { openConfig(1) }
+            MobileSettingRow(stringResource(R.string.mobile_settings_live_api), liveUrl) { openConfig(1) }
         }
         item {
-            MobileSettingRow("壁纸接口", snapshot.wallConfigUrl) { openConfig(2) }
+            MobileSettingRow(stringResource(R.string.mobile_settings_wall_api), snapshot.wallConfigUrl) { openConfig(2) }
         }
 
-        item { MobileSectionTitle("外观") }
+        item { MobileSectionTitle(stringResource(R.string.mobile_settings_section_appearance)) }
         item {
+            val themeTitle = stringResource(R.string.mobile_settings_theme)
+            val themeLabels = listOf(
+                stringResource(R.string.mobile_settings_theme_minimal),
+                stringResource(R.string.mobile_settings_theme_dark),
+                stringResource(R.string.mobile_settings_theme_system),
+            )
             MobileSettingRow(
-                "外观主题",
-                listOf("简约", "暗黑", "跟随系统").getOrElse(snapshot.themeMode) { "简约" },
+                themeTitle,
+                themeLabels.getOrElse(snapshot.themeMode) { themeLabels.first() },
             ) {
-                choose("外观主题", listOf("简约", "暗黑", "跟随系统"), snapshot.themeMode) { index ->
+                choose(themeTitle, themeLabels, snapshot.themeMode) { index ->
                     dataSource.setThemeMode(index)
                     ThemeController.apply(index)
                 }
             }
         }
         item {
+            val languageTitle = stringResource(R.string.mobile_settings_language)
             val languageTags = com.onefilm.android.tv.compose.bridge.LanguageBridge.tags()
             val languageCurrent = com.onefilm.android.tv.compose.bridge.LanguageBridge.current()
             MobileSettingRow(
-                "界面语言",
+                languageTitle,
                 com.onefilm.android.tv.compose.bridge.LanguageBridge.labelOf(languageCurrent),
             ) {
                 choose(
-                    "界面语言",
+                    languageTitle,
                     languageTags.map { com.onefilm.android.tv.compose.bridge.LanguageBridge.labelOf(it) },
                     languageTags.indexOf(languageCurrent).coerceAtLeast(0),
                 ) { index ->
@@ -194,218 +203,342 @@ fun MobileSettingsScreen(
             }
         }
         item {
-            MobileSettingRow("壁纸切换", snapshot.wallpaperLabel) {
+            MobileSettingRow(stringResource(R.string.mobile_settings_wallpaper), snapshot.wallpaperLabel) {
                 dataSource.cycleWallpaper()
                 refresh()
             }
         }
         item {
-            MobileSettingRow("DoH", snapshot.dohLabel.ifBlank { "跟随配置" }) {
+            MobileSettingRow("DoH", snapshot.dohLabel.ifBlank { stringResource(R.string.mobile_settings_follow_config) }) {
                 dataSource.cycleDoh()
                 refresh()
             }
         }
         item {
-            MobileSwitchRow("隐身模式", "不写入历史与缓存", snapshot.incognito) {
+            MobileSwitchRow(
+                stringResource(R.string.mobile_settings_incognito),
+                stringResource(R.string.mobile_settings_incognito_desc),
+                snapshot.incognito,
+            ) {
                 dataSource.setIncognito(it); refresh()
             }
         }
 
-        item { MobileSectionTitle("字幕") }
+        item { MobileSectionTitle(stringResource(R.string.mobile_settings_section_subtitle)) }
         item {
-            MobileSettingRow("字幕位置", snapshot.subtitlePosition.toInt().toString()) {
+            val positionTitle = stringResource(R.string.mobile_settings_subtitle_position)
+            MobileSettingRow(positionTitle, snapshot.subtitlePosition.toInt().toString()) {
                 choose(
-                    "字幕位置",
+                    positionTitle,
                     listOf(-5f, 0f, 5f, 10f, 20f).map { it.toInt().toString() },
                     listOf(-5f, 0f, 5f, 10f, 20f).indexOf(snapshot.subtitlePosition).coerceAtLeast(0),
                 ) { dataSource.setSubtitlePosition(listOf(-5f, 0f, 5f, 10f, 20f)[it]) }
             }
         }
-        item { MobileSettingRow("字幕颜色", snapshot.subtitleColorLabel) { dataSource.cycleSubtitleColor(); refresh() } }
+        item { MobileSettingRow(stringResource(R.string.mobile_settings_subtitle_color), snapshot.subtitleColorLabel) { dataSource.cycleSubtitleColor(); refresh() } }
         item {
-            MobileSettingRow("字幕描边", "%.0f".format(snapshot.subtitleEdgeWidth)) {
+            val edgeTitle = stringResource(R.string.mobile_settings_subtitle_edge)
+            MobileSettingRow(edgeTitle, "%.0f".format(snapshot.subtitleEdgeWidth)) {
                 choose(
-                    "字幕描边",
+                    edgeTitle,
                     listOf(0f, 1f, 2f, 4f).map { "%.0f".format(it) },
                     listOf(0f, 1f, 2f, 4f).indexOf(snapshot.subtitleEdgeWidth).coerceAtLeast(0),
                 ) { dataSource.setSubtitleEdgeWidth(listOf(0f, 1f, 2f, 4f)[it]) }
             }
         }
         item {
-            MobileSettingRow("字幕大小", "%.1fx".format(snapshot.subtitleScale)) {
+            val sizeTitle = stringResource(R.string.mobile_settings_subtitle_size)
+            MobileSettingRow(sizeTitle, "%.1fx".format(snapshot.subtitleScale)) {
                 choose(
-                    "字幕大小",
+                    sizeTitle,
                     listOf(0.8f, 1.0f, 1.2f, 1.5f).map { "%.1fx".format(it) },
                     listOf(0.8f, 1.0f, 1.2f, 1.5f).indexOf(snapshot.subtitleScale).coerceAtLeast(0),
                 ) { dataSource.setSubtitleScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[it]) }
             }
         }
         item {
-            MobileSettingRow("字幕样式", listOf("原始", "系统", "自定义").getOrElse(snapshot.subtitleStyle) { "原始" }) {
-                choose("字幕样式", listOf("原始", "系统", "自定义"), snapshot.subtitleStyle) {
+            val styleTitle = stringResource(R.string.mobile_settings_subtitle_style)
+            val styleLabels = listOf(
+                stringResource(R.string.mobile_settings_style_original),
+                stringResource(R.string.mobile_settings_style_system),
+                stringResource(R.string.mobile_settings_style_custom),
+            )
+            MobileSettingRow(
+                styleTitle,
+                styleLabels.getOrElse(snapshot.subtitleStyle) { styleLabels.first() },
+            ) {
+                choose(styleTitle, styleLabels, snapshot.subtitleStyle) {
                     dataSource.setSubtitleStyle(it)
                 }
             }
         }
 
-        item { MobileSectionTitle("弹幕") }
-        item { MobileSwitchRow("显示弹幕", "加载并渲染弹幕", snapshot.danmakuShow) { dataSource.setDanmakuShow(it); refresh() } }
+        item { MobileSectionTitle(stringResource(R.string.mobile_settings_section_danmaku)) }
         item {
-            MobileSettingRow("弹幕字号", "%.1fx".format(snapshot.danmakuScale)) {
+            MobileSwitchRow(
+                stringResource(R.string.mobile_settings_danmaku_show),
+                stringResource(R.string.mobile_settings_danmaku_show_desc),
+                snapshot.danmakuShow,
+            ) { dataSource.setDanmakuShow(it); refresh() }
+        }
+        item {
+            val danmakuSizeTitle = stringResource(R.string.mobile_settings_danmaku_size)
+            MobileSettingRow(danmakuSizeTitle, "%.1fx".format(snapshot.danmakuScale)) {
                 choose(
-                    "弹幕字号",
+                    danmakuSizeTitle,
                     listOf(0.8f, 1.0f, 1.2f, 1.5f).map { "%.1fx".format(it) },
                     listOf(0.8f, 1.0f, 1.2f, 1.5f).indexOf(snapshot.danmakuScale).coerceAtLeast(0),
                 ) { dataSource.setDanmakuScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[it]) }
             }
         }
         item {
-            MobileSettingRow("弹幕透明度", "${(snapshot.danmakuTransparency * 100).toInt()}%") {
+            val alphaTitle = stringResource(R.string.mobile_settings_danmaku_alpha)
+            MobileSettingRow(alphaTitle, "${(snapshot.danmakuTransparency * 100).toInt()}%") {
                 choose(
-                    "弹幕透明度",
+                    alphaTitle,
                     listOf(0f, 0.25f, 0.5f, 0.7f).map { "${(it * 100).toInt()}%" },
                     listOf(0f, 0.25f, 0.5f, 0.7f).indexOf(snapshot.danmakuTransparency).coerceAtLeast(0),
                 ) { dataSource.setDanmakuTransparency(listOf(0f, 0.25f, 0.5f, 0.7f)[it]) }
             }
         }
         item {
-            MobileSettingRow("弹幕速度", "${snapshot.danmakuDurationMs / 1000}s") {
+            val speedTitle = stringResource(R.string.mobile_settings_danmaku_speed)
+            MobileSettingRow(speedTitle, "${snapshot.danmakuDurationMs / 1000}s") {
                 choose(
-                    "弹幕速度",
+                    speedTitle,
                     listOf(6000L, 8000L, 10000L).map { "${it / 1000}s" },
                     listOf(6000L, 8000L, 10000L).indexOf(snapshot.danmakuDurationMs).coerceAtLeast(0),
                 ) { dataSource.setDanmakuDuration(listOf(6000L, 8000L, 10000L)[it]) }
             }
         }
         item {
-            MobileSettingRow("滚动行数", "${snapshot.danmakuLines} 行") {
+            val linesTitle = stringResource(R.string.mobile_settings_danmaku_lines)
+            val linesOptions = listOf(
+                stringResource(R.string.mobile_settings_danmaku_lines_value, 4),
+                stringResource(R.string.mobile_settings_danmaku_lines_value, 8),
+                stringResource(R.string.mobile_settings_danmaku_lines_value, 12),
+            )
+            MobileSettingRow(
+                linesTitle,
+                stringResource(R.string.mobile_settings_danmaku_lines_value, snapshot.danmakuLines),
+            ) {
                 choose(
-                    "滚动行数",
-                    listOf(4, 8, 12).map { "$it 行" },
+                    linesTitle,
+                    linesOptions,
                     listOf(4, 8, 12).indexOf(snapshot.danmakuLines).coerceAtLeast(0),
                 ) { dataSource.setDanmakuLines(listOf(4, 8, 12)[it]) }
             }
         }
         item {
-            MobileSettingRow("弹幕屏蔽词", snapshot.danmakuBlockWords.ifBlank { "未设置" }) {
+            val blockTitle = stringResource(R.string.mobile_settings_danmaku_block)
+            val notSet = stringResource(R.string.mobile_settings_not_set)
+            MobileSettingRow(blockTitle, snapshot.danmakuBlockWords.ifBlank { notSet }) {
                 blockWordsDraft = snapshot.danmakuBlockWords
                 editBlockWords = true
             }
         }
 
-        item { MobileSectionTitle("播放") }
+        item { MobileSectionTitle(stringResource(R.string.mobile_settings_section_playback)) }
         item {
-            MobileSettingRow("播放超时", "${snapshot.playTimeoutSeconds} 秒") {
+            MobileSettingRow(
+                stringResource(R.string.mobile_settings_play_timeout),
+                stringResource(R.string.mobile_settings_seconds_value, snapshot.playTimeoutSeconds),
+            ) {
                 dataSource.cyclePlayTimeout()
                 refresh()
             }
         }
         item {
-            MobileSettingRow("播放引擎", if (snapshot.engineMpv) "MPV" else "Exo") {
-                choose("播放引擎", listOf("Exo", "MPV"), if (snapshot.engineMpv) 1 else 0) {
+            val engineTitle = stringResource(R.string.mobile_settings_play_engine)
+            MobileSettingRow(engineTitle, if (snapshot.engineMpv) "MPV" else "Exo") {
+                choose(engineTitle, listOf("Exo", "MPV"), if (snapshot.engineMpv) 1 else 0) {
                     dataSource.setEngine(it == 1)
                 }
             }
         }
         item {
-            MobileSettingRow("后台播放", listOf("关闭", "后台", "PiP").getOrElse(snapshot.background) { "关闭" }) {
-                choose("后台播放", listOf("关闭", "后台", "PiP"), snapshot.background) {
+            val backgroundTitle = stringResource(R.string.mobile_settings_background)
+            val backgroundLabels = listOf(
+                stringResource(R.string.mobile_settings_background_off),
+                stringResource(R.string.mobile_settings_background_bg),
+                "PiP",
+            )
+            MobileSettingRow(
+                backgroundTitle,
+                backgroundLabels.getOrElse(snapshot.background) { backgroundLabels.first() },
+            ) {
+                choose(backgroundTitle, backgroundLabels, snapshot.background) {
                     dataSource.setBackground(it)
                 }
             }
         }
         item {
-            MobileSettingRow("缓冲区", "${snapshot.bufferSeconds} 秒") {
-                choose("缓冲区", listOf("1 秒", "2 秒", "5 秒", "10 秒"), when (snapshot.bufferSeconds) {
-                    1 -> 0; 2 -> 1; 5 -> 2; else -> 3
-                }) { dataSource.setBufferSeconds(listOf(1, 2, 5, 10)[it]) }
+            val bufferTitle = stringResource(R.string.mobile_settings_buffer)
+            val bufferOptions = listOf(
+                stringResource(R.string.mobile_settings_seconds_value, 1),
+                stringResource(R.string.mobile_settings_seconds_value, 2),
+                stringResource(R.string.mobile_settings_seconds_value, 5),
+                stringResource(R.string.mobile_settings_seconds_value, 10),
+            )
+            MobileSettingRow(
+                bufferTitle,
+                stringResource(R.string.mobile_settings_seconds_value, snapshot.bufferSeconds),
+            ) {
+                choose(
+                    bufferTitle,
+                    bufferOptions,
+                    when (snapshot.bufferSeconds) {
+                        1 -> 0; 2 -> 1; 5 -> 2; else -> 3
+                    },
+                ) { dataSource.setBufferSeconds(listOf(1, 2, 5, 10)[it]) }
             }
         }
         item {
-            MobileSettingRow("渲染方式", if (snapshot.renderTexture) "Texture" else "Surface") {
-                choose("渲染方式", listOf("Surface", "Texture"), if (snapshot.renderTexture) 1 else 0) {
+            val renderTitle = stringResource(R.string.mobile_settings_render_mode)
+            MobileSettingRow(renderTitle, if (snapshot.renderTexture) "Texture" else "Surface") {
+                choose(renderTitle, listOf("Surface", "Texture"), if (snapshot.renderTexture) 1 else 0) {
                     dataSource.setRenderTexture(it == 1)
                 }
             }
         }
-        item { MobileSwitchRow("隧道解码", "需要 Surface 渲染", snapshot.tunnel) { dataSource.setTunnel(it); refresh() } }
-        item { MobileSwitchRow("音频直通", "HDMI / 功放透传", snapshot.audioPassThrough) { dataSource.setAudioPassThrough(it); refresh() } }
-        item { MobileSwitchRow("音频偏软解", "软解优先使用 Audio 解码器", snapshot.audioPrefer) { dataSource.setAudioPrefer(it); refresh() } }
-        item { MobileSwitchRow("视频偏软解", "软解优先使用 Video 解码器", snapshot.videoPrefer) { dataSource.setVideoPrefer(it); refresh() } }
         item {
-            MobileSettingRow("Dolby Vision 输出", snapshot.dvPolicyLabel) {
+            MobileSwitchRow(
+                stringResource(R.string.mobile_settings_tunnel),
+                stringResource(R.string.mobile_settings_tunnel_desc),
+                snapshot.tunnel,
+            ) { dataSource.setTunnel(it); refresh() }
+        }
+        item {
+            MobileSwitchRow(
+                stringResource(R.string.mobile_settings_audio_passthrough),
+                stringResource(R.string.mobile_settings_audio_passthrough_desc),
+                snapshot.audioPassThrough,
+            ) { dataSource.setAudioPassThrough(it); refresh() }
+        }
+        item {
+            MobileSwitchRow(
+                stringResource(R.string.mobile_settings_audio_soft),
+                stringResource(R.string.mobile_settings_audio_soft_desc),
+                snapshot.audioPrefer,
+            ) { dataSource.setAudioPrefer(it); refresh() }
+        }
+        item {
+            MobileSwitchRow(
+                stringResource(R.string.mobile_settings_video_soft),
+                stringResource(R.string.mobile_settings_video_soft_desc),
+                snapshot.videoPrefer,
+            ) { dataSource.setVideoPrefer(it); refresh() }
+        }
+        item {
+            MobileSettingRow(stringResource(R.string.mobile_settings_dv_output), snapshot.dvPolicyLabel) {
                 dataSource.cycleDolbyVisionPolicy()
                 refresh()
             }
         }
 
-        item { MobileSectionTitle("搜索") }
+        item { MobileSectionTitle(stringResource(R.string.menu_search)) }
         item {
-            MobileSettingRow("搜索线程", "${snapshot.searchThreads}") {
+            val threadsTitle = stringResource(R.string.mobile_settings_search_threads)
+            MobileSettingRow(threadsTitle, "${snapshot.searchThreads}") {
                 choose(
-                    "搜索线程",
+                    threadsTitle,
                     SEARCH_THREAD_OPTIONS.map { "$it" },
                     SEARCH_THREAD_OPTIONS.indexOf(snapshot.searchThreads).coerceAtLeast(0),
                 ) { dataSource.setSearchThreads(SEARCH_THREAD_OPTIONS[it]) }
             }
         }
         item {
-            MobileSettingRow("参与搜索的站点", "点击管理") {
+            MobileSettingRow(stringResource(R.string.mobile_settings_search_sites), stringResource(R.string.mobile_settings_manage)) {
                 siteItems = dataSource.searchSites()
                 showSites = true
             }
         }
 
-        item { MobileSectionTitle("预加载与缓存") }
-        item { MobileSwitchRow("开启预加载", "使用 PlayerManager 预加载", snapshot.preloadEnabled) { dataSource.setPreloadEnabled(it); refresh() } }
-        item { MobileSwitchRow("预加载下一集", "Exo 路径生效", snapshot.preloadNext) { dataSource.setPreloadNext(it); refresh() } }
+        item { MobileSectionTitle(stringResource(R.string.mobile_settings_section_cache)) }
         item {
-            MobileSettingRow("预加载线程", "${snapshot.preloadThreads}") {
-                choose("预加载线程", listOf("1", "2", "3", "4"), (snapshot.preloadThreads - 1).coerceIn(0, 3)) {
+            MobileSwitchRow(
+                stringResource(R.string.mobile_settings_preload),
+                stringResource(R.string.mobile_settings_preload_desc),
+                snapshot.preloadEnabled,
+            ) { dataSource.setPreloadEnabled(it); refresh() }
+        }
+        item {
+            MobileSwitchRow(
+                stringResource(R.string.mobile_settings_preload_next),
+                stringResource(R.string.mobile_settings_preload_next_desc),
+                snapshot.preloadNext,
+            ) { dataSource.setPreloadNext(it); refresh() }
+        }
+        item {
+            val preloadThreadsTitle = stringResource(R.string.mobile_settings_preload_threads)
+            MobileSettingRow(preloadThreadsTitle, "${snapshot.preloadThreads}") {
+                choose(preloadThreadsTitle, listOf("1", "2", "3", "4"), (snapshot.preloadThreads - 1).coerceIn(0, 3)) {
                     dataSource.setPreloadThreads(it + 1)
                 }
             }
         }
         item {
-            MobileSettingRow("缓存大小", "${snapshot.preloadSizeMb} MB") {
+            val cacheSizeTitle = stringResource(R.string.mobile_settings_cache_size)
+            MobileSettingRow(cacheSizeTitle, "${snapshot.preloadSizeMb} MB") {
                 choose(
-                    "缓存大小",
+                    cacheSizeTitle,
                     listOf(128, 256, 512, 1024).map { "$it MB" },
                     listOf(128, 256, 512, 1024).indexOf(snapshot.preloadSizeMb).coerceAtLeast(0),
                 ) { dataSource.setPreloadSizeMb(listOf(128, 256, 512, 1024)[it]) }
             }
         }
         item {
-            MobileSettingRow("缓存天数", "${snapshot.cacheDays} 天") {
+            val cacheDaysTitle = stringResource(R.string.mobile_settings_cache_days)
+            val cacheDaysOptions = listOf(
+                stringResource(R.string.mobile_settings_days_value, 7),
+                stringResource(R.string.mobile_settings_days_value, 30),
+                stringResource(R.string.mobile_settings_days_value, 60),
+                stringResource(R.string.mobile_settings_days_value, 90),
+            )
+            MobileSettingRow(
+                cacheDaysTitle,
+                stringResource(R.string.mobile_settings_days_value, snapshot.cacheDays),
+            ) {
                 choose(
-                    "缓存天数",
-                    listOf(7, 30, 60, 90).map { "$it 天" },
+                    cacheDaysTitle,
+                    cacheDaysOptions,
                     listOf(7, 30, 60, 90).indexOf(snapshot.cacheDays).coerceAtLeast(0),
                 ) { dataSource.setCacheDays(listOf(7, 30, 60, 90)[it]) }
             }
         }
-        item { MobileSettingRow("清除缓存", snapshot.cacheSizeLabel) { showClearCacheConfirm = true } }
+        item { MobileSettingRow(stringResource(R.string.mobile_settings_clear_cache), snapshot.cacheSizeLabel) { showClearCacheConfirm = true } }
         item {
-            MobileSettingRow("导出诊断", "写入 Download") {
+            MobileSettingRow(
+                stringResource(R.string.mobile_settings_export),
+                stringResource(R.string.mobile_settings_export_desc),
+            ) {
                 val path = dataSource.exportDiagnostics()
-                Toast.makeText(
-                    context,
-                    if (path.isBlank()) "导出失败，请检查存储权限" else "已导出：$path",
-                    Toast.LENGTH_LONG,
-                ).show()
+                val failedText = context.getString(R.string.mobile_settings_export_failed)
+                val doneText = context.getString(R.string.mobile_settings_export_ok, path)
+                val message = if (path.isBlank()) failedText else doneText
+                Toast.makeText(context, message, Toast.LENGTH_LONG).show()
             }
         }
 
-        item { MobileSectionTitle("更新") }
+        item { MobileSectionTitle(stringResource(R.string.mobile_settings_section_update)) }
         item {
-            MobileSwitchRow("强制升级", "检测到新版后自动下载并强制更新", snapshot.forceUpdate) {
+            MobileSwitchRow(
+                stringResource(R.string.mobile_settings_force_update),
+                stringResource(R.string.mobile_settings_force_update_desc),
+                snapshot.forceUpdate,
+            ) {
                 dataSource.setForceUpdate(it); refresh()
             }
         }
-        item { MobileSettingRow("重置 UA", "清空自定义") { dataSource.resetUa(); refresh() } }
+        item {
+            MobileSettingRow(
+                stringResource(R.string.mobile_settings_reset_ua),
+                stringResource(R.string.mobile_settings_reset_ua_desc),
+            ) { dataSource.resetUa(); refresh() }
+        }
 
-        item { MobileSectionTitle("关于") }
-        item { MobileSettingRow("版本", "${snapshot.version} · GPL-3.0") { } }
+        item { MobileSectionTitle(stringResource(R.string.mobile_settings_section_about)) }
+        item { MobileSettingRow(stringResource(R.string.mobile_settings_version), "${snapshot.version} · GPL-3.0") { } }
     }
 
     choice?.let { current ->
@@ -484,7 +617,7 @@ fun MobileSettingsScreen(
 
                     if (depotLines.isNotEmpty()) {
                         Text(
-                            depotTitle.ifBlank { "仓库线路" },
+                            depotTitle.ifBlank { stringResource(R.string.mobile_settings_repo_lines) },
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
@@ -525,7 +658,7 @@ fun MobileSettingsScreen(
                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
                                 if (configName.isEmpty()) {
                                     Text(
-                                        "线路名称（可选）",
+                                        stringResource(R.string.mobile_settings_line_name_hint),
                                         fontSize = 13.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -554,7 +687,7 @@ fun MobileSettingsScreen(
                             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
                                 if (configDraft.isEmpty()) {
                                     Text(
-                                        "请输入接口 URL",
+                                        stringResource(R.string.mobile_settings_url_hint),
                                         fontSize = 13.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -578,7 +711,7 @@ fun MobileSettingsScreen(
                         Button(
                             enabled = !configBusy,
                             onClick = { saveNew(type) },
-                        ) { Text(if (configBusy) "加载中…" else "保存并加载", fontSize = 13.sp) }
+                        ) { Text(if (configBusy) stringResource(R.string.mobile_settings_loading) else stringResource(R.string.mobile_settings_save_load), fontSize = 13.sp) }
                     }
                 }
             }
@@ -596,9 +729,9 @@ fun MobileSettingsScreen(
                 color = MaterialTheme.colorScheme.surface,
             ) {
                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("弹幕屏蔽词", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.mobile_settings_danmaku_block), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     Text(
-                        "多个关键词用逗号分隔",
+                        stringResource(R.string.mobile_settings_danmaku_block_desc),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -621,12 +754,12 @@ fun MobileSettingsScreen(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                     ) {
-                        TextButton(onClick = { editBlockWords = false }) { Text("取消", fontSize = 13.sp) }
+                        TextButton(onClick = { editBlockWords = false }) { Text(stringResource(R.string.mobile_settings_cancel), fontSize = 13.sp) }
                         Button(onClick = {
                             dataSource.setDanmakuBlockWords(blockWordsDraft.trim())
                             editBlockWords = false
                             refresh()
-                        }) { Text("保存", fontSize = 13.sp) }
+                        }) { Text(stringResource(R.string.mobile_settings_save), fontSize = 13.sp) }
                     }
                 }
             }
@@ -645,10 +778,10 @@ fun MobileSettingsScreen(
             ) {
                 Column(Modifier.padding(14.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text("参与搜索的站点", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.mobile_settings_search_sites), fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "已选 ${siteItems.count { it.enabled }} / ${siteItems.size}",
+                            stringResource(R.string.mobile_settings_sites_selected, siteItems.count { it.enabled }, siteItems.size),
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -657,15 +790,15 @@ fun MobileSettingsScreen(
                         TextButton(onClick = {
                             siteItems = siteItems.map { it.copy(enabled = true) }
                             dataSource.setAllSearchSites(true)
-                        }) { Text("全选", fontSize = 13.sp) }
+                        }) { Text(stringResource(R.string.mobile_settings_select_all), fontSize = 13.sp) }
                         TextButton(onClick = {
                             siteItems = siteItems.map { it.copy(enabled = false) }
                             dataSource.setAllSearchSites(false)
-                        }) { Text("全不选", fontSize = 13.sp) }
+                        }) { Text(stringResource(R.string.mobile_settings_select_none), fontSize = 13.sp) }
                     }
                     if (siteItems.isEmpty()) {
                         Text(
-                            "当前接口没有可搜索的站点",
+                            stringResource(R.string.mobile_settings_sites_empty),
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(vertical = 16.dp),
@@ -712,7 +845,7 @@ fun MobileSettingsScreen(
                         Modifier.fillMaxWidth().padding(top = 8.dp),
                         horizontalArrangement = Arrangement.End,
                     ) {
-                        Button(onClick = { showSites = false }) { Text("完成", fontSize = 13.sp) }
+                        Button(onClick = { showSites = false }) { Text(stringResource(R.string.mobile_settings_done), fontSize = 13.sp) }
                     }
                 }
             }
@@ -730,9 +863,9 @@ fun MobileSettingsScreen(
                 color = MaterialTheme.colorScheme.surface,
             ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("确定清除缓存？", fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.mobile_settings_clear_cache_confirm), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     Text(
-                        "将删除图片缓存和临时文件，不会删除收藏和观看记录。",
+                        stringResource(R.string.mobile_settings_clear_cache_desc),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -740,12 +873,12 @@ fun MobileSettingsScreen(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                     ) {
-                        TextButton(onClick = { showClearCacheConfirm = false }) { Text("取消", fontSize = 13.sp) }
+                        TextButton(onClick = { showClearCacheConfirm = false }) { Text(stringResource(R.string.mobile_settings_cancel), fontSize = 13.sp) }
                         Button(onClick = {
                             dataSource.clearCache()
                             showClearCacheConfirm = false
                             refresh()
-                        }) { Text("清除", fontSize = 13.sp) }
+                        }) { Text(stringResource(R.string.mobile_settings_clear), fontSize = 13.sp) }
                     }
                 }
             }
@@ -778,7 +911,7 @@ private fun ConfigLineRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                line.name.ifBlank { line.url }.ifBlank { "未命名" },
+                line.name.ifBlank { line.url }.ifBlank { stringResource(R.string.mobile_unnamed) },
                 fontSize = 13.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -787,7 +920,7 @@ private fun ConfigLineRow(
             if (line.current) {
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    "当前",
+                    stringResource(R.string.mobile_settings_current),
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
@@ -801,13 +934,13 @@ private fun ConfigLineRow(
             enabled = !busy,
             onClick = onLoad,
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-        ) { Text("加载", fontSize = 12.sp) }
+        ) { Text(stringResource(R.string.mobile_settings_load), fontSize = 12.sp) }
         if (showDelete) {
             TextButton(
                 enabled = !busy,
                 onClick = onDelete,
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-            ) { Text("删除", fontSize = 12.sp, color = MaterialTheme.colorScheme.error) }
+            ) { Text(stringResource(R.string.menu_delete), fontSize = 12.sp, color = MaterialTheme.colorScheme.error) }
         }
     }
 }
@@ -836,7 +969,7 @@ private fun MobileSettingRow(title: String, value: String, onClick: () -> Unit) 
     ) {
         Text(title, fontSize = 15.sp, modifier = Modifier.weight(1f))
         Text(
-            value.ifBlank { "未设置" },
+            value.ifBlank { stringResource(R.string.mobile_settings_not_set) },
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,

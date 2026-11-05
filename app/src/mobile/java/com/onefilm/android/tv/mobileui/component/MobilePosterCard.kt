@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.bridge.MediaCard
+import com.onefilm.android.tv.R
 import androidx.compose.foundation.lazy.items
 
 /**
@@ -95,7 +97,7 @@ fun MobilePosterCard(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = card.title.ifBlank { "未命名" },
+                text = card.title.ifBlank { stringResource(R.string.mobile_unnamed) },
                 color = Color.White,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,

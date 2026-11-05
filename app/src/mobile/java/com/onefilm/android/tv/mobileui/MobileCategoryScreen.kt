@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -43,6 +44,7 @@ import com.onefilm.android.tv.compose.bridge.CategoryPage
 import com.onefilm.android.tv.compose.bridge.HomeCategory
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.mobileui.component.MobileHorizontalGrid
+import com.onefilm.android.tv.R
 
 private sealed interface MobileCategoryState {
     data object Loading : MobileCategoryState
@@ -97,9 +99,9 @@ fun MobileCategoryScreen(
             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextButton(onClick = onBack) { Text("‹ 返回") }
+            TextButton(onClick = onBack) { Text(stringResource(R.string.mobile_back)) }
             Text(
-                text = category.name.ifBlank { "分类" },
+                text = category.name.ifBlank { stringResource(R.string.mobile_category) },
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
@@ -107,7 +109,7 @@ fun MobileCategoryScreen(
             )
             Spacer(Modifier.weight(1f))
             if (availableFilters.isNotEmpty()) {
-                TextButton(onClick = { showFilters = true }) { Text("筛选") }
+                TextButton(onClick = { showFilters = true }) { Text(stringResource(R.string.mobile_filter)) }
             }
         }
         when (val current = state) {
@@ -119,9 +121,9 @@ fun MobileCategoryScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("分类加载失败", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.mobile_category_load_failed), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Button(onClick = { retry++ }, modifier = Modifier.padding(top = 12.dp)) {
-                    Text("重试")
+                    Text(stringResource(R.string.mobile_retry))
                 }
             }
             is MobileCategoryState.Content -> BoxWithConstraints(Modifier.fillMaxSize()) {
