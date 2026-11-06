@@ -106,6 +106,28 @@ Menu, cài đặt, điều khiển trình phát, ổ đĩa mạng và thông bá
 
 > Ảnh chụp chỉ dùng để minh hoạ giao diện và kiểm thử trong quá trình phát triển; phim, poster và địa chỉ nguồn đều là nội dung demo; bản phát hành chính thức không tích hợp sẵn bất kỳ tài nguyên phim hay nguồn khả dụng nào.
 
+## Hiệu năng và bộ nhớ
+
+Tìm kiếm tổng hợp tạo ra nhiều engine script tạm thời; cách thu hồi bộ nhớ này quyết định thiết bị yếu có chạy ổn định hay không. Từ 0.1.22, việc thu hồi engine dùng: giải phóng từng site, bảo vệ site đang chạy, dọn dẹp dự phòng sau mỗi 10 site và giải phóng cưỡng bức cho site quá thời gian.
+
+Đo trên cùng một thiết bị với 5 lần tìm kiếm đầy đủ liên tiếp:
+
+| Tình huống | Trước | Sau |
+|---|---:|---:|
+| Native cao nhất khi tìm kiếm | 765 MB | 281 MB |
+| Tổng bộ nhớ (PSS) cao nhất khi tìm kiếm | 1.06 GB | 537 MB |
+| Thời gian duy trì mức cao | 30–40 giây | 4–6 giây |
+| Native khi phát sau tìm kiếm | 743 MB | 116 MB |
+| Tổng bộ nhớ khi phát sau tìm kiếm | 1.01 GB | 366 MB |
+| Tổng bộ nhớ sau khi thoát trình phát | 814 MB | 354 MB |
+| Native 60 giây sau tìm kiếm | 177 MB | 115 MB |
+
+Ghi chú:
+
+- Trình phát rất nhẹ: phát ngay sau khi khởi động lạnh chỉ tăng khoảng 20 MB; phần lớn áp lực đến từ engine tạm thời khi tìm kiếm.
+- Bộ nhớ được giải phóng sớm hơn, nên **TV và box 2 GB / 3 GB ít bị hệ thống thu hồi hơn khi tìm kiếm hoặc chuyển tập**, giảm giật và giảm việc bị thoát giữa chừng.
+- Dữ liệu từ một thiết bị 11.4 GB, giao diện và từ khóa cố định; kết quả thay đổi theo số site, loại giao diện và mạng.
+
 ## Lưu ý
 
 OneFilm **không cung cấp, không tích hợp sẵn và không kèm theo** bất kỳ nội dung phim, nguồn trực tiếp hay nguồn xem theo yêu cầu/trực tiếp khả dụng nào. Đây chỉ là lớp vỏ của trình phát: người dùng cần tự chuẩn bị và cấu hình nguồn nội dung hợp pháp, đồng thời tự chịu trách nhiệm về nguồn mình sử dụng. Không dùng phần mềm này để phát tán nội dung xâm phạm bản quyền hoặc cho mục đích vi phạm pháp luật địa phương.

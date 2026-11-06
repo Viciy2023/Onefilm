@@ -106,6 +106,28 @@ Menus, settings, player controls, network storage, and messages all support **Si
 
 > Screenshots are only for showing the interface and for development testing. Movies, posters, and source addresses are all demo content; the official release does not include any media resources or working sources.
 
+## Performance and memory
+
+Aggregated search creates a large number of temporary script engines, and how that memory is recycled decides whether low-end devices stay stable. Starting with 0.1.22, engine recycling uses per-site release, active protection, a fallback trim every 10 sites, and forced release for timed-out sites.
+
+Measured on the same device with five consecutive full searches:
+
+| Scenario | Before | After |
+|---|---:|---:|
+| Peak native during search | 765 MB | 281 MB |
+| Peak total memory (PSS) during search | 1.06 GB | 537 MB |
+| Time spent at peak | 30–40 s | 4–6 s |
+| Native while playing after search | 743 MB | 116 MB |
+| Total memory while playing after search | 1.01 GB | 366 MB |
+| Total memory after leaving the player | 814 MB | 354 MB |
+| Native 60 s after search | 177 MB | 115 MB |
+
+Notes:
+
+- The player itself is cheap: playing right after a cold start adds about 20 MB. Most of the pressure comes from temporary engines during search.
+- Memory is released much earlier, so **TVs and boxes with 2 GB / 3 GB of RAM are far less likely to be reclaimed by the system while searching or switching episodes**, which means fewer stalls and fewer surprise exits.
+- Data comes from a single 11.4 GB device with a fixed interface and fixed keywords; results vary with the number of sites, interface type and network conditions.
+
 ## Notes
 
 OneFilm **does not provide, does not bundle, and does not ship** any media content, live sources, or working on-demand/live sources. It is only a player shell: you need to prepare and configure legal content sources yourself, and you are responsible for the sources you use. Do not use this software to distribute infringing content or for purposes that violate local laws and regulations.
