@@ -128,6 +128,20 @@ Ghi chú:
 - Bộ nhớ được giải phóng sớm hơn, nên **TV và box 2 GB / 3 GB ít bị hệ thống thu hồi hơn khi tìm kiếm hoặc chuyển tập**, giảm giật và giảm việc bị thoát giữa chừng.
 - Dữ liệu từ một thiết bị 11.4 GB, giao diện và từ khóa cố định; kết quả thay đổi theo số site, loại giao diện và mạng.
 
+### Đo trên TV 2 GB (Android 9)
+
+Lặp lại đúng 5 lần tìm kiếm và phát trên TV Xiaomi 2 GB chạy Android 9:
+
+| Tình huống | PSS ứng dụng | Native | Bộ nhớ hệ thống còn trống |
+|---|---:|---:|---:|
+| Trang chủ nhàn rỗi | 104 MB | 20 MB | 800 MB |
+| Cao nhất khi 5 lần tìm kiếm | 303 MB | 156 MB | 677 MB |
+| 60 giây sau tìm kiếm | 197 MB | 53 MB | 778 MB |
+| Phát sau tìm kiếm | 209 MB | 52 MB | 650–758 MB |
+| Chuyển xuống nền | 192 MB | 53 MB | 700 MB |
+
+Tiến trình không bị hệ thống kill, bộ nhớ trống thấp nhất khoảng 677 MB, cho thấy thiết bị 2 GB vẫn còn đủ dư.
+
 ## Lưu ý
 
 OneFilm **không cung cấp, không tích hợp sẵn và không kèm theo** bất kỳ nội dung phim, nguồn trực tiếp hay nguồn xem theo yêu cầu/trực tiếp khả dụng nào. Đây chỉ là lớp vỏ của trình phát: người dùng cần tự chuẩn bị và cấu hình nguồn nội dung hợp pháp, đồng thời tự chịu trách nhiệm về nguồn mình sử dụng. Không dùng phần mềm này để phát tán nội dung xâm phạm bản quyền hoặc cho mục đích vi phạm pháp luật địa phương.

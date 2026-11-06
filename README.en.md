@@ -128,6 +128,20 @@ Notes:
 - Memory is released much earlier, so **TVs and boxes with 2 GB / 3 GB of RAM are far less likely to be reclaimed by the system while searching or switching episodes**, which means fewer stalls and fewer surprise exits.
 - Data comes from a single 11.4 GB device with a fixed interface and fixed keywords; results vary with the number of sites, interface type and network conditions.
 
+### Measured on a 2 GB TV (Android 9)
+
+The same five searches and playback, repeated on a 2 GB Xiaomi TV running Android 9:
+
+| Scenario | App PSS | Native | System available memory |
+|---|---:|---:|---:|
+| Idle on home | 104 MB | 20 MB | 800 MB |
+| Peak during 5 searches | 303 MB | 156 MB | 677 MB |
+| 60 s after search | 197 MB | 53 MB | 778 MB |
+| Playing after search | 209 MB | 52 MB | 650–758 MB |
+| Sent to background | 192 MB | 53 MB | 700 MB |
+
+The process was never killed, and system available memory stayed above ~677 MB, so a 2 GB device still has plenty of headroom.
+
 ## Notes
 
 OneFilm **does not provide, does not bundle, and does not ship** any media content, live sources, or working on-demand/live sources. It is only a player shell: you need to prepare and configure legal content sources yourself, and you are responsible for the sources you use. Do not use this software to distribute infringing content or for purposes that violate local laws and regulations.
