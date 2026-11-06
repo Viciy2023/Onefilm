@@ -110,7 +110,7 @@ Menu, cài đặt, điều khiển trình phát, ổ đĩa mạng và thông bá
 
 Tìm kiếm tổng hợp tạo ra nhiều engine script tạm thời; cách thu hồi bộ nhớ này quyết định thiết bị yếu có chạy ổn định hay không. Từ 0.1.22, việc thu hồi engine dùng: giải phóng từng site, bảo vệ site đang chạy, dọn dẹp dự phòng sau mỗi 10 site và giải phóng cưỡng bức cho site quá thời gian.
 
-Đo trên cùng một thiết bị với 5 lần tìm kiếm đầy đủ liên tiếp:
+Đo trên cùng một thiết bị với 313 site và 5 lần tìm kiếm đầy đủ liên tiếp:
 
 | Tình huống | Trước | Sau |
 |---|---:|---:|
@@ -130,7 +130,7 @@ Ghi chú:
 
 ### Đo trên TV 2 GB (Android 9)
 
-Lặp lại đúng 5 lần tìm kiếm và phát trên TV Xiaomi 2 GB chạy Android 9:
+Lặp lại đúng 5 lần tìm kiếm và phát với cùng 313 site trên TV Xiaomi 2 GB chạy Android 9:
 
 | Tình huống | PSS ứng dụng | Native | Bộ nhớ hệ thống còn trống |
 |---|---:|---:|---:|

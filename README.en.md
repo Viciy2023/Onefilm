@@ -110,7 +110,7 @@ Menus, settings, player controls, network storage, and messages all support **Si
 
 Aggregated search creates a large number of temporary script engines, and how that memory is recycled decides whether low-end devices stay stable. Starting with 0.1.22, engine recycling uses per-site release, active protection, a fallback trim every 10 sites, and forced release for timed-out sites.
 
-Measured on the same device with five consecutive full searches:
+Measured on the same device with 313 sites and five consecutive full searches:
 
 | Scenario | Before | After |
 |---|---:|---:|
@@ -130,7 +130,7 @@ Notes:
 
 ### Measured on a 2 GB TV (Android 9)
 
-The same five searches and playback, repeated on a 2 GB Xiaomi TV running Android 9:
+The same 313 sites, five searches and playback, repeated on a 2 GB Xiaomi TV running Android 9:
 
 | Scenario | App PSS | Native | System available memory |
 |---|---:|---:|---:|
