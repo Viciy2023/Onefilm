@@ -89,6 +89,10 @@ public class Flag implements Parcelable, Diffable<Flag> {
     }
 
     public void setEpisodes(String url) {
+        // 保存原始剧集串：Vod.setFlags() 会被调用两次，第二次需要用同一份数据
+        // 重新解析并去重，否则空串会被解析成名为 "01" 的空剧集。
+        this.urls = url;
+        if (TextUtils.isEmpty(url)) return;
         String[] urls = url.contains("#") ? url.split("#") : new String[]{url};
         for (int i = 0; i < urls.length; i++) {
             String[] split = urls[i].split("\\$", 2);
