@@ -113,6 +113,7 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
         },
         forceUpdate = Setting.getForceUpdate(),
         searchThreads = SearchSettings.threads(),
+        adblock = Setting.isAdblock(),
         )
     }
 
@@ -124,6 +125,10 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
         }.getOrDefault("—")
         cachedCacheSizeLabel = label
         return label
+    }
+
+    override fun setAdblock(enabled: Boolean) {
+        Setting.putAdblock(enabled)
     }
 
     override fun setEngine(mpv: Boolean) {

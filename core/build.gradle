@@ -26,4 +26,5 @@ dependencies {
     implementation libs.annotation
     implementation libs.gson
     implementation libs.simple.xml
+    testImplementation 'junit:junit:4.13.2'
 }

@@ -88,6 +88,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         installThreadGuard();
         initBugly();
         CoreContext.INSTANCE.init(this);
+        com.onefilm.android.tv.player.adblock.HlsAdBlockProvider.install();
         Notify.createChannel();
         registerActivityLifecycleCallbacks(this);
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setHomeDataSource(new com.onefilm.android.tv.composebridge.AppHomeDataSource());

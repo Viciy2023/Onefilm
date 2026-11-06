@@ -41,6 +41,7 @@ data class SettingsSnapshot(
     val wallpaperLabel: String,
     val forceUpdate: Boolean,
     val searchThreads: Int = 16,
+    val adblock: Boolean = true,
 )
 
 /** 搜索线程候选值，设置页与搜索实现共用。 */
@@ -98,6 +99,9 @@ interface SettingsDataSource {
     fun setPreloadSizeMb(sizeMb: Int)
 
     fun resetUa()
+
+    /** 播放时的 m3u8 广告过滤开关。 */
+    fun setAdblock(enabled: Boolean) {}
 
     fun loadConfig(
         type: Int,

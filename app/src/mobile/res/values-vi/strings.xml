@@ -102,6 +102,8 @@
     <string name="mobile_settings_follow_config">Theo cấu hình</string>
     <string name="mobile_settings_incognito">Chế độ ẩn danh</string>
     <string name="mobile_settings_incognito_desc">Không ghi lịch sử hay bộ nhớ đệm</string>
+    <string name="mobile_settings_adblock">Chặn quảng cáo</string>
+    <string name="mobile_settings_adblock_desc">Tự động bỏ quảng cáo trong luồng HLS khi phát</string>
     <string name="mobile_settings_section_subtitle">Phụ đề</string>
     <string name="mobile_settings_subtitle_position">Vị trí</string>
     <string name="mobile_settings_subtitle_color">Màu</string>

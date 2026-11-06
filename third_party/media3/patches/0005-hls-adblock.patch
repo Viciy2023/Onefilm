@@ -1,0 +1,99 @@
+diff --git a/libraries/exoplayer_hls/src/main/java/androidx/media3/exoplayer/hls/playlist/HlsAdFilter.java b/libraries/exoplayer_hls/src/main/java/androidx/media3/exoplayer/hls/playlist/HlsAdFilter.java
+new file mode 100644
+index 0000000..2defb97
+--- /dev/null
++++ b/libraries/exoplayer_hls/src/main/java/androidx/media3/exoplayer/hls/playlist/HlsAdFilter.java
+@@ -0,0 +1,80 @@
++/*
++ * OneFilm addition, not part of upstream media3.
++ *
++ * 广告过滤钩子：媒体3 只负责把 m3u8 文本交出去、拿回来；
++ * 具体规则与算法放在 App 层（core 模块的 M3u8AdFilter），避免把业务规则写进播放器内核。
++ */
++package androidx.media3.exoplayer.hls.playlist;
++
++import java.io.ByteArrayInputStream;
++import java.io.ByteArrayOutputStream;
++import java.io.IOException;
++import java.io.InputStream;
++import java.nio.charset.StandardCharsets;
++
++/** Hook for filtering ad segments out of HLS media playlists. */
++public final class HlsAdFilter {
++
++  /** 由 App 提供：返回处理后的 m3u8 文本；返回 null/空串/原文表示不处理。 */
++  public interface Provider {
++    String filter(String playlistUrl, String playlistText);
++  }
++
++  private static volatile Provider provider;
++
++  private HlsAdFilter() {
++  }
++
++  public static void setProvider(Provider provider) {
++    HlsAdFilter.provider = provider;
++  }
++
++  public static Provider getProvider() {
++    return provider;
++  }
++
++  /**
++   * 在解析前拦截播放列表内容。
++   *
++   * <p>只处理点播媒体列表（含 {@code #EXTM3U} 与 {@code #EXT-X-ENDLIST}、且不含
++   * {@code #EXT-X-STREAM-INF}）；其余情况原样返回，保证直播与主列表行为不变。
++   */
++  /* package */ static InputStream filterStream(String playlistUrl, InputStream inputStream)
++      throws IOException {
++    Provider current = provider;
++    if (current == null) {
++      return inputStream;
++    }
++    byte[] original = readAll(inputStream);
++    String text = new String(original, StandardCharsets.UTF_8);
++    if (!shouldFilter(text)) {
++      return new ByteArrayInputStream(original);
++    }
++    String filtered;
++    try {
++      filtered = current.filter(playlistUrl, text);
++    } catch (Throwable t) {
++      return new ByteArrayInputStream(original);
++    }
++    if (filtered == null || filtered.isEmpty() || filtered.equals(text)) {
++      return new ByteArrayInputStream(original);
++    }
++    return new ByteArrayInputStream(filtered.getBytes(StandardCharsets.UTF_8));
++  }
++
++  private static boolean shouldFilter(String text) {
++    return text.contains("#EXTM3U")
++        && text.contains("#EXT-X-ENDLIST")
++        && !text.contains("#EXT-X-STREAM-INF");
++  }
++
++  private static byte[] readAll(InputStream inputStream) throws IOException {
++    ByteArrayOutputStream output = new ByteArrayOutputStream();
++    byte[] buffer = new byte[8192];
++    int read;
++    while ((read = inputStream.read(buffer)) != -1) {
++      output.write(buffer, 0, read);
++    }
++    return output.toByteArray();
++  }
++}
+diff --git a/libraries/exoplayer_hls/src/main/java/androidx/media3/exoplayer/hls/playlist/HlsPlaylistParser.java b/libraries/exoplayer_hls/src/main/java/androidx/media3/exoplayer/hls/playlist/HlsPlaylistParser.java
+index 041879a..31cbc89 100644
+--- a/libraries/exoplayer_hls/src/main/java/androidx/media3/exoplayer/hls/playlist/HlsPlaylistParser.java
++++ b/libraries/exoplayer_hls/src/main/java/androidx/media3/exoplayer/hls/playlist/HlsPlaylistParser.java
+@@ -320,6 +320,8 @@ public final class HlsPlaylistParser implements ParsingLoadable.Parser<HlsPlayli
+ 
+   @Override
+   public HlsPlaylist parse(Uri uri, InputStream inputStream) throws IOException {
++    // OneFilm: 广告过滤钩子，仅对点播媒体列表生效。
++    inputStream = HlsAdFilter.filterStream(uri.toString(), inputStream);
+     BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+     Queue<String> extraLines = new ArrayDeque<>();
+     String line;

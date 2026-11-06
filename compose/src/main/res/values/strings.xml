@@ -75,6 +75,8 @@
     <string name="settings_search_threads">Search threads</string>
     <string name="settings_search_sites">Search sites</string>
     <string name="settings_incognito">Incognito</string>
+    <string name="settings_adblock">Ad blocking</string>
+    <string name="settings_adblock_desc">Remove pre-roll ads from HLS streams</string>
     <string name="settings_player_engine">Player engine</string>
     <string name="settings_preload_next">Preload next episode</string>
     <string name="settings_preload_threads">Preload threads</string>

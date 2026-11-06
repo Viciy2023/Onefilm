@@ -489,6 +489,15 @@ fun SettingsScreen(
             }
             item {
             SettingsPanelRow {
+                SwitchRow(
+                    stringResource(R.string.settings_adblock),
+                    stringResource(R.string.settings_adblock_desc),
+                    snapshot.adblock,
+                ) { enabled -> refresh { setAdblock(enabled) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_player_engine),
                     subtitle = stringResource(R.string.settings_mpv_legacy),

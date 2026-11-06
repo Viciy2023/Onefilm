@@ -340,6 +340,15 @@ fun MobileSettingsScreen(
 
         item { MobileSectionTitle(stringResource(R.string.mobile_settings_section_playback)) }
         item {
+            MobileSwitchRow(
+                stringResource(R.string.mobile_settings_adblock),
+                stringResource(R.string.mobile_settings_adblock_desc),
+                snapshot.adblock,
+            ) {
+                dataSource.setAdblock(it); refresh()
+            }
+        }
+        item {
             MobileSettingRow(
                 stringResource(R.string.mobile_settings_play_timeout),
                 stringResource(R.string.mobile_settings_seconds_value, snapshot.playTimeoutSeconds),

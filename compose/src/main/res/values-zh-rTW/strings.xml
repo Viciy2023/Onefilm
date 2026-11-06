@@ -75,6 +75,8 @@
     <string name="settings_search_threads">搜尋執行緒</string>
     <string name="settings_search_sites">參與搜尋的站點</string>
     <string name="settings_incognito">隱身模式</string>
+    <string name="settings_adblock">廣告過濾</string>
+    <string name="settings_adblock_desc">播放時自動跳過 m3u8 貼片廣告</string>
     <string name="settings_player_engine">播放引擎</string>
     <string name="settings_preload_next">預載下一集</string>
     <string name="settings_preload_threads">預載執行緒</string>

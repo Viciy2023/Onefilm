@@ -102,6 +102,8 @@
     <string name="mobile_settings_follow_config">Follow config</string>
     <string name="mobile_settings_incognito">Incognito mode</string>
     <string name="mobile_settings_incognito_desc">No history or cache writes</string>
+    <string name="mobile_settings_adblock">Ad blocking</string>
+    <string name="mobile_settings_adblock_desc">Remove pre-roll ads from HLS streams</string>
     <string name="mobile_settings_section_subtitle">Subtitles</string>
     <string name="mobile_settings_subtitle_position">Position</string>
     <string name="mobile_settings_subtitle_color">Color</string>

@@ -75,6 +75,8 @@
     <string name="settings_search_threads">เธรดค้นหา</string>
     <string name="settings_search_sites">เว็บที่ค้นหา</string>
     <string name="settings_incognito">ไม่ระบุตัวตน</string>
+    <string name="settings_adblock">บล็อกโฆษณา</string>
+    <string name="settings_adblock_desc">ข้ามโฆษณาในสตรีม HLS อัตโนมัติเมื่อเล่น</string>
     <string name="settings_player_engine">เอนจินเล่น</string>
     <string name="settings_preload_next">โหลดตอนถัดไปล่วงหน้า</string>
     <string name="settings_preload_threads">เธรดโหลดล่วงหน้า</string>
