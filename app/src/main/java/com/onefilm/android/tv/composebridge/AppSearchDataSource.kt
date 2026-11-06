@@ -35,6 +35,9 @@ class AppSearchDataSource : SearchDataSource {
     /** 各站点的连续超时次数：连续 2 次才判定为卡死，避免偶发慢站被永久跳过。 */
     private val timeoutCounts: java.util.concurrent.ConcurrentHashMap<String, Int> = java.util.concurrent.ConcurrentHashMap()
 
+    /** 正在执行的站点：trim 时必须保留它们的引擎，避免把还在跑的调用掐断。 */
+    private val inFlightSites: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
     /** JS 源单站超时：QuickJS 引擎初始化 + 加载模块本身就较重，5 秒不够。 */
     private val JS_SITE_TIMEOUT_MS = 15_000L
 
@@ -102,6 +105,7 @@ class AppSearchDataSource : SearchDataSource {
                 else -> timeoutMs
             }
             var timedOut = false
+            inFlightSites.add(site.key)
             val vods = try {
                 future.get(effectiveTimeout, TimeUnit.MILLISECONDS)
             } catch (e: java.util.concurrent.TimeoutException) {
@@ -112,21 +116,42 @@ class AppSearchDataSource : SearchDataSource {
                 null
             } catch (e: CancellationException) {
                 future.cancel(true)
+                if (isJs) {
+                    val siteKey = site.key
+                    // 取消也未必能停下原生调用，5 秒后再兜底回收。
+                    Task.schedule({
+                        runCatching { inFlightSites.remove(siteKey) }
+                        runCatching { BaseLoader.get().forceReleaseJs(siteKey) }
+                    }, 5, TimeUnit.SECONDS)
+                } else {
+                    inFlightSites.remove(site.key)
+                }
                 throw e
             } catch (e: Throwable) {
                 null // 失败即跳过，本轮不重试
             }
             // 方案 B：JS 站点本轮只用这一次，搜索返回后立即释放其引擎，
             // 避免 80+ 个 QuickJS 运行时同时常驻。
-            if (!timedOut) timeoutCounts.remove(site.key)
-            // 超时的站点其调用可能还在跑（init 未完成），此时不能回收，否则会把引擎掐断。
-            // 回收放到多线程池里并行执行：destroy() 本身要几十到几百毫秒，
-            // 用单线程调度器排队会跟不上引擎创建速度，导致搜索期峰值偏高。
-            if (isJs && !timedOut) {
+            if (!timedOut) {
+                timeoutCounts.remove(site.key)
+                inFlightSites.remove(site.key)
+            }
+            if (isJs) {
                 val siteKey = site.key
-                Task.execute { runCatching { BaseLoader.get().releaseJs(siteKey) } }
+                if (!timedOut) {
+                    // 回收放到多线程池里并行执行：destroy() 本身要几十到几百毫秒。
+                    Task.execute { runCatching { BaseLoader.get().releaseJs(siteKey) } }
+                } else {
+                    // 超时调用可能仍在原生层执行，5 秒后强制回收并解除 in-flight 保护。
+                    Task.schedule({
+                        runCatching { inFlightSites.remove(siteKey) }
+                        runCatching { BaseLoader.get().forceReleaseJs(siteKey) }
+                    }, 5, TimeUnit.SECONDS)
+                }
             }
             val doneCount = completed.incrementAndGet()
+            // 边跑边清：每完成 10 个站点兜底 trim 一次，避免引擎堆到阶段结束。
+            if (doneCount % 10 == 0) trimJsEngines()
             if (vods.isNullOrEmpty()) return
             val snapshot: List<MediaCard>
             synchronized(items) {
@@ -152,7 +177,7 @@ class AppSearchDataSource : SearchDataSource {
         // 是 2GB 设备上最大的常驻开销；后面的重型源都是 csp_* jar 类，不需要 JS 引擎。
         trimJsEngines()
         // 20 秒宽限期内的引擎会在这次补刀里释放。
-        Task.schedule({ trimJsEngines() }, 25, TimeUnit.SECONDS)
+        Task.schedule({ trimJsEngines() }, 10, TimeUnit.SECONDS)
 
         // 二、网盘 / GoProxy 源最后串行跑。
         // 这类源首次使用要下载并加载 libwexproxy.so（约 10MB），并发会让设备直接 SIGSEGV，
@@ -189,7 +214,7 @@ class AppSearchDataSource : SearchDataSource {
     private fun trimJsEngines() {
         Task.execute {
             runCatching {
-                val keep = HashSet<String>()
+                val keep = HashSet<String>(inFlightSites)
                 val homeKey = VodConfig.get().getHome().key
                 if (!homeKey.isNullOrBlank()) keep.add(homeKey)
                 BaseLoader.get().retainJs(keep)

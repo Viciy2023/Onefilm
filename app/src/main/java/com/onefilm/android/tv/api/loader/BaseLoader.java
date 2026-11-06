@@ -78,6 +78,11 @@ public class BaseLoader {
         return jsLoader.release(key);
     }
 
+    /** 强制释放（跳过保护窗口），用于超时站点的兜底回收。 */
+    public boolean forceReleaseJs(String key) {
+        return jsLoader.forceRelease(key);
+    }
+
     public Spider getSpider(String key, String api, String ext, String jar) {
         if (isPy(api)) return pyLoader == null ? new SpiderNull() : pyLoader.getSpider(key, api, ext);
         else if (isJs(api)) return jsLoader.getSpider(key, api, ext, jar);

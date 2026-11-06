@@ -14,10 +14,10 @@ import java.util.concurrent.ConcurrentHashMap;
 public class JsLoader {
 
     /** 回收时保留最近这段时间内被使用过的引擎，避免掐断正在进行的详情/播放调用。 */
-    private static final long RETAIN_GRACE_MS = 20_000L;
+    private static final long RETAIN_GRACE_MS = 5_000L;
 
     /** 单站点释放的保护窗口：刚被取用过的引擎先不销毁（可能在跑详情/播放）。 */
-    private static final long RELEASE_GRACE_MS = 500L;
+    private static final long RELEASE_GRACE_MS = 150L;
 
     private final ConcurrentHashMap<String, Spider> spiders;
     private final ConcurrentHashMap<String, Long> lastAccess;
@@ -114,8 +114,24 @@ public class JsLoader {
      *
      * @return 是否真的销毁了一个引擎
      */
+    /** 强制释放：跳过保护窗口，用于超时站点的兜底回收。 */
+    public boolean forceRelease(String key) {
+        if (key == null || key.isEmpty()) return false;
+        Spider spider = spiders.remove(key);
+        lastAccess.remove(key);
+        if (spider == null) return false;
+        try {
+            spider.destroy();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+        return true;
+    }
+
     public boolean release(String key) {
         if (key == null || key.isEmpty()) return false;
+        // 正在被界面使用的站点不回收（详情/播放刚点开）。
+        if (key.equals(recent)) return false;
         Long used = lastAccess.get(key);
         // 刚被取用过（可能正在跑详情/播放），先留着，交给后续的批量回收。
         if (used != null && System.currentTimeMillis() - used < RELEASE_GRACE_MS) return false;
