@@ -44,3 +44,4 @@ buglybin/
 .mnemon/runtime/memories.json
 .mnemon/runtime/MEMORY.md
 .mnemon/runtime/USER.md
+*.hprof
