@@ -30,7 +30,7 @@ import androidx.compose.ui.res.stringResource
 import com.onefilm.android.tv.compose.R
 
 /**
- * 欧歌式聚合入口：榜单/推荐卡片只有片名和海报时，
+ * 聚合入口：榜单/推荐卡片只有片名和海报时，
  * 按片名聚合搜索全部站点，拿到第一个可用的真实详情 ID 后直接进详情。
  */
 @Composable

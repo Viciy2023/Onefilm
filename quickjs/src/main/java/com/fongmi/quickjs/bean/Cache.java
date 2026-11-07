@@ -8,7 +8,7 @@ import org.jsoup.nodes.Document;
  *
  * <p>drpy 的 {@code pdfh}/{@code pdfa}/{@code pdfl} 会对同一段 HTML 反复取规则，
  * 每次重新 {@code Jsoup.parse} 既慢又会产生大量临时对象。这里按 HTML 文本缓存解析结果，
- * 与欧歌的实现保持一致。
+ * 保持同样的缓存行为。
  */
 public class Cache {
 

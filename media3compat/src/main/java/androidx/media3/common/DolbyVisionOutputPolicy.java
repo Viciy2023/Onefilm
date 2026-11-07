@@ -5,7 +5,7 @@ import androidx.annotation.IntDef;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-/** OneFilm compatibility shim. Placeholder for FongMi's media3 fork type. */
+/** OneFilm 兼容层：media3 扩展类型的占位实现。 */
 public final class DolbyVisionOutputPolicy {
 
     public static final int AUTO = 0;

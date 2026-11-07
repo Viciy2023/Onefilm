@@ -77,7 +77,7 @@ android {
         leanback {
             dimension "device"
             // TV 端保持 targetSdk < 29：爬虫 jar 里的 guard 在 targetSdk>=29 时会在进程内
-            // System.load soproxy-android-arm.so（2GB 盒子必崩），targetSdk=28 时与欧歌一致，
+            // System.load soproxy-android-arm.so（2GB 盒子必崩），targetSdk=28 时保持同样的进程外启动行为，
             // 改为 nohup 启动 goproxy-android-arm 独立进程。
             targetSdk 28
             manifestPlaceholders = [BUGLY_APPID: buglyAppIdTv, BUGLY_APPKEY: buglyAppKeyTv]

@@ -5,7 +5,7 @@ import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.cache.Cache;
 import androidx.media3.exoplayer.source.MediaSource;
 
-/** OneFilm compatibility shim. Mirrors the FongMi fork's preload supplier. */
+/** OneFilm 兼容层：对应播放器扩展中的预加载 Supplier。 */
 public interface MediaSourceFactorySupplier {
 
     @NonNull

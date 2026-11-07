@@ -17,7 +17,7 @@ index b25ed50..3bede37 100644
     */
 +  /**
 +   * OneFilm: switches the video output between {@link SurfaceView} (0) and {@link TextureView}
-+   * (1) at runtime, mirroring FongMi's PlayerView extension.
++   * (1) at runtime, mirroring the PlayerView extension.
 +   */
 +  public void setRender(int render) {
 +    if (contentFrame == null) {

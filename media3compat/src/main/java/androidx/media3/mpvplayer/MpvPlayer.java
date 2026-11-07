@@ -329,7 +329,7 @@ public class MpvPlayer extends SimpleBasePlayer {
         return Futures.immediateVoidFuture();
     }
 
-    // ---- FongMi API compatibility (not implemented by the MPV runtime yet) ----
+    // ---- API compatibility (not implemented by the MPV runtime yet) ----
 
     public void setAudioOutputListener(@Nullable AudioOutputListener listener) {
     }

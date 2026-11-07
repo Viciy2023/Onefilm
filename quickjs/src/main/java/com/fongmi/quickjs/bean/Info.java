@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * 一条解析规则的拆分结果。
  *
- * <p>规则语法（与 TVBox / 欧歌一致）：
+ * <p>规则语法（与 TVBox 兼容）：
  * <ul>
  *   <li>{@code div.item:eq(2)} → 选择第 3 个，{@link #index} = 2</li>
  *   <li>{@code div.item--script} → 选中后排除 script 子节点</li>

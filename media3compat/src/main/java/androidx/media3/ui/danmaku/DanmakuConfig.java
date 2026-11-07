@@ -3,7 +3,7 @@ package androidx.media3.ui.danmaku;
 import android.graphics.Typeface;
 
 /**
- * OneFilm compatibility shim. Placeholder for FongMi's media3 fork type.
+ * OneFilm 兼容层：media3 扩展类型的占位实现。
  * Rendering is not implemented in the Phase 1 baseline; settings still round-trip.
  */
 public final class DanmakuConfig {

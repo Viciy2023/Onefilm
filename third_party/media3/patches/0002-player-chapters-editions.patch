@@ -6,7 +6,7 @@ index 0000000..2353c96
 @@ -0,0 +1,13 @@
 +package androidx.media3.common;
 +
-+/** OneFilm compatibility shim. Placeholder for FongMi's media3 fork type. */
++/** OneFilm 兼容层：media3 扩展类型的占位实现。 */
 +public final class MediaChapter {
 +    public final String label;
 +    public final long timeUs;
@@ -25,7 +25,7 @@ index 0000000..c563d2e
 @@ -0,0 +1,13 @@
 +package androidx.media3.common;
 +
-+/** OneFilm compatibility shim. Placeholder for FongMi's media3 fork type. */
++/** OneFilm 兼容层：media3 扩展类型的占位实现。 */
 +public final class MediaEdition {
 +    public final String label;
 +    public final long durationUs;

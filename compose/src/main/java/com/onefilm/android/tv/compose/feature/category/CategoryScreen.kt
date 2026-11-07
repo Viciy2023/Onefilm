@@ -155,7 +155,7 @@ private fun CategoryContent(
         }
 
         if (showFilters && page.filters.isNotEmpty()) {
-            // 参考欧歌：筛选面板放在独立窗口（Dialog）里，返回键由面板窗口自己消费，
+            // 筛选面板放在独立窗口（Dialog）里，返回键由面板窗口自己消费，
             // 关闭后活动窗口的焦点仍是打开面板前的分类标签，不会被带回主页。
             Dialog(
                 onDismissRequest = onDismissFilters,

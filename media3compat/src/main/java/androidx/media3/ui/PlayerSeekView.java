@@ -8,7 +8,7 @@ import androidx.annotation.Nullable;
 import androidx.media3.common.Player;
 
 /**
- * OneFilm compatibility shim. Placeholder for FongMi's media3 fork type.
+ * OneFilm 兼容层：media3 扩展类型的占位实现。
  * Hosts a DefaultTimeBar so existing layouts and scrub listeners keep working.
  */
 public class PlayerSeekView extends FrameLayout {

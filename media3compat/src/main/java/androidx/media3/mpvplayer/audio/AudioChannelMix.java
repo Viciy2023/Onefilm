@@ -1,6 +1,6 @@
 package androidx.media3.mpvplayer.audio;
 
-/** OneFilm compatibility shim. Pure helpers mirrored from FongMi's API. */
+/** OneFilm 兼容层：与播放器扩展 API 保持一致的纯函数。 */
 public final class AudioChannelMix {
 
     private AudioChannelMix() {

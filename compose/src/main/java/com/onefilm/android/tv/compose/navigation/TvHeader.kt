@@ -523,7 +523,7 @@ private fun TvCategoryChip(
             textAlign = TextAlign.Center,
             maxLines = 1,
         )
-        // 参考欧歌：筛选图标放在标签内部，只作提示，不单独聚焦/点击
+        // 筛选图标放在标签内部，只作提示，不单独聚焦/点击
         if (hasFilter) {
             Spacer(Modifier.width((4 * scale).dp))
             Icon(
