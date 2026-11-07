@@ -23,7 +23,8 @@ import java.util.Locale;
 public final class HlsAdBlockProvider implements HlsAdFilter.Provider {
 
     private static final String TAG = "HlsAdBlock";
-    private static final M3u8AdFilter.Limits LIMITS = new M3u8AdFilter.Limits(0.20, 90.0, 3, 400);
+    private static final M3u8AdFilter.Limits LIMITS = new M3u8AdFilter.Limits(0.20, 90.0, 3, 400, 8);
+    private static final M3u8AdFilter.PtsProbe PROBE = new HlsPtsProbe();
 
     private volatile List<Rule> cachedSource = List.of();
     private volatile List<AdBlockRule> cachedRules = List.of();
@@ -39,9 +40,12 @@ public final class HlsAdBlockProvider implements HlsAdFilter.Provider {
         if (playlistText == null || playlistText.isEmpty()) return null;
         try {
             M3u8AdFilter.Result result =
-                    M3u8AdFilter.INSTANCE.filter(playlistUrl, playlistText, rules(), LIMITS);
+                    M3u8AdFilter.INSTANCE.filter(playlistUrl, playlistText, rules(), LIMITS, PROBE);
             if (!result.getChanged()) return null;
-            Log.d(TAG, "hit=" + (result.getRule() == null ? "heuristic" : result.getRule())
+            String hit = result.getRule() != null
+                    ? result.getRule()
+                    : (result.getPts() ? "pts" : "heuristic");
+            Log.d(TAG, "hit=" + hit
                     + " removed=" + result.getRemovedSegments()
                     + " seconds=" + String.format(Locale.US, "%.2f", result.getRemovedSeconds())
                     + " url=" + playlistUrl);
