@@ -9,6 +9,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
+import androidx.media3.common.Player
+import androidx.media3.ui.PlayerView
 import androidx.media3.ui.danmaku.DanmakuConfig
 import androidx.media3.ui.danmaku.DanmakuParser
 import androidx.media3.ui.danmaku.DanmakuView
@@ -101,13 +103,20 @@ object DanmakuController {
         applyConfig()
     }
 
-    fun attach(target: DanmakuView) {
+    fun attach(target: DanmakuView, host: PlayerView? = null, player: Player? = null) {
         view = target
         syncSettings()
         Log.d(TAG, "attach view=${target.hashCode()} enabled=$enabled xmlLen=${xml?.length ?: -1}")
+        target.setHost(host)
+        target.setPlayer(player)
         xml?.let { runCatching { target.setItems(parseFiltered(it)) } }
         target.setEnabled(enabled)
         target.setClock(lastPosition)
+    }
+
+    /** 播放器切换（Exo/MPV）时同步给弹幕视图。 */
+    fun setPlayer(player: Player?) {
+        view?.setPlayer(player)
     }
 
     private fun parseFiltered(content: String): List<androidx.media3.ui.danmaku.DanmakuItem> {
@@ -117,7 +126,11 @@ object DanmakuController {
     }
 
     fun detach(target: DanmakuView) {
-        if (view === target) view = null
+        if (view === target) {
+            view = null
+            target.setHost(null)
+            target.setPlayer(null)
+        }
     }
 
     fun attachedTo(target: DanmakuView): Boolean = view === target

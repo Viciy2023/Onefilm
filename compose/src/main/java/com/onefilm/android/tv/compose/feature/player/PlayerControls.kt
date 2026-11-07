@@ -135,12 +135,6 @@ fun VideoSurface(modifier: Modifier = Modifier) {
     val mpv = PlaybackSession.engineMpv
     val episode = PlaybackSession.currentEpisode
     val danmakuKey = "${PlaybackSession.siteKey}:${PlaybackSession.vodId}:${episode?.url.orEmpty()}"
-    LaunchedEffect(player) {
-        while (player != null) {
-            DanmakuController.setClock(player.currentPosition)
-            delay(50)
-        }
-    }
     LaunchedEffect(danmakuKey, player) {
         if (player != null) {
             DanmakuController.ensureLoaded(context, danmakuKey, ComposeDependencies.danmakuDataSource)
@@ -183,7 +177,7 @@ fun VideoSurface(modifier: Modifier = Modifier) {
                 root.addView(danmaku, FrameLayout.LayoutParams(-1, -1))
                 legacy.bindPlayerView(video)
                 video.player = player
-                DanmakuController.attach(danmaku)
+                DanmakuController.attach(danmaku, video, player)
                 root.tag = Triple(video, danmaku, mpv)
                 root
             },
@@ -194,8 +188,12 @@ fun VideoSurface(modifier: Modifier = Modifier) {
                 video?.player = PlaybackSession.player
                 video?.resizeMode = PlaybackSession.resizeMode
                 video?.setRender(if (PlaybackSession.textureRender) 1 else 0)
-                if (danmaku != null && !DanmakuController.attachedTo(danmaku)) {
-                    DanmakuController.attach(danmaku)
+                if (danmaku != null) {
+                    if (!DanmakuController.attachedTo(danmaku)) {
+                        DanmakuController.attach(danmaku, video, PlaybackSession.player)
+                    } else {
+                        DanmakuController.setPlayer(PlaybackSession.player)
+                    }
                 }
             },
             onRelease = { root ->
