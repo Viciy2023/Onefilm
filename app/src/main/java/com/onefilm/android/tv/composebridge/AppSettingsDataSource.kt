@@ -109,6 +109,13 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
         danmakuTransparency = DanmakuSetting.getTransparency(),
         danmakuDurationMs = DanmakuSetting.getDurationMs(),
         danmakuLines = DanmakuSetting.getMaxScrollLines(),
+        danmakuStyle = DanmakuSetting.getStyleMode(),
+        danmakuColorMode = DanmakuSetting.getColorMode(),
+        danmakuBold = DanmakuSetting.isTextBold(),
+        danmakuTopLines = DanmakuSetting.getMaxTopLines(),
+        danmakuBottomLines = DanmakuSetting.getMaxBottomLines(),
+        danmakuTimeOffsetMs = DanmakuSetting.getTimeOffsetMs(),
+        danmakuMaxOnScreen = DanmakuSetting.getMaxOnScreen(),
         preloadEnabled = PreloadSetting.isEnabled(),
         preloadNext = PreloadSetting.isNextEpisodeEnabled(),
         preloadThreads = PreloadSetting.getThreads(),
@@ -246,6 +253,34 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
 
     override fun setDanmakuLines(lines: Int) {
         DanmakuSetting.putMaxScrollLines(lines)
+    }
+
+    override fun setDanmakuStyle(mode: Int) {
+        DanmakuSetting.putStyleMode(mode)
+    }
+
+    override fun setDanmakuColorMode(mode: Int) {
+        DanmakuSetting.putColorMode(mode)
+    }
+
+    override fun setDanmakuBold(bold: Boolean) {
+        DanmakuSetting.putTextBold(bold)
+    }
+
+    override fun setDanmakuTopLines(lines: Int) {
+        DanmakuSetting.putMaxTopLines(lines)
+    }
+
+    override fun setDanmakuBottomLines(lines: Int) {
+        DanmakuSetting.putMaxBottomLines(lines)
+    }
+
+    override fun setDanmakuTimeOffsetMs(offset: Long) {
+        DanmakuSetting.putTimeOffsetMs(offset)
+    }
+
+    override fun setDanmakuMaxOnScreen(value: Int) {
+        DanmakuSetting.putMaxOnScreen(value)
     }
 
     override fun setPreloadEnabled(enabled: Boolean) {

@@ -366,4 +366,20 @@
     <string name="search_rank_tv">TV ranking</string>
     <string name="search_rank_movie">Movie ranking</string>
     <string name="search_rank_variety">Variety ranking</string>
+    <string name="settings_danmaku_style">Danmaku style</string>
+    <string name="settings_danmaku_style_stroke">Stroke</string>
+    <string name="settings_danmaku_style_shadow">Shadow</string>
+    <string name="settings_danmaku_style_projection">Projection</string>
+    <string name="settings_danmaku_style_none">None</string>
+    <string name="settings_danmaku_color">Danmaku color</string>
+    <string name="settings_danmaku_color_default">Default</string>
+    <string name="settings_danmaku_color_override">White</string>
+    <string name="settings_danmaku_color_random">Random</string>
+    <string name="settings_danmaku_color_colorful">Colorful</string>
+    <string name="settings_danmaku_color_gradient">Gradient</string>
+    <string name="settings_danmaku_bold">Bold</string>
+    <string name="settings_danmaku_top_lines">Top rows</string>
+    <string name="settings_danmaku_bottom_lines">Bottom rows</string>
+    <string name="settings_danmaku_time_offset">Time offset</string>
+    <string name="settings_danmaku_max_on_screen">Max on screen</string>
 </resources>

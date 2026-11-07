@@ -7,6 +7,7 @@ import com.onefilm.android.tv.compose.bridge.DanmakuDataSource
 import com.onefilm.android.tv.compose.bridge.DanmakuDisplayConfig
 import com.onefilm.android.tv.compose.bridge.DanmakuSource
 import com.onefilm.android.tv.setting.DanmakuSetting
+import androidx.media3.ui.danmaku.DanmakuConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -50,4 +51,6 @@ class AppDanmakuDataSource : DanmakuDataSource {
             .map { it.trim() }
             .filter { it.isNotEmpty() },
     )
+
+    override fun engineConfig(): DanmakuConfig = DanmakuSetting.getConfig()
 }

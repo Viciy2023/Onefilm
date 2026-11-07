@@ -161,7 +161,19 @@ public final class DanmakuView extends View {
         paint.setTextSize(28f * scale);
         paint.setStyle(Paint.Style.FILL);
         drawActive(canvas, positionMs, scale, alpha);
-        if (active != null && active.isPlaying()) postInvalidateOnAnimation();
+        if (active != null && active.isPlaying()) {
+            if (activeItems.isEmpty()) {
+                // 空白期不空转：直接睡到下一条弹幕出现前再唤醒。
+                if (nextIndex < items.size()) {
+                    long delay = items.get(nextIndex).timeMs - positionMs;
+                    if (delay > 0) {
+                        postInvalidateDelayed(delay + 16L);
+                    }
+                }
+            } else {
+                postInvalidateOnAnimation();
+            }
+        }
     }
 
     /** 平滑时钟：播放器位置只做锚点/校正，帧间按真实时间推进。 */
@@ -231,8 +243,8 @@ public final class DanmakuView extends View {
 
     private void addActive(DanmakuItem item, long positionMs) {
         if (item.mode == DanmakuItem.MODE_SCROLL && !config.showScroll) return;
-        if (item.mode == DanmakuItem.MODE_TOP && !config.showTop) return;
-        if (item.mode == DanmakuItem.MODE_BOTTOM && !config.showBottom) return;
+        if (item.mode == DanmakuItem.MODE_TOP && (config.maxTopLines <= 0 || !config.showTop)) return;
+        if (item.mode == DanmakuItem.MODE_BOTTOM && (config.maxBottomLines <= 0 || !config.showBottom)) return;
         if (item.mode != DanmakuItem.MODE_SCROLL
                 && item.mode != DanmakuItem.MODE_TOP
                 && item.mode != DanmakuItem.MODE_BOTTOM) return;
@@ -240,12 +252,17 @@ public final class DanmakuView extends View {
         if (activeItems.size() >= maxOnScreen) return;
 
         ensureLanes();
-        paint.setTextSize(28f * Math.max(0.5f, config.textScale));
+        float scale = Math.max(0.5f, config.textScale);
+        paint.setTextSize(28f * scale);
+        paint.setTypeface(resolveTypeface());
         item.measure(paint);
         if (item.mode == DanmakuItem.MODE_SCROLL) {
             int lane = pick(scrollFree, item.timeMs);
             item.lane = lane;
-            scrollFree[lane] = item.timeMs + Math.max(250, visibleDuration(item));
+            float travel = getWidth() + item.width;
+            float gapPx = getWidth() * Math.max(0f, Math.min(0.5f, config.scrollGapRatio));
+            long gapMs = (long) (config.durationMs * gapPx / Math.max(1f, travel));
+            scrollFree[lane] = item.timeMs + Math.max(250, visibleDuration(item)) + gapMs;
         } else if (item.mode == DanmakuItem.MODE_TOP) {
             int lane = pick(topFree, item.timeMs);
             item.lane = lane;
@@ -263,6 +280,7 @@ public final class DanmakuView extends View {
         float laneHeight = (fontMetrics.descent - fontMetrics.ascent) + config.lineSpacing;
         float textSize = 28f * scale;
         float projectionAlpha = clamp(config.projectionTransparency);
+        Typeface typeface = resolveTypeface();
         paint.clearShadowLayer();
         paint.setStyle(Paint.Style.FILL);
         for (int i = 0; i < activeItems.size(); i++) {
@@ -281,7 +299,18 @@ public final class DanmakuView extends View {
                 x = (getWidth() - item.width) / 2f;
             }
             if (item.cacheBitmap == null) {
-                item.ensureCache(textSize, config.styleMode, scale, projectionAlpha, fontMetrics);
+                item.ensureCache(
+                        textSize,
+                        config.styleMode,
+                        config.colorMode,
+                        scale,
+                        projectionAlpha,
+                        config.shadowTransparency,
+                        config.strokeWidthMultiplier,
+                        config.projectionOffsetXMultiplier,
+                        config.projectionOffsetYMultiplier,
+                        typeface,
+                        fontMetrics);
             }
             if (item.cacheBitmap == null) continue;
             int itemAlpha = config.transparency >= 1f ? 0 : alpha;
@@ -311,7 +340,14 @@ public final class DanmakuView extends View {
     }
 
     private void ensureLanes() {
-        int scrollLanes = Math.max(1, config.maxScrollLines);
+        paint.setTextSize(28f * Math.max(0.5f, config.textScale));
+        paint.setTypeface(resolveTypeface());
+        paint.getFontMetrics(fontMetrics);
+        float laneHeight = (fontMetrics.descent - fontMetrics.ascent) + config.lineSpacing;
+        float areaRatio = Math.max(0.1f, Math.min(1f, config.scrollAreaRatio));
+        float areaHeight = getHeight() * areaRatio;
+        int byArea = Math.max(1, (int) (areaHeight / Math.max(1f, laneHeight)));
+        int scrollLanes = Math.max(1, Math.min(config.maxScrollLines, byArea));
         int topLanes = Math.max(1, config.maxTopLines);
         int bottomLanes = Math.max(1, config.maxBottomLines);
         if (scrollFree.length != scrollLanes) {
@@ -326,6 +362,11 @@ public final class DanmakuView extends View {
             bottomFree = new long[bottomLanes];
             resetLanes(bottomFree);
         }
+    }
+
+    private Typeface resolveTypeface() {
+        if (config.typeface != null) return config.typeface;
+        return config.textBold ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT;
     }
 
     private static void resetLanes(long[] lanes) {

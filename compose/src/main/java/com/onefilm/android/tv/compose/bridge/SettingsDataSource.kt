@@ -45,6 +45,13 @@ data class SettingsSnapshot(
     val forceUpdate: Boolean,
     val searchThreads: Int = 16,
     val adblock: Boolean = true,
+    val danmakuStyle: Int = 1,
+    val danmakuColorMode: Int = 0,
+    val danmakuBold: Boolean = true,
+    val danmakuTopLines: Int = 3,
+    val danmakuBottomLines: Int = 3,
+    val danmakuTimeOffsetMs: Long = 0L,
+    val danmakuMaxOnScreen: Int = 100,
 )
 
 /** 搜索线程候选值，设置页与搜索实现共用。 */
@@ -101,6 +108,13 @@ interface SettingsDataSource {
     fun setDanmakuTransparency(value: Float)
     fun setDanmakuDuration(ms: Long)
     fun setDanmakuLines(lines: Int)
+    fun setDanmakuStyle(mode: Int)
+    fun setDanmakuColorMode(mode: Int)
+    fun setDanmakuBold(bold: Boolean)
+    fun setDanmakuTopLines(lines: Int)
+    fun setDanmakuBottomLines(lines: Int)
+    fun setDanmakuTimeOffsetMs(offset: Long)
+    fun setDanmakuMaxOnScreen(value: Int)
 
     fun setPreloadEnabled(enabled: Boolean)
     fun setPreloadNext(enabled: Boolean)

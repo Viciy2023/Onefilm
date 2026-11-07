@@ -563,6 +563,78 @@ fun SettingsScreen(
             }
             item {
             SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = stringResource(R.string.settings_danmaku_style),
+                    options = listOf(
+                        stringResource(R.string.settings_danmaku_style_stroke) to (snapshot.danmakuStyle == 1),
+                        stringResource(R.string.settings_danmaku_style_shadow) to (snapshot.danmakuStyle == 2),
+                        stringResource(R.string.settings_danmaku_style_projection) to (snapshot.danmakuStyle == 3),
+                        stringResource(R.string.settings_danmaku_style_none) to (snapshot.danmakuStyle == 0),
+                    ),
+                ) { index -> refresh { setDanmakuStyle(listOf(1, 2, 3, 0)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = stringResource(R.string.settings_danmaku_color),
+                    options = listOf(
+                        stringResource(R.string.settings_danmaku_color_default) to (snapshot.danmakuColorMode == 0),
+                        stringResource(R.string.settings_danmaku_color_override) to (snapshot.danmakuColorMode == 1),
+                        stringResource(R.string.settings_danmaku_color_random) to (snapshot.danmakuColorMode == 2),
+                        stringResource(R.string.settings_danmaku_color_colorful) to (snapshot.danmakuColorMode == 3),
+                        stringResource(R.string.settings_danmaku_color_gradient) to (snapshot.danmakuColorMode == 4),
+                    ),
+                ) { index -> refresh { setDanmakuColorMode(index) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                SwitchRow(stringResource(R.string.settings_danmaku_bold), "", snapshot.danmakuBold) {
+                    refresh { setDanmakuBold(it) }
+                }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = stringResource(R.string.settings_danmaku_top_lines),
+                    options = listOf(0, 1, 2, 3, 5).map {
+                        (if (it == 0) stringResource(R.string.settings_off) else stringResource(R.string.settings_rows, it)) to (snapshot.danmakuTopLines == it)
+                    },
+                ) { index -> refresh { setDanmakuTopLines(listOf(0, 1, 2, 3, 5)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = stringResource(R.string.settings_danmaku_bottom_lines),
+                    options = listOf(0, 1, 2, 3, 5).map {
+                        (if (it == 0) stringResource(R.string.settings_off) else stringResource(R.string.settings_rows, it)) to (snapshot.danmakuBottomLines == it)
+                    },
+                ) { index -> refresh { setDanmakuBottomLines(listOf(0, 1, 2, 3, 5)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = stringResource(R.string.settings_danmaku_time_offset),
+                    options = listOf(-2000L, -1000L, 0L, 1000L, 2000L).map {
+                        (if (it > 0) "+" else "") + "${it / 1000}s" to (snapshot.danmakuTimeOffsetMs == it)
+                    },
+                ) { index -> refresh { setDanmakuTimeOffsetMs(listOf(-2000L, -1000L, 0L, 1000L, 2000L)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = stringResource(R.string.settings_danmaku_max_on_screen),
+                    options = listOf(50, 100, 150, 200, 300).map { "$it" to (snapshot.danmakuMaxOnScreen == it) },
+                ) { index -> refresh { setDanmakuMaxOnScreen(listOf(50, 100, 150, 200, 300)[index]) } }
+            }
+            }
+            item {
+            SettingsPanelRow {
                 ActionRow(
                     stringResource(R.string.settings_danmaku_block),
                     snapshot.danmakuBlockWords.ifBlank { stringResource(R.string.settings_not_set) },

@@ -51,19 +51,27 @@ object DanmakuController {
         private set
     private var durationMs by mutableLongStateOf(8000L)
     private var blockWords: List<String> = emptyList()
+    private var engineConfig: DanmakuConfig? = null
 
     private fun syncSettings() {
-        val config = ComposeDependencies.danmakuDataSource.displayConfig()
+        val dataSource = ComposeDependencies.danmakuDataSource
+        val config = dataSource.displayConfig()
         enabled = config.show
         textScale = config.scale
         transparency = config.transparency
         densityLines = config.lines
         durationMs = config.durationMs
         blockWords = config.blockWords
+        engineConfig = runCatching { dataSource.engineConfig() }.getOrNull()
         applyConfig()
     }
 
     private fun applyConfig() {
+        val full = engineConfig
+        if (full != null) {
+            view?.setConfig(full)
+            return
+        }
         view?.setConfig(
             DanmakuConfig.Builder()
                 .setTextScale(textScale)
@@ -75,32 +83,38 @@ object DanmakuController {
     }
 
     fun cycleDensity() {
-        densityLines = when (densityLines) {
+        val next = when (densityLines) {
             4 -> 8
             8 -> 12
             else -> 4
         }
-        applyConfig()
+        ComposeDependencies.settingsDataSource.setDanmakuLines(next)
+        densityLines = next
+        syncSettings()
     }
 
     fun cycleTransparency() {
-        transparency = when {
+        val next = when {
             transparency < 0.1f -> 0.25f
             transparency < 0.3f -> 0.5f
             transparency < 0.6f -> 0.7f
             else -> 0f
         }
-        applyConfig()
+        ComposeDependencies.settingsDataSource.setDanmakuTransparency(next)
+        transparency = next
+        syncSettings()
     }
 
     fun cycleScale() {
-        textScale = when {
+        val next = when {
             textScale < 0.9f -> 1.0f
             textScale < 1.1f -> 1.2f
             textScale < 1.3f -> 1.4f
             else -> 0.8f
         }
-        applyConfig()
+        ComposeDependencies.settingsDataSource.setDanmakuScale(next)
+        textScale = next
+        syncSettings()
     }
 
     fun attach(target: DanmakuView, host: PlayerView? = null, player: Player? = null) {
@@ -142,12 +156,14 @@ object DanmakuController {
 
     fun updateEnabled(value: Boolean) {
         enabled = value
+        ComposeDependencies.settingsDataSource.setDanmakuShow(value)
         view?.setEnabled(value)
         statusRes = if (value) R.string.common_on else R.string.common_off
     }
 
     fun toggle(context: Context, key: String, dataSource: DanmakuDataSource) {
         enabled = !enabled
+        ComposeDependencies.settingsDataSource.setDanmakuShow(enabled)
         view?.setEnabled(enabled)
         if (enabled && loadedKey != key) load(context, key, dataSource)
         if (!enabled) statusRes = R.string.common_off

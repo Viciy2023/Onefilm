@@ -366,4 +366,20 @@
     <string name="search_rank_tv">อันดับทีวี</string>
     <string name="search_rank_movie">อันดับภาพยนตร์</string>
     <string name="search_rank_variety">อันดับวาไรตี้</string>
+    <string name="settings_danmaku_style">สไตล์ดันมะคุ</string>
+    <string name="settings_danmaku_style_stroke">ขอบ</string>
+    <string name="settings_danmaku_style_shadow">เงา</string>
+    <string name="settings_danmaku_style_projection">เงาทึบ</string>
+    <string name="settings_danmaku_style_none">ไม่มี</string>
+    <string name="settings_danmaku_color">สีดันมะคุ</string>
+    <string name="settings_danmaku_color_default">ค่าเริ่มต้น</string>
+    <string name="settings_danmaku_color_override">สีขาว</string>
+    <string name="settings_danmaku_color_random">สุ่ม</string>
+    <string name="settings_danmaku_color_colorful">หลายสี</string>
+    <string name="settings_danmaku_color_gradient">ไล่สี</string>
+    <string name="settings_danmaku_bold">ตัวหนา</string>
+    <string name="settings_danmaku_top_lines">จำนวนบรรทัดบน</string>
+    <string name="settings_danmaku_bottom_lines">จำนวนบรรทัดล่าง</string>
+    <string name="settings_danmaku_time_offset">ชดเชยเวลา</string>
+    <string name="settings_danmaku_max_on_screen">สูงสุดบนหน้าจอ</string>
 </resources>

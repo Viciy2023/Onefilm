@@ -366,4 +366,20 @@
     <string name="search_rank_tv">Bảng xếp hạng TV</string>
     <string name="search_rank_movie">Bảng xếp hạng phim</string>
     <string name="search_rank_variety">Bảng xếp hạng giải trí</string>
+    <string name="settings_danmaku_style">Kiểu đạn mạc</string>
+    <string name="settings_danmaku_style_stroke">Viền</string>
+    <string name="settings_danmaku_style_shadow">Bóng</string>
+    <string name="settings_danmaku_style_projection">Đổ bóng</string>
+    <string name="settings_danmaku_style_none">Không</string>
+    <string name="settings_danmaku_color">Màu đạn mạc</string>
+    <string name="settings_danmaku_color_default">Mặc định</string>
+    <string name="settings_danmaku_color_override">Trắng</string>
+    <string name="settings_danmaku_color_random">Ngẫu nhiên</string>
+    <string name="settings_danmaku_color_colorful">Nhiều màu</string>
+    <string name="settings_danmaku_color_gradient">Chuyển sắc</string>
+    <string name="settings_danmaku_bold">Đậm</string>
+    <string name="settings_danmaku_top_lines">Số dòng trên</string>
+    <string name="settings_danmaku_bottom_lines">Số dòng dưới</string>
+    <string name="settings_danmaku_time_offset">Lệch thời gian</string>
+    <string name="settings_danmaku_max_on_screen">Tối đa trên màn hình</string>
 </resources>

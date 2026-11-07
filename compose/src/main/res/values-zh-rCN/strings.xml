@@ -366,4 +366,20 @@
     <string name="search_rank_tv">电视榜</string>
     <string name="search_rank_movie">电影榜</string>
     <string name="search_rank_variety">综艺榜</string>
+    <string name="settings_danmaku_style">弹幕样式</string>
+    <string name="settings_danmaku_style_stroke">描边</string>
+    <string name="settings_danmaku_style_shadow">阴影</string>
+    <string name="settings_danmaku_style_projection">投影</string>
+    <string name="settings_danmaku_style_none">无</string>
+    <string name="settings_danmaku_color">弹幕颜色</string>
+    <string name="settings_danmaku_color_default">默认</string>
+    <string name="settings_danmaku_color_override">白色</string>
+    <string name="settings_danmaku_color_random">随机</string>
+    <string name="settings_danmaku_color_colorful">彩色</string>
+    <string name="settings_danmaku_color_gradient">渐变</string>
+    <string name="settings_danmaku_bold">加粗</string>
+    <string name="settings_danmaku_top_lines">顶部行数</string>
+    <string name="settings_danmaku_bottom_lines">底部行数</string>
+    <string name="settings_danmaku_time_offset">时间偏移</string>
+    <string name="settings_danmaku_max_on_screen">同屏上限</string>
 </resources>
