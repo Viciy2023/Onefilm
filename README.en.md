@@ -18,10 +18,19 @@ If you already have a legal media source, a TVBOX-compatible config, or live cha
 - **Looks good, works well**: a clean, bright interface, smooth card animations, nothing in the way. Open it and watch.
 - **Comfortable viewing**: subtitles, audio tracks, aspect ratio, playback speed, danmaku, and more playback settings.
 - **Video ad filtering**: automatically detects and skips m3u8 pre-roll ads; sources not covered by rules fall back to URL signatures and PTS timeline continuity.
+- **Danmaku**: works with common danmaku endpoints or a custom danmaku API, matching title and episode automatically. Public or self-hosted nodes are supported.
 - **Pick up where you left off**: favorites, watch history, and resume points are all saved, so changing episodes or sources doesn't mean searching again.
 - **Five languages, one tap away**: Simplified Chinese, Traditional Chinese, English, Tiếng Việt, and ไทย. Switch them in Settings.
 
 ## What it does
+
+### Danmaku
+
+Works with common danmaku endpoints, or set a custom danmaku API in Settings. Title and episode are matched automatically; public nodes and self-hosted services are both supported.
+
+![Danmaku in full screen](docs/screenshots/readme/danmaku-large.jpg)
+
+![Danmaku in the inline player](docs/screenshots/readme/danmaku-small.jpg)
 
 ### Your living-room media hub
 

@@ -18,10 +18,19 @@ Nếu bạn đã có nguồn phim hợp pháp, cấu hình tương thích TVBOX 
 - **Đẹp và dễ dùng**: giao diện sáng, gọn, hiệu ứng thẻ mượt, không làm phiền; mở lên là xem.
 - **Xem thoải mái**: hỗ trợ phụ đề, âm thanh, tỉ lệ khung hình, tốc độ phát, danmaku và nhiều tuỳ chọn phát khác.
 - **Lọc quảng cáo video**: tự động nhận diện và bỏ qua quảng cáo m3u8; nguồn chưa có quy tắc sẽ dựa vào đặc điểm URL và tính liên tục của dòng thời gian PTS.
+- **Bình luận bay**: tương thích máy chủ bình luận bay thông dụng hoặc API tùy chỉnh, tự động khớp tên phim và tập; hỗ trợ nút công cộng hoặc tự dựng.
 - **Lần sau xem tiếp**: yêu thích, lịch sử xem và vị trí xem tiếp đều được lưu, đổi tập hay đổi nguồn không cần tìm lại.
 - **Năm ngôn ngữ, chuyển trong một chạm**: 简体中文, 繁體中文, English, Tiếng Việt, ไทย, chuyển ngay trong Cài đặt.
 
 ## Ứng dụng làm được gì
+
+### Bình luận bay
+
+Tương thích máy chủ bình luận bay thông dụng, hoặc tự nhập API bình luận bay trong Cài đặt. Tự động khớp tên phim và tập; hỗ trợ nút công cộng và dịch vụ tự dựng.
+
+![Bình luận bay toàn màn hình](docs/screenshots/readme/danmaku-large.jpg)
+
+![Bình luận bay trong cửa sổ nhỏ](docs/screenshots/readme/danmaku-small.jpg)
 
 ### Cổng nội dung trong phòng khách
 
