@@ -33,6 +33,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -121,6 +123,7 @@ fun SettingsScreen(
     val configRowFocus = remember { List(3) { FocusRequester() } }
     val danmakuApiFocus = remember { FocusRequester() }
     val blockWordsFocus = remember { FocusRequester() }
+    val contactQrBringIntoView = remember { BringIntoViewRequester() }
     val listState = rememberLazyListState()
     val firstSettingFocus = remember { FocusRequester() }
     val editFieldFocus = remember { FocusRequester() }
@@ -137,6 +140,13 @@ fun SettingsScreen(
             val type = editType ?: return@LaunchedEffect
             delay(150)
             if (type in configRowFocus.indices) runCatching { configRowFocus[type].requestFocus() }
+        }
+    }
+    LaunchedEffect(showContact) {
+        // 二维码在“联系我们”上方展开后，把列表上滑，保证整张二维码完整可见。
+        if (showContact) {
+            delay(180)
+            runCatching { contactQrBringIntoView.bringIntoView() }
         }
     }
     LaunchedEffect(Unit) {
@@ -787,7 +797,10 @@ fun SettingsScreen(
             item {
                 if (showContact) {
                     Box(
-                        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        Modifier
+                            .fillMaxWidth()
+                            .bringIntoViewRequester(contactQrBringIntoView)
+                            .padding(vertical = 8.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Image(
