@@ -116,6 +116,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public class VideoActivity extends VodPlaybackActivity implements Clock.Callback, CustomKeyDown.Listener, ControlDialog.Listener, ParseDialog.Listener, VodPlaybackHost, FlagAdapter.OnClickListener, EpisodeAdapter.OnClickListener, QualityAdapter.OnClickListener, QuickAdapter.OnClickListener, CastDialog.Listener, InfoDialog.Listener {
@@ -1081,6 +1082,9 @@ public class VideoActivity extends VodPlaybackActivity implements Clock.Callback
         mBinding.control.back.setVisibility(isLock() ? View.GONE : View.VISIBLE);
         mBinding.control.top.setVisibility(isLock() ? View.GONE : View.VISIBLE);
         mBinding.control.getRoot().setVisibility(View.VISIBLE);
+        long position = player().getPosition();
+        long duration = player().getDuration();
+        if (position >= 0 && duration > 0) updateTimeView(position, duration);
         setR1Callback();
     }
 
@@ -1275,7 +1279,23 @@ public class VideoActivity extends VodPlaybackActivity implements Clock.Callback
         long position = player().getPosition();
         long duration = player().getDuration();
         if (position < 0 || duration <= 0) return;
+        updateTimeView(position, duration);
         mVod.onTimeChanged(time, position, duration);
+    }
+
+    private void updateTimeView(long position, long duration) {
+        mBinding.control.position.setText(formatTime(position));
+        mBinding.control.duration.setText(formatTime(duration));
+    }
+
+    private static String formatTime(long millis) {
+        long totalSeconds = Math.max(0, millis) / 1000;
+        long seconds = totalSeconds % 60;
+        long minutes = (totalSeconds / 60) % 60;
+        long hours = totalSeconds / 3600;
+        return hours > 0
+                ? String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds)
+                : String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
