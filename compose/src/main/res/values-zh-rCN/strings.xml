@@ -380,6 +380,7 @@
     <string name="settings_danmaku_bold">加粗</string>
     <string name="settings_danmaku_top_lines">顶部行数</string>
     <string name="settings_danmaku_bottom_lines">底部行数</string>
+    <string name="settings_danmaku_auto_rows">自动</string>
     <string name="settings_danmaku_time_offset">时间偏移</string>
     <string name="settings_danmaku_max_on_screen">同屏上限</string>
 </resources>

@@ -243,8 +243,8 @@ public final class DanmakuView extends View {
 
     private void addActive(DanmakuItem item, long positionMs) {
         if (item.mode == DanmakuItem.MODE_SCROLL && !config.showScroll) return;
-        if (item.mode == DanmakuItem.MODE_TOP && (config.maxTopLines <= 0 || !config.showTop)) return;
-        if (item.mode == DanmakuItem.MODE_BOTTOM && (config.maxBottomLines <= 0 || !config.showBottom)) return;
+        if (item.mode == DanmakuItem.MODE_TOP && !config.showTop) return;
+        if (item.mode == DanmakuItem.MODE_BOTTOM && !config.showBottom) return;
         if (item.mode != DanmakuItem.MODE_SCROLL
                 && item.mode != DanmakuItem.MODE_TOP
                 && item.mode != DanmakuItem.MODE_BOTTOM) return;
@@ -347,9 +347,12 @@ public final class DanmakuView extends View {
         float areaRatio = Math.max(0.1f, Math.min(1f, config.scrollAreaRatio));
         float areaHeight = getHeight() * areaRatio;
         int byArea = Math.max(1, (int) (areaHeight / Math.max(1f, laneHeight)));
-        int scrollLanes = Math.max(1, Math.min(config.maxScrollLines, byArea));
-        int topLanes = Math.max(1, config.maxTopLines);
-        int bottomLanes = Math.max(1, config.maxBottomLines);
+        // 0 表示“自动”：滚动行数按可视区域计算，顶部/底部默认 3 行。
+        int scrollLanes = config.maxScrollLines <= 0
+                ? byArea
+                : Math.max(1, Math.min(config.maxScrollLines, byArea));
+        int topLanes = config.maxTopLines <= 0 ? 3 : Math.max(1, config.maxTopLines);
+        int bottomLanes = config.maxBottomLines <= 0 ? 3 : Math.max(1, config.maxBottomLines);
         if (scrollFree.length != scrollLanes) {
             scrollFree = new long[scrollLanes];
             resetLanes(scrollFree);

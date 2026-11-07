@@ -557,8 +557,10 @@ fun SettingsScreen(
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_scroll_lines),
-                    options = listOf(4, 8, 12).map { stringResource(R.string.settings_rows, it) to (snapshot.danmakuLines == it) },
-                ) { index -> refresh { setDanmakuLines(listOf(4, 8, 12)[index]) } }
+                    options = listOf(0, 4, 8, 12).map {
+                        (if (it == 0) stringResource(R.string.settings_danmaku_auto_rows) else stringResource(R.string.settings_rows, it)) to (snapshot.danmakuLines == it)
+                    },
+                ) { index -> refresh { setDanmakuLines(listOf(0, 4, 8, 12)[index]) } }
             }
             }
             item {
@@ -600,7 +602,7 @@ fun SettingsScreen(
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_danmaku_top_lines),
                     options = listOf(0, 1, 2, 3, 5).map {
-                        (if (it == 0) stringResource(R.string.settings_off) else stringResource(R.string.settings_rows, it)) to (snapshot.danmakuTopLines == it)
+                        (if (it == 0) stringResource(R.string.settings_danmaku_auto_rows) else stringResource(R.string.settings_rows, it)) to (snapshot.danmakuTopLines == it)
                     },
                 ) { index -> refresh { setDanmakuTopLines(listOf(0, 1, 2, 3, 5)[index]) } }
             }
@@ -610,7 +612,7 @@ fun SettingsScreen(
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_danmaku_bottom_lines),
                     options = listOf(0, 1, 2, 3, 5).map {
-                        (if (it == 0) stringResource(R.string.settings_off) else stringResource(R.string.settings_rows, it)) to (snapshot.danmakuBottomLines == it)
+                        (if (it == 0) stringResource(R.string.settings_danmaku_auto_rows) else stringResource(R.string.settings_rows, it)) to (snapshot.danmakuBottomLines == it)
                     },
                 ) { index -> refresh { setDanmakuBottomLines(listOf(0, 1, 2, 3, 5)[index]) } }
             }

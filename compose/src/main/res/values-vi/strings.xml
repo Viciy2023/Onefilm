@@ -380,6 +380,7 @@
     <string name="settings_danmaku_bold">Đậm</string>
     <string name="settings_danmaku_top_lines">Số dòng trên</string>
     <string name="settings_danmaku_bottom_lines">Số dòng dưới</string>
+    <string name="settings_danmaku_auto_rows">Tự động</string>
     <string name="settings_danmaku_time_offset">Lệch thời gian</string>
     <string name="settings_danmaku_max_on_screen">Tối đa trên màn hình</string>
 </resources>

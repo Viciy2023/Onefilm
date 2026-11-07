@@ -380,6 +380,7 @@
     <string name="settings_danmaku_bold">Bold</string>
     <string name="settings_danmaku_top_lines">Top rows</string>
     <string name="settings_danmaku_bottom_lines">Bottom rows</string>
+    <string name="settings_danmaku_auto_rows">Auto</string>
     <string name="settings_danmaku_time_offset">Time offset</string>
     <string name="settings_danmaku_max_on_screen">Max on screen</string>
 </resources>

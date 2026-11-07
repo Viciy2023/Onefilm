@@ -380,6 +380,7 @@
     <string name="settings_danmaku_bold">ตัวหนา</string>
     <string name="settings_danmaku_top_lines">จำนวนบรรทัดบน</string>
     <string name="settings_danmaku_bottom_lines">จำนวนบรรทัดล่าง</string>
+    <string name="settings_danmaku_auto_rows">อัตโนมัติ</string>
     <string name="settings_danmaku_time_offset">ชดเชยเวลา</string>
     <string name="settings_danmaku_max_on_screen">สูงสุดบนหน้าจอ</string>
 </resources>
