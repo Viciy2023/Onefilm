@@ -15,6 +15,10 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -124,7 +128,7 @@ fun SettingsScreen(
     val danmakuApiFocus = remember { FocusRequester() }
     val blockWordsFocus = remember { FocusRequester() }
     val contactQrBringIntoView = remember { BringIntoViewRequester() }
-    val listState = rememberLazyListState()
+    val listState = rememberLazyGridState()
     val firstSettingFocus = remember { FocusRequester() }
     val editFieldFocus = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
@@ -289,15 +293,17 @@ fun SettingsScreen(
                 },
             )
             else -> {
-                LazyColumn(
-                    Modifier.fillMaxSize(),
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.fillMaxSize(),
                     state = listState,
                     verticalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsGroupTitle(stringResource(R.string.settings_network))
             }
-            item {
+            item(span = { GridItemSpan(2) }) {
             ConfigBlock(
                 modifier = Modifier.fillMaxWidth().height(32.dp),
                 title = stringResource(R.string.settings_vod_url),
@@ -322,7 +328,7 @@ fun SettingsScreen(
                 },
             )
             }
-            item {
+            item(span = { GridItemSpan(2) }) {
             ConfigBlock(
                 modifier = Modifier.fillMaxWidth().height(32.dp),
                 title = stringResource(R.string.settings_live_url),
@@ -347,7 +353,7 @@ fun SettingsScreen(
                 },
             )
             }
-            item {
+            item(span = { GridItemSpan(2) }) {
             ConfigBlock(
                 modifier = Modifier.fillMaxWidth().height(32.dp),
                 title = stringResource(R.string.settings_wall_url),
@@ -372,7 +378,7 @@ fun SettingsScreen(
                 },
             )
             }
-            item {
+            item(span = { GridItemSpan(2) }) {
             ConfigBlock(
                 modifier = Modifier.fillMaxWidth().height(32.dp),
                 title = stringResource(R.string.settings_danmaku_api),
@@ -391,10 +397,10 @@ fun SettingsScreen(
             )
             }
 
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsGroupTitle(stringResource(R.string.settings_appearance))
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 val languageTags = com.onefilm.android.tv.compose.bridge.LanguageBridge.tags()
                 val languageCurrent = com.onefilm.android.tv.compose.bridge.LanguageBridge.current()
@@ -411,7 +417,7 @@ fun SettingsScreen(
                 }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_theme_title),
@@ -427,17 +433,17 @@ fun SettingsScreen(
                 }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ActionRow(stringResource(R.string.settings_wall_switch), snapshot.wallpaperLabel) { refresh { cycleWallpaper() } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ActionRow("DoH", snapshot.dohLabel.ifBlank { stringResource(R.string.settings_follow_config) }) { refresh { cycleDoh() } }
             }
             }
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_incognito), stringResource(R.string.settings_no_history), snapshot.incognito) {
                     refresh { setIncognito(it) }
@@ -445,10 +451,10 @@ fun SettingsScreen(
             }
             }
 
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsGroupTitle(stringResource(R.string.settings_subtitle))
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_subtitle_position),
@@ -459,12 +465,12 @@ fun SettingsScreen(
                 ) { index -> refresh { setSubtitlePosition(listOf(-5f, 0f, 5f, 10f, 20f)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ActionRow(stringResource(R.string.settings_subtitle_color), snapshot.subtitleColorLabel) { refresh { cycleSubtitleColor() } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_subtitle_outline),
@@ -474,7 +480,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setSubtitleEdgeWidth(listOf(0f, 1f, 2f, 4f)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_subtitle_size),
@@ -485,7 +491,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setSubtitleScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_subtitle_style),
@@ -499,31 +505,31 @@ fun SettingsScreen(
             }
             }
 
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsGroupTitle(stringResource(R.string.settings_danmaku))
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_danmaku_show), stringResource(R.string.settings_load_danmaku), snapshot.danmakuShow) {
                     refresh { setDanmakuShow(it) }
                 }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_danmaku_load), stringResource(R.string.settings_danmaku_load_desc), snapshot.danmakuLoad) {
                     refresh { setDanmakuLoad(it) }
                 }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_danmaku_auto), stringResource(R.string.settings_danmaku_auto_desc), snapshot.danmakuAuto) {
                     refresh { setDanmakuAuto(it) }
                 }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_danmaku_size),
@@ -533,7 +539,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setDanmakuScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_danmaku_opacity),
@@ -543,7 +549,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setDanmakuTransparency(listOf(0f, 0.25f, 0.5f, 0.7f)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_danmaku_speed),
@@ -553,7 +559,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setDanmakuDuration(listOf(6000L, 8000L, 10000L)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_scroll_lines),
@@ -563,7 +569,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setDanmakuLines(listOf(0, 4, 8, 12)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_danmaku_style),
@@ -576,7 +582,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setDanmakuStyle(listOf(1, 2, 3, 0)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_danmaku_color),
@@ -590,14 +596,14 @@ fun SettingsScreen(
                 ) { index -> refresh { setDanmakuColorMode(index) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_danmaku_bold), "", snapshot.danmakuBold) {
                     refresh { setDanmakuBold(it) }
                 }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_danmaku_top_lines),
@@ -607,7 +613,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setDanmakuTopLines(listOf(0, 1, 2, 3, 5)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_danmaku_bottom_lines),
@@ -617,7 +623,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setDanmakuBottomLines(listOf(0, 1, 2, 3, 5)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_danmaku_time_offset),
@@ -627,7 +633,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setDanmakuTimeOffsetMs(listOf(-2000L, -1000L, 0L, 1000L, 2000L)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_danmaku_max_on_screen),
@@ -635,7 +641,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setDanmakuMaxOnScreen(listOf(50, 100, 150, 200, 300)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsPanelRow {
                 ActionRow(
                     stringResource(R.string.settings_danmaku_block),
@@ -648,10 +654,10 @@ fun SettingsScreen(
             }
             }
 
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsGroupTitle(stringResource(R.string.settings_playback))
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 SwitchRow(
                     stringResource(R.string.settings_adblock),
@@ -660,7 +666,7 @@ fun SettingsScreen(
                 ) { enabled -> refresh { setAdblock(enabled) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_player_engine),
@@ -669,7 +675,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setEngine(index == 1) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_background_play),
@@ -682,7 +688,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setBackground(index) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_buffer),
@@ -693,7 +699,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setBufferSeconds(listOf(1, 2, 5, 10)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_render_mode),
@@ -702,12 +708,12 @@ fun SettingsScreen(
                 ) { index -> refresh { setRenderTexture(index == 1) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_tunnel), stringResource(R.string.settings_need_surface), snapshot.tunnel) { refresh { setTunnel(it) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ActionRow(
                     title = stringResource(R.string.settings_dv_output),
@@ -715,30 +721,30 @@ fun SettingsScreen(
                 ) { refresh { cycleDolbyVisionPolicy() } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ActionRow(stringResource(R.string.settings_play_timeout), stringResource(R.string.settings_seconds, snapshot.playTimeoutSeconds)) { refresh { cyclePlayTimeout() } }
             }
             }
 
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsGroupTitle(stringResource(R.string.settings_audio))
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_audio_passthrough), stringResource(R.string.settings_hdmi_passthrough), snapshot.audioPassThrough) {
                     refresh { setAudioPassThrough(it) }
                 }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_audio_soft), stringResource(R.string.settings_soft_audio_hint), snapshot.audioPrefer) {
                     refresh { setAudioPrefer(it) }
                 }
             }
             }
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_video_soft), stringResource(R.string.settings_soft_video_hint), snapshot.videoPrefer) {
                     refresh { setVideoPrefer(it) }
@@ -746,10 +752,10 @@ fun SettingsScreen(
             }
             }
 
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsGroupTitle(stringResource(R.string.settings_search))
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_search_threads),
@@ -760,7 +766,7 @@ fun SettingsScreen(
                 }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 val sites = remember(snapshot.configUrl, showSearchSites) { dataSource.searchSites() }
                 val enabledCount = sites.count { it.enabled }
@@ -774,21 +780,21 @@ fun SettingsScreen(
                 ) { showSearchSites = true }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_enable_preload), stringResource(R.string.settings_legacy_preload_hint), snapshot.preloadEnabled) {
                     refresh { setPreloadEnabled(it) }
                 }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_preload_next), stringResource(R.string.settings_exo_only), snapshot.preloadNext) {
                     refresh { setPreloadNext(it) }
                 }
             }
             }
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_preload_threads),
@@ -797,10 +803,10 @@ fun SettingsScreen(
             }
             }
 
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsGroupTitle(stringResource(R.string.settings_storage))
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_cache_size),
@@ -810,7 +816,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setPreloadSizeMb(listOf(128, 256, 512, 1024)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_cache_days),
@@ -820,14 +826,14 @@ fun SettingsScreen(
                 ) { index -> refresh { setCacheDays(listOf(7, 30, 60, 90)[index]) } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ActionRow(stringResource(R.string.settings_cache_clear), snapshot.cacheSizeLabel) {
                     showClearCacheConfirm = true
                 }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 val context = LocalContext.current
                 ActionRow(stringResource(R.string.settings_export_diag), stringResource(R.string.settings_write_download)) {
@@ -837,12 +843,12 @@ fun SettingsScreen(
                 }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ActionRow(stringResource(R.string.settings_reset_ua), stringResource(R.string.settings_clear_custom)) { refresh { resetUa() } }
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 SwitchRow(
                     stringResource(R.string.settings_force_update),
@@ -852,15 +858,15 @@ fun SettingsScreen(
             }
             }
 
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsGroupTitle(stringResource(R.string.settings_about))
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 InfoRow(stringResource(R.string.settings_version_title), "${snapshot.version} · GPL-3.0")
             }
             }
-            item {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 InfoRow(
                     stringResource(R.string.settings_latest_version),
@@ -868,7 +874,7 @@ fun SettingsScreen(
                 )
             }
             }
-            item {
+            item(span = { GridItemSpan(2) }) {
                 if (showContact) {
                     Box(
                         Modifier
@@ -886,7 +892,7 @@ fun SettingsScreen(
                     }
                 }
             }
-            item {
+            item(span = { GridItemSpan(2) }) {
             SettingsPanelRow {
                 ActionRow(
                     stringResource(R.string.settings_contact_us),
