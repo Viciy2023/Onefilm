@@ -65,6 +65,11 @@
     <string name="settings_language_title">ภาษา</string>
     <string name="settings_version_title">เวอร์ชัน</string>
     <string name="settings_latest_version">เวอร์ชันล่าสุด</string>
+    <string name="settings_contact_us">ติดต่อเรา</string>
+    <string name="settings_contact_us_desc">เข้าร่วมกลุ่ม Telegram</string>
+    <string name="settings_contact_qr_desc">QR โค้ดกลุ่ม Telegram</string>
+    <string name="settings_contact_qr_hint">สแกนด้วย Telegram เพื่อเข้าร่วม</string>
+    <string name="settings_close">ปิด</string>
     <string name="settings_vod_url">อินเทอร์เฟซ VOD</string>
     <string name="settings_live_url">อินเทอร์เฟซถ่ายทอดสด</string>
     <string name="settings_wall_url">อินเทอร์เฟซวอลเปเปอร์</string>

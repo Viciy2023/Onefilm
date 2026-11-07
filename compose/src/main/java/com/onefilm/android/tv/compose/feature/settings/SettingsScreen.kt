@@ -85,6 +85,7 @@ import com.onefilm.android.tv.compose.design.ThemeController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.onefilm.android.tv.compose.R
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 
 @Composable
@@ -106,6 +107,7 @@ fun SettingsScreen(
     var blockWordsDraft by remember { mutableStateOf("") }
     var showClearCacheConfirm by remember { mutableStateOf(false) }
     var showSearchSites by remember { mutableStateOf(false) }
+    var showContact by remember { mutableStateOf(false) }
     var panelPage by remember { mutableStateOf(0) }
     var latestVersion by remember { mutableStateOf<String?>(null) }
     BackHandler(enabled = panelMode) {
@@ -710,6 +712,14 @@ fun SettingsScreen(
                 )
             }
             }
+            item {
+            SettingsPanelRow {
+                ActionRow(
+                    stringResource(R.string.settings_contact_us),
+                    stringResource(R.string.settings_contact_us_desc),
+                ) { showContact = true }
+            }
+            }
                 }
             }
         }
@@ -761,6 +771,35 @@ fun SettingsScreen(
                     primary = true,
                 )
             }
+        }
+    }
+
+    if (showContact) {
+        SettingsDialog(
+            onDismiss = { showContact = false },
+            width = 360.dp,
+            padding = 16.dp,
+        ) {
+            Text(stringResource(R.string.settings_contact_us), fontSize = 15.sp)
+            Spacer(Modifier.height(10.dp))
+            Image(
+                painter = painterResource(R.drawable.telegram_qr),
+                contentDescription = stringResource(R.string.settings_contact_qr_desc),
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(240.dp),
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.settings_contact_qr_hint),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(12.dp))
+            SettingsButton(
+                text = stringResource(R.string.settings_close),
+                onClick = { showContact = false },
+                primary = true,
+            )
         }
     }
 
