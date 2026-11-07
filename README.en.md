@@ -17,6 +17,7 @@ If you already have a legal media source, a TVBOX-compatible config, or live cha
 - **Built for the TV**: large text, large posters, and a clear focus highlight, so everything works from the sofa with a remote.
 - **Looks good, works well**: a clean, bright interface, smooth card animations, nothing in the way. Open it and watch.
 - **Comfortable viewing**: subtitles, audio tracks, aspect ratio, playback speed, danmaku, and more playback settings.
+- **Video ad filtering**: automatically detects and skips m3u8 pre-roll ads; sources not covered by rules fall back to URL signatures and PTS timeline continuity.
 - **Pick up where you left off**: favorites, watch history, and resume points are all saved, so changing episodes or sources doesn't mean searching again.
 - **Five languages, one tap away**: Simplified Chinese, Traditional Chinese, English, Tiếng Việt, and ไทย. Switch them in Settings.
 

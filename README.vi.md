@@ -17,6 +17,7 @@ Nếu bạn đã có nguồn phim hợp pháp, cấu hình tương thích TVBOX 
 - **Sinh ra cho TV**: chữ lớn, poster lớn, điểm sáng tiêu điểm rõ ràng, ngồi trên ghế sofa dùng điều khiển là làm được mọi thứ.
 - **Đẹp và dễ dùng**: giao diện sáng, gọn, hiệu ứng thẻ mượt, không làm phiền; mở lên là xem.
 - **Xem thoải mái**: hỗ trợ phụ đề, âm thanh, tỉ lệ khung hình, tốc độ phát, danmaku và nhiều tuỳ chọn phát khác.
+- **Lọc quảng cáo video**: tự động nhận diện và bỏ qua quảng cáo m3u8; nguồn chưa có quy tắc sẽ dựa vào đặc điểm URL và tính liên tục của dòng thời gian PTS.
 - **Lần sau xem tiếp**: yêu thích, lịch sử xem và vị trí xem tiếp đều được lưu, đổi tập hay đổi nguồn không cần tìm lại.
 - **Năm ngôn ngữ, chuyển trong một chạm**: 简体中文, 繁體中文, English, Tiếng Việt, ไทย, chuyển ngay trong Cài đặt.
 
