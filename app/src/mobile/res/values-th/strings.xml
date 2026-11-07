@@ -104,6 +104,7 @@
     <string name="mobile_settings_incognito_desc">ไม่บันทึกประวัติหรือแคช</string>
     <string name="mobile_settings_adblock">บล็อกโฆษณา</string>
     <string name="mobile_settings_adblock_desc">ข้ามโฆษณาในสตรีม HLS อัตโนมัติเมื่อเล่น</string>
+    <string name="mobile_ad_filter_success_tip">ONEFILM แจ้งเตือน: ข้ามโฆษณาในเรื่องนี้แล้ว ขอให้รับชมอย่างมีความสุข!</string>
     <string name="mobile_settings_section_subtitle">คำบรรยาย</string>
     <string name="mobile_settings_subtitle_position">ตำแหน่ง</string>
     <string name="mobile_settings_subtitle_color">สี</string>

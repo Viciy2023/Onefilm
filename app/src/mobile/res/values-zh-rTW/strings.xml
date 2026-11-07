@@ -104,6 +104,7 @@
     <string name="mobile_settings_incognito_desc">不寫入歷史與快取</string>
     <string name="mobile_settings_adblock">廣告過濾</string>
     <string name="mobile_settings_adblock_desc">播放時自動跳過 m3u8 貼片廣告</string>
+    <string name="mobile_ad_filter_success_tip">ONEFILM提示您：本片廣告過濾成功，祝您觀影愉快！</string>
     <string name="mobile_settings_section_subtitle">字幕</string>
     <string name="mobile_settings_subtitle_position">字幕位置</string>
     <string name="mobile_settings_subtitle_color">字幕顏色</string>

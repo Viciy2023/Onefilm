@@ -47,6 +47,8 @@ import com.onefilm.android.tv.api.DanmakuApi;
 import com.onefilm.android.tv.api.SiteApi;
 import com.onefilm.android.tv.api.config.VodConfig;
 import com.onefilm.android.tv.bean.Danmaku;
+import com.onefilm.android.tv.core.adblock.AdFilterNotifier;
+import com.onefilm.android.tv.ui.widget.MobileAdFilterTip;
 import com.onefilm.android.tv.bean.Episode;
 import com.onefilm.android.tv.bean.Flag;
 import com.onefilm.android.tv.bean.History;
@@ -255,7 +257,14 @@ public class VideoActivity extends VodPlaybackActivity implements Clock.Callback
     protected void onCreate(Bundle savedInstanceState) {
         applyThemeMode();
         super.onCreate(savedInstanceState);
+        AdFilterNotifier.INSTANCE.addListener(adFilterListener);
     }
+
+    private final AdFilterNotifier.Listener adFilterListener = seconds ->
+            runOnUiThread(() -> {
+                if (isFinishing() || isDestroyed()) return;
+                MobileAdFilterTip.show(this);
+            });
 
     /** 详情页跟随设置里的主题：0=简约（浅色）、1=深色、2=跟随系统。 */
     private void applyThemeMode() {
@@ -1540,6 +1549,7 @@ public class VideoActivity extends VodPlaybackActivity implements Clock.Callback
 
     @Override
     protected void onDestroy() {
+        AdFilterNotifier.INSTANCE.removeListener(adFilterListener);
         mClock.release();
         saveHistory(true);
         Timer.get().reset();
