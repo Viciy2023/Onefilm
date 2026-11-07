@@ -49,3 +49,6 @@ buglybin/
 
 # Local test APKs (not committed)
 /*.apk
+
+# wrangler local state
+.wrangler/
