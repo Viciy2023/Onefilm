@@ -46,3 +46,6 @@ buglybin/
 .mnemon/runtime/MEMORY.md
 .mnemon/runtime/USER.md
 *.hprof
+
+# Local test APKs (not committed)
+/*.apk
