@@ -64,6 +64,7 @@
     <string name="settings_theme_title">外观主题</string>
     <string name="settings_language_title">界面语言</string>
     <string name="settings_version_title">版本</string>
+    <string name="settings_latest_version">最新版本</string>
     <string name="settings_vod_url">点播接口</string>
     <string name="settings_live_url">直播接口</string>
     <string name="settings_wall_url">壁纸接口</string>

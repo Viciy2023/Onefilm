@@ -41,6 +41,20 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
     @Volatile
     private var cachedCacheSizeLabel: String = context.getString(R.string.settings_calculating)
 
+    @Volatile
+    private var cachedLatestVersion: String? = null
+
+    override suspend fun latestVersion(): String {
+        cachedLatestVersion?.let { return it }
+        val version = withContext(Dispatchers.IO) {
+            runCatching { com.onefilm.android.tv.utils.UpdateManifest.fetch().version }
+                .getOrNull()
+                .orEmpty()
+        }
+        if (version.isNotBlank()) cachedLatestVersion = version
+        return version
+    }
+
     init {
         EventBus.getDefault().register(this)
         Thread {

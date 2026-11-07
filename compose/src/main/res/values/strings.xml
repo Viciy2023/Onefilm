@@ -64,6 +64,7 @@
     <string name="settings_theme_title">Theme</string>
     <string name="settings_language_title">Language</string>
     <string name="settings_version_title">Version</string>
+    <string name="settings_latest_version">Latest version</string>
     <string name="settings_vod_url">VOD interface</string>
     <string name="settings_live_url">Live interface</string>
     <string name="settings_wall_url">Wallpaper interface</string>

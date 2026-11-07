@@ -67,6 +67,9 @@ data class ConfigLine(
 interface SettingsDataSource {
     fun load(): SettingsSnapshot
 
+    /** 服务端最新版本号；失败返回空串。 */
+    suspend fun latestVersion(): String = ""
+
     /** 缓存目录大小可能很大，后台计算，避免打开设置时阻塞主线程。 */
     suspend fun refreshCacheSize(): String = ""
 

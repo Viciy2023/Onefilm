@@ -27,6 +27,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -78,7 +79,12 @@ fun MobileSettingsScreen(
     var showSites by remember { mutableStateOf(false) }
     var siteItems by remember { mutableStateOf<List<SearchSiteItem>>(emptyList()) }
     var showClearCacheConfirm by remember { mutableStateOf(false) }
+    var latestVersion by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        latestVersion = runCatching { dataSource.latestVersion() }.getOrNull().orEmpty()
+    }
 
     fun refresh() {
         snapshot = dataSource.load()
@@ -548,6 +554,12 @@ fun MobileSettingsScreen(
 
         item { MobileSectionTitle(stringResource(R.string.mobile_settings_section_about)) }
         item { MobileSettingRow(stringResource(R.string.mobile_settings_version), "${snapshot.version} · GPL-3.0") { } }
+        item {
+            MobileSettingRow(
+                stringResource(R.string.mobile_settings_latest_version),
+                latestVersion?.takeIf { it.isNotBlank() } ?: "—",
+            ) { }
+        }
     }
 
     choice?.let { current ->
@@ -581,6 +593,7 @@ fun MobileSettingsScreen(
                                 option,
                                 maxLines = 1,
                                 fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = if (index == current.selected) FontWeight.SemiBold else FontWeight.Normal,
                             )
                         }
@@ -836,6 +849,7 @@ fun MobileSettingsScreen(
                                     Text(
                                         site.name.ifBlank { site.key },
                                         fontSize = 14.sp,
+                                        color = MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier.weight(1f),
@@ -976,7 +990,12 @@ private fun MobileSettingRow(title: String, value: String, onClick: () -> Unit) 
             .padding(horizontal = 14.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, fontSize = 15.sp, modifier = Modifier.weight(1f))
+        Text(
+            title,
+            fontSize = 15.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+        )
         Text(
             value.ifBlank { stringResource(R.string.mobile_settings_not_set) },
             fontSize = 13.sp,
@@ -1007,7 +1026,11 @@ private fun MobileSwitchRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 15.sp)
+            Text(
+                title,
+                fontSize = 15.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
             Text(
                 subtitle,
                 fontSize = 12.sp,

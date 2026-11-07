@@ -166,6 +166,7 @@
     <string name="mobile_settings_reset_ua_desc">ล้างค่ากำหนดเอง</string>
     <string name="mobile_settings_section_about">เกี่ยวกับ</string>
     <string name="mobile_settings_version">เวอร์ชัน</string>
+    <string name="mobile_settings_latest_version">เวอร์ชันล่าสุด</string>
     <string name="mobile_settings_load_failed">โหลดไม่สำเร็จ</string>
     <string name="mobile_settings_enter_url">ป้อน URL ของ API</string>
     <string name="mobile_settings_line_name_hint">ชื่อสาย (ไม่บังคับ)</string>

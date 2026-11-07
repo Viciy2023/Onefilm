@@ -37,11 +37,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -105,6 +107,7 @@ fun SettingsScreen(
     var showClearCacheConfirm by remember { mutableStateOf(false) }
     var showSearchSites by remember { mutableStateOf(false) }
     var panelPage by remember { mutableStateOf(0) }
+    var latestVersion by remember { mutableStateOf<String?>(null) }
     BackHandler(enabled = panelMode) {
         if (panelPage != 0) panelPage = 0 else onRequestClose()
     }
@@ -132,6 +135,9 @@ fun SettingsScreen(
     LaunchedEffect(Unit) {
         val label = runCatching { dataSource.refreshCacheSize() }.getOrNull().orEmpty()
         if (label.isNotBlank()) snapshot = snapshot.copy(cacheSizeLabel = label)
+    }
+    LaunchedEffect(Unit) {
+        latestVersion = runCatching { dataSource.latestVersion() }.getOrNull().orEmpty()
     }
     LaunchedEffect(Unit) {
         ServerEventBridge.settings.collect { pushed ->
@@ -696,6 +702,14 @@ fun SettingsScreen(
                 InfoRow(stringResource(R.string.settings_version_title), "${snapshot.version} · GPL-3.0")
             }
             }
+            item {
+            SettingsPanelRow {
+                InfoRow(
+                    stringResource(R.string.settings_latest_version),
+                    latestVersion?.takeIf { it.isNotBlank() } ?: "—",
+                )
+            }
+            }
                 }
             }
         }
@@ -962,7 +976,9 @@ private fun SettingsPanelRow(
             ),
         contentAlignment = Alignment.CenterStart,
     ) {
-        content()
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+            content()
+        }
     }
 }
 
@@ -1169,7 +1185,9 @@ private fun SettingBar(modifier: Modifier = Modifier, content: @Composable () ->
                 RoundedCornerShape(10.dp),
             ),
     ) {
-        content()
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
+            content()
+        }
     }
 }
 

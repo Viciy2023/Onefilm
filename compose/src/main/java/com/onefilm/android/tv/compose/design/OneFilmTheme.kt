@@ -1,6 +1,7 @@
 package com.onefilm.android.tv.compose.design
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -46,7 +47,12 @@ fun OneFilmTheme(
             colorScheme = if (darkTheme) DarkScheme else LightScheme,
             typography = OneFilmTypography,
             shapes = OneFilmShapes,
-            content = content,
-        )
+        ) {
+            // 统一默认文字色：避免未显式指定 color 的 Text 在暗色主题下仍用黑色。
+            CompositionLocalProvider(
+                LocalContentColor provides MaterialTheme.colorScheme.onBackground,
+                content = content,
+            )
+        }
     }
 }

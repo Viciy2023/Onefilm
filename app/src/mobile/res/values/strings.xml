@@ -166,6 +166,7 @@
     <string name="mobile_settings_reset_ua_desc">Clear custom value</string>
     <string name="mobile_settings_section_about">About</string>
     <string name="mobile_settings_version">Version</string>
+    <string name="mobile_settings_latest_version">Latest version</string>
     <string name="mobile_settings_load_failed">Failed to load</string>
     <string name="mobile_settings_enter_url">Enter an API URL</string>
     <string name="mobile_settings_line_name_hint">Line name (optional)</string>

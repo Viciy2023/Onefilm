@@ -58,7 +58,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -79,8 +78,6 @@ import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.delay
 import androidx.compose.ui.res.stringResource
 import com.onefilm.android.tv.compose.R
-
-private val TvInk = Color(0xFF1C1C1E)
 
 object TvHeaderFocusState {
     var homeCategoryFocused by mutableStateOf(false)
@@ -330,7 +327,7 @@ fun TvBrandRow(
             Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
                 Text(
                     text = "ONEFILM",
-                    color = TvInk,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = (14 * scale).sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
@@ -339,7 +336,7 @@ fun TvBrandRow(
             Box(Modifier.weight(1.4f), contentAlignment = Alignment.Center) {
                 Text(
                     text = resolvedCenter,
-                    color = TvInk,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = (14 * scale).sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
@@ -350,7 +347,7 @@ fun TvBrandRow(
             Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
                 Text(
                     text = "$date   $time",
-                    color = TvInk,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = (14 * scale).sp,
                     fontWeight = FontWeight.Medium,
                 )

@@ -64,6 +64,7 @@
     <string name="settings_theme_title">外觀主題</string>
     <string name="settings_language_title">介面語言</string>
     <string name="settings_version_title">版本</string>
+    <string name="settings_latest_version">最新版本</string>
     <string name="settings_vod_url">隨選介面</string>
     <string name="settings_live_url">直播介面</string>
     <string name="settings_wall_url">桌布介面</string>

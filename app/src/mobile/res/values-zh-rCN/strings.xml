@@ -166,6 +166,7 @@
     <string name="mobile_settings_reset_ua_desc">清空自定义</string>
     <string name="mobile_settings_section_about">关于</string>
     <string name="mobile_settings_version">版本</string>
+    <string name="mobile_settings_latest_version">最新版本</string>
     <string name="mobile_settings_load_failed">加载失败</string>
     <string name="mobile_settings_enter_url">请输入接口地址</string>
     <string name="mobile_settings_line_name_hint">线路名称（可选）</string>

@@ -166,6 +166,7 @@
     <string name="mobile_settings_reset_ua_desc">Xoá giá trị tuỳ chỉnh</string>
     <string name="mobile_settings_section_about">Thông tin</string>
     <string name="mobile_settings_version">Phiên bản</string>
+    <string name="mobile_settings_latest_version">Phiên bản mới nhất</string>
     <string name="mobile_settings_load_failed">Tải thất bại</string>
     <string name="mobile_settings_enter_url">Nhập URL API</string>
     <string name="mobile_settings_line_name_hint">Tên kênh (tuỳ chọn)</string>
