@@ -28,9 +28,10 @@ OneFilm คือโปรแกรมเล่นวิดีโอที่ส
 
 รองรับเซิร์ฟเวอร์ดานมากุทั่วไป หรือใส่ API ดานมากุเองในหน้าตั้งค่า ระบบจับคู่ชื่อเรื่องและตอนให้อัตโนมัติ รองรับทั้งโหนดสาธารณะและบริการที่ติดตั้งเอง
 
-![ดานมากุบนหน้าจอเต็ม](docs/screenshots/readme/danmaku-large.jpg)
-
-![ดานมากุในหน้าต่างเล็ก](docs/screenshots/readme/danmaku-small.jpg)
+<p align="center">
+  <img src="docs/screenshots/readme/danmaku-large.jpg" width="49%" alt="ดานมากุบนหน้าจอเต็ม" />
+  <img src="docs/screenshots/readme/danmaku-small.jpg" width="49%" alt="ดานมากุในหน้าต่างเล็ก" />
+</p>
 
 ### ประตูสู่หนังในห้องนั่งเล่น
 

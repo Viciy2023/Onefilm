@@ -28,9 +28,10 @@ If you already have a legal media source, a TVBOX-compatible config, or live cha
 
 Works with common danmaku endpoints, or set a custom danmaku API in Settings. Title and episode are matched automatically; public nodes and self-hosted services are both supported.
 
-![Danmaku in full screen](docs/screenshots/readme/danmaku-large.jpg)
-
-![Danmaku in the inline player](docs/screenshots/readme/danmaku-small.jpg)
+<p align="center">
+  <img src="docs/screenshots/readme/danmaku-large.jpg" width="49%" alt="Danmaku in full screen" />
+  <img src="docs/screenshots/readme/danmaku-small.jpg" width="49%" alt="Danmaku in the inline player" />
+</p>
 
 ### Your living-room media hub
 

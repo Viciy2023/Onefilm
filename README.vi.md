@@ -28,9 +28,10 @@ Nếu bạn đã có nguồn phim hợp pháp, cấu hình tương thích TVBOX 
 
 Tương thích máy chủ bình luận bay thông dụng, hoặc tự nhập API bình luận bay trong Cài đặt. Tự động khớp tên phim và tập; hỗ trợ nút công cộng và dịch vụ tự dựng.
 
-![Bình luận bay toàn màn hình](docs/screenshots/readme/danmaku-large.jpg)
-
-![Bình luận bay trong cửa sổ nhỏ](docs/screenshots/readme/danmaku-small.jpg)
+<p align="center">
+  <img src="docs/screenshots/readme/danmaku-large.jpg" width="49%" alt="Bình luận bay toàn màn hình" />
+  <img src="docs/screenshots/readme/danmaku-small.jpg" width="49%" alt="Bình luận bay trong cửa sổ nhỏ" />
+</p>
 
 ### Cổng nội dung trong phòng khách
 

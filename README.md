@@ -28,9 +28,10 @@
 
 兼容常规弹幕接口，也可以在设置里填写自定义弹幕 API。播放时按片名与集数自动匹配，支持公益节点或自建服务。
 
-![大屏播放弹幕](docs/screenshots/readme/danmaku-large.jpg)
-
-![小窗播放弹幕](docs/screenshots/readme/danmaku-small.jpg)
+<p align="center">
+  <img src="docs/screenshots/readme/danmaku-large.jpg" width="49%" alt="大屏播放弹幕" />
+  <img src="docs/screenshots/readme/danmaku-small.jpg" width="49%" alt="小窗播放弹幕" />
+</p>
 
 ### 客厅里的影视入口
 
