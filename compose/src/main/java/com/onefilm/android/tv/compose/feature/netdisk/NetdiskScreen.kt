@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -60,6 +63,7 @@ import com.onefilm.android.tv.compose.bridge.NetdiskPlayback
 import com.onefilm.android.tv.compose.design.component.TvTagButton
 import org.json.JSONObject
 import kotlinx.coroutines.launch
+import java.io.File
 
 @Composable
 fun NetdiskScreen(
@@ -344,22 +348,8 @@ private fun DriveDialog(
     var username by remember(drive?.id) { mutableStateOf("") }
     var password by remember(drive?.id) { mutableStateOf("") }
     var localUri by remember(drive?.id) { mutableStateOf("") }
+    var showFolderPicker by remember(drive?.id) { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-
-    val folderPicker = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTree(),
-    ) { uri ->
-        if (uri != null) {
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                )
-            }
-            localUri = uri.toString()
-            if (name.isBlank()) name = uri.lastPathSegment.orEmpty()
-        }
-    }
 
     androidx.compose.runtime.LaunchedEffect(drive?.id) {
         if (drive != null) {
@@ -419,7 +409,7 @@ private fun DriveDialog(
                                 modifier = Modifier.weight(1f),
                             )
                             Spacer(Modifier.size(10.dp))
-                            TvTagButton(text = stringResource(R.string.netdisk_select_dir), onClick = { folderPicker.launch(null) })
+                            TvTagButton(text = stringResource(R.string.netdisk_select_dir), onClick = { showFolderPicker = true })
                         }
                     }
                     1 -> {
@@ -477,6 +467,90 @@ private fun DriveDialog(
                             )
                         }
                     })
+                }
+            }
+        }
+    }
+
+    if (showFolderPicker) {
+        LocalFolderPicker(
+            initial = localUri,
+            onDismiss = { showFolderPicker = false },
+            onPick = { path ->
+                localUri = if (path.startsWith("file://")) path else "file://$path"
+                if (name.isBlank()) name = File(path).name
+                showFolderPicker = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun LocalFolderPicker(
+    initial: String,
+    onDismiss: () -> Unit,
+    onPick: (String) -> Unit,
+) {
+    val startDir = remember(initial) {
+        val raw = initial.removePrefix("file://")
+        val candidate = if (raw.startsWith("/")) File(raw) else null
+        if (candidate != null && candidate.isDirectory) candidate
+        else android.os.Environment.getExternalStorageDirectory() ?: File("/storage")
+    }
+    var dir by remember { mutableStateOf(startDir) }
+    val children = remember(dir) {
+        runCatching {
+            dir.listFiles()
+                ?.filter { it.isDirectory && !it.name.startsWith(".") }
+                ?.sortedBy { it.name.lowercase() }
+                .orEmpty()
+        }.getOrDefault(emptyList())
+    }
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        androidx.compose.material3.Surface(
+            modifier = Modifier.fillMaxWidth(0.5f),
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp,
+        ) {
+            Column(
+                Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(stringResource(R.string.netdisk_select_dir), fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    dir.absolutePath,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TvTagButton(
+                        text = stringResource(R.string.netdisk_parent_dir),
+                        onClick = { dir.parentFile?.let { parent -> dir = parent } },
+                    )
+                    TvTagButton(
+                        text = stringResource(R.string.netdisk_use_dir),
+                        selected = true,
+                        onClick = { onPick(dir.absolutePath) },
+                    )
+                    TvTagButton(text = stringResource(R.string.settings_cancel), onClick = onDismiss)
+                }
+                LazyColumn(
+                    Modifier.fillMaxWidth().heightIn(max = 380.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    items(children) { file ->
+                        TvTagButton(
+                            text = file.name,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { dir = file },
+                        )
+                    }
                 }
             }
         }

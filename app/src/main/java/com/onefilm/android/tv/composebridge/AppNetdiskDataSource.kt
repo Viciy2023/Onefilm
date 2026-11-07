@@ -22,6 +22,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.w3c.dom.Element
+import java.io.File
 import java.net.URI
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -90,6 +91,26 @@ class AppNetdiskDataSource(private val context: Context) : NetdiskDataSource {
         val context = App.get()
         val treeUri = config.get("uri")?.asString.orEmpty()
         if (treeUri.isBlank()) throw IllegalStateException(context.getString(R.string.netdisk_err_no_local_dir))
+
+        // 内置目录选择器保存的是 file:// 绝对路径，直接走文件系统，避免依赖 SAF。
+        val rawPath = path.ifBlank { treeUri }
+        val fsPath = rawPath.removePrefix("file://")
+        if (fsPath.startsWith("/")) {
+            val folder = File(fsPath)
+            if (!folder.exists() || !folder.isDirectory) {
+                throw IllegalStateException(context.getString(R.string.netdisk_err_open_local_dir))
+            }
+            return folder.listFiles().orEmpty().map { file ->
+                val fileUrl = "file://" + file.absolutePath
+                NetdiskEntry(
+                    name = file.name.orEmpty().ifBlank { context.getString(R.string.detail_unnamed) },
+                    path = fileUrl,
+                    isDirectory = file.isDirectory,
+                    fileUrl = if (file.isFile) fileUrl else null,
+                )
+            }.sortedWith(compareByDescending<NetdiskEntry> { it.isDirectory }.thenBy { it.name })
+        }
+
         val folder = if (path.isBlank()) {
             DocumentFile.fromTreeUri(context, Uri.parse(treeUri))
         } else {
