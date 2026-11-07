@@ -28,11 +28,6 @@
 
 兼容常规弹幕接口，也可以在设置里填写自定义弹幕 API。播放时按片名与集数自动匹配，支持公益节点或自建服务。
 
-<p align="center">
-  <img src="docs/screenshots/readme/danmaku-large.jpg" width="49%" alt="大屏播放弹幕" />
-  <img src="docs/screenshots/readme/danmaku-small.jpg" width="49%" alt="小窗播放弹幕" />
-</p>
-
 ### 客厅里的影视入口
 
 把常用的影视接口集中到一个播放器里。首页是清晰的海报墙，分类、筛选、榜单和搜索都在手边，找片不需要复杂操作。
@@ -96,6 +91,10 @@
 | 详情 | 播放 |
 |---|---|
 | ![详情](docs/screenshots/readme/detail.png) | ![播放](docs/screenshots/readme/player.png) |
+
+| 大屏弹幕 | 小窗弹幕 |
+|---|---|
+| ![大屏弹幕](docs/screenshots/readme/danmaku-large.jpg) | ![小窗弹幕](docs/screenshots/readme/danmaku-small.jpg) |
 
 ### 手机版界面
 

@@ -28,11 +28,6 @@ If you already have a legal media source, a TVBOX-compatible config, or live cha
 
 Works with common danmaku endpoints, or set a custom danmaku API in Settings. Title and episode are matched automatically; public nodes and self-hosted services are both supported.
 
-<p align="center">
-  <img src="docs/screenshots/readme/danmaku-large.jpg" width="49%" alt="Danmaku in full screen" />
-  <img src="docs/screenshots/readme/danmaku-small.jpg" width="49%" alt="Danmaku in the inline player" />
-</p>
-
 ### Your living-room media hub
 
 Bring your usual media sources together in one player. The home screen is a clear poster wall, with categories, filters, rankings, and search close at hand, so finding something takes no complicated steps.
@@ -96,6 +91,10 @@ Menus, settings, player controls, network storage, and messages all support **Si
 | Details | Playback |
 |---|---|
 | ![Details](docs/screenshots/readme/detail.png) | ![Playback](docs/screenshots/readme/player.png) |
+
+| Danmaku (full screen) | Danmaku (inline) |
+|---|---|
+| ![Danmaku (full screen)](docs/screenshots/readme/danmaku-large.jpg) | ![Danmaku (inline)](docs/screenshots/readme/danmaku-small.jpg) |
 
 ### Mobile interface
 

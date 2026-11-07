@@ -28,11 +28,6 @@ Nếu bạn đã có nguồn phim hợp pháp, cấu hình tương thích TVBOX 
 
 Tương thích máy chủ bình luận bay thông dụng, hoặc tự nhập API bình luận bay trong Cài đặt. Tự động khớp tên phim và tập; hỗ trợ nút công cộng và dịch vụ tự dựng.
 
-<p align="center">
-  <img src="docs/screenshots/readme/danmaku-large.jpg" width="49%" alt="Bình luận bay toàn màn hình" />
-  <img src="docs/screenshots/readme/danmaku-small.jpg" width="49%" alt="Bình luận bay trong cửa sổ nhỏ" />
-</p>
-
 ### Cổng nội dung trong phòng khách
 
 Gom những nguồn phim quen dùng vào một trình phát. Trang chủ là tường poster rõ ràng, phân loại, bộ lọc, bảng xếp hạng và tìm kiếm đều trong tầm tay, tìm phim không cần thao tác phức tạp.
@@ -96,6 +91,10 @@ Menu, cài đặt, điều khiển trình phát, ổ đĩa mạng và thông bá
 | Chi tiết | Phát |
 |---|---|
 | ![Chi tiết](docs/screenshots/readme/detail.png) | ![Phát](docs/screenshots/readme/player.png) |
+
+| Bình luận bay toàn màn hình | Bình luận bay cửa sổ nhỏ |
+|---|---|
+| ![Bình luận bay toàn màn hình](docs/screenshots/readme/danmaku-large.jpg) | ![Bình luận bay cửa sổ nhỏ](docs/screenshots/readme/danmaku-small.jpg) |
 
 ### Giao diện trên điện thoại
 
