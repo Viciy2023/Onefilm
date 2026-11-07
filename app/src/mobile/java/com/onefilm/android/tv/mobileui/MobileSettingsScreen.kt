@@ -80,6 +80,8 @@ fun MobileSettingsScreen(
     var depotLines by remember { mutableStateOf<List<ConfigLine>>(emptyList()) }
     var blockWordsDraft by remember { mutableStateOf("") }
     var editBlockWords by remember { mutableStateOf(false) }
+    var danmakuApiDraft by remember { mutableStateOf("") }
+    var editDanmakuApi by remember { mutableStateOf(false) }
     var showSites by remember { mutableStateOf(false) }
     var siteItems by remember { mutableStateOf<List<SearchSiteItem>>(emptyList()) }
     var showClearCacheConfirm by remember { mutableStateOf(false) }
@@ -174,6 +176,15 @@ fun MobileSettingsScreen(
         }
         item {
             MobileSettingRow(stringResource(R.string.mobile_settings_wall_api), snapshot.wallConfigUrl) { openConfig(2) }
+        }
+        item {
+            MobileSettingRow(
+                stringResource(R.string.mobile_settings_danmaku_api),
+                snapshot.danmakuApi.ifBlank { stringResource(R.string.mobile_settings_danmaku_api_default) },
+            ) {
+                danmakuApiDraft = snapshot.danmakuApi
+                editDanmakuApi = true
+            }
         }
 
         item { MobileSectionTitle(stringResource(R.string.mobile_settings_section_appearance)) }
@@ -291,6 +302,20 @@ fun MobileSettingsScreen(
                 stringResource(R.string.mobile_settings_danmaku_show_desc),
                 snapshot.danmakuShow,
             ) { dataSource.setDanmakuShow(it); refresh() }
+        }
+        item {
+            MobileSwitchRow(
+                stringResource(R.string.mobile_settings_danmaku_load),
+                stringResource(R.string.mobile_settings_danmaku_load_desc),
+                snapshot.danmakuLoad,
+            ) { dataSource.setDanmakuLoad(it); refresh() }
+        }
+        item {
+            MobileSwitchRow(
+                stringResource(R.string.mobile_settings_danmaku_auto),
+                stringResource(R.string.mobile_settings_danmaku_auto_desc),
+                snapshot.danmakuAuto,
+            ) { dataSource.setDanmakuAuto(it); refresh() }
         }
         item {
             val danmakuSizeTitle = stringResource(R.string.mobile_settings_danmaku_size)
@@ -797,6 +822,54 @@ fun MobileSettingsScreen(
                         Button(onClick = {
                             dataSource.setDanmakuBlockWords(blockWordsDraft.trim())
                             editBlockWords = false
+                            refresh()
+                        }) { Text(stringResource(R.string.mobile_settings_save), fontSize = 13.sp) }
+                    }
+                }
+            }
+        }
+    }
+
+    if (editDanmakuApi) {
+        Dialog(
+            onDismissRequest = { editDanmakuApi = false },
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surface,
+            ) {
+                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.mobile_settings_danmaku_api), fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        stringResource(R.string.mobile_settings_danmaku_api_hint),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    BasicTextField(
+                        value = danmakuApiDraft,
+                        onValueChange = { danmakuApiDraft = it },
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        ),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 40.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))
+                            .padding(horizontal = 10.dp, vertical = 10.dp),
+                    )
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    ) {
+                        TextButton(onClick = { editDanmakuApi = false }) { Text(stringResource(R.string.mobile_settings_cancel), fontSize = 13.sp) }
+                        Button(onClick = {
+                            dataSource.setDanmakuApi(danmakuApiDraft.trim())
+                            editDanmakuApi = false
                             refresh()
                         }) { Text(stringResource(R.string.mobile_settings_save), fontSize = 13.sp) }
                     }

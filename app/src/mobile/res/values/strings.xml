@@ -117,6 +117,13 @@
     <string name="mobile_settings_section_danmaku">Danmaku</string>
     <string name="mobile_settings_danmaku_show">Show danmaku</string>
     <string name="mobile_settings_danmaku_show_desc">Load and render danmaku</string>
+    <string name="mobile_settings_danmaku_load">Load danmaku</string>
+    <string name="mobile_settings_danmaku_load_desc">Fetch danmaku from the configured server</string>
+    <string name="mobile_settings_danmaku_auto">Auto search</string>
+    <string name="mobile_settings_danmaku_auto_desc">Match by title and episode on playback</string>
+    <string name="mobile_settings_danmaku_api">Danmaku API</string>
+    <string name="mobile_settings_danmaku_api_default">Follow config</string>
+    <string name="mobile_settings_danmaku_api_hint">Leave empty to use the address in the interface config</string>
     <string name="mobile_settings_danmaku_size">Font size</string>
     <string name="mobile_settings_danmaku_alpha">Opacity</string>
     <string name="mobile_settings_danmaku_speed">Speed</string>

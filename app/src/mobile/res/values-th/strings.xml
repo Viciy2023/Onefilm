@@ -117,6 +117,13 @@
     <string name="mobile_settings_section_danmaku">คอมเมนต์ลอย</string>
     <string name="mobile_settings_danmaku_show">แสดงคอมเมนต์ลอย</string>
     <string name="mobile_settings_danmaku_show_desc">โหลดและแสดงคอมเมนต์ลอย</string>
+    <string name="mobile_settings_danmaku_load">โหลดดานมากุ</string>
+    <string name="mobile_settings_danmaku_load_desc">โหลดดานมากุจากเซิร์ฟเวอร์ที่ตั้งค่าไว้</string>
+    <string name="mobile_settings_danmaku_auto">ค้นหาอัตโนมัติ</string>
+    <string name="mobile_settings_danmaku_auto_desc">จับคู่ตามชื่อเรื่องและตอนเมื่อเริ่มเล่น</string>
+    <string name="mobile_settings_danmaku_api">Danmaku API</string>
+    <string name="mobile_settings_danmaku_api_default">ตามการตั้งค่าอินเทอร์เฟซ</string>
+    <string name="mobile_settings_danmaku_api_hint">เว้นว่างเพื่อใช้ที่อยู่ในอินเทอร์เฟซ</string>
     <string name="mobile_settings_danmaku_size">ขนาดตัวอักษร</string>
     <string name="mobile_settings_danmaku_alpha">ความทึบ</string>
     <string name="mobile_settings_danmaku_speed">ความเร็ว</string>

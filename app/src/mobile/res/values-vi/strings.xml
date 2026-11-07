@@ -117,6 +117,13 @@
     <string name="mobile_settings_section_danmaku">Danmaku</string>
     <string name="mobile_settings_danmaku_show">Hiện danmaku</string>
     <string name="mobile_settings_danmaku_show_desc">Tải và hiển thị danmaku</string>
+    <string name="mobile_settings_danmaku_load">Tải bình luận bay</string>
+    <string name="mobile_settings_danmaku_load_desc">Tải bình luận bay từ máy chủ đã cấu hình</string>
+    <string name="mobile_settings_danmaku_auto">Tự động tìm</string>
+    <string name="mobile_settings_danmaku_auto_desc">Khớp theo tên phim và tập khi phát</string>
+    <string name="mobile_settings_danmaku_api">API bình luận bay</string>
+    <string name="mobile_settings_danmaku_api_default">Theo cấu hình giao diện</string>
+    <string name="mobile_settings_danmaku_api_hint">Để trống để dùng địa chỉ trong cấu hình giao diện</string>
     <string name="mobile_settings_danmaku_size">Cỡ chữ</string>
     <string name="mobile_settings_danmaku_alpha">Độ mờ</string>
     <string name="mobile_settings_danmaku_speed">Tốc độ</string>

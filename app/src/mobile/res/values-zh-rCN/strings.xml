@@ -117,6 +117,13 @@
     <string name="mobile_settings_section_danmaku">弹幕</string>
     <string name="mobile_settings_danmaku_show">显示弹幕</string>
     <string name="mobile_settings_danmaku_show_desc">加载并渲染弹幕</string>
+    <string name="mobile_settings_danmaku_load">弹幕加载</string>
+    <string name="mobile_settings_danmaku_load_desc">从弹幕服务器加载弹幕</string>
+    <string name="mobile_settings_danmaku_auto">自动搜索</string>
+    <string name="mobile_settings_danmaku_auto_desc">播放时按片名和集数自动匹配</string>
+    <string name="mobile_settings_danmaku_api">弹幕 API</string>
+    <string name="mobile_settings_danmaku_api_default">跟随接口配置</string>
+    <string name="mobile_settings_danmaku_api_hint">留空则使用接口配置中的地址</string>
     <string name="mobile_settings_danmaku_size">弹幕字号</string>
     <string name="mobile_settings_danmaku_alpha">弹幕透明度</string>
     <string name="mobile_settings_danmaku_speed">弹幕速度</string>
