@@ -31,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +50,7 @@ import com.onefilm.android.tv.compose.bridge.SEARCH_THREAD_OPTIONS
 import com.onefilm.android.tv.compose.bridge.SearchSiteItem
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.design.ThemeController
+import kotlinx.coroutines.launch
 import com.onefilm.android.tv.R
 import com.github.catvod.utils.Prefers
 
@@ -81,6 +83,7 @@ fun MobileSettingsScreen(
     var showClearCacheConfirm by remember { mutableStateOf(false) }
     var latestVersion by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         latestVersion = runCatching { dataSource.latestVersion() }.getOrNull().orEmpty()
@@ -900,7 +903,11 @@ fun MobileSettingsScreen(
                         Button(onClick = {
                             dataSource.clearCache()
                             showClearCacheConfirm = false
-                            refresh()
+                            snapshot = snapshot.copy(cacheSizeLabel = context.getString(R.string.mobile_settings_loading))
+                            scope.launch {
+                                val label = runCatching { dataSource.refreshCacheSize() }.getOrNull().orEmpty()
+                                if (label.isNotBlank()) snapshot = snapshot.copy(cacheSizeLabel = label)
+                            }
                         }) { Text(stringResource(R.string.mobile_settings_clear), fontSize = 13.sp) }
                     }
                 }
