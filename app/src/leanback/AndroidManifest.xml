@@ -38,13 +38,6 @@
             </intent-filter>
         </activity>
 
-        <!-- 临时压测入口，随 Step 10 移除 -->
-        <activity
-            android:name=".debug.DanmakuStressActivity"
-            android:exported="true"
-            android:screenOrientation="sensorLandscape"
-            android:theme="@style/Theme.App" />
-
 
         <activity
             android:name=".ui.activity.CastActivity"
