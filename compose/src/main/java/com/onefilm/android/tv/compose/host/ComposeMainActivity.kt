@@ -841,7 +841,7 @@ private fun SettingsPanelOverlay(
                 Box(
                     Modifier
                         .fillMaxHeight()
-                        .fillMaxWidth(0.62f)
+                        .fillMaxWidth(0.4f)
                         .clip(RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
                         .background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f)),
                 ) {
