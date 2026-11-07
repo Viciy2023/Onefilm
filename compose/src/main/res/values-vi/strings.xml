@@ -78,6 +78,7 @@
     <string name="settings_incognito">Ẩn danh</string>
     <string name="settings_adblock">Chặn quảng cáo</string>
     <string name="settings_adblock_desc">Tự động bỏ quảng cáo trong luồng HLS khi phát</string>
+    <string name="ad_filter_success_tip">ONEFILM thông báo: Đã bỏ qua quảng cáo trong phim này. Chúc bạn xem vui vẻ!</string>
     <string name="settings_player_engine">Công cụ phát</string>
     <string name="settings_preload_next">Tải trước tập tiếp theo</string>
     <string name="settings_preload_threads">Luồng tải trước</string>

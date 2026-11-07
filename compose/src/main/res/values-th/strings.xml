@@ -78,6 +78,7 @@
     <string name="settings_incognito">ไม่ระบุตัวตน</string>
     <string name="settings_adblock">บล็อกโฆษณา</string>
     <string name="settings_adblock_desc">ข้ามโฆษณาในสตรีม HLS อัตโนมัติเมื่อเล่น</string>
+    <string name="ad_filter_success_tip">ONEFILM แจ้งเตือน: ข้ามโฆษณาในเรื่องนี้แล้ว ขอให้รับชมอย่างมีความสุข!</string>
     <string name="settings_player_engine">เอนจินเล่น</string>
     <string name="settings_preload_next">โหลดตอนถัดไปล่วงหน้า</string>
     <string name="settings_preload_threads">เธรดโหลดล่วงหน้า</string>

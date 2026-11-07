@@ -78,6 +78,7 @@
     <string name="settings_incognito">隱身模式</string>
     <string name="settings_adblock">廣告過濾</string>
     <string name="settings_adblock_desc">播放時自動跳過 m3u8 貼片廣告</string>
+    <string name="ad_filter_success_tip">ONEFILM提示您：本片廣告過濾成功，祝您觀影愉快！</string>
     <string name="settings_player_engine">播放引擎</string>
     <string name="settings_preload_next">預載下一集</string>
     <string name="settings_preload_threads">預載執行緒</string>

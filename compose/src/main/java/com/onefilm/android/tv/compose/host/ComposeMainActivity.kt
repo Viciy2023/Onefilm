@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -75,6 +76,7 @@ import com.onefilm.android.tv.compose.feature.player.PlaybackEpisode
 import com.onefilm.android.tv.compose.feature.player.PlaybackSession
 import com.onefilm.android.tv.compose.feature.player.PlayerRoute
 import com.onefilm.android.tv.compose.feature.player.TvPlayerKeyState
+import com.onefilm.android.tv.compose.feature.player.TvAdFilterTip
 import com.onefilm.android.tv.compose.feature.search.SearchRoute
 import com.onefilm.android.tv.compose.feature.search.SearchSession
 import com.onefilm.android.tv.compose.feature.source.SourceRoute
@@ -733,6 +735,11 @@ class ComposeMainActivity : ComponentActivity() {
                     visible = showSettingsPanel,
                     onDismiss = { showSettingsPanel = false },
                     onConfigChanged = { CategoryCache.clear(); homeViewModel.retry() },
+                )
+                TvAdFilterTip(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 64.dp),
                 )
                 }
                 // 返回键统一由这里处理。必须放在 NavHost 之后组合：navigation-compose 2.7.7
