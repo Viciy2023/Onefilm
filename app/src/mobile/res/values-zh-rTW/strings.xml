@@ -168,6 +168,8 @@
     <string name="mobile_settings_section_about">關於</string>
     <string name="mobile_settings_version">版本</string>
     <string name="mobile_settings_latest_version">最新版本</string>
+    <string name="mobile_settings_contact_us">聯絡我們</string>
+    <string name="mobile_settings_contact_us_desc">加入 Telegram 交流群</string>
     <string name="mobile_settings_load_failed">載入失敗</string>
     <string name="mobile_settings_enter_url">請輸入介面網址</string>
     <string name="mobile_settings_line_name_hint">線路名稱（選填）</string>

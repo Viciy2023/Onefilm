@@ -1,5 +1,7 @@
 package com.onefilm.android.tv.mobileui
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -562,6 +564,18 @@ fun MobileSettingsScreen(
                 stringResource(R.string.mobile_settings_latest_version),
                 latestVersion?.takeIf { it.isNotBlank() } ?: "—",
             ) { }
+        }
+        item {
+            MobileSettingRow(
+                stringResource(R.string.mobile_settings_contact_us),
+                stringResource(R.string.mobile_settings_contact_us_desc),
+            ) {
+                runCatching {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/+I6pu2Yd2SAJjZTJl")),
+                    )
+                }
+            }
         }
     }
 
