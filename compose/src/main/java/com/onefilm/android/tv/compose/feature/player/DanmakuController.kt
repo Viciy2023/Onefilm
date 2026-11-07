@@ -2,6 +2,7 @@ package com.onefilm.android.tv.compose.feature.player
 
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -13,20 +14,26 @@ import androidx.media3.ui.danmaku.DanmakuParser
 import androidx.media3.ui.danmaku.DanmakuView
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import com.onefilm.android.tv.compose.bridge.DanmakuDataSource
+import com.onefilm.android.tv.core.danmaku.DanmakuQuery
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.onefilm.android.tv.compose.R
 import androidx.compose.ui.res.stringResource
 
 /** 弹幕开关与渲染：真实调用旧 DanmakuApi 搜索并加载弹幕文件。 */
 object DanmakuController {
+    private const val TAG = "DanmakuCtrl"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var view: DanmakuView? = null
     private var xml: String? = null
     private var loadedKey: String = ""
     private var lastPosition: Long = 0L
+    private var loadJob: Job? = null
+    private var currentKey: String = ""
 
     var enabled by mutableStateOf(true)
         private set
@@ -97,6 +104,7 @@ object DanmakuController {
     fun attach(target: DanmakuView) {
         view = target
         syncSettings()
+        Log.d(TAG, "attach view=${target.hashCode()} enabled=$enabled xmlLen=${xml?.length ?: -1}")
         xml?.let { runCatching { target.setItems(parseFiltered(it)) } }
         target.setEnabled(enabled)
         target.setClock(lastPosition)
@@ -134,42 +142,66 @@ object DanmakuController {
 
     fun ensureLoaded(context: Context, key: String, dataSource: DanmakuDataSource) {
         syncSettings()
+        Log.d(TAG, "ensureLoaded enabled=$enabled key=$key")
         if (enabled) load(context, key, dataSource)
     }
 
     private fun load(context: Context, key: String, dataSource: DanmakuDataSource) {
-        if (loading) return
         if (loadedKey == key && xml != null) {
             statusRes = R.string.common_on
             return
         }
         val episode = PlaybackSession.currentEpisode
-        val name = PlaybackSession.title
-        if (name.isBlank() || episode == null) {
+        val name = PlaybackSession.title.ifBlank { episode?.name.orEmpty() }
+        if (name.isBlank()) {
             statusRes = R.string.player_no_source
             return
         }
+        val episodeName = episode?.name?.takeIf { it.isNotBlank() && it != name } ?: name
+        Log.d(TAG, "load name=$name episode=$episodeName")
+        currentKey = key
+        loadJob?.cancel()
         loading = true
         statusRes = R.string.settings_loading
-        scope.launch {
-            val sources = runCatching { dataSource.search(name, episode.name) }.getOrDefault(emptyList())
-            val content = sources.firstOrNull()?.let { source ->
-                runCatching { dataSource.load(source.url) }.getOrNull()
+        loadJob = scope.launch(Dispatchers.IO) {
+            val startedAt = System.currentTimeMillis()
+            var content: String? = null
+            var chosen: List<androidx.media3.ui.danmaku.DanmakuItem> = emptyList()
+            outer@ for ((n, e) in DanmakuQuery.combinations(name, episodeName, 6)) {
+                if (System.currentTimeMillis() - startedAt > 25_000L) break@outer
+                val sources = runCatching { dataSource.search(n, e) }.getOrDefault(emptyList())
+                Log.d(TAG, "search name=$n episode=$e sources=${sources.size}")
+                for (source in sources.take(8)) {
+                    val candidate = runCatching { dataSource.load(source.url) }.getOrNull()
+                    val items = candidate?.let { runCatching { parseFiltered(it) }.getOrDefault(emptyList()) }
+                        ?: emptyList()
+                    Log.d(TAG, "candidate len=${candidate?.length ?: -1} items=${items.size} url=${source.url}")
+                    if (!candidate.isNullOrBlank() && items.isNotEmpty()) {
+                        content = candidate
+                        chosen = items
+                        break@outer
+                    }
+                }
             }
-            loading = false
-            if (content.isNullOrBlank()) {
-                enabled = false
-                view?.setEnabled(false)
-                statusRes = R.string.player_no_source
-                return@launch
-            }
-            xml = content
-            loadedKey = key
-            statusRes = R.string.common_on
-            view?.let { target ->
-                runCatching { target.setItems(parseFiltered(content)) }
-                target.setEnabled(true)
-                target.setClock(lastPosition)
+            Log.d(TAG, "chosen contentLen=${content?.length ?: -1}")
+            withContext(Dispatchers.Main) {
+                loading = false
+                Log.d(TAG, "apply key=$key current=$currentKey view=${view != null} enabled=$enabled")
+                if (currentKey != key) return@withContext
+                if (content.isNullOrBlank() || chosen.isEmpty()) {
+                    enabled = false
+                    view?.setEnabled(false)
+                    statusRes = R.string.player_no_source
+                    return@withContext
+                }
+                xml = content
+                loadedKey = key
+                statusRes = R.string.common_on
+                view?.let { target ->
+                    runCatching { target.setItems(chosen) }
+                    target.setEnabled(true)
+                    target.setClock(lastPosition)
+                }
             }
         }
     }

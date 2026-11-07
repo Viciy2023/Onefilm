@@ -125,6 +125,16 @@
     <string name="settings_buffer">Bộ đệm</string>
     <string name="settings_load">Tải</string>
     <string name="settings_load_danmaku">Tải và hiển thị danmaku</string>
+    <string name="settings_danmaku_load">Tải bình luận bay</string>
+    <string name="settings_danmaku_load_desc">Tải bình luận bay từ máy chủ đã cấu hình</string>
+    <string name="settings_danmaku_auto">Tự động tìm</string>
+    <string name="settings_danmaku_auto_desc">Khớp theo tên phim và tập khi phát</string>
+    <string name="settings_danmaku_api">API bình luận bay</string>
+    <string name="settings_danmaku_api_default">Theo cấu hình giao diện</string>
+    <string name="settings_danmaku_api_hint">Để trống để dùng địa chỉ trong cấu hình giao diện</string>
+    <string name="settings_danmaku_qr">Quét để đặt API bình luận bay</string>
+    <string name="settings_danmaku_qr_desc">Đẩy API bình luận bay từ điện thoại</string>
+    <string name="settings_danmaku_qr_hint">Mở địa chỉ trên điện thoại, nhập API bình luận bay vào nội dung đẩy, đặt tên là danmaku rồi gửi</string>
     <string name="settings_force_update_hint">Tự động tải và cập nhật khi có phiên bản mới</string>
     <string name="settings_clear_cache_hint">Xoá bộ nhớ đệm hình ảnh và tệp tạm; yêu thích và lịch sử vẫn được giữ.</string>
     <string name="settings_exo_only">Chỉ áp dụng cho đường dẫn Exo</string>

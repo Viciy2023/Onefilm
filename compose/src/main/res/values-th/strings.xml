@@ -125,6 +125,16 @@
     <string name="settings_buffer">บัฟเฟอร์</string>
     <string name="settings_load">โหลด</string>
     <string name="settings_load_danmaku">โหลดและแสดงคอมเมนต์ลอย</string>
+    <string name="settings_danmaku_load">โหลดดานมากุ</string>
+    <string name="settings_danmaku_load_desc">โหลดดานมากุจากเซิร์ฟเวอร์ที่ตั้งค่าไว้</string>
+    <string name="settings_danmaku_auto">ค้นหาอัตโนมัติ</string>
+    <string name="settings_danmaku_auto_desc">จับคู่ตามชื่อเรื่องและตอนเมื่อเริ่มเล่น</string>
+    <string name="settings_danmaku_api">Danmaku API</string>
+    <string name="settings_danmaku_api_default">ตามการตั้งค่าอินเทอร์เฟซ</string>
+    <string name="settings_danmaku_api_hint">เว้นว่างเพื่อใช้ที่อยู่ในอินเทอร์เฟซ</string>
+    <string name="settings_danmaku_qr">สแกนเพื่อตั้งค่า Danmaku API</string>
+    <string name="settings_danmaku_qr_desc">ส่ง Danmaku API จากโทรศัพท์</string>
+    <string name="settings_danmaku_qr_hint">เปิดที่อยู่บนโทรศัพท์ ใส่ Danmaku API ในช่องเนื้อหาที่จะส่ง ตั้งชื่อเป็น danmaku แล้วกดส่ง</string>
     <string name="settings_force_update_hint">ดาวน์โหลดและบังคับอัปเดตเมื่อพบเวอร์ชันใหม่</string>
     <string name="settings_clear_cache_hint">ลบแคชรูปภาพและไฟล์ชั่วคราว รายการโปรดและประวัติยังคงอยู่</string>
     <string name="settings_exo_only">มีผลกับเส้นทาง Exo เท่านั้น</string>

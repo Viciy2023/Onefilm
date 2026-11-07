@@ -125,6 +125,16 @@
     <string name="settings_buffer">缓冲区</string>
     <string name="settings_load">加载</string>
     <string name="settings_load_danmaku">加载并渲染弹幕</string>
+    <string name="settings_danmaku_load">弹幕加载</string>
+    <string name="settings_danmaku_load_desc">从弹幕服务器加载弹幕</string>
+    <string name="settings_danmaku_auto">自动搜索</string>
+    <string name="settings_danmaku_auto_desc">播放时按片名和集数自动匹配</string>
+    <string name="settings_danmaku_api">弹幕 API</string>
+    <string name="settings_danmaku_api_default">跟随接口配置</string>
+    <string name="settings_danmaku_api_hint">留空则使用接口配置中的地址</string>
+    <string name="settings_danmaku_qr">扫码设置弹幕接口</string>
+    <string name="settings_danmaku_qr_desc">手机扫码后推送弹幕 API</string>
+    <string name="settings_danmaku_qr_hint">手机访问该地址，在推送内容中填入弹幕 API，名称填 danmaku，再点推送</string>
     <string name="settings_force_update_hint">检测到新版本后自动下载并强制更新</string>
     <string name="settings_clear_cache_hint">将删除图片缓存和临时文件，不会删除收藏和观看记录。</string>
     <string name="settings_exo_only">仅 Exo 路径生效</string>

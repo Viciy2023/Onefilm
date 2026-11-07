@@ -125,6 +125,16 @@
     <string name="settings_buffer">緩衝區</string>
     <string name="settings_load">載入</string>
     <string name="settings_load_danmaku">載入並渲染彈幕</string>
+    <string name="settings_danmaku_load">彈幕載入</string>
+    <string name="settings_danmaku_load_desc">從彈幕伺服器載入彈幕</string>
+    <string name="settings_danmaku_auto">自動搜尋</string>
+    <string name="settings_danmaku_auto_desc">播放時依片名與集數自動匹配</string>
+    <string name="settings_danmaku_api">彈幕 API</string>
+    <string name="settings_danmaku_api_default">跟隨介面設定</string>
+    <string name="settings_danmaku_api_hint">留空則使用介面設定中的位址</string>
+    <string name="settings_danmaku_qr">掃碼設定彈幕介面</string>
+    <string name="settings_danmaku_qr_desc">手機掃碼後推送彈幕 API</string>
+    <string name="settings_danmaku_qr_hint">手機開啟該位址，在推送內容中填入彈幕 API，名稱填 danmaku，再按推送</string>
     <string name="settings_force_update_hint">偵測到新版本後自動下載並強制更新</string>
     <string name="settings_clear_cache_hint">將刪除圖片快取和暫存檔，不會刪除收藏和觀看紀錄。</string>
     <string name="settings_exo_only">僅 Exo 路徑生效</string>

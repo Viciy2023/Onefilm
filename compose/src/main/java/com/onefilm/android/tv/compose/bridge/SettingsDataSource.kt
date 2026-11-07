@@ -20,6 +20,9 @@ data class SettingsSnapshot(
     val subtitleEdgeWidth: Float,
     val danmakuBlockWords: String,
     val danmakuShow: Boolean,
+    val danmakuLoad: Boolean = false,
+    val danmakuAuto: Boolean = false,
+    val danmakuApi: String = "",
     val danmakuScale: Float,
     val danmakuTransparency: Float,
     val danmakuDurationMs: Long,
@@ -91,6 +94,9 @@ interface SettingsDataSource {
     fun cycleSubtitleColor()
 
     fun setDanmakuShow(show: Boolean)
+    fun setDanmakuLoad(enabled: Boolean)
+    fun setDanmakuAuto(enabled: Boolean)
+    fun setDanmakuApi(url: String)
     fun setDanmakuScale(scale: Float)
     fun setDanmakuTransparency(value: Float)
     fun setDanmakuDuration(ms: Long)

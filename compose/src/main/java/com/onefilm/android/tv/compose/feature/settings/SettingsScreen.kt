@@ -108,6 +108,7 @@ fun SettingsScreen(
     var showClearCacheConfirm by remember { mutableStateOf(false) }
     var showSearchSites by remember { mutableStateOf(false) }
     var showContact by remember { mutableStateOf(false) }
+    var reloadingDanmaku by remember { mutableStateOf(false) }
     var panelPage by remember { mutableStateOf(0) }
     var latestVersion by remember { mutableStateOf<String?>(null) }
     BackHandler(enabled = panelMode) {
@@ -143,9 +144,14 @@ fun SettingsScreen(
     }
     LaunchedEffect(Unit) {
         ServerEventBridge.settings.collect { pushed ->
-            editName = pushed.name
-            editUrl = pushed.text
-            configError = null
+            if (pushed.name.equals("danmaku", true) || pushed.name == "弹幕") {
+                dataSource.setDanmakuApi(pushed.text.trim())
+                snapshot = dataSource.load()
+            } else {
+                editName = pushed.name
+                editUrl = pushed.text
+                configError = null
+            }
         }
     }
 
@@ -205,20 +211,27 @@ fun SettingsScreen(
                 qrBitmap = qrBitmap,
                 firstFieldFocus = editFieldFocus,
                 onSave = {
-                    configLoading = true
-                    dataSource.loadConfig(type, editUrl.trim(), editName.trim()) { ok, message ->
-                        configLoading = false
-                        if (ok) {
-                            onConfigChanged()
-                            snapshot = dataSource.load()
-                            editType = null
-                            panelPage = 0
-                            scope.launch {
-                                delay(150)
-                                runCatching { configRowFocus[type].requestFocus() }
+                    if (type == 3) {
+                        dataSource.setDanmakuApi(editUrl.trim())
+                        snapshot = dataSource.load()
+                        editType = null
+                        panelPage = 0
+                    } else {
+                        configLoading = true
+                        dataSource.loadConfig(type, editUrl.trim(), editName.trim()) { ok, message ->
+                            configLoading = false
+                            if (ok) {
+                                onConfigChanged()
+                                snapshot = dataSource.load()
+                                editType = null
+                                panelPage = 0
+                                scope.launch {
+                                    delay(150)
+                                    runCatching { configRowFocus[type].requestFocus() }
+                                }
+                            } else {
+                                configError = message
                             }
-                        } else {
-                            configError = message
                         }
                     }
                 },
@@ -228,7 +241,7 @@ fun SettingsScreen(
                         panelPage = 0
                         scope.launch {
                             delay(150)
-                            runCatching { configRowFocus[type].requestFocus() }
+                            if (type in 0..2) runCatching { configRowFocus[type].requestFocus() }
                         }
                     }
                 },
@@ -323,6 +336,23 @@ fun SettingsScreen(
                     } else {
                         reportConfig(2, resContext.getString(R.string.settings_wall_url), false, resContext.getString(R.string.settings_no_config_url))
                     }
+                },
+            )
+            }
+            item {
+            ConfigBlock(
+                modifier = Modifier.fillMaxWidth().height(32.dp),
+                title = stringResource(R.string.settings_danmaku_api),
+                value = snapshot.danmakuApi.ifBlank { stringResource(R.string.settings_danmaku_api_default) },
+                loading = reloadingDanmaku,
+                onEdit = {
+                    openConfig(3, snapshot.danmakuApi)
+                },
+                onReload = {
+                    reloadingDanmaku = true
+                    dataSource.setDanmakuApi(snapshot.danmakuApi)
+                    snapshot = dataSource.load()
+                    reloadingDanmaku = false
                 },
             )
             }
@@ -442,6 +472,20 @@ fun SettingsScreen(
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_danmaku_show), stringResource(R.string.settings_load_danmaku), snapshot.danmakuShow) {
                     refresh { setDanmakuShow(it) }
+                }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                SwitchRow(stringResource(R.string.settings_danmaku_load), stringResource(R.string.settings_danmaku_load_desc), snapshot.danmakuLoad) {
+                    refresh { setDanmakuLoad(it) }
+                }
+            }
+            }
+            item {
+            SettingsPanelRow {
+                SwitchRow(stringResource(R.string.settings_danmaku_auto), stringResource(R.string.settings_danmaku_auto_desc), snapshot.danmakuAuto) {
+                    refresh { setDanmakuAuto(it) }
                 }
             }
             }
@@ -858,23 +902,28 @@ private fun ConfigEditPanel(
                 when (type) {
                     0 -> stringResource(R.string.settings_vod_url)
                     1 -> stringResource(R.string.settings_live_url)
-                    else -> stringResource(R.string.settings_wall_url)
+                    2 -> stringResource(R.string.settings_wall_url)
+                    else -> stringResource(R.string.settings_danmaku_api)
                 },
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
             )
         }
-        CompactTextField(
-            value = name,
-            onValueChange = onNameChange,
-            placeholder = stringResource(R.string.settings_line_name),
-            modifier = Modifier.fillMaxWidth().focusRequester(firstFieldFocus),
-        )
+        if (type != 3) {
+            CompactTextField(
+                value = name,
+                onValueChange = onNameChange,
+                placeholder = stringResource(R.string.settings_line_name),
+                modifier = Modifier.fillMaxWidth().focusRequester(firstFieldFocus),
+            )
+        }
         CompactTextField(
             value = url,
             onValueChange = onUrlChange,
             placeholder = stringResource(R.string.settings_config_url),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().then(
+                if (type == 3) Modifier.focusRequester(firstFieldFocus) else Modifier,
+            ),
         )
         qrBitmap?.let { bitmap ->
             Image(
@@ -1076,7 +1125,7 @@ private fun ConfigRow(
             .padding(horizontal = 10.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(title, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.width(6.dp))
         Box(
             modifier = Modifier
@@ -1096,7 +1145,7 @@ private fun ConfigRow(
             )
         }
         Spacer(Modifier.width(4.dp))
-        Text("›", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text("›", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

@@ -102,6 +102,9 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
         subtitleEdgeWidth = SubtitleSetting.getEdgeWidth(),
         danmakuBlockWords = com.github.catvod.utils.Prefers.getString("compose_danmaku_block_words"),
         danmakuShow = DanmakuSetting.isShow(),
+        danmakuLoad = DanmakuSetting.isLoad(),
+        danmakuAuto = DanmakuSetting.isAuto(),
+        danmakuApi = DanmakuSetting.getEffectiveApiUrl().orEmpty(),
         danmakuScale = DanmakuSetting.getTextScale(),
         danmakuTransparency = DanmakuSetting.getTransparency(),
         danmakuDurationMs = DanmakuSetting.getDurationMs(),
@@ -215,6 +218,18 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
 
     override fun setDanmakuShow(show: Boolean) {
         DanmakuSetting.putShow(show)
+    }
+
+    override fun setDanmakuLoad(enabled: Boolean) {
+        DanmakuSetting.putLoad(enabled)
+    }
+
+    override fun setDanmakuAuto(enabled: Boolean) {
+        DanmakuSetting.putAuto(enabled)
+    }
+
+    override fun setDanmakuApi(url: String) {
+        DanmakuSetting.putApiUrl(url.trim())
     }
 
     override fun setDanmakuScale(scale: Float) {
