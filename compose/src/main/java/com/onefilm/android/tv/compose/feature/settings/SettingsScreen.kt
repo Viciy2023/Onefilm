@@ -14,6 +14,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -118,6 +119,9 @@ fun SettingsScreen(
     var configMessageSuccess by remember { mutableStateOf(true) }
     var messageType by remember { mutableStateOf(0) }
     val configRowFocus = remember { List(3) { FocusRequester() } }
+    val danmakuApiFocus = remember { FocusRequester() }
+    val blockWordsFocus = remember { FocusRequester() }
+    val listState = rememberLazyListState()
     val firstSettingFocus = remember { FocusRequester() }
     val editFieldFocus = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
@@ -132,7 +136,7 @@ fun SettingsScreen(
         if (panelPage == 0) {
             val type = editType ?: return@LaunchedEffect
             delay(150)
-            runCatching { configRowFocus[type].requestFocus() }
+            if (type in configRowFocus.indices) runCatching { configRowFocus[type].requestFocus() }
         }
     }
     LaunchedEffect(Unit) {
@@ -216,6 +220,10 @@ fun SettingsScreen(
                         snapshot = dataSource.load()
                         editType = null
                         panelPage = 0
+                        scope.launch {
+                            delay(200)
+                            runCatching { danmakuApiFocus.requestFocus() }
+                        }
                     } else {
                         configLoading = true
                         dataSource.loadConfig(type, editUrl.trim(), editName.trim()) { ok, message ->
@@ -240,8 +248,12 @@ fun SettingsScreen(
                         editType = null
                         panelPage = 0
                         scope.launch {
-                            delay(150)
-                            if (type in 0..2) runCatching { configRowFocus[type].requestFocus() }
+                            delay(200)
+                            if (type == 3) {
+                                runCatching { danmakuApiFocus.requestFocus() }
+                            } else if (type in configRowFocus.indices) {
+                                runCatching { configRowFocus[type].requestFocus() }
+                            }
                         }
                     }
                 },
@@ -253,12 +265,23 @@ fun SettingsScreen(
                     dataSource.setDanmakuBlockWords(blockWordsDraft.trim())
                     snapshot = dataSource.load()
                     panelPage = 0
+                    scope.launch {
+                        delay(200)
+                        runCatching { blockWordsFocus.requestFocus() }
+                    }
                 },
-                onBack = { panelPage = 0 },
+                onBack = {
+                    panelPage = 0
+                    scope.launch {
+                        delay(200)
+                        runCatching { blockWordsFocus.requestFocus() }
+                    }
+                },
             )
             else -> {
                 LazyColumn(
                     Modifier.fillMaxSize(),
+                    state = listState,
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
             item {
@@ -345,6 +368,7 @@ fun SettingsScreen(
                 title = stringResource(R.string.settings_danmaku_api),
                 value = snapshot.danmakuApi.ifBlank { stringResource(R.string.settings_danmaku_api_default) },
                 loading = reloadingDanmaku,
+                initialFocus = danmakuApiFocus,
                 onEdit = {
                     openConfig(3, snapshot.danmakuApi)
                 },
@@ -529,7 +553,11 @@ fun SettingsScreen(
             }
             item {
             SettingsPanelRow {
-                ActionRow(stringResource(R.string.settings_danmaku_block), snapshot.danmakuBlockWords.ifBlank { stringResource(R.string.settings_not_set) }) {
+                ActionRow(
+                    stringResource(R.string.settings_danmaku_block),
+                    snapshot.danmakuBlockWords.ifBlank { stringResource(R.string.settings_not_set) },
+                    modifier = Modifier.focusRequester(blockWordsFocus),
+                ) {
                     blockWordsDraft = snapshot.danmakuBlockWords
                     panelPage = 2
                 }
@@ -757,14 +785,6 @@ fun SettingsScreen(
             }
             }
             item {
-            SettingsPanelRow {
-                ActionRow(
-                    stringResource(R.string.settings_contact_us),
-                    stringResource(R.string.settings_contact_us_desc),
-                ) { showContact = !showContact }
-            }
-            }
-            item {
                 if (showContact) {
                     Box(
                         Modifier.fillMaxWidth().padding(vertical = 8.dp),
@@ -778,6 +798,14 @@ fun SettingsScreen(
                         )
                     }
                 }
+            }
+            item {
+            SettingsPanelRow {
+                ActionRow(
+                    stringResource(R.string.settings_contact_us),
+                    stringResource(R.string.settings_contact_us_desc),
+                ) { showContact = !showContact }
+            }
             }
                 }
             }
@@ -980,6 +1008,11 @@ private fun BlockWordsEditPanel(
     onSave: () -> Unit,
     onBack: () -> Unit,
 ) {
+    val fieldFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        delay(150)
+        runCatching { fieldFocus.requestFocus() }
+    }
     Column(
         Modifier.fillMaxSize().padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -993,7 +1026,7 @@ private fun BlockWordsEditPanel(
             value = value,
             onValueChange = onValueChange,
             placeholder = stringResource(R.string.settings_keywords_hint),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().focusRequester(fieldFocus),
         )
         Text(
             stringResource(R.string.settings_keywords_hint),
@@ -1547,10 +1580,11 @@ private fun SettingChip(
 private fun ActionRow(
     title: String,
     value: String,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .height(34.dp)
             .clickable(
