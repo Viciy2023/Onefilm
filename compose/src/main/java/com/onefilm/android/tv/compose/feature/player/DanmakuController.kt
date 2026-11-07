@@ -21,6 +21,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.onefilm.android.tv.compose.R
@@ -117,14 +119,27 @@ object DanmakuController {
         syncSettings()
     }
 
-    fun attach(target: DanmakuView, host: PlayerView? = null, player: Player? = null) {
+    fun attach(target: DanmakuView, host: PlayerView? = null, player: Player? = null, key: String? = null) {
+        if (key != null && key != currentKey) {
+            // 新视频/新集：立即丢弃上一部的缓存与弹幕，避免串台。
+            currentKey = key
+            loadedKey = ""
+            xml = null
+            loadJob?.cancel()
+        }
         view = target
         syncSettings()
         Log.d(TAG, "attach view=${target.hashCode()} enabled=$enabled xmlLen=${xml?.length ?: -1}")
         target.setHost(host)
         target.setPlayer(player)
-        xml?.let { runCatching { target.setItems(parseFiltered(it)) } }
-        target.setEnabled(enabled)
+        val cached = xml
+        if (cached != null && currentKey.isNotEmpty() && loadedKey == currentKey) {
+            runCatching { target.setItems(parseFiltered(cached)) }
+            target.setEnabled(enabled)
+        } else {
+            target.setItems(emptyList())
+            target.setEnabled(false)
+        }
         target.setClock(lastPosition)
     }
 
@@ -171,8 +186,17 @@ object DanmakuController {
 
     fun ensureLoaded(context: Context, key: String, dataSource: DanmakuDataSource) {
         syncSettings()
+        if (key != currentKey) {
+            // 换视频/换集：先清空旧弹幕和旧缓存，再发起新的加载。
+            currentKey = key
+            loadedKey = ""
+            xml = null
+            loadJob?.cancel()
+            view?.setItems(emptyList())
+            view?.setEnabled(false)
+        }
         Log.d(TAG, "ensureLoaded enabled=$enabled key=$key")
-        if (enabled) load(context, key, dataSource)
+        if (enabled) load(context, key, dataSource) else view?.setEnabled(false)
     }
 
     private fun load(context: Context, key: String, dataSource: DanmakuDataSource) {
@@ -197,11 +221,25 @@ object DanmakuController {
             var content: String? = null
             var chosen: List<androidx.media3.ui.danmaku.DanmakuItem> = emptyList()
             outer@ for ((n, e) in DanmakuQuery.combinations(name, episodeName, 6)) {
+                if (!isActive) break@outer
                 if (System.currentTimeMillis() - startedAt > 25_000L) break@outer
-                val sources = runCatching { dataSource.search(n, e) }.getOrDefault(emptyList())
+                val sources = try {
+                    dataSource.search(n, e)
+                } catch (c: CancellationException) {
+                    throw c
+                } catch (t: Throwable) {
+                    emptyList()
+                }
                 Log.d(TAG, "search name=$n episode=$e sources=${sources.size}")
                 for (source in sources.take(8)) {
-                    val candidate = runCatching { dataSource.load(source.url) }.getOrNull()
+                    if (!isActive) break@outer
+                    val candidate = try {
+                        dataSource.load(source.url)
+                    } catch (c: CancellationException) {
+                        throw c
+                    } catch (t: Throwable) {
+                        null
+                    }
                     val items = candidate?.let { runCatching { parseFiltered(it) }.getOrDefault(emptyList()) }
                         ?: emptyList()
                     Log.d(TAG, "candidate len=${candidate?.length ?: -1} items=${items.size} url=${source.url}")
@@ -218,7 +256,9 @@ object DanmakuController {
                 Log.d(TAG, "apply key=$key current=$currentKey view=${view != null} enabled=$enabled")
                 if (currentKey != key) return@withContext
                 if (content.isNullOrBlank() || chosen.isEmpty()) {
-                    enabled = false
+                    xml = null
+                    loadedKey = ""
+                    view?.setItems(emptyList())
                     view?.setEnabled(false)
                     statusRes = R.string.player_no_source
                     return@withContext
@@ -228,7 +268,7 @@ object DanmakuController {
                 statusRes = R.string.common_on
                 view?.let { target ->
                     runCatching { target.setItems(chosen) }
-                    target.setEnabled(true)
+                    target.setEnabled(enabled)
                     target.setClock(lastPosition)
                 }
             }

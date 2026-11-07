@@ -177,7 +177,7 @@ fun VideoSurface(modifier: Modifier = Modifier) {
                 root.addView(danmaku, FrameLayout.LayoutParams(-1, -1))
                 legacy.bindPlayerView(video)
                 video.player = player
-                DanmakuController.attach(danmaku, video, player)
+                DanmakuController.attach(danmaku, video, player, danmakuKey)
                 root.tag = Triple(video, danmaku, mpv)
                 root
             },
@@ -190,7 +190,7 @@ fun VideoSurface(modifier: Modifier = Modifier) {
                 video?.setRender(if (PlaybackSession.textureRender) 1 else 0)
                 if (danmaku != null) {
                     if (!DanmakuController.attachedTo(danmaku)) {
-                        DanmakuController.attach(danmaku, video, PlaybackSession.player)
+                        DanmakuController.attach(danmaku, video, PlaybackSession.player, danmakuKey)
                     } else {
                         DanmakuController.setPlayer(PlaybackSession.player)
                     }
