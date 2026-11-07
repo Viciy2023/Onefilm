@@ -8,11 +8,15 @@
         <item name="android:windowAnimationStyle">@style/NoAnim</item>
     </style>
 
+    <!-- Android 12+ 的 Theme.SplashScreen 父主题是 DeviceDefault.DayNight，自带 ActionBar，
+         不关掉会在启动页上方显示一条带应用名的黑色标题栏。 -->
     <style name="Theme.Splash" parent="Theme.SplashScreen">
         <item name="postSplashScreenTheme">@style/Theme.App</item>
         <item name="windowSplashScreenBackground">#FFFFFFFF</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
         <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
     </style>
 
     <style name="Theme.App" parent="Theme.Base" />
