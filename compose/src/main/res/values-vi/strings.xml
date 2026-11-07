@@ -68,8 +68,6 @@
     <string name="settings_contact_us">Liên hệ</string>
     <string name="settings_contact_us_desc">Tham gia nhóm Telegram</string>
     <string name="settings_contact_qr_desc">Mã QR nhóm Telegram</string>
-    <string name="settings_contact_qr_hint">Quét bằng Telegram để tham gia</string>
-    <string name="settings_close">Đóng</string>
     <string name="settings_vod_url">Giao diện VOD</string>
     <string name="settings_live_url">Giao diện trực tiếp</string>
     <string name="settings_wall_url">Giao diện hình nền</string>

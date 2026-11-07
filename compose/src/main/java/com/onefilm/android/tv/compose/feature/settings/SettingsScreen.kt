@@ -717,8 +717,23 @@ fun SettingsScreen(
                 ActionRow(
                     stringResource(R.string.settings_contact_us),
                     stringResource(R.string.settings_contact_us_desc),
-                ) { showContact = true }
+                ) { showContact = !showContact }
             }
+            }
+            item {
+                if (showContact) {
+                    Box(
+                        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.telegram_qr),
+                            contentDescription = stringResource(R.string.settings_contact_qr_desc),
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.size(220.dp),
+                        )
+                    }
+                }
             }
                 }
             }
@@ -771,35 +786,6 @@ fun SettingsScreen(
                     primary = true,
                 )
             }
-        }
-    }
-
-    if (showContact) {
-        SettingsDialog(
-            onDismiss = { showContact = false },
-            width = 360.dp,
-            padding = 16.dp,
-        ) {
-            Text(stringResource(R.string.settings_contact_us), fontSize = 15.sp)
-            Spacer(Modifier.height(10.dp))
-            Image(
-                painter = painterResource(R.drawable.telegram_qr),
-                contentDescription = stringResource(R.string.settings_contact_qr_desc),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.size(240.dp),
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                stringResource(R.string.settings_contact_qr_hint),
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(12.dp))
-            SettingsButton(
-                text = stringResource(R.string.settings_close),
-                onClick = { showContact = false },
-                primary = true,
-            )
         }
     }
 
