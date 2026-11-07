@@ -96,7 +96,8 @@ public final class DanmakuView extends View {
     }
 
     private void drawItems(Canvas canvas, List<DanmakuItem> list, long positionMs, float scale, int alpha) {
-        float laneHeight = paint.getFontMetrics(null) * -1f + config.lineSpacing;
+        Paint.FontMetrics fm = paint.getFontMetrics();
+        float laneHeight = (fm.descent - fm.ascent) + config.lineSpacing;
         for (DanmakuItem item : list) {
             if (item.mode == DanmakuItem.MODE_SCROLL && !config.showScroll) continue;
             if (item.mode == DanmakuItem.MODE_TOP && !config.showTop) continue;

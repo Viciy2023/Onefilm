@@ -7,7 +7,9 @@ import com.onefilm.android.tv.compose.bridge.DanmakuDataSource
 import com.onefilm.android.tv.compose.bridge.DanmakuDisplayConfig
 import com.onefilm.android.tv.compose.bridge.DanmakuSource
 import com.onefilm.android.tv.setting.DanmakuSetting
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 
 class AppDanmakuDataSource : DanmakuDataSource {
@@ -28,9 +30,14 @@ class AppDanmakuDataSource : DanmakuDataSource {
             )
         }
 
-    override suspend fun load(url: String): String? = runCatching {
-        OkHttp.string(url)
-    }.getOrNull()?.takeIf { it.isNotBlank() }
+    override suspend fun load(url: String): String? = withContext(Dispatchers.IO) {
+        try {
+            OkHttp.string(url)?.takeIf { it.isNotBlank() }
+        } catch (t: Throwable) {
+            android.util.Log.w("AppDanmaku", "load failed: $url", t)
+            null
+        }
+    }
 
     override fun displayConfig(): DanmakuDisplayConfig = DanmakuDisplayConfig(
         show = DanmakuSetting.isShow(),

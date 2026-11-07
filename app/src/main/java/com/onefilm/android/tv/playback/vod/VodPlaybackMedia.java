@@ -8,6 +8,7 @@ import com.onefilm.android.tv.bean.Danmaku;
 import com.onefilm.android.tv.bean.Episode;
 import com.onefilm.android.tv.bean.History;
 import com.onefilm.android.tv.bean.Result;
+import com.onefilm.android.tv.player.danmaku.DanmakuResolver;
 import com.onefilm.android.tv.player.media.MediaItemFactory;
 import com.onefilm.android.tv.setting.DanmakuSetting;
 
@@ -25,9 +26,6 @@ public final class VodPlaybackMedia {
     public static void searchDanmaku(Result result, History history, Episode episode, Consumer<Danmaku> set, Consumer<Danmaku> add) {
         if (!DanmakuApi.canSearch()) return;
         if (VodConfig.get().getSite(result.getKey()).getDanmaku() == 0) return;
-        DanmakuApi.search(history.getVodName(), episode.getName(), danmaku -> {
-            if (DanmakuSetting.isSpiderFirst() && !result.getDanmaku().isEmpty()) add.accept(danmaku);
-            else set.accept(danmaku);
-        });
+        DanmakuResolver.resolve(history.getVodName(), episode.getName(), result.getDanmaku(), set, add);
     }
 }
