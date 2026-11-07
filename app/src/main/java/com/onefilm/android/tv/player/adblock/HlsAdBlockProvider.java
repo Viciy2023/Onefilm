@@ -7,6 +7,7 @@ import androidx.media3.exoplayer.hls.playlist.HlsAdFilter;
 import com.onefilm.android.tv.api.config.RuleConfig;
 import com.onefilm.android.tv.bean.Rule;
 import com.onefilm.android.tv.core.adblock.AdBlockRule;
+import com.onefilm.android.tv.core.adblock.AdFilterNotifier;
 import com.onefilm.android.tv.core.adblock.M3u8AdFilter;
 import com.onefilm.android.tv.setting.Setting;
 
@@ -49,6 +50,7 @@ public final class HlsAdBlockProvider implements HlsAdFilter.Provider {
                     + " removed=" + result.getRemovedSegments()
                     + " seconds=" + String.format(Locale.US, "%.2f", result.getRemovedSeconds())
                     + " url=" + playlistUrl);
+            AdFilterNotifier.INSTANCE.notifyFiltered(result.getRemovedSeconds());
             return result.getText();
         } catch (Throwable t) {
             Log.w(TAG, "filter failed", t);
