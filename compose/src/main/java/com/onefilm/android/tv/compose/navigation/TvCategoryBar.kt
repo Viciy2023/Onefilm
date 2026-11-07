@@ -59,6 +59,8 @@ fun TvCategoryBar(
     onCategory: (HomeCategory) -> Unit,
     hasCategoryFilters: (HomeCategory) -> Boolean,
     onHomeFocused: (Boolean) -> Unit,
+    leftFocus: FocusRequester? = null,
+    focusHomeToken: Int = 0,
 ) {
     val allCategories = listOf(HomeCategory("", "", stringResource(R.string.category_home))) + categories
     val initialFocus = remember { FocusRequester() }
@@ -66,6 +68,13 @@ fun TvCategoryBar(
     LaunchedEffect(Unit) {
         delay(100)
         runCatching { initialFocus.requestFocus() }
+    }
+    LaunchedEffect(focusHomeToken) {
+        // 从分类页返回主页时由外层递增 token，把焦点拉回“主页”标签。
+        if (focusHomeToken > 0) {
+            delay(150)
+            runCatching { initialFocus.requestFocus() }
+        }
     }
     Row(
         Modifier
@@ -94,6 +103,7 @@ fun TvCategoryBar(
                     onHomeFocused(home)
                 },
                 leftEdge = index == 0,
+                leftFocus = if (index == 0) leftFocus else null,
                 rightEdge = index == allCategories.lastIndex,
                 onFocusTrigger = {
                     when {
@@ -116,6 +126,7 @@ private fun TvCategoryChip(
     onFocused: () -> Unit = {},
     onFocusTrigger: () -> Unit = {},
     leftEdge: Boolean = false,
+    leftFocus: FocusRequester? = null,
     rightEdge: Boolean = false,
     focusRequester: FocusRequester? = null,
     modifier: Modifier = Modifier,
@@ -144,8 +155,10 @@ private fun TvCategoryChip(
             .focusRequester(targetFocus)
             .onFocusChanged { if (it.isFocused) onFocused() }
             .focusProperties {
-                // 行首/行尾自锁，避免默认几何搜索在尽头甩到下方内容。
-                if (leftEdge) left = targetFocus
+                // 行首/行尾自锁，避免默认几何搜索在尽头甩到下方内容；
+                // 行首有明确左目标时（主页标签）优先跳到左侧导航。
+                if (leftFocus != null) left = leftFocus
+                else if (leftEdge) left = targetFocus
                 if (rightEdge) right = targetFocus
             }
             .clip(shape)

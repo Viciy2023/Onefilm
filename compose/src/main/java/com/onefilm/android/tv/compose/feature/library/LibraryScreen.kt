@@ -60,15 +60,14 @@ fun LibraryScreen(
     val focusRequesters = remember { mutableMapOf<String, FocusRequester>() }
     var lastFocusedKey by rememberSaveable { mutableStateOf<String?>(null) }
 
-    // 历史/收藏页没有导航行，进入页面或从详情返回时必须主动恢复卡片焦点，
-    // 否则遥控器会停在“无焦点”状态，必须多按一次方向键才出现选中框。
+    // 从详情返回时恢复上次的卡片焦点；首次从左侧导航进入时不要抢焦点，
+    // 否则用户在导航上按向下会被内容区的几何焦点搜索带到线路/网盘。
     LaunchedEffect(items.size) {
-        if (items.isNotEmpty()) {
-            delay(120)
-            val target = lastFocusedKey?.takeIf { focusRequesters.containsKey(it) }
-                ?: items.firstOrNull()?.let { "${it.key}:${it.id}" }
-            target?.let { focusRequesters[it]?.requestFocus() }
-        }
+        val key = lastFocusedKey ?: return@LaunchedEffect
+        if (items.isEmpty()) return@LaunchedEffect
+        // 等 LazyVerticalGrid 完成布局、卡片 FocusRequester 注册后再恢复焦点。
+        delay(120)
+        runCatching { focusRequesters[key]?.requestFocus() }
     }
 
     Column(

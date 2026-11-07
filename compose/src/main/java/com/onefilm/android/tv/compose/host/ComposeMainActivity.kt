@@ -248,6 +248,7 @@ class ComposeMainActivity : ComponentActivity() {
                     }
                 }
                 var searchFocusToken by remember { mutableIntStateOf(0) }
+                var homeCategoryFocusToken by remember { mutableIntStateOf(0) }
                 var showSettingsPanel by remember { mutableStateOf(false) }
                 var searchResultVisible by remember { mutableStateOf(false) }
                 val prefetchScope = rememberCoroutineScope()
@@ -498,14 +499,14 @@ class ComposeMainActivity : ComponentActivity() {
                                     SidebarEntry(
                                         label = stringResource(R.string.nav_config),
                                         icon = Icons.Outlined.Tune,
-                                        selected = false,
+                                        selected = showConfigDialog,
                                     ) {
                                         showConfigDialog = true
                                     },
                                     SidebarEntry(
                                         label = stringResource(R.string.nav_lines),
                                         icon = Icons.Outlined.SwapHoriz,
-                                        selected = false,
+                                        selected = showLinesDialog,
                                     ) {
                                         showLinesDialog = true
                                     },
@@ -519,7 +520,7 @@ class ComposeMainActivity : ComponentActivity() {
                                     SidebarEntry(
                                         label = stringResource(R.string.nav_settings),
                                         icon = Icons.Outlined.Settings,
-                                        selected = false,
+                                        selected = showSettingsPanel,
                                     ) {
                                         showSettingsPanel = true
                                     },
@@ -580,6 +581,8 @@ class ComposeMainActivity : ComponentActivity() {
                                 onHomeFocused = { home ->
                                     TvHeaderFocusState.homeCategoryFocused = home
                                 },
+                                leftFocus = sidebarFirstFocus,
+                                focusHomeToken = homeCategoryFocusToken,
                             )
                         }
                     },
@@ -747,9 +750,7 @@ class ComposeMainActivity : ComponentActivity() {
                 // 后注册的优先；放在它前面会被它抢先弹栈，表现就是“回到主页后按返回变成返回上一步”。
                 BackHandler(enabled = !showSettingsPanel) {
                     when {
-                        // TV 顶部“主页”按钮只有退出语义：焦点在它上面时按返回
-                        // 直接弹退出确认，不再执行回到上一页/分类页的逻辑。
-                        isTv && TvHeaderFocusState.homeCategoryFocused -> showExitDialog = true
+                        // 只有主页按返回才弹退出确认；分类页一律先回主页。
                         route?.startsWith(Routes.HOME) == true -> showExitDialog = true
                         // Any API category returns straight to home, never to the
                         // previously focused category.
@@ -760,6 +761,8 @@ class ComposeMainActivity : ComponentActivity() {
                                     launchSingleTop = true
                                 }
                             }
+                            // 回到主页后把焦点还给“主页”分类标签。
+                            homeCategoryFocusToken++
                         }
                         // 侧栏页面返回点播主页，不回到上一个侧栏页面。
                         route == Routes.HISTORY || route == Routes.LIBRARY ||
