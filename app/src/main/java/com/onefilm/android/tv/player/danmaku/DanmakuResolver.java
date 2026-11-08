@@ -55,6 +55,13 @@ public final class DanmakuResolver {
         DanmakuApi.cancel();
     }
 
+    /** 接口地址变更后清空源列表缓存，避免继续复用旧服务端的搜索结果。 */
+    public static void resetCache() {
+        cachedShowKey = "";
+        cachedSources = List.of();
+        cachedAt = 0L;
+    }
+
     /**
      * @param name           影片名（可含年份/语言/演员版本）
      * @param episode        集名（可含数字）

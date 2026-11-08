@@ -1,6 +1,7 @@
 package com.onefilm.android.tv.composebridge
 
 import android.content.Context
+import android.net.Uri
 import com.onefilm.android.tv.compose.R
 
 import androidx.media3.common.DolbyVisionOutputPolicy
@@ -22,6 +23,10 @@ import com.onefilm.android.tv.compose.bridge.ServerEventBridge
 import com.onefilm.android.tv.compose.bridge.HomeFeedCache
 import com.onefilm.android.tv.compose.bridge.DetailCache
 import com.onefilm.android.tv.compose.bridge.ConfigLine
+import com.onefilm.android.tv.compose.bridge.DanmakuProbeResult
+import com.github.catvod.net.OkHttp
+import okhttp3.FormBody
+import okhttp3.Request
 import com.onefilm.android.tv.setting.DanmakuSetting
 import com.onefilm.android.tv.setting.DecodeSetting
 import com.onefilm.android.tv.setting.PlayerSetting
@@ -238,6 +243,51 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
 
     override fun setDanmakuApi(url: String) {
         DanmakuSetting.putApiUrl(url.trim())
+    }
+
+    override suspend fun probeDanmakuApi(url: String): DanmakuProbeResult = withContext(Dispatchers.IO) {
+        val target = url.trim()
+        if (target.isEmpty()) return@withContext DanmakuProbeResult(false, "")
+        if (!target.startsWith("http://") && !target.startsWith("https://")) {
+            return@withContext DanmakuProbeResult(false, "http(s):// required")
+        }
+        // 1) danmu_api 风格：/api/config 返回 JSON（含 version），最快也最能说明服务端活着
+        probeConfig(target)?.let { return@withContext DanmakuProbeResult(true, it) }
+        // 2) 其它服务端：按真实请求方式发一次不可能命中的搜索，只看 HTTP 是否可达
+        probeSearch(target)
+    }
+
+    /** GET {origin}/api/config，成功时返回版本号。 */
+    private fun probeConfig(target: String): String? = runCatching {
+        val uri = Uri.parse(target)
+        val host = uri.host ?: return@runCatching null
+        val port = if (uri.port > 0) ":${uri.port}" else ""
+        val configUrl = "${uri.scheme}://$host$port/api/config"
+        OkHttp.newCall(OkHttp.client(8_000L), configUrl).execute().use { response ->
+            if (!response.isSuccessful) return@runCatching null
+            val body = response.body?.string().orEmpty()
+            val version = Regex("\"version\"\\s*:\\s*\"([^\"]+)\"").find(body)?.groupValues?.get(1)
+            if (version.isNullOrBlank()) "HTTP ${response.code}" else "v$version"
+        }
+    }.getOrNull()
+
+    /** 按真实请求方式探活：模板地址走 GET，否则 POST 一次轻量搜索。 */
+    private fun probeSearch(target: String): DanmakuProbeResult = runCatching {
+        val client = OkHttp.client(12_000L)
+        val call = if (target.contains("{name}") || target.contains("{episode}")) {
+            OkHttp.newCall(
+                client,
+                target.replace("{name}", "OneFilmProbe").replace("{episode}", "1"),
+            )
+        } else {
+            val body = FormBody.Builder().add("name", "OneFilmProbe").add("episode", "1").build()
+            client.newCall(Request.Builder().url(target).post(body).build())
+        }
+        call.execute().use { response ->
+            DanmakuProbeResult(response.isSuccessful, "HTTP ${response.code}")
+        }
+    }.getOrElse { error ->
+        DanmakuProbeResult(false, (error.message ?: error.javaClass.simpleName).take(120))
     }
 
     override fun setDanmakuScale(scale: Float) {

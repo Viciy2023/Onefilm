@@ -230,7 +230,7 @@ fun ConfigScreen(
                     TvTagButton(
                         text = if (loading) stringResource(R.string.settings_loading) else stringResource(R.string.config_save_and_load),
                         enabled = !loading && loadingLineKey == null,
-                        modifier = Modifier.width(126.dp),
+                        modifier = Modifier.width(126.dp).height(38.dp),
                         onClick = {
                             if (url.isBlank()) {
                                 error = resContext.getString(R.string.config_url_required)

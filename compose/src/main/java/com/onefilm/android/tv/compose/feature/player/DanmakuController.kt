@@ -250,6 +250,17 @@ object DanmakuController {
         runCatching { ComposeDependencies.danmakuDataSource.cancel() }
     }
 
+    /** 弹幕接口地址变更后调用：取消请求并清空源缓存，下次加载会重新搜索。 */
+    fun invalidate() {
+        cancelLoad()
+        loadedKey = ""
+        xml = null
+        cachedShow = ""
+        cachedSources = emptyList()
+        cachedAt = 0L
+        runCatching { ComposeDependencies.danmakuDataSource.invalidateCache() }
+    }
+
     /**
      * 换集复用：同一部剧（片名+年份）且缓存未过期，并且缓存里确实有当前集。
      * 电影没有“第N集”标记时视为可复用。

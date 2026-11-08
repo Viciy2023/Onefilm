@@ -391,4 +391,9 @@
     <string name="player_parse_default">默认解析</string>
     <string name="player_parsing">正在解析视频地址…</string>
     <string name="player_parse_failed">解析失败，请换个引擎重试</string>
+    <string name="settings_saved">已保存</string>
+    <string name="settings_danmaku_saved">已保存，下次播放时生效</string>
+    <string name="settings_danmaku_probe_ok">连接成功（%1$s）</string>
+    <string name="settings_danmaku_probe_fail">连接失败（%1$s）</string>
+    <string name="settings_danmaku_probe_empty">还没有可用的弹幕接口地址</string>
 </resources>

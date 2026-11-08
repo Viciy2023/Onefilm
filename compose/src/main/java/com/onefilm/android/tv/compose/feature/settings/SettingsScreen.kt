@@ -125,6 +125,7 @@ fun SettingsScreen(
     }
     var configMessage by remember { mutableStateOf<String?>(null) }
     var configMessageSuccess by remember { mutableStateOf(true) }
+    var configMessageTitle by remember { mutableStateOf<String?>(null) }
     var messageType by remember { mutableStateOf(0) }
     val configRowFocus = remember { List(3) { FocusRequester() } }
     val danmakuApiFocus = remember { FocusRequester() }
@@ -189,11 +190,12 @@ fun SettingsScreen(
         panelPage = 1
     }
 
-    fun reportConfig(type: Int, label: String, ok: Boolean, message: String) {
+    fun reportConfig(type: Int, label: String, ok: Boolean, message: String, title: String? = null) {
         messageType = type
         configMessageSuccess = ok
+        configMessageTitle = title
         configMessage = if (ok) {
-            resContext.getString(R.string.settings_load_ok, label)
+            message.ifBlank { resContext.getString(R.string.settings_load_ok, label) }
         } else {
             resContext.getString(R.string.settings_load_fail, label, message.ifBlank { resContext.getString(R.string.settings_check_url) })
         }
@@ -233,9 +235,18 @@ fun SettingsScreen(
                 onSave = {
                     if (type == 3) {
                         dataSource.setDanmakuApi(editUrl.trim())
+                        // 地址变了：清掉源缓存与正在进行的请求，避免继续用旧服务端的结果
+                        com.onefilm.android.tv.compose.feature.player.DanmakuController.invalidate()
                         snapshot = dataSource.load()
                         editType = null
                         panelPage = 0
+                        reportConfig(
+                            3,
+                            resContext.getString(R.string.settings_danmaku_api),
+                            true,
+                            resContext.getString(R.string.settings_danmaku_saved),
+                            resContext.getString(R.string.settings_saved),
+                        )
                         scope.launch {
                             delay(200)
                             runCatching { danmakuApiFocus.requestFocus() }
@@ -391,10 +402,39 @@ fun SettingsScreen(
                     openConfig(3, snapshot.danmakuApi)
                 },
                 onReload = {
-                    reloadingDanmaku = true
-                    dataSource.setDanmakuApi(snapshot.danmakuApi)
-                    snapshot = dataSource.load()
-                    reloadingDanmaku = false
+                    if (!reloadingDanmaku) {
+                        val target = snapshot.danmakuApi.trim()
+                        if (target.isEmpty()) {
+                            reportConfig(
+                                3,
+                                resContext.getString(R.string.settings_danmaku_api),
+                                false,
+                                resContext.getString(R.string.settings_danmaku_probe_empty),
+                            )
+                        } else {
+                            reloadingDanmaku = true
+                            scope.launch {
+                                val result = runCatching { dataSource.probeDanmakuApi(target) }
+                                    .getOrElse { error ->
+                                        com.onefilm.android.tv.compose.bridge.DanmakuProbeResult(
+                                            false,
+                                            error.message.orEmpty(),
+                                        )
+                                    }
+                                reloadingDanmaku = false
+                                reportConfig(
+                                    3,
+                                    resContext.getString(R.string.settings_danmaku_api),
+                                    result.ok,
+                                    if (result.ok) {
+                                        resContext.getString(R.string.settings_danmaku_probe_ok, result.detail)
+                                    } else {
+                                        resContext.getString(R.string.settings_danmaku_probe_fail, result.detail)
+                                    },
+                                )
+                            }
+                        }
+                    }
                 },
             )
             }
@@ -994,16 +1034,21 @@ fun SettingsScreen(
         SettingsDialog(
             onDismiss = {
                 configMessage = null
+                configMessageTitle = null
                 scope.launch {
                     delay(150)
-                    runCatching { configRowFocus[messageType].requestFocus() }
+                    if (messageType == 3) {
+                        runCatching { danmakuApiFocus.requestFocus() }
+                    } else {
+                        configRowFocus.getOrNull(messageType)?.let { runCatching { it.requestFocus() } }
+                    }
                 }
             },
             width = 360.dp,
             padding = 12.dp,
         ) {
             Text(
-                text = if (configMessageSuccess) stringResource(R.string.settings_loaded) else stringResource(R.string.settings_load_failed),
+                text = configMessageTitle ?: if (configMessageSuccess) stringResource(R.string.settings_loaded) else stringResource(R.string.settings_load_failed),
                 fontSize = 14.sp,
             )
             Spacer(Modifier.height(6.dp))

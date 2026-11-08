@@ -58,6 +58,9 @@ data class SettingsSnapshot(
 /** 搜索线程候选值，设置页与搜索实现共用。 */
 val SEARCH_THREAD_OPTIONS = listOf(12, 16, 24, 36, 48)
 
+/** 弹幕接口探活结果：ok 表示连接可用，detail 是版本号 / HTTP 状态 / 异常摘要。 */
+data class DanmakuProbeResult(val ok: Boolean, val detail: String)
+
 /** 搜索源勾选项。 */
 data class SearchSiteItem(
     val key: String,
@@ -105,6 +108,9 @@ interface SettingsDataSource {
     fun setDanmakuLoad(enabled: Boolean)
     fun setDanmakuAuto(enabled: Boolean)
     fun setDanmakuApi(url: String)
+
+    /** 探活弹幕接口：先试 /api/config，再按真实请求方式发一次极轻量搜索。 */
+    suspend fun probeDanmakuApi(url: String): DanmakuProbeResult = DanmakuProbeResult(false, "")
     fun setDanmakuScale(scale: Float)
     fun setDanmakuTransparency(value: Float)
     fun setDanmakuDuration(ms: Long)

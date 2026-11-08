@@ -29,4 +29,7 @@ interface DanmakuDataSource {
 
     /** 取消当前弹幕网络请求（退出播放/切集时调用）。 */
     fun cancel()
+
+    /** 接口地址变更后清空源列表缓存，避免继续命中旧服务端的搜索结果。 */
+    fun invalidateCache() {}
 }

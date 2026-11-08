@@ -6,6 +6,7 @@ import com.onefilm.android.tv.bean.Danmaku
 import com.onefilm.android.tv.compose.bridge.DanmakuDataSource
 import com.onefilm.android.tv.compose.bridge.DanmakuDisplayConfig
 import com.onefilm.android.tv.compose.bridge.DanmakuSource
+import com.onefilm.android.tv.player.danmaku.DanmakuResolver
 import com.onefilm.android.tv.setting.DanmakuSetting
 import androidx.media3.ui.danmaku.DanmakuConfig
 import kotlinx.coroutines.Dispatchers
@@ -67,5 +68,9 @@ class AppDanmakuDataSource : DanmakuDataSource {
 
     override fun cancel() {
         DanmakuApi.cancel()
+    }
+
+    override fun invalidateCache() {
+        DanmakuResolver.resetCache()
     }
 }

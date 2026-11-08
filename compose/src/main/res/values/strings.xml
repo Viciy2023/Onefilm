@@ -391,4 +391,9 @@
     <string name="player_parse_default">Default</string>
     <string name="player_parsing">Parsing the video link…</string>
     <string name="player_parse_failed">Parsing failed. Try another engine.</string>
+    <string name="settings_saved">Saved</string>
+    <string name="settings_danmaku_saved">Saved. It takes effect the next time playback starts.</string>
+    <string name="settings_danmaku_probe_ok">Connected (%1$s)</string>
+    <string name="settings_danmaku_probe_fail">Cannot connect (%1$s)</string>
+    <string name="settings_danmaku_probe_empty">No danmaku API configured</string>
 </resources>
