@@ -119,7 +119,7 @@ fun LibraryScreen(
                 )
             }
             else -> LazyVerticalGrid(
-                columns = GridCells.Fixed(if (PosterStyleController.horizontal) 5 else 6),
+                columns = GridCells.Fixed(if (PosterStyleController.horizontal) 4 else 6),
                 modifier = Modifier.padding(top = 12.dp),
                 contentPadding = PaddingValues(vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),

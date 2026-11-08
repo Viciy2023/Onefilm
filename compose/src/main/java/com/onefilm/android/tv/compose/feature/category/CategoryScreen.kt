@@ -126,7 +126,7 @@ private fun CategoryContent(
     }
     Box(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
-            columns = GridCells.Fixed(if (PosterStyleController.horizontal) 5 else 6),
+            columns = GridCells.Fixed(if (PosterStyleController.horizontal) 4 else 6),
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),

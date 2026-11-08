@@ -74,7 +74,6 @@ fun PosterCard(
     } else {
         PosterStyle.Vertical
     }) == PosterStyle.Horizontal
-    val layout = titleLayout ?: if (horizontal) PosterTitleLayout.Below else PosterTitleLayout.Overlay
     when {
         horizontal -> HorizontalPoster(
             title = title,
@@ -87,7 +86,7 @@ fun PosterCard(
             onClick = onClick,
             modifier = modifier,
         )
-        layout == PosterTitleLayout.Below -> VerticalBelowPoster(
+        titleLayout == PosterTitleLayout.Below -> VerticalBelowPoster(
             title = title,
             posterUrl = posterUrl,
             subtitle = subtitle,
@@ -347,22 +346,45 @@ private fun HorizontalPoster(
                         .padding(horizontal = 8.dp, vertical = 3.dp),
                 )
             }
-        }
-        Spacer(Modifier.height(6.dp))
-        Text(
-            text = title.ifBlank { stringResource(R.string.detail_unnamed) },
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        if (!subtitle.isNullOrBlank()) {
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.Transparent, Color(0x33000000), Color(0xE6000000)),
+                        ),
+                    ),
             )
+            Column(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Bottom,
+            ) {
+                Text(
+                    text = title.ifBlank { stringResource(R.string.detail_unnamed) },
+                    color = Color.White,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                subtitle?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        text = it,
+                        color = Color.White.copy(alpha = 0.75f),
+                        fontSize = 11.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
     }
 }

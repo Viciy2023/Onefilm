@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.R
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.bridge.SearchRank
+import com.onefilm.android.tv.compose.design.PosterStyleController
 import com.onefilm.android.tv.compose.design.component.PosterCard
 import com.onefilm.android.tv.compose.design.component.TvTagButton
 import com.onefilm.android.tv.compose.navigation.TvBrandRow
@@ -574,7 +575,7 @@ private fun SearchResults(
                     contentAlignment = Alignment.Center,
                 ) { Text(state.message.ifBlank { stringResource(R.string.search_load_failed) }, fontSize = 13.sp, color = MaterialTheme.colorScheme.error) }
                 is SearchUiState.Content -> LazyVerticalGrid(
-                    columns = GridCells.Fixed(5),
+                    columns = GridCells.Fixed(if (PosterStyleController.horizontal) 4 else 5),
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
