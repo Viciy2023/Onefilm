@@ -47,15 +47,11 @@ import com.onefilm.android.tv.compose.design.PosterStyleController
 /** 海报样式：竖版 2:3 / 横版 16:9。 */
 enum class PosterStyle { Vertical, Horizontal }
 
-/** 标题布局：竖版网格用叠加，横版与首页 rail 用图下。 */
-enum class PosterTitleLayout { Overlay, Below }
-
 /**
  * TV 端统一海报卡片。
  *
- * - 竖版 + Overlay：首页网格、分类、搜索、收藏（保持现状）
- * - 竖版 + Below：首页 SectionRow（保持现状）
- * - 横版：16:9 + 标题在图片下方；优先横图，缺失时用「竖图放大暗化背景 + 完整竖图居中」兜底
+ * - 竖版：2:3，标题叠加在图内（首页网格、首页 rail、分类、搜索、收藏）
+ * - 横版：16:9，标题叠加在图内；优先横图，缺失时用「竖图放大暗化背景 + 完整竖图居中」兜底
  */
 @Composable
 fun PosterCard(
@@ -69,7 +65,6 @@ fun PosterCard(
     sourceLabel: String? = null,
     focusEnabled: Boolean = true,
     style: PosterStyle? = null,
-    titleLayout: PosterTitleLayout? = null,
 ) {
     val horizontal = (style ?: if (PosterStyleController.horizontal) {
         PosterStyle.Horizontal
@@ -83,15 +78,6 @@ fun PosterCard(
             landscapeUrl = landscapeUrl,
             subtitle = subtitle,
             sourceLabel = sourceLabel,
-            width = width,
-            focusEnabled = focusEnabled,
-            onClick = onClick,
-            modifier = modifier,
-        )
-        titleLayout == PosterTitleLayout.Below -> VerticalBelowPoster(
-            title = title,
-            posterUrl = posterUrl,
-            subtitle = subtitle,
             width = width,
             focusEnabled = focusEnabled,
             onClick = onClick,
@@ -144,9 +130,13 @@ private fun VerticalOverlayPoster(
         Box(
             Modifier
                 .fillMaxWidth()
-                .graphicsLayer { scaleX = scale; scaleY = scale }
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    shadowElevation = if (focused) 18.dp.toPx() else 0f
+                }
                 .clip(shape)
-                .border(if (focused) 2.dp else 0.dp, Color.White.copy(alpha = 0.8f), shape),
+                .border(if (focused) 3.dp else 0.dp, Color.White, shape),
         ) {
             Box(
                 Modifier
@@ -218,64 +208,6 @@ private fun VerticalOverlayPoster(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun VerticalBelowPoster(
-    title: String,
-    posterUrl: String?,
-    subtitle: String?,
-    width: Dp?,
-    focusEnabled: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier,
-) {
-    Column(
-        modifier = modifier
-            .then(if (width != null) Modifier.width(width) else Modifier.width(140.dp))
-            .focusProperties { canFocus = focusEnabled },
-    ) {
-        FocusableSurface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(2f / 3f)
-                .clip(RoundedCornerShape(20.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentDescription = title,
-            onClick = onClick,
-        ) {
-            if (posterUrl.isNullOrBlank()) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.common_no_poster), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            } else {
-                RemoteImage(
-                    rawUrl = posterUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    requestWidth = 480,
-                    requestHeight = 720,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = title.ifBlank { stringResource(R.string.detail_unnamed) },
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        if (!subtitle.isNullOrBlank()) {
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
         }
     }
 }
