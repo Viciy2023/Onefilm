@@ -81,6 +81,7 @@ fun PosterCard(
             title = title,
             posterUrl = posterUrl,
             landscapeUrl = landscapeUrl,
+            subtitle = subtitle,
             sourceLabel = sourceLabel,
             width = width,
             focusEnabled = focusEnabled,
@@ -284,6 +285,7 @@ private fun HorizontalPoster(
     title: String,
     posterUrl: String?,
     landscapeUrl: String?,
+    subtitle: String?,
     sourceLabel: String?,
     width: Dp?,
     focusEnabled: Boolean,
@@ -351,7 +353,7 @@ private fun HorizontalPoster(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(8.dp)
+                        .padding(start = 8.dp, top = 2.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(Color.Black.copy(alpha = 0.6f))
                         .padding(horizontal = 8.dp, vertical = 3.dp),
@@ -384,6 +386,17 @@ private fun HorizontalPoster(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+                subtitle?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        text = it,
+                        color = Color.White.copy(alpha = 0.75f),
+                        fontSize = 11.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
