@@ -10,6 +10,7 @@ object ComposeDependencies {
     lateinit var favoriteStore: FavoriteStore
     lateinit var sourceDataSource: SourceDataSource
     lateinit var playbackResolver: PlaybackResolver
+    lateinit var parseEngine: ParseEngine
     lateinit var playbackHistoryStore: PlaybackHistoryStore
     lateinit var danmakuDataSource: DanmakuDataSource
     lateinit var legacyPlayerFactory: LegacyPlayerFactory

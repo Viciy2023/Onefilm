@@ -19,8 +19,10 @@ import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import com.onefilm.android.tv.compose.bridge.LegacyPlayer
 import com.onefilm.android.tv.compose.bridge.LegacyPlayerListener
 import com.onefilm.android.tv.compose.bridge.LegacyTrack
+import com.onefilm.android.tv.compose.bridge.ParseOutcome
 import com.onefilm.android.tv.compose.bridge.PlaybackHistoryStore
 import com.onefilm.android.tv.compose.bridge.PlaybackResolver
+import com.onefilm.android.tv.compose.bridge.ResolvedPlayback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -38,6 +40,7 @@ object PlaybackSession {
     private var legacy: LegacyPlayer? = null
     private var playerHolder by mutableStateOf<Player?>(null)
     private var currentUrl: String? = null
+    private var currentHeaders: Map<String, String> = emptyMap()
     private var appContext: Context? = null
     private var openingApplied = false
     private var endingApplied = false
@@ -79,6 +82,9 @@ object PlaybackSession {
     var speed by mutableFloatStateOf(1f)
         private set
     var error by mutableStateOf<String?>(null)
+        private set
+    /** 正在用解析引擎处理当前网页地址。 */
+    var parsing by mutableStateOf(false)
         private set
     /** 当前 error 是否为"可自愈"的中间态（同源重试/线路切换），详情页据此跳过站点回退。 */
     var errorTransient by mutableStateOf(false)
@@ -395,6 +401,7 @@ object PlaybackSession {
         headers: Map<String, String> = emptyMap(),
     ) {
         appContext = context.applicationContext
+        currentHeaders = headers
         val target = ensureLegacy() ?: return
         if (currentUrl != url) {
             currentUrl = url
@@ -420,8 +427,8 @@ object PlaybackSession {
         val flag = flagName
         error = null
         scope.launch {
-            val resolved = resolver.resolve(key, flag, item.url)
-            if (resolved.isNullOrBlank()) {
+            val resolved = resolvePlayable(resolver, key, flag, item.url)
+            if (resolved == null) {
                 error = str(R.string.player_episode_resolve_failed)
                 return@launch
             }
@@ -438,7 +445,7 @@ object PlaybackSession {
             } else {
                 setMarks(0L, 0L)
             }
-            play(context, resolved, start)
+            play(context, resolved.url, start, resolved.headers)
             // 切集后播放器可能重建或重置参数，这里必须重新应用倍速
             applySpeed(playerHolder)
             if (history?.episodeUrl == item.url && history.speed > 0f) {
@@ -455,9 +462,46 @@ object PlaybackSession {
         val key = siteKey
         val flag = flagName
         scope.launch {
-            val url = resolver.resolve(key, flag, next.url) ?: return@launch
-            legacy?.preload(url, key, title)
+            val resolved = resolver.resolve(key, flag, next.url) ?: return@launch
+            // 需要解析的地址预加载代价太大（会起 WebView），等真正切集时再解析
+            if (resolved.needParse) return@launch
+            legacy?.preload(resolved.url, key, title)
         }
+    }
+
+    /** 解析真实地址；needParse 时先过解析引擎。失败返回 null。 */
+    suspend fun resolvePlayable(
+        resolver: PlaybackResolver,
+        key: String,
+        flag: String,
+        episodeUrl: String,
+    ): ResolvedPlayback? {
+        val resolved = resolver.resolve(key, flag, episodeUrl) ?: return null
+        if (!resolved.needParse) return resolved
+        val parseEngine = ComposeDependencies.parseEngine
+        if (!parseEngine.available) return resolved
+        val outcome = parseEngine.parse(episodeUrl, null)
+        if (!outcome.isSuccess) return null
+        return ResolvedPlayback(outcome.url, outcome.headers)
+    }
+
+    /** 手动解析当前集：engine 为空表示配置里的默认解析。 */
+    suspend fun parseAndPlay(engine: String?): Boolean {
+        val ctx = appContext ?: return false
+        val source = currentEpisode?.url?.takeIf { it.isNotBlank() } ?: currentUrl ?: return false
+        val parseEngine = ComposeDependencies.parseEngine
+        if (!parseEngine.available) return false
+        parsing = true
+        val outcome = try {
+            parseEngine.parse(source, engine)
+        } catch (e: Exception) {
+            ParseOutcome.failure
+        } finally {
+            parsing = false
+        }
+        if (!outcome.isSuccess) return false
+        play(ctx, outcome.url, positionMs(), outcome.headers)
+        return true
     }
 
     fun toggle() {
@@ -497,7 +541,7 @@ object PlaybackSession {
         val url = currentUrl ?: return
         val position = positionMs()
         error = null
-        target.start(url, siteKey, title, position)
+        target.start(url, siteKey, title, position, currentHeaders)
         attachPlayer(target.player)
         target.player?.play()
     }

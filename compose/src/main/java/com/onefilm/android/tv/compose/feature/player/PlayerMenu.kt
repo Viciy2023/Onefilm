@@ -23,6 +23,8 @@ class PlayerMenuActions(
     val onPrevious: (() -> Unit)?,
     val onNext: (() -> Unit)?,
     val onOpenEpisodes: () -> Unit,
+    /** 打开「解析」引擎选择面板；没有可用解析引擎时为 null。 */
+    val onParse: (() -> Unit)?,
     val danmakuOn: Boolean,
     val onToggleDanmaku: () -> Unit,
     val onPip: () -> Unit,
@@ -38,6 +40,7 @@ fun buildPlayerMenu(actions: PlayerMenuActions, context: Context): List<PlayerMe
     add(PlayerMenuEntry(s(R.string.player_replay)) { PlaybackSession.replay() })
     add(PlayerMenuEntry(s(R.string.player_refresh)) { PlaybackSession.refresh() })
     add(PlayerMenuEntry(s(R.string.player_select_episode), PlaybackSession.queue.size > 1) { actions.onOpenEpisodes() })
+    add(PlayerMenuEntry(s(R.string.player_parse), actions.onParse != null) { actions.onParse?.invoke() })
     add(
         PlayerMenuEntry(
             s(R.string.player_opening, formatTime(PlaybackSession.openingMs)),

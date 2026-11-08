@@ -387,4 +387,8 @@
     <string name="settings_danmaku_auto_rows">อัตโนมัติ</string>
     <string name="settings_danmaku_time_offset">ชดเชยเวลา</string>
     <string name="settings_danmaku_max_on_screen">สูงสุดบนหน้าจอ</string>
+    <string name="player_parse">แยกวิเคราะห์</string>
+    <string name="player_parse_default">ค่าเริ่มต้น</string>
+    <string name="player_parsing">กำลังแยกวิเคราะห์ลิงก์วิดีโอ…</string>
+    <string name="player_parse_failed">แยกวิเคราะห์ไม่สำเร็จ ลองใช้เครื่องมืออื่น</string>
 </resources>

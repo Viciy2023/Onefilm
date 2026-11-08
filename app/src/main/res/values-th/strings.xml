@@ -444,4 +444,5 @@
     <string name="auto_live">ถ่ายทอดสด</string>
     <string name="playback_preparing">กำลังเตรียมเล่น</string>
     <string name="entry_loading">กำลังโหลด โปรดรอสักครู่!</string>
+    <string name="external_link_unsupported">ยังไม่รองรับลิงก์ประเภทนี้ โปรดใช้หน้าเว็บวิดีโอหรือลิงก์วิดีโอโดยตรง (m3u8 / mp4)</string>
 </resources>

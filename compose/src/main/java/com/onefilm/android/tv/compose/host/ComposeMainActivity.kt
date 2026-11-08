@@ -251,14 +251,12 @@ class ComposeMainActivity : ComponentActivity() {
                         pendingSearchQuery.value = null
                     }
                 }
-                val pendingExternalPlay = ExternalPlaybackRequest.url
+                val pendingExternalPlay = ExternalPlaybackRequest.pending
                 LaunchedEffect(pendingExternalPlay) {
-                    if (!pendingExternalPlay.isNullOrBlank()) {
-                        val url = pendingExternalPlay
-                        ExternalPlaybackRequest.url = null
-                        val resolved = runCatching {
-                            ComposeDependencies.playbackResolver.resolve("push_agent", "push", url)
-                        }.getOrNull()?.takeIf { it.isNotBlank() } ?: url
+                    if (pendingExternalPlay != null) {
+                        val request = pendingExternalPlay
+                        ExternalPlaybackRequest.pending = null
+                        val url = request.url
                         PlaybackSession.setQueue(
                             key = "push_agent",
                             id = url,
@@ -268,7 +266,16 @@ class ComposeMainActivity : ComponentActivity() {
                             episodes = listOf(PlaybackEpisode("外部播放", url)),
                             index = 0,
                         )
-                        PlaybackSession.play(this@ComposeMainActivity, resolved, 0L)
+                        // 本地文件直接播；网络地址走解析流程（站点解析 + 网页解析引擎）
+                        if (request.direct) {
+                            PlaybackSession.play(this@ComposeMainActivity, url)
+                        } else {
+                            PlaybackSession.playEpisode(
+                                this@ComposeMainActivity,
+                                0,
+                                ComposeDependencies.playbackResolver,
+                            )
+                        }
                         navController.navigate(Routes.PLAYER) { launchSingleTop = true }
                     }
                 }

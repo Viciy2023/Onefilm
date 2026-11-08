@@ -2,16 +2,32 @@ package com.onefilm.android.tv.composebridge
 
 import com.onefilm.android.tv.api.SiteApi
 import com.onefilm.android.tv.compose.bridge.PlaybackResolver
+import com.onefilm.android.tv.compose.bridge.ResolvedPlayback
+import com.onefilm.android.tv.utils.Sniffer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class AppPlaybackResolver : PlaybackResolver {
-    override suspend fun resolve(key: String, flag: String, episodeUrl: String): String? =
+    override suspend fun resolve(key: String, flag: String, episodeUrl: String): ResolvedPlayback? =
         withContext(Dispatchers.IO) {
             runCatching {
-                SiteApi.playerContent(key, flag, episodeUrl).realUrl
+                val result = SiteApi.playerContent(key, flag, episodeUrl)
+                val url = result.realUrl
+                if (url.isBlank()) return@runCatching null
+                ResolvedPlayback(
+                    url = url,
+                    headers = result.header,
+                    // 站点标记了 parse/jx，或者推送来的不是直链视频，都需要再过解析引擎
+                    needParse = result.needParse() || (key == SiteApi.PUSH && isWebPage(url)),
+                )
             }.onFailure {
                 android.util.Log.e("PlaybackResolver", "resolve failed", it)
-            }.getOrNull()?.takeIf { it.isNotBlank() }
+            }.getOrNull()
         }
+
+    /** 推送来的 http(s) 地址不是直链视频时，按网页地址走解析引擎。 */
+    private fun isWebPage(url: String): Boolean {
+        if (!url.startsWith("http://") && !url.startsWith("https://")) return false
+        return runCatching { !Sniffer.isVideoFormat(url) }.getOrDefault(true)
+    }
 }

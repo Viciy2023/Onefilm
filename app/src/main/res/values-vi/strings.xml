@@ -444,4 +444,5 @@
     <string name="auto_live">Trực tiếp</string>
     <string name="playback_preparing">Đang chuẩn bị phát</string>
     <string name="entry_loading">Đang tải, vui lòng đợi!</string>
+    <string name="external_link_unsupported">Chưa hỗ trợ loại liên kết này. Vui lòng dùng trang video trên web hoặc liên kết video trực tiếp (m3u8 / mp4).</string>
 </resources>

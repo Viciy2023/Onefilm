@@ -387,4 +387,8 @@
     <string name="settings_danmaku_auto_rows">自動</string>
     <string name="settings_danmaku_time_offset">時間偏移</string>
     <string name="settings_danmaku_max_on_screen">同屏上限</string>
+    <string name="player_parse">解析</string>
+    <string name="player_parse_default">預設解析</string>
+    <string name="player_parsing">正在解析影片位址…</string>
+    <string name="player_parse_failed">解析失敗，請換個引擎重試</string>
 </resources>

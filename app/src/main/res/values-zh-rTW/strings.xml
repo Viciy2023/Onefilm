@@ -435,4 +435,5 @@
     <string name="auto_live">直播</string>
     <string name="playback_preparing">正在準備播放</string>
     <string name="entry_loading">正在載入，請稍候！</string>
+    <string name="external_link_unsupported">暫不支援此連結類型。請使用網頁影片網址或直鏈影片（m3u8 / mp4）。</string>
 </resources>

@@ -99,8 +99,8 @@ fun DetailRoute(
         val index = flag.episodes.indexOf(episode).coerceAtLeast(0)
         val selectedFlag = flag
         scope.launch {
-            val url = playbackResolver.resolve(key, selectedFlag.name, sourceUrl)
-            if (!url.isNullOrBlank()) {
+            val resolved = PlaybackSession.resolvePlayable(playbackResolver, key, selectedFlag.name, sourceUrl)
+            if (resolved != null) {
                 PlaybackSession.setQueue(
                     key = key,
                     id = id,
@@ -128,10 +128,10 @@ fun DetailRoute(
                 } else {
                     PlaybackSession.setMarks(0L, 0L)
                 }
-                PlaybackSession.play(context, url, start)
+                PlaybackSession.play(context, resolved.url, start, resolved.headers)
                 PlaybackSession.preloadNext(playbackResolver)
                 if (resumeFromHistory) PlaybackSession.updateSpeed(history!!.speed)
-                playingUrl = url
+                playingUrl = resolved.url
             }
         }
     }

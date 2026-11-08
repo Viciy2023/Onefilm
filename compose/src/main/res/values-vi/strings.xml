@@ -387,4 +387,8 @@
     <string name="settings_danmaku_auto_rows">Tự động</string>
     <string name="settings_danmaku_time_offset">Lệch thời gian</string>
     <string name="settings_danmaku_max_on_screen">Tối đa trên màn hình</string>
+    <string name="player_parse">Phân tích</string>
+    <string name="player_parse_default">Mặc định</string>
+    <string name="player_parsing">Đang phân tích liên kết video…</string>
+    <string name="player_parse_failed">Phân tích thất bại. Hãy thử công cụ khác.</string>
 </resources>

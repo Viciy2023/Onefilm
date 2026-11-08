@@ -387,4 +387,8 @@
     <string name="settings_danmaku_auto_rows">Auto</string>
     <string name="settings_danmaku_time_offset">Time offset</string>
     <string name="settings_danmaku_max_on_screen">Max on screen</string>
+    <string name="player_parse">Parse</string>
+    <string name="player_parse_default">Default</string>
+    <string name="player_parsing">Parsing the video link…</string>
+    <string name="player_parse_failed">Parsing failed. Try another engine.</string>
 </resources>

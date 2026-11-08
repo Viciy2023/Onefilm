@@ -232,6 +232,12 @@ fun PlayerControls(
     var showEpisodes by remember { mutableStateOf(false) }
     var showMore by remember { mutableStateOf(false) }
     var showDlna by remember { mutableStateOf(false) }
+    var showParse by remember { mutableStateOf(false) }
+    var parseHint by remember { mutableStateOf<String?>(null) }
+    // 解析引擎列表来自配置，配置变更后重新进入播放页即可刷新。
+    val parseEngines = remember {
+        runCatching { ComposeDependencies.parseEngine.engines() }.getOrDefault(emptyList())
+    }
     var dlnaDevices by remember { mutableStateOf<List<DlnaDevice>>(emptyList()) }
     var dlnaLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -253,7 +259,7 @@ fun PlayerControls(
         TvPlayerKeyState.fullscreenActive = !inline
         TvPlayerKeyState.controlsVisible = controlsVisible
         if (!controlsVisible) TvPlayerKeyState.playFocused = false
-        TvPlayerKeyState.menuOpen = showEpisodes || showMore || showDlna
+        TvPlayerKeyState.menuOpen = showEpisodes || showMore || showDlna || showParse
         TvPlayerKeyState.requestControls = {
             if (!controlsVisible) revealToMenu = false
             controlsVisible = true
@@ -267,6 +273,7 @@ fun PlayerControls(
             when {
                 showDlna -> { showDlna = false; true }
                 showMore -> { showMore = false; true }
+                showParse -> { showParse = false; true }
                 showEpisodes -> { showEpisodes = false; true }
                 else -> false
             }
@@ -310,12 +317,27 @@ fun PlayerControls(
             seekHint = null
         }
     }
+    LaunchedEffect(parseHint) {
+        if (parseHint != null) {
+            delay(2_000)
+            parseHint = null
+        }
+    }
+
+    fun startParse(engine: String?) {
+        showParse = false
+        scope.launch {
+            val ok = PlaybackSession.parseAndPlay(engine)
+            if (!ok) parseHint = resContext.getString(R.string.player_parse_failed)
+        }
+    }
 
     val menuEntries = buildPlayerMenu(
         PlayerMenuActions(
             onPrevious = onPrevious,
             onNext = onNext,
             onOpenEpisodes = { showEpisodes = true },
+            onParse = if (parseEngines.isEmpty()) null else ({ showParse = true }),
             danmakuOn = danmakuOn,
             onToggleDanmaku = {
                 danmakuOn = !danmakuOn
@@ -357,10 +379,10 @@ fun PlayerControls(
         resContext,
     )
 
-    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, showDlna) {
+    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, showDlna, showParse) {
         if (!controlsVisible) return@LaunchedEffect
         // 菜单打开或暂停时不自动隐藏；播放中则 10 秒无操作才隐藏。
-        if (!PlaybackSession.isPlaying || showEpisodes || showMore || showDlna) return@LaunchedEffect
+        if (!PlaybackSession.isPlaying || showEpisodes || showMore || showDlna || showParse) return@LaunchedEffect
         // 重新开始计时：暂停后恢复、弹窗关闭都要从当下重新数 10 秒。
         lastInteractionAt = SystemClock.uptimeMillis()
         while (true) {
@@ -412,7 +434,7 @@ fun PlayerControls(
                     inline = inline,
                     actions = PlayerKeyActions(
                         hidden = { !controlsVisible },
-                        overlayOpen = { showEpisodes || showMore || showDlna },
+                        overlayOpen = { showEpisodes || showMore || showDlna || showParse },
                         seek = { deltaMs -> seekWithHint(deltaMs) },
                         reveal = {
                             revealToMenu = false
@@ -623,6 +645,66 @@ fun PlayerControls(
                         }
                     }
                 }
+            }
+        }
+
+        if (showParse) {
+            PanelScrim(onDismiss = { showParse = false }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.player_parse),
+                        color = Ink,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    TextAction(stringResource(R.string.common_close)) { showParse = false }
+                }
+                Spacer(Modifier.height(12.dp))
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(96.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
+                ) {
+                    item {
+                        FlatTile(
+                            text = stringResource(R.string.player_parse_default),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { startParse(null) }
+                    }
+                    items(parseEngines) { entry ->
+                        FlatTile(
+                            text = entry.name,
+                            emphasis = entry.god,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { startParse(entry.name) }
+                    }
+                }
+            }
+        }
+
+        // 解析进行中/失败的提示，与快进提示区分位置，避免互相遮挡。
+        val parseCapsule = if (PlaybackSession.parsing) {
+            stringResource(R.string.player_parsing)
+        } else {
+            parseHint
+        }
+        parseCapsule?.let { hint ->
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = if (inline) 130.dp else 190.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color.Black.copy(alpha = 0.62f))
+                    .padding(horizontal = 18.dp, vertical = 8.dp),
+            ) {
+                Text(
+                    text = hint,
+                    color = Ink,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                )
             }
         }
 
