@@ -284,7 +284,7 @@ private fun TvPosterSection(
         columns = GridCells.Fixed(if (PosterStyleController.horizontal) 4 else 6),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (PosterStyleController.horizontal) 12.dp else 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         gridItemsIndexed(

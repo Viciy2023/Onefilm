@@ -26,6 +26,8 @@ fun RemoteImage(
     contentScale: ContentScale = ContentScale.Crop,
     requestWidth: Int? = null,
     requestHeight: Int? = null,
+    showPlaceholder: Boolean = true,
+    onSize: ((Int, Int) -> Unit)? = null,
 ) {
     val source = remember(rawUrl) { parseImageSource(rawUrl) }
     if (source == null) {
@@ -46,12 +48,18 @@ fun RemoteImage(
             .build()
     }
     Box(modifier) {
-        PosterLogoFallback(Modifier.fillMaxSize())
+        if (showPlaceholder) PosterLogoFallback(Modifier.fillMaxSize())
         AsyncImage(
             model = request,
             contentDescription = contentDescription,
             contentScale = contentScale,
             modifier = Modifier.fillMaxSize(),
+            onSuccess = { state ->
+                val drawable = state.result.drawable
+                if (drawable != null) {
+                    onSize?.invoke(drawable.intrinsicWidth, drawable.intrinsicHeight)
+                }
+            },
             onError = { state ->
                 android.util.Log.e(
                     "RemoteImage",
@@ -64,7 +72,7 @@ fun RemoteImage(
 }
 
 @Composable
-private fun PosterLogoFallback(modifier: Modifier = Modifier) {
+internal fun PosterLogoFallback(modifier: Modifier = Modifier) {
     Box(
         modifier
             .fillMaxSize()

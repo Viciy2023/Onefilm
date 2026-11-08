@@ -65,6 +65,7 @@
     <string name="settings_poster_style_title">Poster style</string>
     <string name="settings_poster_style_vertical">Vertical (2:3)</string>
     <string name="settings_poster_style_horizontal">Horizontal (16:9)</string>
+    <string name="settings_poster_style_hint">Horizontal posters rely on landscape artwork from your source. If a title has no landscape image, its vertical poster will be shown centered. You can switch back to vertical at any time.</string>
     <string name="settings_language_title">Language</string>
     <string name="settings_version_title">Version</string>
     <string name="settings_latest_version">Latest version</string>

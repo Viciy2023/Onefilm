@@ -65,6 +65,7 @@
     <string name="settings_poster_style_title">海报样式</string>
     <string name="settings_poster_style_vertical">竖版（2:3）</string>
     <string name="settings_poster_style_horizontal">横版（16:9）</string>
+    <string name="settings_poster_style_hint">横版海报依赖源接口提供横版剧照。若当前接口没有横版图，将自动使用竖版海报居中显示；可随时在「海报样式」中切回竖版。</string>
     <string name="settings_language_title">界面语言</string>
     <string name="settings_version_title">版本</string>
     <string name="settings_latest_version">最新版本</string>

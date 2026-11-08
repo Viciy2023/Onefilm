@@ -65,6 +65,7 @@
     <string name="settings_poster_style_title">สไตล์โปสเตอร์</string>
     <string name="settings_poster_style_vertical">แนวตั้ง (2:3)</string>
     <string name="settings_poster_style_horizontal">แนวนอน (16:9)</string>
+    <string name="settings_poster_style_hint">โปสเตอร์แนวนอนต้องใช้ภาพแนวนอนจากแหล่งข้อมูลของคุณ หากไม่มีภาพแนวนอน ระบบจะแสดงโปสเตอร์แนวตั้งแบบจัดกึ่งกลาง และคุณสามารถสลับกลับได้ทุกเมื่อ</string>
     <string name="settings_language_title">ภาษา</string>
     <string name="settings_version_title">เวอร์ชัน</string>
     <string name="settings_latest_version">เวอร์ชันล่าสุด</string>

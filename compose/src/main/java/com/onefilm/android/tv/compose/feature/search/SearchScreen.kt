@@ -578,8 +578,8 @@ private fun SearchResults(
                     columns = GridCells.Fixed(if (PosterStyleController.horizontal) 4 else 5),
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(22.dp),
+                    horizontalArrangement = Arrangement.spacedBy(if (PosterStyleController.horizontal) 12.dp else 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (PosterStyleController.horizontal) 12.dp else 22.dp),
                 ) {
                     itemsIndexed(
                         items = visibleItems,

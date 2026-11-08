@@ -22,7 +22,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,7 +81,6 @@ fun PosterCard(
             title = title,
             posterUrl = posterUrl,
             landscapeUrl = landscapeUrl,
-            subtitle = subtitle,
             sourceLabel = sourceLabel,
             width = width,
             focusEnabled = focusEnabled,
@@ -283,7 +284,6 @@ private fun HorizontalPoster(
     title: String,
     posterUrl: String?,
     landscapeUrl: String?,
-    subtitle: String?,
     sourceLabel: String?,
     width: Dp?,
     focusEnabled: Boolean,
@@ -293,7 +293,7 @@ private fun HorizontalPoster(
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (focused) 1.06f else 1f,
+        targetValue = if (focused) 1.10f else 1f,
         animationSpec = spring(
             dampingRatio = 0.82f,
             stiffness = 320f,
@@ -302,6 +302,9 @@ private fun HorizontalPoster(
         label = "poster-focus-h",
     )
     val shape = RoundedCornerShape(14.dp)
+    var landscapeOk by remember(landscapeUrl, posterUrl) {
+        mutableStateOf(!landscapeUrl.isNullOrBlank() && landscapeUrl != posterUrl)
+    }
     Column(
         modifier = modifier
             .then(if (width != null) Modifier.width(width) else Modifier.fillMaxWidth())
@@ -312,19 +315,27 @@ private fun HorizontalPoster(
         Box(
             Modifier
                 .fillMaxWidth()
-                .graphicsLayer { scaleX = scale; scaleY = scale }
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    shadowElevation = if (focused) 18.dp.toPx() else 0f
+                }
                 .clip(shape)
-                .border(if (focused) 2.dp else 0.dp, Color.White.copy(alpha = 0.8f), shape)
+                .border(if (focused) 3.dp else 0.dp, Color.White, shape)
                 .aspectRatio(16f / 9f)
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
-            if (!landscapeUrl.isNullOrBlank()) {
+            if (landscapeOk) {
                 RemoteImage(
                     rawUrl = landscapeUrl,
                     contentDescription = title,
                     contentScale = ContentScale.Crop,
                     requestWidth = 640,
                     requestHeight = 360,
+                    onSize = { width, height ->
+                        // 源端给的“横图”如果是竖图，直接退回兜底，避免裁成竖版截断效果。
+                        if (width > 0 && height > 0 && width <= height) landscapeOk = false
+                    },
                     modifier = Modifier.fillMaxSize(),
                 )
             } else {
@@ -359,7 +370,7 @@ private fun HorizontalPoster(
                 Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Bottom,
             ) {
@@ -373,17 +384,6 @@ private fun HorizontalPoster(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                subtitle?.takeIf { it.isNotBlank() }?.let {
-                    Text(
-                        text = it,
-                        color = Color.White.copy(alpha = 0.75f),
-                        fontSize = 11.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
             }
         }
     }
@@ -392,21 +392,20 @@ private fun HorizontalPoster(
 /** 无横图兜底：竖图放大暗化作背景，原竖图完整居中，不裁切。 */
 @Composable
 private fun LandscapeFallback(posterUrl: String?, title: String) {
-    Box(Modifier.fillMaxSize()) {
+    var loaded by remember(posterUrl) { mutableStateOf(false) }
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant)) {
         if (posterUrl.isNullOrBlank()) {
-            Text(
-                text = stringResource(R.string.common_no_poster),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.Center),
-            )
+            PosterLogoFallback(Modifier.fillMaxSize())
             return@Box
         }
+        // 背景：竖图放大暗化，形成模糊化观感
         RemoteImage(
             rawUrl = posterUrl,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             requestWidth = 320,
             requestHeight = 180,
+            showPlaceholder = false,
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
@@ -416,12 +415,19 @@ private fun LandscapeFallback(posterUrl: String?, title: String) {
                 },
         )
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)))
+        // 中间海报加载前显示默认 LOGO
+        if (!loaded) PosterLogoFallback(Modifier.fillMaxSize())
+        // 前景：竖图完整居中，不裁切；关闭占位，避免两侧出现两条白边
         RemoteImage(
             rawUrl = posterUrl,
             contentDescription = title,
             contentScale = ContentScale.Fit,
             requestWidth = 300,
             requestHeight = 450,
+            showPlaceholder = false,
+            onSize = { width, height ->
+                if (width > 0 && height > 0) loaded = true
+            },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 28.dp),

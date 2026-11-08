@@ -65,6 +65,7 @@
     <string name="settings_poster_style_title">Kiểu áp phích</string>
     <string name="settings_poster_style_vertical">Dọc (2:3)</string>
     <string name="settings_poster_style_horizontal">Ngang (16:9)</string>
+    <string name="settings_poster_style_hint">Áp phích ngang cần hình ngang từ nguồn của bạn. Nếu không có, áp phích dọc sẽ được hiển thị căn giữa; bạn có thể chuyển lại bất cứ lúc nào.</string>
     <string name="settings_language_title">Ngôn ngữ</string>
     <string name="settings_version_title">Phiên bản</string>
     <string name="settings_latest_version">Phiên bản mới nhất</string>

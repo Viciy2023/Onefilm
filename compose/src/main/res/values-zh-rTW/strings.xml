@@ -65,6 +65,7 @@
     <string name="settings_poster_style_title">海報樣式</string>
     <string name="settings_poster_style_vertical">直式（2:3）</string>
     <string name="settings_poster_style_horizontal">橫式（16:9）</string>
+    <string name="settings_poster_style_hint">橫版海報依賴源接口提供橫版劇照。若目前接口沒有橫版圖，將自動使用直式海報置中顯示；可隨時在「海報樣式」中切回直式。</string>
     <string name="settings_language_title">介面語言</string>
     <string name="settings_version_title">版本</string>
     <string name="settings_latest_version">最新版本</string>

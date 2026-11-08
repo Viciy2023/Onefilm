@@ -122,8 +122,8 @@ fun LibraryScreen(
                 columns = GridCells.Fixed(if (PosterStyleController.horizontal) 4 else 6),
                 modifier = Modifier.padding(top = 12.dp),
                 contentPadding = PaddingValues(vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalArrangement = Arrangement.spacedBy(if (PosterStyleController.horizontal) 12.dp else 16.dp),
+                verticalArrangement = Arrangement.spacedBy(if (PosterStyleController.horizontal) 12.dp else 24.dp),
             ) {
                 itemsIndexed(items, key = { index, card -> "${card.key}:${card.id}:$index" }) { _, card ->
                     val cardKey = "${card.key}:${card.id}"

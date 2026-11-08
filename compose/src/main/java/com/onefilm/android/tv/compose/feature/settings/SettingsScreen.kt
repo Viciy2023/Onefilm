@@ -115,6 +115,7 @@ fun SettingsScreen(
     var blockWordsDraft by remember { mutableStateOf("") }
     var showClearCacheConfirm by remember { mutableStateOf(false) }
     var showSearchSites by remember { mutableStateOf(false) }
+    var showPosterStyleHint by remember { mutableStateOf(false) }
     var showContact by remember { mutableStateOf(false) }
     var reloadingDanmaku by remember { mutableStateOf(false) }
     var panelPage by remember { mutableStateOf(0) }
@@ -450,6 +451,7 @@ fun SettingsScreen(
                 ) { index ->
                     refresh { setPosterStyle(index) }
                     PosterStyleController.apply(index)
+                    if (index == 1) showPosterStyleHint = true
                 }
             }
             }
@@ -463,7 +465,7 @@ fun SettingsScreen(
                 ActionRow("DoH", snapshot.dohLabel.ifBlank { stringResource(R.string.settings_follow_config) }) { refresh { cycleDoh() } }
             }
             }
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_incognito), stringResource(R.string.settings_no_history), snapshot.incognito) {
                     refresh { setIncognito(it) }
@@ -971,6 +973,20 @@ fun SettingsScreen(
                     primary = true,
                 )
             }
+        }
+    }
+
+    if (showPosterStyleHint) {
+        SettingsDialog(
+            onDismiss = { showPosterStyleHint = false },
+            width = 420.dp,
+            padding = 16.dp,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_poster_style_hint),
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+            )
         }
     }
 
