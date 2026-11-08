@@ -10,6 +10,8 @@ data class MediaCard(
     val posterUrl: String?,
     val progress: Float? = null,
     val siteName: String? = null,
+    /** 横版海报；空时客户端用竖图 + 模糊背景兜底。 */
+    val landscapeUrl: String? = null,
 ) : Serializable
 
 data class HomeSection(val title: String, val items: List<MediaCard>, val key: String? = null) : Serializable

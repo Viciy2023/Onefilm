@@ -62,6 +62,9 @@
     <string name="settings_theme_light">简约</string>
     <string name="settings_theme_system">跟随系统</string>
     <string name="settings_theme_title">外观主题</string>
+    <string name="settings_poster_style_title">海报样式</string>
+    <string name="settings_poster_style_vertical">竖版（2:3）</string>
+    <string name="settings_poster_style_horizontal">横版（16:9）</string>
     <string name="settings_language_title">界面语言</string>
     <string name="settings_version_title">版本</string>
     <string name="settings_latest_version">最新版本</string>

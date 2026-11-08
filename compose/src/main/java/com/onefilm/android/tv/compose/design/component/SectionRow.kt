@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.onefilm.android.tv.compose.design.PosterStyleController
 
 data class PosterItem(
     val key: String,
@@ -18,6 +19,7 @@ data class PosterItem(
     val title: String,
     val posterUrl: String?,
     val subtitle: String?,
+    val landscapeUrl: String? = null,
 )
 
 @Composable
@@ -44,6 +46,8 @@ fun SectionRow(
                     title = item.title,
                     posterUrl = item.posterUrl,
                     subtitle = item.subtitle,
+                    landscapeUrl = item.landscapeUrl,
+                    width = if (PosterStyleController.horizontal) 240.dp else null,
                     onClick = { onItemClick(item) },
                 )
             }

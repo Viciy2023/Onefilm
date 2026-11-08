@@ -60,7 +60,8 @@ import com.onefilm.android.tv.compose.bridge.HomeSection
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.design.component.HeroBanner
 import com.onefilm.android.tv.compose.design.component.PosterItem
-import com.onefilm.android.tv.compose.design.component.TvPosterCard
+import com.onefilm.android.tv.compose.design.PosterStyleController
+import com.onefilm.android.tv.compose.design.component.PosterCard
 import com.onefilm.android.tv.compose.design.component.SectionRow
 import com.onefilm.android.tv.compose.R
 import androidx.compose.ui.res.stringResource
@@ -244,6 +245,7 @@ private fun HomeContent(
                                 title = item.title,
                                 subtitle = item.subtitle,
                                 posterUrl = item.posterUrl,
+                                landscapeUrl = item.landscapeUrl,
                             ),
                         )
                     },
@@ -259,6 +261,7 @@ private fun MediaCard.toPosterItem() = PosterItem(
     title = title,
     posterUrl = posterUrl,
     subtitle = subtitle,
+    landscapeUrl = landscapeUrl,
 )
 
 @Composable
@@ -278,7 +281,7 @@ private fun TvPosterSection(
     onCardClick: (MediaCard) -> Unit,
 ) {
     LazyVerticalGrid(
-        columns = GridCells.Fixed(6),
+        columns = GridCells.Fixed(if (PosterStyleController.horizontal) 5 else 6),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -288,10 +291,11 @@ private fun TvPosterSection(
             items = items,
             key = { index, card -> "${card.key}:${card.id}:$index" },
         ) { _, item ->
-            TvPosterCard(
+            PosterCard(
                 title = item.title,
                 posterUrl = item.posterUrl,
                 subtitle = item.subtitle,
+                landscapeUrl = item.landscapeUrl,
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { onCardClick(item) },
             )

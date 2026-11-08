@@ -213,9 +213,10 @@ private fun DetailContent(
                         }
                     }
                 } else {
-                    if (!info.posterUrl.isNullOrBlank()) {
+                    val heroUrl = hdSlide(info.landscapeUrl?.takeIf { it.isNotBlank() } ?: info.posterUrl)
+                    if (!heroUrl.isNullOrBlank()) {
                         RemoteImage(
-                            rawUrl = info.posterUrl,
+                            rawUrl = heroUrl,
                             contentDescription = info.title,
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.fillMaxSize(),
@@ -524,3 +525,7 @@ private fun EpisodeButton(
         )
     }
 }
+
+/** 详情页头图优先横版；豆瓣 /view/photo/m/ 升级为 /view/photo/l/ 高清。 */
+private fun hdSlide(url: String?): String? =
+    url?.replace("/view/photo/m/", "/view/photo/l/")

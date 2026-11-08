@@ -67,7 +67,7 @@ import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.R
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.bridge.SearchRank
-import com.onefilm.android.tv.compose.design.component.TvPosterCard
+import com.onefilm.android.tv.compose.design.component.PosterCard
 import com.onefilm.android.tv.compose.design.component.TvTagButton
 import com.onefilm.android.tv.compose.navigation.TvBrandRow
 import kotlinx.coroutines.delay
@@ -586,9 +586,10 @@ private fun SearchResults(
                     ) { _, card ->
                         val cardKey = "${card.key}:${card.id}"
                         val requester = cardFocusRequesters.getOrPut(cardKey) { FocusRequester() }
-                        TvPosterCard(
+                        PosterCard(
                             title = card.title,
                             posterUrl = card.posterUrl,
+                            landscapeUrl = card.landscapeUrl,
                             subtitle = card.subtitle,
                             modifier = Modifier.fillMaxWidth().focusRequester(requester),
                             sourceLabel = card.siteName?.takeIf { it.isNotBlank() } ?: card.key,

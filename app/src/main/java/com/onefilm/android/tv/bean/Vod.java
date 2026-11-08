@@ -44,6 +44,9 @@ public class Vod implements Parcelable, Diffable<Vod> {
     @Element(name = "pic", required = false)
     @SerializedName("vod_pic")
     private String vodPic;
+    @Element(name = "pic_slide", required = false)
+    @SerializedName("vod_pic_slide")
+    private String vodPicSlide;
     @Element(name = "note", required = false)
     @SerializedName("vod_remarks")
     private String vodRemarks;
@@ -93,6 +96,7 @@ public class Vod implements Parcelable, Diffable<Vod> {
         this.vodName = in.readString();
         this.typeName = in.readString();
         this.vodPic = in.readString();
+        this.vodPicSlide = in.readString();
         this.vodRemarks = in.readString();
         this.vodYear = in.readString();
         this.vodArea = in.readString();
@@ -149,6 +153,15 @@ public class Vod implements Parcelable, Diffable<Vod> {
 
     public void setPic(String vodPic) {
         this.vodPic = vodPic;
+    }
+
+    /** 横版海报（列表/详情由源端提供；为空时客户端走兜底）。 */
+    public String getPicSlide() {
+        return TextUtils.isEmpty(vodPicSlide) ? "" : vodPicSlide.trim();
+    }
+
+    public void setPicSlide(String vodPicSlide) {
+        this.vodPicSlide = vodPicSlide;
     }
 
     public String getRemarks() {
@@ -336,6 +349,7 @@ public class Vod implements Parcelable, Diffable<Vod> {
         dest.writeString(this.vodName);
         dest.writeString(this.typeName);
         dest.writeString(this.vodPic);
+        dest.writeString(this.vodPicSlide);
         dest.writeString(this.vodRemarks);
         dest.writeString(this.vodYear);
         dest.writeString(this.vodArea);

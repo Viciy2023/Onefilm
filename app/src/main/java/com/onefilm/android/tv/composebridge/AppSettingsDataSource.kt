@@ -128,6 +128,7 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
         incognito = Setting.isIncognito(),
         dohLabel = runCatching { Doh.objectFrom(Setting.getDoh()).getName() }.getOrNull().orEmpty(),
         themeMode = com.github.catvod.utils.Prefers.getInt("compose_theme_mode", 0),
+        posterStyle = com.github.catvod.utils.Prefers.getInt("compose_poster_style", 0),
         cacheDays = Setting.getHistoryDays(),
         cacheSizeLabel = cachedCacheSizeLabel,
         wallpaperLabel = when (Setting.getWall()) {
@@ -460,6 +461,10 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
 
     override fun setThemeMode(mode: Int) {
         com.github.catvod.utils.Prefers.put("compose_theme_mode", mode.coerceIn(0, 2))
+    }
+
+    override fun setPosterStyle(style: Int) {
+        com.github.catvod.utils.Prefers.put("compose_poster_style", if (style == 1) 1 else 0)
     }
 
     override fun configPushUrl(): String = runCatching {

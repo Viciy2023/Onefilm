@@ -62,6 +62,9 @@
     <string name="settings_theme_light">簡約</string>
     <string name="settings_theme_system">跟隨系統</string>
     <string name="settings_theme_title">外觀主題</string>
+    <string name="settings_poster_style_title">海報樣式</string>
+    <string name="settings_poster_style_vertical">直式（2:3）</string>
+    <string name="settings_poster_style_horizontal">橫式（16:9）</string>
     <string name="settings_language_title">介面語言</string>
     <string name="settings_version_title">版本</string>
     <string name="settings_latest_version">最新版本</string>

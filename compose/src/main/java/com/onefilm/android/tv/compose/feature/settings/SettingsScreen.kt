@@ -88,6 +88,7 @@ import com.onefilm.android.tv.compose.design.component.TvTagButton
 import com.onefilm.android.tv.compose.bridge.ServerEventBridge
 import com.onefilm.android.tv.compose.bridge.SEARCH_THREAD_OPTIONS
 import com.onefilm.android.tv.compose.bridge.SearchSiteItem
+import com.onefilm.android.tv.compose.design.PosterStyleController
 import com.onefilm.android.tv.compose.design.ThemeController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -430,6 +431,25 @@ fun SettingsScreen(
                 ) { index ->
                     refresh { setThemeMode(index) }
                     ThemeController.apply(index)
+                }
+            }
+            }
+            item(span = { GridItemSpan(1) }) {
+            SettingsPanelRow {
+                ExpandableChoiceRow(
+                    title = stringResource(R.string.settings_poster_style_title),
+                    subtitle = if (snapshot.posterStyle == 1) {
+                        stringResource(R.string.settings_poster_style_horizontal)
+                    } else {
+                        stringResource(R.string.settings_poster_style_vertical)
+                    },
+                    options = listOf(
+                        stringResource(R.string.settings_poster_style_vertical) to (snapshot.posterStyle == 0),
+                        stringResource(R.string.settings_poster_style_horizontal) to (snapshot.posterStyle == 1),
+                    ),
+                ) { index ->
+                    refresh { setPosterStyle(index) }
+                    PosterStyleController.apply(index)
                 }
             }
             }

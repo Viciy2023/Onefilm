@@ -39,6 +39,7 @@ data class SettingsSnapshot(
     val incognito: Boolean,
     val dohLabel: String,
     val themeMode: Int,
+    val posterStyle: Int = 0,
     val cacheDays: Int,
     val cacheSizeLabel: String,
     val wallpaperLabel: String,
@@ -156,6 +157,7 @@ interface SettingsDataSource {
     fun configPushUrl(): String
     fun qrBitmap(content: String, size: Int): Bitmap?
     fun setThemeMode(mode: Int)
+    fun setPosterStyle(style: Int)
     fun setCacheDays(days: Int)
     fun clearCache()
     fun cycleWallpaper()

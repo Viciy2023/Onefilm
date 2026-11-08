@@ -28,6 +28,7 @@ class AppDetailDataSource : DetailDataSource {
                 id = id,
                 title = vod.name.orEmpty().ifBlank { "" },
                 posterUrl = vod.pic.orEmpty().ifBlank { null },
+                landscapeUrl = vod.picSlide.orEmpty().ifBlank { null },
                 description = vod.content.orEmpty().ifBlank { null },
                 year = vod.year.orEmpty().ifBlank { null },
                 area = vod.area.orEmpty().ifBlank { null },

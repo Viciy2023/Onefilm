@@ -27,14 +27,14 @@ class TvPosterCardFocusTest {
         compose.setContent {
             OneFilmTheme {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    TvPosterCard(
+                    PosterCard(
                         title = "第一张",
                         posterUrl = null,
                         subtitle = null,
                         onClick = {},
                         modifier = Modifier.width(200.dp).testTag("card1"),
                     )
-                    TvPosterCard(
+                    PosterCard(
                         title = "第二张",
                         posterUrl = null,
                         subtitle = null,

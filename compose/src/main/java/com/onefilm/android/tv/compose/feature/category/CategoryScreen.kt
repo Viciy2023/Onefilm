@@ -59,7 +59,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.onefilm.android.tv.compose.bridge.CategoryFilterGroup
 import com.onefilm.android.tv.compose.bridge.CategoryPage
 import com.onefilm.android.tv.compose.bridge.MediaCard
-import com.onefilm.android.tv.compose.design.component.TvPosterCard
+import com.onefilm.android.tv.compose.design.PosterStyleController
+import com.onefilm.android.tv.compose.design.component.PosterCard
 import com.onefilm.android.tv.compose.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.stringResource
@@ -125,7 +126,7 @@ private fun CategoryContent(
     }
     Box(Modifier.fillMaxSize()) {
         LazyVerticalGrid(
-            columns = GridCells.Fixed(6),
+            columns = GridCells.Fixed(if (PosterStyleController.horizontal) 5 else 6),
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -135,9 +136,10 @@ private fun CategoryContent(
                 items = page.items,
                 key = { index, card -> "${card.key}:${card.id}:$index" },
             ) { _, card ->
-                TvPosterCard(
+                PosterCard(
                     title = card.title,
                     posterUrl = card.posterUrl,
+                    landscapeUrl = card.landscapeUrl,
                     subtitle = card.subtitle,
                     modifier = Modifier.fillMaxWidth(),
                     onClick = { onCardClick(card) },

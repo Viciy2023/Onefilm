@@ -16,6 +16,7 @@ object HomeFeedMapper {
             title = vod.name.orEmpty().ifBlank { "" },
             subtitle = vod.remarks.orEmpty().ifBlank { null },
             posterUrl = vod.pic.orEmpty().ifBlank { null },
+            landscapeUrl = vod.picSlide.orEmpty().ifBlank { null },
             siteName = runCatching { VodConfig.get().getSite(siteKey).name }.getOrNull(),
         )
     }

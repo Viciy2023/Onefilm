@@ -20,6 +20,8 @@ data class DetailInfo(
     val actor: String? = null,
     val director: String? = null,
     val playUrl: String? = null,
+    /** 横版海报；空时详情页头图回退竖图。 */
+    val landscapeUrl: String? = null,
 ) : Serializable
 
 interface DetailDataSource {

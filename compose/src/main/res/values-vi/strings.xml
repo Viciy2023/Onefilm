@@ -62,6 +62,9 @@
     <string name="settings_theme_light">Tối giản</string>
     <string name="settings_theme_system">Theo hệ thống</string>
     <string name="settings_theme_title">Giao diện</string>
+    <string name="settings_poster_style_title">Kiểu áp phích</string>
+    <string name="settings_poster_style_vertical">Dọc (2:3)</string>
+    <string name="settings_poster_style_horizontal">Ngang (16:9)</string>
     <string name="settings_language_title">Ngôn ngữ</string>
     <string name="settings_version_title">Phiên bản</string>
     <string name="settings_latest_version">Phiên bản mới nhất</string>

@@ -36,7 +36,8 @@ import androidx.compose.ui.unit.sp
 import com.onefilm.android.tv.compose.bridge.LibraryData
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.design.component.AppLogoLoading
-import com.onefilm.android.tv.compose.design.component.TvPosterCard
+import com.onefilm.android.tv.compose.design.PosterStyleController
+import com.onefilm.android.tv.compose.design.component.PosterCard
 import com.onefilm.android.tv.compose.design.component.TvTagButton
 import kotlinx.coroutines.delay
 import androidx.compose.ui.res.stringResource
@@ -118,7 +119,7 @@ fun LibraryScreen(
                 )
             }
             else -> LazyVerticalGrid(
-                columns = GridCells.Fixed(6),
+                columns = GridCells.Fixed(if (PosterStyleController.horizontal) 5 else 6),
                 modifier = Modifier.padding(top = 12.dp),
                 contentPadding = PaddingValues(vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -127,9 +128,10 @@ fun LibraryScreen(
                 itemsIndexed(items, key = { index, card -> "${card.key}:${card.id}:$index" }) { _, card ->
                     val cardKey = "${card.key}:${card.id}"
                     val requester = focusRequesters.getOrPut(cardKey) { FocusRequester() }
-                    TvPosterCard(
+                    PosterCard(
                         title = card.title,
                         posterUrl = card.posterUrl,
+                        landscapeUrl = card.landscapeUrl,
                         subtitle = card.subtitle,
                         modifier = Modifier
                             .fillMaxWidth()

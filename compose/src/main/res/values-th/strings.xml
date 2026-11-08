@@ -62,6 +62,9 @@
     <string name="settings_theme_light">มินิมอล</string>
     <string name="settings_theme_system">ตามระบบ</string>
     <string name="settings_theme_title">ธีม</string>
+    <string name="settings_poster_style_title">สไตล์โปสเตอร์</string>
+    <string name="settings_poster_style_vertical">แนวตั้ง (2:3)</string>
+    <string name="settings_poster_style_horizontal">แนวนอน (16:9)</string>
     <string name="settings_language_title">ภาษา</string>
     <string name="settings_version_title">เวอร์ชัน</string>
     <string name="settings_latest_version">เวอร์ชันล่าสุด</string>

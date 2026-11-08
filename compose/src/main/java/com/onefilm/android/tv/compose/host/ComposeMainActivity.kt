@@ -67,6 +67,7 @@ import androidx.compose.ui.input.key.type
 import com.onefilm.android.tv.compose.navigation.TvHeaderFocusState
 import com.onefilm.android.tv.compose.design.OneFilmTheme
 import com.onefilm.android.tv.compose.design.component.TvFocusScrolling
+import com.onefilm.android.tv.compose.design.PosterStyleController
 import com.onefilm.android.tv.compose.design.ThemeController
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.feature.category.CategoryRoute
@@ -231,7 +232,9 @@ class ComposeMainActivity : ComponentActivity() {
 
         setContent {
             PlaybackSession.historyStore = ComposeDependencies.playbackHistoryStore
-            ThemeController.apply(ComposeDependencies.settingsDataSource.load().themeMode)
+            val initialSettings = ComposeDependencies.settingsDataSource.load()
+            ThemeController.apply(initialSettings.themeMode)
+            PosterStyleController.apply(initialSettings.posterStyle)
             OneFilmTheme(
                 darkTheme = when (ThemeController.mode) {
                     0 -> false
