@@ -46,7 +46,7 @@ object DanmakuController {
     private const val RETRY_DELAY_MS = 500L
     /** 同一部剧的源列表缓存 10 分钟；换集只重选源，不重复搜索。 */
     private const val SOURCE_CACHE_TTL_MS = 10 * 60 * 1000L
-    /** 每个平台最多 1 条，最多 6 条：bilibili > 360 > youku > iqiyi > tencent > migu。 */
+    /** 每个平台最多 1 条，最多 6 条：bilibili > 360 > imgo > youku > iqiyi > tencent > migu。 */
     private const val MAX_SOURCES = 6
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -323,7 +323,7 @@ object DanmakuController {
                     DanmakuQuery.scoreSource(it.name, year, name, episodeQuery)
                 }
                 // 只保留“最匹配那一档”的源，避免为了凑平台而拿到错误版本；
-                // 每个平台最多 1 条，再按 bilibili > 360 > youku > iqiyi > tencent > migu 排序，最多 6 条。
+                // 每个平台最多 1 条，再按 bilibili > 360 > imgo > youku > iqiyi > tencent > migu 排序，最多 6 条。
                 val bestBase = DanmakuQuery.baseScore(ranked[0].name, year, name, episodeQuery)
                 val byPlatform = LinkedHashMap<String, DanmakuSource>()
                 for (candidate in ranked) {

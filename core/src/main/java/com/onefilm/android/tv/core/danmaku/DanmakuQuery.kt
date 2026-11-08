@@ -113,12 +113,13 @@ object DanmakuQuery {
 
     /**
      * 平台抓取速度分（只用于同分排序，远小于年份 1000 / 片名 500）。
-     * 实测：bilibili 6~8s，360→bilibili1 约 9s，youku 11~13s，
-     * iqiyi 26~72s，tencent 52s，migu 95s+。
+     * 实测：bilibili 6~8s，360→bilibili1 约 9s，360→imgo 约 19s，
+     * youku 11~13s，iqiyi 26~72s，tencent 52s，migu 95s+。
      */
     private fun platformScore(platform: String): Int = when {
         platform.contains("bilibili") -> 70
         platform == "360" -> 60
+        platform.contains("imgo") -> 55
         platform.contains("youku") -> 50
         platform.contains("qiyi") -> 20
         platform.contains("qq") || platform.contains("tencent") -> 10
@@ -144,7 +145,7 @@ object DanmakuQuery {
     }
 
     /**
-     * 平台优先级：bilibili > 360(bilibili1) > youku > iqiyi > tencent > migu > 其他。
+     * 平台优先级：bilibili > 360(bilibili1) > imgo > youku > iqiyi > tencent > migu > 其他。
      * 只用于选源顺序，不参与“是否匹配”的判断。
      */
     fun platformRank(sourceName: String): Int {
@@ -153,10 +154,11 @@ object DanmakuQuery {
             key == "360-bilibili" -> 1
             key.contains("bilibili") -> 0
             key == "360" -> 1
-            key.contains("youku") -> 2
-            key.contains("qiyi") -> 3
-            key.contains("qq") || key.contains("tencent") -> 4
-            key.contains("migu") -> 5
+            key.contains("imgo") -> 2
+            key.contains("youku") -> 3
+            key.contains("qiyi") -> 4
+            key.contains("qq") || key.contains("tencent") -> 5
+            key.contains("migu") -> 6
             else -> 9
         }
     }

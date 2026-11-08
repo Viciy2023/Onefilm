@@ -44,7 +44,7 @@ public final class DanmakuResolver {
     private static volatile String cachedShowKey = "";
     private static volatile List<Danmaku> cachedSources = List.of();
     private static volatile long cachedAt = 0L;
-    /** 每个平台最多 1 条，最多 6 条：bilibili > 360 > youku > iqiyi > tencent > migu。 */
+    /** 每个平台最多 1 条，最多 6 条：bilibili > 360 > imgo > youku > iqiyi > tencent > migu。 */
     private static final int MAX_SOURCES = 6;
 
     private DanmakuResolver() {
