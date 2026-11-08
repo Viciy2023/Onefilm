@@ -21,6 +21,7 @@ Nếu bạn đã có nguồn phim hợp pháp, cấu hình tương thích TVBOX 
 - **Bình luận bay**: tương thích máy chủ bình luận bay thông dụng hoặc API tùy chỉnh, tự động khớp tên phim và tập; hỗ trợ nút công cộng hoặc tự dựng.
 - **Lần sau xem tiếp**: yêu thích, lịch sử xem và vị trí xem tiếp đều được lưu, đổi tập hay đổi nguồn không cần tìm lại.
 - **Năm ngôn ngữ, chuyển trong một chạm**: 简体中文, 繁體中文, English, Tiếng Việt, ไทย, chuyển ngay trong Cài đặt.
+- **Hai kiểu áp phích**: chuyển giữa tường áp phích dọc 2:3 và bố cục ngang 16:9 trong "Cài đặt → Giao diện → Kiểu áp phích"; áp dụng cho Trang chủ, Danh mục, Tìm kiếm, Yêu thích và Lịch sử.
 
 ## Ứng dụng làm được gì
 
@@ -74,11 +75,51 @@ Menu, cài đặt, điều khiển trình phát, ổ đĩa mạng và thông bá
 
 > Yêu cầu hệ thống: **Android 7.0 trở lên**.
 
+## Hiệu năng và bộ nhớ
+
+Tìm kiếm tổng hợp tạo ra nhiều engine script tạm thời; cách thu hồi bộ nhớ này quyết định thiết bị yếu có chạy ổn định hay không. Từ 0.1.22, việc thu hồi engine dùng: giải phóng từng site, bảo vệ site đang chạy, dọn dẹp dự phòng sau mỗi 10 site và giải phóng cưỡng bức cho site quá thời gian.
+
+Đo trên cùng một thiết bị với 313 site và 5 lần tìm kiếm đầy đủ liên tiếp:
+
+| Tình huống | Trước | Sau |
+|---|---:|---:|
+| Native cao nhất khi tìm kiếm | 765 MB | 281 MB |
+| Tổng bộ nhớ (PSS) cao nhất khi tìm kiếm | 1.06 GB | 537 MB |
+| Thời gian duy trì mức cao | 30–40 giây | 4–6 giây |
+| Native khi phát sau tìm kiếm | 743 MB | 116 MB |
+| Tổng bộ nhớ khi phát sau tìm kiếm | 1.01 GB | 366 MB |
+| Tổng bộ nhớ sau khi thoát trình phát | 814 MB | 354 MB |
+| Native 60 giây sau tìm kiếm | 177 MB | 115 MB |
+
+Ghi chú:
+
+- Trình phát rất nhẹ: phát ngay sau khi khởi động lạnh chỉ tăng khoảng 20 MB; phần lớn áp lực đến từ engine tạm thời khi tìm kiếm.
+- Bộ nhớ được giải phóng sớm hơn, nên **TV và box 2 GB / 3 GB ít bị hệ thống thu hồi hơn khi tìm kiếm hoặc chuyển tập**, giảm giật và giảm việc bị thoát giữa chừng.
+- Dữ liệu từ một thiết bị 11.4 GB, giao diện và từ khóa cố định; kết quả thay đổi theo số site, loại giao diện và mạng.
+
+### Đo trên TV 2 GB (Android 9)
+
+Lặp lại đúng 5 lần tìm kiếm và phát với cùng 313 site trên TV Xiaomi 2 GB chạy Android 9:
+
+| Tình huống | PSS ứng dụng | Native | Bộ nhớ hệ thống còn trống |
+|---|---:|---:|---:|
+| Trang chủ nhàn rỗi | 104 MB | 20 MB | 800 MB |
+| Cao nhất khi 5 lần tìm kiếm | 303 MB | 156 MB | 677 MB |
+| 60 giây sau tìm kiếm | 197 MB | 53 MB | 778 MB |
+| Phát sau tìm kiếm | 209 MB | 52 MB | 650–758 MB |
+| Chuyển xuống nền | 192 MB | 53 MB | 700 MB |
+
+Tiến trình không bị hệ thống kill, bộ nhớ trống thấp nhất khoảng 677 MB, cho thấy thiết bị 2 GB vẫn còn đủ dư.
+
 ## Xem trước giao diện
 
 | Trang chủ | Phân loại |
 |---|---|
 | ![Trang chủ](docs/screenshots/readme/home.png) | ![Phân loại](docs/screenshots/readme/category.png) |
+
+| Trang chủ ngang | Tìm kiếm ngang |
+|---|---|
+| ![Trang chủ ngang](docs/screenshots/readme/tv-horizontal-home.jpg) | ![Tìm kiếm ngang](docs/screenshots/readme/tv-horizontal-search.jpg) |
 
 | Tìm kiếm | Kết quả tìm kiếm |
 |---|---|
@@ -115,42 +156,6 @@ Menu, cài đặt, điều khiển trình phát, ổ đĩa mạng và thông bá
 | ![Cài đặt trên điện thoại](docs/screenshots/readme/mobile-settings.jpg) | ![Phân loại trên điện thoại](docs/screenshots/readme/mobile-category.png) |
 
 > Ảnh chụp chỉ dùng để minh hoạ giao diện và kiểm thử trong quá trình phát triển; phim, poster và địa chỉ nguồn đều là nội dung demo; bản phát hành chính thức không tích hợp sẵn bất kỳ tài nguyên phim hay nguồn khả dụng nào.
-
-## Hiệu năng và bộ nhớ
-
-Tìm kiếm tổng hợp tạo ra nhiều engine script tạm thời; cách thu hồi bộ nhớ này quyết định thiết bị yếu có chạy ổn định hay không. Từ 0.1.22, việc thu hồi engine dùng: giải phóng từng site, bảo vệ site đang chạy, dọn dẹp dự phòng sau mỗi 10 site và giải phóng cưỡng bức cho site quá thời gian.
-
-Đo trên cùng một thiết bị với 313 site và 5 lần tìm kiếm đầy đủ liên tiếp:
-
-| Tình huống | Trước | Sau |
-|---|---:|---:|
-| Native cao nhất khi tìm kiếm | 765 MB | 281 MB |
-| Tổng bộ nhớ (PSS) cao nhất khi tìm kiếm | 1.06 GB | 537 MB |
-| Thời gian duy trì mức cao | 30–40 giây | 4–6 giây |
-| Native khi phát sau tìm kiếm | 743 MB | 116 MB |
-| Tổng bộ nhớ khi phát sau tìm kiếm | 1.01 GB | 366 MB |
-| Tổng bộ nhớ sau khi thoát trình phát | 814 MB | 354 MB |
-| Native 60 giây sau tìm kiếm | 177 MB | 115 MB |
-
-Ghi chú:
-
-- Trình phát rất nhẹ: phát ngay sau khi khởi động lạnh chỉ tăng khoảng 20 MB; phần lớn áp lực đến từ engine tạm thời khi tìm kiếm.
-- Bộ nhớ được giải phóng sớm hơn, nên **TV và box 2 GB / 3 GB ít bị hệ thống thu hồi hơn khi tìm kiếm hoặc chuyển tập**, giảm giật và giảm việc bị thoát giữa chừng.
-- Dữ liệu từ một thiết bị 11.4 GB, giao diện và từ khóa cố định; kết quả thay đổi theo số site, loại giao diện và mạng.
-
-### Đo trên TV 2 GB (Android 9)
-
-Lặp lại đúng 5 lần tìm kiếm và phát với cùng 313 site trên TV Xiaomi 2 GB chạy Android 9:
-
-| Tình huống | PSS ứng dụng | Native | Bộ nhớ hệ thống còn trống |
-|---|---:|---:|---:|
-| Trang chủ nhàn rỗi | 104 MB | 20 MB | 800 MB |
-| Cao nhất khi 5 lần tìm kiếm | 303 MB | 156 MB | 677 MB |
-| 60 giây sau tìm kiếm | 197 MB | 53 MB | 778 MB |
-| Phát sau tìm kiếm | 209 MB | 52 MB | 650–758 MB |
-| Chuyển xuống nền | 192 MB | 53 MB | 700 MB |
-
-Tiến trình không bị hệ thống kill, bộ nhớ trống thấp nhất khoảng 677 MB, cho thấy thiết bị 2 GB vẫn còn đủ dư.
 
 ## Lưu ý
 

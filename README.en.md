@@ -21,6 +21,7 @@ If you already have a legal media source, a TVBOX-compatible config, or live cha
 - **Danmaku**: works with common danmaku endpoints or a custom danmaku API, matching title and episode automatically. Public or self-hosted nodes are supported.
 - **Pick up where you left off**: favorites, watch history, and resume points are all saved, so changing episodes or sources doesn't mean searching again.
 - **Five languages, one tap away**: Simplified Chinese, Traditional Chinese, English, Tiếng Việt, and ไทย. Switch them in Settings.
+- **Two poster styles**: switch between the classic 2:3 poster wall and a 16:9 horizontal layout in Settings → Appearance → Poster style; the choice applies to Home, Categories, Search, Favorites, and History.
 
 ## What it does
 
@@ -74,11 +75,51 @@ Menus, settings, player controls, network storage, and messages all support **Si
 
 > System requirement: **Android 7.0 or later**.
 
+## Performance and memory
+
+Aggregated search creates a large number of temporary script engines, and how that memory is recycled decides whether low-end devices stay stable. Starting with 0.1.22, engine recycling uses per-site release, active protection, a fallback trim every 10 sites, and forced release for timed-out sites.
+
+Measured on the same device with 313 sites and five consecutive full searches:
+
+| Scenario | Before | After |
+|---|---:|---:|
+| Peak native during search | 765 MB | 281 MB |
+| Peak total memory (PSS) during search | 1.06 GB | 537 MB |
+| Time spent at peak | 30–40 s | 4–6 s |
+| Native while playing after search | 743 MB | 116 MB |
+| Total memory while playing after search | 1.01 GB | 366 MB |
+| Total memory after leaving the player | 814 MB | 354 MB |
+| Native 60 s after search | 177 MB | 115 MB |
+
+Notes:
+
+- The player itself is cheap: playing right after a cold start adds about 20 MB. Most of the pressure comes from temporary engines during search.
+- Memory is released much earlier, so **TVs and boxes with 2 GB / 3 GB of RAM are far less likely to be reclaimed by the system while searching or switching episodes**, which means fewer stalls and fewer surprise exits.
+- Data comes from a single 11.4 GB device with a fixed interface and fixed keywords; results vary with the number of sites, interface type and network conditions.
+
+### Measured on a 2 GB TV (Android 9)
+
+The same 313 sites, five searches and playback, repeated on a 2 GB Xiaomi TV running Android 9:
+
+| Scenario | App PSS | Native | System available memory |
+|---|---:|---:|---:|
+| Idle on home | 104 MB | 20 MB | 800 MB |
+| Peak during 5 searches | 303 MB | 156 MB | 677 MB |
+| 60 s after search | 197 MB | 53 MB | 778 MB |
+| Playing after search | 209 MB | 52 MB | 650–758 MB |
+| Sent to background | 192 MB | 53 MB | 700 MB |
+
+The process was never killed, and system available memory stayed above ~677 MB, so a 2 GB device still has plenty of headroom.
+
 ## Interface preview
 
 | Home | Categories |
 |---|---|
 | ![Home](docs/screenshots/readme/home.png) | ![Categories](docs/screenshots/readme/category.png) |
+
+| Horizontal home | Horizontal search |
+|---|---|
+| ![Horizontal home](docs/screenshots/readme/tv-horizontal-home.jpg) | ![Horizontal search](docs/screenshots/readme/tv-horizontal-search.jpg) |
 
 | Search | Search results |
 |---|---|
@@ -115,42 +156,6 @@ Menus, settings, player controls, network storage, and messages all support **Si
 | ![Mobile settings](docs/screenshots/readme/mobile-settings.jpg) | ![Mobile categories](docs/screenshots/readme/mobile-category.png) |
 
 > Screenshots are only for showing the interface and for development testing. Movies, posters, and source addresses are all demo content; the official release does not include any media resources or working sources.
-
-## Performance and memory
-
-Aggregated search creates a large number of temporary script engines, and how that memory is recycled decides whether low-end devices stay stable. Starting with 0.1.22, engine recycling uses per-site release, active protection, a fallback trim every 10 sites, and forced release for timed-out sites.
-
-Measured on the same device with 313 sites and five consecutive full searches:
-
-| Scenario | Before | After |
-|---|---:|---:|
-| Peak native during search | 765 MB | 281 MB |
-| Peak total memory (PSS) during search | 1.06 GB | 537 MB |
-| Time spent at peak | 30–40 s | 4–6 s |
-| Native while playing after search | 743 MB | 116 MB |
-| Total memory while playing after search | 1.01 GB | 366 MB |
-| Total memory after leaving the player | 814 MB | 354 MB |
-| Native 60 s after search | 177 MB | 115 MB |
-
-Notes:
-
-- The player itself is cheap: playing right after a cold start adds about 20 MB. Most of the pressure comes from temporary engines during search.
-- Memory is released much earlier, so **TVs and boxes with 2 GB / 3 GB of RAM are far less likely to be reclaimed by the system while searching or switching episodes**, which means fewer stalls and fewer surprise exits.
-- Data comes from a single 11.4 GB device with a fixed interface and fixed keywords; results vary with the number of sites, interface type and network conditions.
-
-### Measured on a 2 GB TV (Android 9)
-
-The same 313 sites, five searches and playback, repeated on a 2 GB Xiaomi TV running Android 9:
-
-| Scenario | App PSS | Native | System available memory |
-|---|---:|---:|---:|
-| Idle on home | 104 MB | 20 MB | 800 MB |
-| Peak during 5 searches | 303 MB | 156 MB | 677 MB |
-| 60 s after search | 197 MB | 53 MB | 778 MB |
-| Playing after search | 209 MB | 52 MB | 650–758 MB |
-| Sent to background | 192 MB | 53 MB | 700 MB |
-
-The process was never killed, and system available memory stayed above ~677 MB, so a 2 GB device still has plenty of headroom.
 
 ## Notes
 
