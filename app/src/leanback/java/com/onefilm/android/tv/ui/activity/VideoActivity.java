@@ -59,6 +59,7 @@ import com.onefilm.android.tv.playback.vod.VodPlayRequest;
 import com.onefilm.android.tv.playback.vod.VodPlaybackController;
 import com.onefilm.android.tv.playback.vod.VodPlaybackHost;
 import com.onefilm.android.tv.playback.vod.VodPlaybackMedia;
+import com.onefilm.android.tv.player.danmaku.DanmakuResolver;
 import com.onefilm.android.tv.player.media.PlaySpec;
 import com.onefilm.android.tv.service.PlaybackService;
 import com.onefilm.android.tv.setting.DanmakuSetting;
@@ -1307,6 +1308,7 @@ public class VideoActivity extends VodPlaybackActivity implements VodPlaybackHos
         mClock.release();
         saveHistory(true);
         DanmakuApi.cancel();
+        DanmakuResolver.cancel();
         RefreshEvent.keep();
         App.removeCallbacks(mR1, mR2, mR3, mR4);
         super.onDestroy();

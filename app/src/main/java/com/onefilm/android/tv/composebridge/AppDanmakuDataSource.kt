@@ -15,6 +15,11 @@ import kotlin.coroutines.resume
 
 class AppDanmakuDataSource : DanmakuDataSource {
 
+    private companion object {
+        /** 服务端冷抓取实测 6~72 秒，不能用默认 30 秒客户端。 */
+        const val LOAD_TIMEOUT_MS = 45_000L
+    }
+
     override suspend fun search(name: String, episode: String): List<DanmakuSource> =
         suspendCancellableCoroutine { continuation ->
             DanmakuApi.search(
@@ -33,7 +38,10 @@ class AppDanmakuDataSource : DanmakuDataSource {
 
     override suspend fun load(url: String): String? = withContext(Dispatchers.IO) {
         try {
-            OkHttp.string(url)?.takeIf { it.isNotBlank() }
+            OkHttp.newCall(OkHttp.client(LOAD_TIMEOUT_MS), url).execute().use { response ->
+                if (!response.isSuccessful) return@withContext null
+                response.body?.string()?.takeIf { it.isNotBlank() }
+            }
         } catch (t: Throwable) {
             android.util.Log.w("AppDanmaku", "load failed: $url", t)
             null
@@ -50,7 +58,14 @@ class AppDanmakuDataSource : DanmakuDataSource {
             .split(",")
             .map { it.trim() }
             .filter { it.isNotEmpty() },
+        load = DanmakuSetting.isLoad(),
+        auto = DanmakuSetting.isAuto(),
+        apiConfigured = DanmakuSetting.getEffectiveApiUrl().isNotBlank(),
     )
 
     override fun engineConfig(): DanmakuConfig = DanmakuSetting.getConfig()
+
+    override fun cancel() {
+        DanmakuApi.cancel()
+    }
 }

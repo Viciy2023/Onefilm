@@ -11,6 +11,9 @@ data class DanmakuDisplayConfig(
     val durationMs: Long,
     val lines: Int,
     val blockWords: List<String>,
+    val load: Boolean = true,
+    val auto: Boolean = true,
+    val apiConfigured: Boolean = true,
 )
 
 /** 旧版弹幕接口桥接：搜索弹幕源并下载弹幕文件内容。 */
@@ -23,4 +26,7 @@ interface DanmakuDataSource {
 
     /** 完整显示配置，与手机/旧播放页共用 DanmakuSetting。 */
     fun engineConfig(): DanmakuConfig
+
+    /** 取消当前弹幕网络请求（退出播放/切集时调用）。 */
+    fun cancel()
 }

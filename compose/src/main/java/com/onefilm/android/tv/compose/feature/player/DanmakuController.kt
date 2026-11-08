@@ -1,36 +1,51 @@
 package com.onefilm.android.tv.compose.feature.player
 
-
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.danmaku.DanmakuConfig
+import androidx.media3.ui.danmaku.DanmakuItem
 import androidx.media3.ui.danmaku.DanmakuParser
 import androidx.media3.ui.danmaku.DanmakuView
+import com.onefilm.android.tv.compose.R
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
 import com.onefilm.android.tv.compose.bridge.DanmakuDataSource
+import com.onefilm.android.tv.compose.bridge.DanmakuSource
 import com.onefilm.android.tv.core.danmaku.DanmakuQuery
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.onefilm.android.tv.compose.R
-import androidx.compose.ui.res.stringResource
+import kotlinx.coroutines.withTimeout
 
-/** 弹幕开关与渲染：真实调用旧 DanmakuApi 搜索并加载弹幕文件。 */
+/**
+ * 弹幕加载与渲染，逻辑对齐上游 FongMi：
+ * - 每次切集只查一次，name=影片基础名，episode=数字集名（电影 1，1080/2160 不算集号）；
+ * - 服务器返回的源按 年份/片名 打分，同分再按平台速度与集数匹配排序，取前 3 条校验；
+ * - 单源失败时对同一 URL 重试一次（命中服务端缓存只需几秒）；
+ * - 同一 key 有任务在跑时不重复加载；退出/切集取消。
+ */
 object DanmakuController {
     private const val TAG = "DanmakuCtrl"
+    private const val SEARCH_TIMEOUT_MS = 60_000L
+    private const val LOAD_TIMEOUT_MS = 45_000L
+    private const val RETRY_DELAY_MS = 500L
+    /** 每个平台最多 1 条，最多 6 条：bilibili > 360 > youku > iqiyi > tencent > migu。 */
+    private const val MAX_SOURCES = 6
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var view: DanmakuView? = null
     private var xml: String? = null
@@ -38,6 +53,7 @@ object DanmakuController {
     private var lastPosition: Long = 0L
     private var loadJob: Job? = null
     private var currentKey: String = ""
+    private var canSearch = true
 
     var enabled by mutableStateOf(true)
         private set
@@ -59,6 +75,7 @@ object DanmakuController {
         val dataSource = ComposeDependencies.danmakuDataSource
         val config = dataSource.displayConfig()
         enabled = config.show
+        canSearch = config.show && config.load && config.auto && config.apiConfigured
         textScale = config.scale
         transparency = config.transparency
         densityLines = config.lines
@@ -122,18 +139,18 @@ object DanmakuController {
     fun attach(target: DanmakuView, host: PlayerView? = null, player: Player? = null, key: String? = null) {
         if (key != null && key != currentKey) {
             // 新视频/新集：立即丢弃上一部的缓存与弹幕，避免串台。
+            cancelLoad()
             currentKey = key
             loadedKey = ""
             xml = null
-            loadJob?.cancel()
         }
         view = target
         syncSettings()
-        Log.d(TAG, "attach view=${target.hashCode()} enabled=$enabled xmlLen=${xml?.length ?: -1}")
+        Log.d(TAG, "attach view=${target.hashCode()} enabled=$enabled canSearch=$canSearch xmlLen=${xml?.length ?: -1}")
         target.setHost(host)
         target.setPlayer(player)
         val cached = xml
-        if (cached != null && currentKey.isNotEmpty() && loadedKey == currentKey) {
+        if (cached != null && canSearch && currentKey.isNotEmpty() && loadedKey == currentKey) {
             runCatching { target.setItems(parseFiltered(cached)) }
             target.setEnabled(enabled)
         } else {
@@ -148,7 +165,7 @@ object DanmakuController {
         view?.setPlayer(player)
     }
 
-    private fun parseFiltered(content: String): List<androidx.media3.ui.danmaku.DanmakuItem> {
+    private fun parseFiltered(content: String): List<DanmakuItem> {
         val items = DanmakuParser.parseXml(content)
         if (blockWords.isEmpty()) return items
         return items.filter { item -> blockWords.none { word -> item.text.contains(word) } }
@@ -156,6 +173,7 @@ object DanmakuController {
 
     fun detach(target: DanmakuView) {
         if (view === target) {
+            cancelLoad()
             view = null
             target.setHost(null)
             target.setPlayer(null)
@@ -172,106 +190,165 @@ object DanmakuController {
     fun updateEnabled(value: Boolean) {
         enabled = value
         ComposeDependencies.settingsDataSource.setDanmakuShow(value)
-        view?.setEnabled(value)
+        view?.setEnabled(value && canSearch)
         statusRes = if (value) R.string.common_on else R.string.common_off
     }
 
     fun toggle(context: Context, key: String, dataSource: DanmakuDataSource) {
         enabled = !enabled
         ComposeDependencies.settingsDataSource.setDanmakuShow(enabled)
-        view?.setEnabled(enabled)
-        if (enabled && loadedKey != key) load(context, key, dataSource)
-        if (!enabled) statusRes = R.string.common_off
+        view?.setEnabled(enabled && canSearch)
+        if (enabled) {
+            ensureLoaded(context, key, dataSource)
+        } else {
+            cancelLoad()
+            statusRes = R.string.common_off
+        }
     }
 
     fun ensureLoaded(context: Context, key: String, dataSource: DanmakuDataSource) {
         syncSettings()
+        if (!canSearch) {
+            cancelLoad()
+            view?.setItems(emptyList())
+            view?.setEnabled(false)
+            statusRes = if (!enabled) R.string.common_off else R.string.player_no_source
+            return
+        }
         if (key != currentKey) {
             // 换视频/换集：先清空旧弹幕和旧缓存，再发起新的加载。
+            cancelLoad()
             currentKey = key
             loadedKey = ""
             xml = null
-            loadJob?.cancel()
             view?.setItems(emptyList())
             view?.setEnabled(false)
+        } else if (loadJob?.isActive == true) {
+            // 同一 key 已有任务在跑，视图重建时不重复取消/重发。
+            Log.d(TAG, "ensureLoaded skip in-flight key=$key")
+            return
         }
-        Log.d(TAG, "ensureLoaded enabled=$enabled key=$key")
-        if (enabled) load(context, key, dataSource) else view?.setEnabled(false)
-    }
-
-    private fun load(context: Context, key: String, dataSource: DanmakuDataSource) {
+        Log.d(TAG, "ensureLoaded enabled=$enabled canSearch=$canSearch key=$key")
         if (loadedKey == key && xml != null) {
             statusRes = R.string.common_on
             return
         }
+        load(context, key, dataSource)
+    }
+
+    private fun cancelLoad() {
+        loadJob?.cancel()
+        loadJob = null
+        loading = false
+        runCatching { ComposeDependencies.danmakuDataSource.cancel() }
+    }
+
+    private suspend fun fetchSource(dataSource: DanmakuDataSource, url: String): String? = try {
+        withTimeout(LOAD_TIMEOUT_MS) { dataSource.load(url) }
+    } catch (t: TimeoutCancellationException) {
+        Log.d(TAG, "load timeout url=$url")
+        null
+    } catch (c: CancellationException) {
+        throw c
+    } catch (t: Throwable) {
+        Log.d(TAG, "load error url=$url ${t.message}")
+        null
+    }
+
+    private fun load(context: Context, key: String, dataSource: DanmakuDataSource) {
         val episode = PlaybackSession.currentEpisode
-        val name = PlaybackSession.title.ifBlank { episode?.name.orEmpty() }
-        if (name.isBlank()) {
+        val rawName = PlaybackSession.title.ifBlank { episode?.name.orEmpty() }
+        if (rawName.isBlank()) {
             statusRes = R.string.player_no_source
             return
         }
-        val episodeName = episode?.name?.takeIf { it.isNotBlank() && it != name } ?: name
-        Log.d(TAG, "load name=$name episode=$episodeName")
+        val name = DanmakuQuery.bestName(rawName)
+        val fallback = (PlaybackSession.currentIndex + 1).coerceAtLeast(1)
+        val episodeQuery = DanmakuQuery.bestEpisode(episode?.name.orEmpty(), fallback)
+        val year = PlaybackSession.vodYear.ifBlank { DanmakuQuery.yearOf(rawName).orEmpty() }
+        Log.d(TAG, "load name=$name episode=$episodeQuery year=$year key=$key")
         currentKey = key
         loadJob?.cancel()
         loading = true
         statusRes = R.string.settings_loading
         loadJob = scope.launch(Dispatchers.IO) {
-            val startedAt = System.currentTimeMillis()
-            var content: String? = null
-            var chosen: List<androidx.media3.ui.danmaku.DanmakuItem> = emptyList()
-            outer@ for ((n, e) in DanmakuQuery.combinations(name, episodeName, 6)) {
-                if (!isActive) break@outer
-                if (System.currentTimeMillis() - startedAt > 25_000L) break@outer
-                val sources = try {
-                    dataSource.search(n, e)
-                } catch (c: CancellationException) {
-                    throw c
-                } catch (t: Throwable) {
-                    emptyList()
+            val sources = try {
+                withTimeout(SEARCH_TIMEOUT_MS) { dataSource.search(name, episodeQuery) }
+            } catch (t: TimeoutCancellationException) {
+                Log.d(TAG, "search timeout name=$name episode=$episodeQuery")
+                emptyList()
+            } catch (c: CancellationException) {
+                throw c
+            } catch (t: Throwable) {
+                emptyList()
+            }
+            Log.d(TAG, "search name=$name episode=$episodeQuery sources=${sources.size}")
+            if (sources.isNotEmpty()) {
+                val ranked = sources.sortedByDescending {
+                    DanmakuQuery.scoreSource(it.name, year, name, episodeQuery)
                 }
-                Log.d(TAG, "search name=$n episode=$e sources=${sources.size}")
-                for (source in sources.take(8)) {
-                    if (!isActive) break@outer
-                    val candidate = try {
-                        dataSource.load(source.url)
-                    } catch (c: CancellationException) {
-                        throw c
-                    } catch (t: Throwable) {
-                        null
+                // 只保留“最匹配那一档”的源，避免为了凑平台而拿到错误版本；
+                // 每个平台最多 1 条，再按 bilibili > 360 > youku > iqiyi > tencent > migu 排序，最多 6 条。
+                val bestBase = DanmakuQuery.baseScore(ranked[0].name, year, name, episodeQuery)
+                val byPlatform = LinkedHashMap<String, DanmakuSource>()
+                for (candidate in ranked) {
+                    val base = DanmakuQuery.baseScore(candidate.name, year, name, episodeQuery)
+                    if (base < bestBase - 400) break
+                    val platform = DanmakuQuery.platformKey(candidate.name).ifBlank { candidate.name }
+                    if (!byPlatform.containsKey(platform)) byPlatform[platform] = candidate
+                }
+                val ordered = byPlatform.values
+                    .sortedBy { DanmakuQuery.platformRank(it.name) }
+                    .take(MAX_SOURCES)
+                Log.d(TAG, "sources=${sources.size} picked=${ordered.size} platforms=${byPlatform.keys}")
+                for (source in ordered) {
+                    val score = DanmakuQuery.scoreSource(source.name, year, name, episodeQuery)
+                    Log.d(TAG, "source score=$score platform=${DanmakuQuery.platformOf(source.name)} name=${source.name}")
+                    var content = fetchSource(dataSource, source.url)
+                    if (content.isNullOrBlank()) {
+                        // 第一次超时/失败时，服务端通常已把结果写进缓存；同一 URL 再要一次只需几秒。
+                        Log.d(TAG, "retry same url=${source.url}")
+                        delay(RETRY_DELAY_MS)
+                        content = fetchSource(dataSource, source.url)
                     }
-                    val items = candidate?.let { runCatching { parseFiltered(it) }.getOrDefault(emptyList()) }
+                    val items = content
+                        ?.let { runCatching { parseFiltered(it) }.getOrDefault(emptyList()) }
                         ?: emptyList()
-                    Log.d(TAG, "candidate len=${candidate?.length ?: -1} items=${items.size} url=${source.url}")
-                    if (!candidate.isNullOrBlank() && items.isNotEmpty()) {
-                        content = candidate
-                        chosen = items
-                        break@outer
+                    Log.d(TAG, "candidate len=${content?.length ?: -1} items=${items.size} url=${source.url}")
+                    if (!content.isNullOrBlank() && items.isNotEmpty()) {
+                        applySuccess(key, content, items)
+                        return@launch
                     }
                 }
             }
-            Log.d(TAG, "chosen contentLen=${content?.length ?: -1}")
-            withContext(Dispatchers.Main) {
-                loading = false
-                Log.d(TAG, "apply key=$key current=$currentKey view=${view != null} enabled=$enabled")
-                if (currentKey != key) return@withContext
-                if (content.isNullOrBlank() || chosen.isEmpty()) {
-                    xml = null
-                    loadedKey = ""
-                    view?.setItems(emptyList())
-                    view?.setEnabled(false)
-                    statusRes = R.string.player_no_source
-                    return@withContext
-                }
-                xml = content
-                loadedKey = key
-                statusRes = R.string.common_on
-                view?.let { target ->
-                    runCatching { target.setItems(chosen) }
-                    target.setEnabled(enabled)
-                    target.setClock(lastPosition)
-                }
+            applyFailure(key)
+        }
+    }
+
+    private suspend fun applySuccess(key: String, content: String, items: List<DanmakuItem>) {
+        withContext(Dispatchers.Main) {
+            if (currentKey != key) return@withContext
+            loading = false
+            xml = content
+            loadedKey = key
+            statusRes = R.string.common_on
+            view?.let { target ->
+                runCatching { target.setItems(items) }
+                target.setEnabled(enabled)
+                target.setClock(lastPosition)
             }
+        }
+    }
+
+    private suspend fun applyFailure(key: String) {
+        withContext(Dispatchers.Main) {
+            if (currentKey != key) return@withContext
+            loading = false
+            xml = null
+            loadedKey = ""
+            view?.setItems(emptyList())
+            view?.setEnabled(false)
+            statusRes = R.string.player_no_source
         }
     }
 }

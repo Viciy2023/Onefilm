@@ -26,6 +26,7 @@ public final class VodPlaybackMedia {
     public static void searchDanmaku(Result result, History history, Episode episode, Consumer<Danmaku> set, Consumer<Danmaku> add) {
         if (!DanmakuApi.canSearch()) return;
         if (VodConfig.get().getSite(result.getKey()).getDanmaku() == 0) return;
-        DanmakuResolver.resolve(history.getVodName(), episode.getName(), result.getDanmaku(), set, add);
+        String year = result.getVod() == null ? "" : result.getVod().getYear();
+        DanmakuResolver.resolve(history.getVodName(), episode.getName(), year, result.getDanmaku(), set, add);
     }
 }

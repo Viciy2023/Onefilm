@@ -54,6 +54,9 @@ object PlaybackSession {
         private set
     var vodId: String = ""
         private set
+
+    var vodYear: String = ""
+        private set
     var title: String = ""
         private set
     var poster: String? = null
@@ -351,9 +354,11 @@ object PlaybackSession {
         flag: String,
         episodes: List<PlaybackEpisode>,
         index: Int,
+        vodYear: String = "",
     ) {
         siteKey = key
         vodId = id
+        this.vodYear = vodYear
         title = vodTitle
         poster = vodPoster
         flagName = flag

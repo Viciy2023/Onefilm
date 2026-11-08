@@ -19,12 +19,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import okhttp3.Call;
+import okhttp3.Request;
 import okhttp3.Response;
 
 public class DanmakuApi {
 
     private static final String TAG = DanmakuApi.class.getSimpleName();
     private static final AtomicInteger REQUEST_ID = new AtomicInteger();
+    /** 冷缓存搜索实测 37~55 秒，不能用默认 30 秒客户端。 */
+    private static final long SEARCH_TIMEOUT_MS = 60_000L;
 
     public static boolean canSearch() {
         return DanmakuSetting.isLoad() && DanmakuSetting.isAuto() && !TextUtils.isEmpty(DanmakuSetting.getEffectiveApiUrl());
@@ -57,14 +60,19 @@ public class DanmakuApi {
     }
 
     private static Call getCall(String url, String name, String episode) {
-        return OkHttp.newCall(url.replace("{name}", Uri.encode(name)).replace("{episode}", Uri.encode(episode)), TAG);
+        return OkHttp.newCall(OkHttp.client(SEARCH_TIMEOUT_MS), url.replace("{name}", Uri.encode(name)).replace("{episode}", Uri.encode(episode)), TAG);
     }
 
     private static Call postCall(String url, String name, String episode) {
         ArrayMap<String, String> params = new ArrayMap<>();
         params.put("name", name);
         params.put("episode", episode);
-        return OkHttp.newCall(url, OkHttp.toBody(params), TAG);
+        Request request = new Request.Builder()
+                .url(url)
+                .post(OkHttp.toBody(params))
+                .tag(TAG)
+                .build();
+        return OkHttp.client(SEARCH_TIMEOUT_MS).newCall(request);
     }
 
     private static String read(Response response) throws IOException {

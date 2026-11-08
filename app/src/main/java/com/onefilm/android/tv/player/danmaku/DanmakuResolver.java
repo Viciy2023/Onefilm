@@ -9,69 +9,150 @@ import com.onefilm.android.tv.bean.Danmaku;
 import com.onefilm.android.tv.core.danmaku.DanmakuQuery;
 import com.onefilm.android.tv.setting.DanmakuSetting;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import androidx.media3.ui.danmaku.DanmakuParser;
-import kotlin.Pair;
+import okhttp3.Response;
 
 /**
- * 弹幕解析：标题/集名候选 + 多候选校验，供旧版播放页（手机/旧 TV）使用。
+ * 弹幕解析：与上游 FongMi 一致的单次查询 + 按年份/片名选源。
  *
- * 与 Compose 播放器共用 [DanmakuQuery] 的候选规则；逐条下载 XML，
- * 只把真正有弹幕的候选交给播放器，避免“第一条是空弹幕”导致整片无弹幕。
+ * 服务器返回全部同名候选（可能包含错误版本），这里按“年份匹配 > 片名完全匹配 >
+ * 片名包含”排序，只对前 3 条做 XML 校验，选中第一条真正有弹幕的源。
  */
 public final class DanmakuResolver {
 
-    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
     private static final String TAG = "DanmakuResolver";
-    private static final long TOTAL_BUDGET_MS = 25_000L;
-    private static final long SEARCH_TIMEOUT_MS = 12_000L;
-    private static final int MAX_CANDIDATES = 8;
+    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
+    private static final AtomicInteger GENERATION = new AtomicInteger();
+    private static final long SEARCH_TIMEOUT_MS = 60_000L;
+    private static final long LOAD_TIMEOUT_MS = 45_000L;
+    private static final long RETRY_DELAY_MS = 500L;
+    /** 每个平台最多 1 条，最多 6 条：bilibili > 360 > youku > iqiyi > tencent > migu。 */
+    private static final int MAX_SOURCES = 6;
 
     private DanmakuResolver() {
     }
 
+    public static void cancel() {
+        GENERATION.incrementAndGet();
+        DanmakuApi.cancel();
+    }
+
     /**
-     * @param spiderDanmakus 源站自带的弹幕（可能为空）
+     * @param name           影片名（可含年份/语言/演员版本）
+     * @param episode        集名（可含数字）
+     * @param year           影片年份（详情页/源站提供，可为空）
+     * @param spiderDanmakus 源站自带弹幕
      * @param set            直接替换当前弹幕源
      * @param add            追加弹幕源（源站优先模式）
      */
-    public static void resolve(String name, String episode, List<Danmaku> spiderDanmakus,
+    public static void resolve(String name, String episode, String year,
+                               List<Danmaku> spiderDanmakus,
                                Consumer<Danmaku> set, Consumer<Danmaku> add) {
+        final int generation = GENERATION.get();
+        final String baseName = DanmakuQuery.INSTANCE.bestName(name);
+        final String episodeQuery = DanmakuQuery.INSTANCE.bestEpisode(episode, 1);
+        String detectedYear = year == null ? "" : year.trim();
+        if (detectedYear.isEmpty()) {
+            String fromName = DanmakuQuery.INSTANCE.yearOf(name);
+            detectedYear = fromName == null ? "" : fromName;
+        }
+        final String targetYear = detectedYear;
+
         EXECUTOR.execute(() -> {
-            long deadline = System.currentTimeMillis() + TOTAL_BUDGET_MS;
-            for (Pair<String, String> combo : DanmakuQuery.INSTANCE.combinations(name, episode, 6)) {
-                if (System.currentTimeMillis() >= deadline) return;
-                List<Danmaku> items = searchBlocking(combo.getFirst(), combo.getSecond());
-                Log.d(TAG, "search name=" + combo.getFirst() + " episode=" + combo.getSecond() + " sources=" + items.size());
-                int tried = 0;
-                for (Danmaku item : items) {
-                    if (tried++ >= MAX_CANDIDATES || System.currentTimeMillis() >= deadline) break;
+            if (generation != GENERATION.get()) return;
+            List<Danmaku> items = searchBlocking(baseName, episodeQuery);
+            Log.d(TAG, "search name=" + baseName + " episode=" + episodeQuery
+                    + " year=" + targetYear + " sources=" + items.size());
+            if (items.isEmpty()) return;
+
+            List<Danmaku> ranked = new ArrayList<>(items);
+            ranked.sort((a, b) -> Integer.compare(score(b, targetYear, baseName, episodeQuery), score(a, targetYear, baseName, episodeQuery)));
+
+            // 只保留“最匹配那一档”的源，避免为了凑平台而拿到错误版本；
+            // 每个平台最多 1 条，再按平台优先级排序，最多 6 条。
+            int bestBase = baseScore(ranked.get(0), targetYear, baseName, episodeQuery);
+            Map<String, Danmaku> byPlatform = new LinkedHashMap<>();
+            for (Danmaku item : ranked) {
+                if (baseScore(item, targetYear, baseName, episodeQuery) < bestBase - 400) break;
+                String sourceName = item.getName() == null ? "" : item.getName();
+                String platform = DanmakuQuery.INSTANCE.platformKey(sourceName);
+                if (platform.isEmpty()) platform = sourceName;
+                if (!byPlatform.containsKey(platform)) byPlatform.put(platform, item);
+            }
+            List<Danmaku> ordered = new ArrayList<>(byPlatform.values());
+            ordered.sort(Comparator.comparingInt(item -> DanmakuQuery.INSTANCE.platformRank(item.getName() == null ? "" : item.getName())));
+            Log.d(TAG, "sources=" + items.size() + " picked=" + ordered.size() + " platforms=" + byPlatform.keySet());
+
+            int tried = 0;
+            for (Danmaku item : ordered) {
+                if (generation != GENERATION.get()) return;
+                if (tried++ >= MAX_SOURCES) break;
+                Log.d(TAG, "source score=" + score(item, targetYear, baseName, episodeQuery)
+                        + " platform=" + DanmakuQuery.INSTANCE.platformOf(item.getName() == null ? "" : item.getName())
+                        + " name=" + item.getName());
+                String xml = download(item.getUrl());
+                if (xml == null) {
+                    // 第一次超时/失败时，服务端通常已把结果写进缓存；同一 URL 再要一次只需几秒。
+                    Log.d(TAG, "retry same url=" + item.getUrl());
                     try {
-                        String xml = OkHttp.string(item.getUrl());
-                        int count = xml == null ? -1 : DanmakuParser.parseXml(xml).size();
-                        Log.d(TAG, "candidate len=" + (xml == null ? -1 : xml.length()) + " items=" + count + " url=" + item.getUrl());
-                        if (xml == null || count == 0) continue;
-                        boolean spiderFirst = DanmakuSetting.isSpiderFirst()
-                                && spiderDanmakus != null
-                                && !spiderDanmakus.isEmpty();
-                        App.post(() -> {
-                            if (spiderFirst) add.accept(item);
-                            else set.accept(item);
-                        });
+                        Thread.sleep(RETRY_DELAY_MS);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         return;
-                    } catch (Throwable ignored) {
-                        // 该候选不可用，继续下一条
                     }
+                    xml = download(item.getUrl());
                 }
+                int count = xml == null ? -1 : DanmakuParser.parseXml(xml).size();
+                Log.d(TAG, "candidate len=" + (xml == null ? -1 : xml.length())
+                        + " items=" + count + " url=" + item.getUrl());
+                if (xml == null || count == 0) continue;
+                final Danmaku chosen = item;
+                App.post(() -> {
+                    if (generation != GENERATION.get()) return;
+                    boolean spiderFirst = DanmakuSetting.isSpiderFirst()
+                            && spiderDanmakus != null
+                            && !spiderDanmakus.isEmpty();
+                    if (spiderFirst) add.accept(chosen);
+                    else set.accept(chosen);
+                });
+                return;
             }
         });
+    }
+
+    private static int score(Danmaku item, String year, String baseName, String episode) {
+        String sourceName = item.getName() == null ? "" : item.getName();
+        return DanmakuQuery.INSTANCE.scoreSource(sourceName, year, baseName, episode);
+    }
+
+    private static int baseScore(Danmaku item, String year, String baseName, String episode) {
+        String sourceName = item.getName() == null ? "" : item.getName();
+        return DanmakuQuery.INSTANCE.baseScore(sourceName, year, baseName, episode);
+    }
+
+    private static String download(String url) {
+        try {
+            Response response = OkHttp.newCall(OkHttp.client(LOAD_TIMEOUT_MS), url).execute();
+            try (Response closeable = response) {
+                if (!closeable.isSuccessful() || closeable.body() == null) return null;
+                return closeable.body().string();
+            }
+        } catch (Throwable ignored) {
+            return null;
+        }
     }
 
     private static List<Danmaku> searchBlocking(String name, String episode) {

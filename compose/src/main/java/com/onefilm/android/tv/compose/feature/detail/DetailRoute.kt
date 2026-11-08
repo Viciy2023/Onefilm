@@ -109,6 +109,7 @@ fun DetailRoute(
                     flag = selectedFlag.name,
                     episodes = selectedFlag.episodes.map { PlaybackEpisode(it.name, it.url) },
                     index = index,
+                    vodYear = info.year.orEmpty(),
                 )
                 // 供播放失败时自动切换下一条线路
                 PlaybackSession.setAlternatives(
