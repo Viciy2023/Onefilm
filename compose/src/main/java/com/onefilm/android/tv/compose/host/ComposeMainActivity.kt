@@ -59,6 +59,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.onefilm.android.tv.compose.R
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
+import com.onefilm.android.tv.compose.bridge.ExternalPlaybackRequest
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -248,6 +249,27 @@ class ComposeMainActivity : ComponentActivity() {
                     if (!pendingSearch.isNullOrBlank()) {
                         navController.navigate(Routes.search(pendingSearch)) { launchSingleTop = true }
                         pendingSearchQuery.value = null
+                    }
+                }
+                val pendingExternalPlay = ExternalPlaybackRequest.url
+                LaunchedEffect(pendingExternalPlay) {
+                    if (!pendingExternalPlay.isNullOrBlank()) {
+                        val url = pendingExternalPlay
+                        ExternalPlaybackRequest.url = null
+                        val resolved = runCatching {
+                            ComposeDependencies.playbackResolver.resolve("push_agent", "push", url)
+                        }.getOrNull()?.takeIf { it.isNotBlank() } ?: url
+                        PlaybackSession.setQueue(
+                            key = "push_agent",
+                            id = url,
+                            vodTitle = url,
+                            vodPoster = null,
+                            flag = "push",
+                            episodes = listOf(PlaybackEpisode("外部播放", url)),
+                            index = 0,
+                        )
+                        PlaybackSession.play(this@ComposeMainActivity, resolved, 0L)
+                        navController.navigate(Routes.PLAYER) { launchSingleTop = true }
                     }
                 }
                 var searchFocusToken by remember { mutableIntStateOf(0) }
