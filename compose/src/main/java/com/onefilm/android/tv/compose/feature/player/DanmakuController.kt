@@ -1,6 +1,7 @@
 package com.onefilm.android.tv.compose.feature.player
 
 import android.content.Context
+import android.os.SystemClock
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -43,6 +44,8 @@ object DanmakuController {
     private const val SEARCH_TIMEOUT_MS = 60_000L
     private const val LOAD_TIMEOUT_MS = 45_000L
     private const val RETRY_DELAY_MS = 500L
+    /** 同一部剧的源列表缓存 10 分钟；换集只重选源，不重复搜索。 */
+    private const val SOURCE_CACHE_TTL_MS = 10 * 60 * 1000L
     /** 每个平台最多 1 条，最多 6 条：bilibili > 360 > youku > iqiyi > tencent > migu。 */
     private const val MAX_SOURCES = 6
 
@@ -53,6 +56,10 @@ object DanmakuController {
     private var lastPosition: Long = 0L
     private var loadJob: Job? = null
     private var currentKey: String = ""
+    // 同一部剧的源列表缓存：换集只重新选源，不再重复搜索。
+    @Volatile private var cachedShow: String = ""
+    @Volatile private var cachedSources: List<DanmakuSource> = emptyList()
+    @Volatile private var cachedAt: Long = 0L
     private var canSearch = true
 
     var enabled by mutableStateOf(true)
@@ -243,6 +250,22 @@ object DanmakuController {
         runCatching { ComposeDependencies.danmakuDataSource.cancel() }
     }
 
+    /**
+     * 换集复用：同一部剧（片名+年份）且缓存未过期，并且缓存里确实有当前集。
+     * 电影没有“第N集”标记时视为可复用。
+     */
+    private fun canReuseSources(showKey: String, episode: String): Boolean {
+        if (cachedShow != showKey || cachedSources.isEmpty()) return false
+        if (SystemClock.elapsedRealtime() - cachedAt >= SOURCE_CACHE_TTL_MS) return false
+        var marked = false
+        for (source in cachedSources) {
+            val number = DanmakuQuery.episodeOf(source.name) ?: continue
+            marked = true
+            if (number.toString() == episode) return true
+        }
+        return !marked
+    }
+
     private suspend fun fetchSource(dataSource: DanmakuDataSource, url: String): String? = try {
         withTimeout(LOAD_TIMEOUT_MS) { dataSource.load(url) }
     } catch (t: TimeoutCancellationException) {
@@ -271,18 +294,30 @@ object DanmakuController {
         loadJob?.cancel()
         loading = true
         statusRes = R.string.settings_loading
+        val showKey = "$name|$year"
         loadJob = scope.launch(Dispatchers.IO) {
-            val sources = try {
-                withTimeout(SEARCH_TIMEOUT_MS) { dataSource.search(name, episodeQuery) }
-            } catch (t: TimeoutCancellationException) {
-                Log.d(TAG, "search timeout name=$name episode=$episodeQuery")
-                emptyList()
-            } catch (c: CancellationException) {
-                throw c
-            } catch (t: Throwable) {
-                emptyList()
+            val sources = if (canReuseSources(showKey, episodeQuery)) {
+                Log.d(TAG, "reuse sources=${cachedSources.size} show=$showKey episode=$episodeQuery")
+                cachedSources
+            } else {
+                val fetched = try {
+                    withTimeout(SEARCH_TIMEOUT_MS) { dataSource.search(name, episodeQuery) }
+                } catch (t: TimeoutCancellationException) {
+                    Log.d(TAG, "search timeout name=$name episode=$episodeQuery")
+                    emptyList()
+                } catch (c: CancellationException) {
+                    throw c
+                } catch (t: Throwable) {
+                    emptyList()
+                }
+                Log.d(TAG, "search name=$name episode=$episodeQuery sources=${fetched.size}")
+                if (fetched.isNotEmpty()) {
+                    cachedShow = showKey
+                    cachedSources = fetched
+                    cachedAt = SystemClock.elapsedRealtime()
+                }
+                fetched
             }
-            Log.d(TAG, "search name=$name episode=$episodeQuery sources=${sources.size}")
             if (sources.isNotEmpty()) {
                 val ranked = sources.sortedByDescending {
                     DanmakuQuery.scoreSource(it.name, year, name, episodeQuery)

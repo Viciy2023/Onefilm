@@ -39,6 +39,11 @@ public final class DanmakuResolver {
     private static final long SEARCH_TIMEOUT_MS = 60_000L;
     private static final long LOAD_TIMEOUT_MS = 45_000L;
     private static final long RETRY_DELAY_MS = 500L;
+    /** 同一部剧的源列表缓存 10 分钟；换集只重选源，不重复搜索。 */
+    private static final long SOURCE_CACHE_TTL_MS = 10 * 60 * 1000L;
+    private static volatile String cachedShowKey = "";
+    private static volatile List<Danmaku> cachedSources = List.of();
+    private static volatile long cachedAt = 0L;
     /** 每个平台最多 1 条，最多 6 条：bilibili > 360 > youku > iqiyi > tencent > migu。 */
     private static final int MAX_SOURCES = 6;
 
@@ -70,12 +75,25 @@ public final class DanmakuResolver {
             detectedYear = fromName == null ? "" : fromName;
         }
         final String targetYear = detectedYear;
+        final String showKey = baseName + "|" + targetYear;
 
         EXECUTOR.execute(() -> {
             if (generation != GENERATION.get()) return;
-            List<Danmaku> items = searchBlocking(baseName, episodeQuery);
-            Log.d(TAG, "search name=" + baseName + " episode=" + episodeQuery
-                    + " year=" + targetYear + " sources=" + items.size());
+            List<Danmaku> items;
+            if (canReuseSources(showKey, episodeQuery)) {
+                items = cachedSources;
+                Log.d(TAG, "reuse sources=" + items.size() + " show=" + showKey
+                        + " episode=" + episodeQuery);
+            } else {
+                items = searchBlocking(baseName, episodeQuery);
+                Log.d(TAG, "search name=" + baseName + " episode=" + episodeQuery
+                        + " year=" + targetYear + " sources=" + items.size());
+                if (!items.isEmpty()) {
+                    cachedShowKey = showKey;
+                    cachedSources = items;
+                    cachedAt = System.currentTimeMillis();
+                }
+            }
             if (items.isEmpty()) return;
 
             List<Danmaku> ranked = new ArrayList<>(items);
@@ -131,6 +149,24 @@ public final class DanmakuResolver {
                 return;
             }
         });
+    }
+
+    /**
+     * 换集复用：同一部剧（片名+年份）且缓存未过期，并且缓存里确实有当前集。
+     * 电影没有“第N集”标记时视为可复用。
+     */
+    private static boolean canReuseSources(String showKey, String episode) {
+        List<Danmaku> sources = cachedSources;
+        if (!showKey.equals(cachedShowKey) || sources.isEmpty()) return false;
+        if (System.currentTimeMillis() - cachedAt >= SOURCE_CACHE_TTL_MS) return false;
+        boolean marked = false;
+        for (Danmaku item : sources) {
+            Integer number = DanmakuQuery.INSTANCE.episodeOf(item.getName() == null ? "" : item.getName());
+            if (number == null) continue;
+            marked = true;
+            if (String.valueOf(number).equals(episode)) return true;
+        }
+        return !marked;
     }
 
     private static int score(Danmaku item, String year, String baseName, String episode) {

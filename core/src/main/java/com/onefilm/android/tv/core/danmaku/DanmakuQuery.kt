@@ -98,6 +98,10 @@ object DanmakuQuery {
     fun sourceYear(sourceName: String): String? =
         YEAR.find(sourceName.substringBefore(" - "))?.value
 
+    /** 从服务器返回的源名里提取“第N集”的集号，没有集号返回 null。 */
+    fun episodeOf(sourceName: String): Int? =
+        CN_EPISODE.find(sourceName)?.groupValues?.get(1)?.toIntOrNull()
+
     /**
      * 实际弹幕平台在 ` - ` 之后的第一个【】里：
      * `功夫(2004)【电影】from 360 - 【bilibili1】 功夫(2004)` → `bilibili1`
@@ -176,7 +180,7 @@ object DanmakuQuery {
         if (year.isNotBlank() && sourceYear == year) score += 1000
         if (anime.contains("【电影】") || anime.contains("【华语电影】")) score += 10
         if (episode.isNotBlank()) {
-            val cn = CN_EPISODE.find(sourceName)?.groupValues?.get(1)?.toIntOrNull()
+            val cn = episodeOf(sourceName)
             if (cn != null) score += if (cn.toString() == episode) 200 else -300
         }
         return score
