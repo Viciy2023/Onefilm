@@ -403,6 +403,13 @@ internal fun DlnaPopup(
     onDismiss: () -> Unit,
     onPick: (DlnaDevice) -> Unit,
 ) {
+    val firstFocus = remember { FocusRequester() }
+    LaunchedEffect(devices, loading) {
+        if (!loading && devices.isNotEmpty()) {
+            kotlinx.coroutines.delay(120)
+            runCatching { firstFocus.requestFocus() }
+        }
+    }
     Box(
         Modifier.fillMaxSize().padding(end = 14.dp, bottom = 64.dp),
         contentAlignment = Alignment.BottomEnd,
@@ -418,10 +425,13 @@ internal fun DlnaPopup(
             when {
                 loading -> Text(stringResource(R.string.cast_searching), color = InkDim, fontSize = 12.sp)
                 devices.isEmpty() -> Text(stringResource(R.string.cast_none), color = InkDim, fontSize = 12.sp)
-                else -> devices.forEach { device ->
+                else -> devices.forEachIndexed { index, device ->
                     FlatTile(
                         text = device.name.ifBlank { device.id },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 1.dp)
+                            .then(if (index == 0) Modifier.focusRequester(firstFocus) else Modifier),
                     ) { onPick(device) }
                 }
             }
@@ -436,7 +446,11 @@ internal fun OverflowPopup(
     onDismiss: () -> Unit,
 ) {
     val firstFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) { runCatching { firstFocus.requestFocus() } }
+    LaunchedEffect(Unit) {
+        // 等 AnimatedVisibility 完成首帧布局再请求焦点，否则焦点会留在「更多」按钮上
+        kotlinx.coroutines.delay(120)
+        runCatching { firstFocus.requestFocus() }
+    }
     Box(
         Modifier
             .fillMaxSize()

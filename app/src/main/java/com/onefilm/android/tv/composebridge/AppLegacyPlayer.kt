@@ -18,6 +18,8 @@ import androidx.media3.ui.PlayerView
 import com.onefilm.android.tv.App
 import com.onefilm.android.tv.Constant
 import com.onefilm.android.tv.bean.Track
+import com.onefilm.android.tv.compose.bridge.LegacyChapter
+import com.onefilm.android.tv.compose.bridge.LegacyEdition
 import com.onefilm.android.tv.compose.bridge.LegacyPlayer
 import com.onefilm.android.tv.compose.bridge.LegacyPlayerListener
 import com.onefilm.android.tv.compose.bridge.LegacyTrack
@@ -56,7 +58,7 @@ class AppLegacyPlayer : LegacyPlayer {
         override fun onPrepare() = listener?.onPrepare() ?: Unit
         override fun onTracksChanged() = listener?.onTracksChanged() ?: Unit
         override fun onDecodeChanged() = listener?.onDecodeChanged() ?: Unit
-        override fun onMediaOptionsChanged() = Unit
+        override fun onMediaOptionsChanged() { listener?.onTracksChanged() }
         override fun onError(msg: String) = listener?.onError(msg) ?: Unit
         override fun onPlayerRebuild(newPlayer: Player?) = listener?.onPlayerRebuild(newPlayer) ?: Unit
         override fun onDanmakuSourceChanged(uri: android.net.Uri?) = Unit
@@ -69,7 +71,7 @@ class AppLegacyPlayer : LegacyPlayer {
         override fun onPrepare() { listener?.onPrepare() }
         override fun onTracksChanged() { listener?.onTracksChanged() }
         override fun onDecodeChanged() { listener?.onDecodeChanged() }
-        override fun onMediaOptionsChanged() {}
+        override fun onMediaOptionsChanged() { listener?.onTracksChanged() }
         override fun onError(msg: String) { listener?.onError(msg) }
         override fun onPlayerRebuild(newPlayer: Player?) { listener?.onPlayerRebuild(newPlayer) }
         override fun onDanmakuSourceChanged(uri: android.net.Uri?) {}
@@ -202,6 +204,33 @@ class AppLegacyPlayer : LegacyPlayer {
         item.isSelected = track.selected
         item.key(manager?.key ?: "")
         manager?.setTrack(item)
+    }
+
+    override fun chapters(): List<LegacyChapter> =
+        manager?.currentMediaChapters.orEmpty().map { chapter ->
+            LegacyChapter(
+                label = chapter.label,
+                timeMs = if (chapter.timeUs == C.TIME_UNSET) -1L else chapter.timeUs / 1000L,
+                selected = chapter.selected,
+            )
+        }
+
+    override fun selectChapter(index: Int) {
+        val chapter = manager?.currentMediaChapters?.getOrNull(index) ?: return
+        if (chapter.timeUs != C.TIME_UNSET) manager?.selectChapter(chapter)
+    }
+
+    override fun editions(): List<LegacyEdition> =
+        manager?.currentMediaEditions.orEmpty().map { edition ->
+            LegacyEdition(
+                label = edition.label,
+                durationMs = if (edition.durationUs == C.TIME_UNSET) -1L else edition.durationUs / 1000L,
+                selected = edition.selected,
+            )
+        }
+
+    override fun selectEdition(index: Int) {
+        manager?.currentMediaEditions?.getOrNull(index)?.let { manager?.selectEdition(it) }
     }
 
     override fun toggleRepeat() {

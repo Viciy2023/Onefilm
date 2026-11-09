@@ -16,6 +16,8 @@ import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import com.onefilm.android.tv.compose.R
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
+import com.onefilm.android.tv.compose.bridge.LegacyChapter
+import com.onefilm.android.tv.compose.bridge.LegacyEdition
 import com.onefilm.android.tv.compose.bridge.LegacyPlayer
 import com.onefilm.android.tv.compose.bridge.LegacyPlayerListener
 import com.onefilm.android.tv.compose.bridge.LegacyTrack
@@ -70,6 +72,17 @@ object PlaybackSession {
     var queue: List<PlaybackEpisode> = emptyList()
         private set
     var currentIndex by mutableIntStateOf(-1)
+        private set
+    /** 影片简介：详情页传入，播放器内「简介」面板展示。 */
+    var description: String = ""
+        private set
+    /** 当前影片是否已收藏。 */
+    var favorite by mutableStateOf(false)
+        private set
+    /** 内嵌章节 / 版次：随媒体加载异步刷新，空表示不支持。 */
+    var chapters by mutableStateOf<List<LegacyChapter>>(emptyList())
+        private set
+    var editions by mutableStateOf<List<LegacyEdition>>(emptyList())
         private set
 
     var isPlaying by mutableStateOf(false)
@@ -157,6 +170,7 @@ object PlaybackSession {
                 error = null
                 durationMs = playerHolder?.duration?.coerceAtLeast(0L) ?: 0L
                 refreshTrackLabels()
+                refreshMediaOptions()
             }
             if (state == Player.STATE_ENDED) {
                 isPlaying = false
@@ -206,10 +220,12 @@ object PlaybackSession {
         override fun onPrepare() {
             error = null
             attachPlayer(legacy?.player)
+            refreshMediaOptions()
         }
 
         override fun onTracksChanged() {
             refreshTrackLabels()
+            refreshMediaOptions()
         }
 
         override fun onDecodeChanged() {
@@ -367,6 +383,39 @@ object PlaybackSession {
         videoLabel = selectedVideo?.name ?: str(R.string.common_default)
     }
 
+    /** 刷新章节/版次列表；媒体信息异步加载，菜单据此决定是否置灰。 */
+    private fun refreshMediaOptions() {
+        val target = legacy ?: return
+        val nextChapters = target.chapters()
+        if (nextChapters != chapters) chapters = nextChapters
+        val nextEditions = target.editions()
+        if (nextEditions != editions) editions = nextEditions
+    }
+
+    /** 选择章节（跳转到章节起点），面板保持打开。 */
+    fun selectChapter(index: Int) {
+        legacy?.selectChapter(index)
+        chapters = legacy?.chapters() ?: chapters
+    }
+
+    /** 选择版次，面板保持打开。 */
+    fun selectEdition(index: Int) {
+        legacy?.selectEdition(index)
+        editions = legacy?.editions() ?: editions
+    }
+
+    /** 收藏 / 取消收藏当前影片。 */
+    fun toggleFavorite() {
+        val store = runCatching { ComposeDependencies.favoriteStore }.getOrNull() ?: return
+        runCatching {
+            store.toggle(siteKey, vodId, "", title, poster)
+            favorite = store.isFavorite(siteKey, vodId)
+        }.onFailure {
+            // 收藏失败时至少把状态翻回来，避免界面与数据不一致
+            favorite = !favorite
+        }
+    }
+
     fun setQueue(
         key: String,
         id: String,
@@ -376,15 +425,18 @@ object PlaybackSession {
         episodes: List<PlaybackEpisode>,
         index: Int,
         vodYear: String = "",
+        vodDesc: String = "",
     ) {
         siteKey = key
         vodId = id
         this.vodYear = vodYear
         title = vodTitle
         poster = vodPoster
+        description = vodDesc
         flagName = flag
         queue = episodes
         currentIndex = index.coerceIn(0, (episodes.size - 1).coerceAtLeast(0))
+        favorite = runCatching { ComposeDependencies.favoriteStore.isFavorite(key, id) }.getOrDefault(false)
     }
 
     /** 详情页把全部线路传进来，播放失败时用于自动回退。 */
@@ -454,6 +506,9 @@ object PlaybackSession {
             subtitleOff = false
             audioIndex = 0
             durationMs = 0L
+            // 换片源后章节/版次需要重新读取，避免沿用上一集的列表
+            chapters = emptyList()
+            editions = emptyList()
         }
         target.start(url, siteKey, title, startMs, headers)
         engineMpv = target.isMpv()

@@ -405,4 +405,9 @@
     <string name="player_subtitle_import">Import subtitle</string>
     <string name="player_subtitle_searching">Searching subtitles…</string>
     <string name="player_subtitle_empty">No subtitles found</string>
+    <string name="player_chapter">Chapters</string>
+    <string name="player_edition">Editions</string>
+    <string name="player_description">Synopsis</string>
+    <string name="player_favorite">Add to favorites</string>
+    <string name="player_favorited">Favorited</string>
 </resources>

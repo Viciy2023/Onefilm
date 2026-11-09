@@ -11,6 +11,20 @@ data class LegacyTrack(
     val selected: Boolean,
 )
 
+/** 媒体章节（MKV/MP4 内嵌）。timeMs 为 -1 表示没有时间点。 */
+data class LegacyChapter(
+    val label: String,
+    val timeMs: Long,
+    val selected: Boolean,
+)
+
+/** 媒体版次（同一影片的多版本）。durationMs 为 -1 表示未知。 */
+data class LegacyEdition(
+    val label: String,
+    val durationMs: Long,
+    val selected: Boolean,
+)
+
 interface LegacyPlayerListener {
     fun onPrepare() {}
     fun onTracksChanged() {}
@@ -42,6 +56,15 @@ interface LegacyPlayer {
     fun decodeText(): String
     fun tracks(): List<LegacyTrack>
     fun selectTrack(track: LegacyTrack)
+
+    /** 当前媒体的章节列表；不支持时为空。 */
+    fun chapters(): List<LegacyChapter> = emptyList()
+    /** 按索引选择章节（跳转到章节起点）。 */
+    fun selectChapter(index: Int) {}
+    /** 当前媒体的版次列表；不支持时为空。 */
+    fun editions(): List<LegacyEdition> = emptyList()
+    /** 按索引选择版次。 */
+    fun selectEdition(index: Int) {}
     fun toggleRepeat()
     fun setTextOffset(ms: Long)
     fun setAudioOffset(ms: Long)

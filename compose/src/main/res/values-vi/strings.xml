@@ -405,4 +405,9 @@
     <string name="player_subtitle_import">Nhập phụ đề</string>
     <string name="player_subtitle_searching">Đang tìm phụ đề…</string>
     <string name="player_subtitle_empty">Không tìm thấy phụ đề</string>
+    <string name="player_chapter">Chương</string>
+    <string name="player_edition">Bản</string>
+    <string name="player_description">Tóm tắt</string>
+    <string name="player_favorite">Yêu thích</string>
+    <string name="player_favorited">Đã yêu thích</string>
 </resources>

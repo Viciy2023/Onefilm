@@ -23,6 +23,14 @@ class PlayerMenuActions(
     val onPrevious: (() -> Unit)?,
     val onNext: (() -> Unit)?,
     val onOpenEpisodes: () -> Unit,
+    /** 打开章节面板；媒体没有内嵌章节时为 null。 */
+    val onOpenChapters: (() -> Unit)?,
+    /** 打开版次面板；媒体没有内嵌版次时为 null。 */
+    val onOpenEditions: (() -> Unit)?,
+    /** 打开简介面板；详情页没提供简介时为 null。 */
+    val onOpenDescription: (() -> Unit)?,
+    /** 收藏 / 取消收藏当前影片。 */
+    val onToggleFavorite: () -> Unit,
     /** 打开「解析」引擎选择面板；没有可用解析引擎时为 null。 */
     val onParse: (() -> Unit)?,
     /** 打开「清晰度」选择面板；只有一个地址时为 null。 */
@@ -70,6 +78,15 @@ fun buildPlayerMenu(actions: PlayerMenuActions, context: Context): List<PlayerMe
     add(PlayerMenuEntry(s(R.string.player_replay)) { PlaybackSession.replay() })
 
     add(PlayerMenuEntry(s(R.string.player_select_episode), PlaybackSession.queue.size > 1) { actions.onOpenEpisodes() })
+    add(PlayerMenuEntry(s(R.string.player_chapter), actions.onOpenChapters != null) { actions.onOpenChapters?.invoke() })
+    add(PlayerMenuEntry(s(R.string.player_edition), actions.onOpenEditions != null) { actions.onOpenEditions?.invoke() })
+    add(PlayerMenuEntry(s(R.string.player_description), actions.onOpenDescription != null) { actions.onOpenDescription?.invoke() })
+    add(
+        PlayerMenuEntry(
+            if (PlaybackSession.favorite) s(R.string.player_favorited) else s(R.string.player_favorite),
+            PlaybackSession.vodId.isNotBlank(),
+        ) { actions.onToggleFavorite() },
+    )
     add(PlayerMenuEntry(s(R.string.player_parse), actions.onParse != null) { actions.onParse?.invoke() })
     add(
         PlayerMenuEntry(

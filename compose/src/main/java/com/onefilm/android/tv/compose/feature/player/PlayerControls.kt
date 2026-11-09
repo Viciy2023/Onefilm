@@ -27,6 +27,8 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -240,6 +242,9 @@ fun PlayerControls(
     var showTracks by remember { mutableStateOf(false) }
     var showDanmakuPanel by remember { mutableStateOf(false) }
     var showSubtitlePanel by remember { mutableStateOf(false) }
+    var showChapters by remember { mutableStateOf(false) }
+    var showEditions by remember { mutableStateOf(false) }
+    var showDescription by remember { mutableStateOf(false) }
     var subtitleLoading by remember { mutableStateOf(false) }
     var subtitleList by remember {
         mutableStateOf<List<com.onefilm.android.tv.compose.bridge.SubtitleCandidate>>(emptyList())
@@ -268,6 +273,9 @@ fun PlayerControls(
     val tracksFirstFocus = remember { FocusRequester() }
     val danmakuFirstFocus = remember { FocusRequester() }
     val subtitleFirstFocus = remember { FocusRequester() }
+    val chaptersFirstFocus = remember { FocusRequester() }
+    val editionsFirstFocus = remember { FocusRequester() }
+    val descriptionFirstFocus = remember { FocusRequester() }
     // 面板打开时把焦点移进去，关闭后还给菜单行；否则遥控器焦点会留在已移除的节点上。
     var panelWasOpen by remember { mutableStateOf(false) }
     // 任何按键/点击都算一次操作，控制栏只在 10 秒无操作后才隐藏。
@@ -279,7 +287,7 @@ fun PlayerControls(
         TvPlayerKeyState.fullscreenActive = !inline
         TvPlayerKeyState.controlsVisible = controlsVisible
         if (!controlsVisible) TvPlayerKeyState.playFocused = false
-        TvPlayerKeyState.menuOpen = showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel || showSubtitlePanel
+        TvPlayerKeyState.menuOpen = showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel || showSubtitlePanel || showChapters || showEditions || showDescription
         TvPlayerKeyState.requestControls = {
             if (!controlsVisible) revealToMenu = false
             controlsVisible = true
@@ -298,6 +306,9 @@ fun PlayerControls(
                 showTracks -> { showTracks = false; true }
                 showDanmakuPanel -> { showDanmakuPanel = false; true }
                 showSubtitlePanel -> { showSubtitlePanel = false; true }
+                showChapters -> { showChapters = false; true }
+                showEditions -> { showEditions = false; true }
+                showDescription -> { showDescription = false; true }
                 showEpisodes -> { showEpisodes = false; true }
                 else -> false
             }
@@ -369,6 +380,10 @@ fun PlayerControls(
             onPrevious = onPrevious,
             onNext = onNext,
             onOpenEpisodes = { showEpisodes = true },
+            onOpenChapters = if (PlaybackSession.chapters.isNotEmpty()) ({ showChapters = true }) else null,
+            onOpenEditions = if (PlaybackSession.editions.isNotEmpty()) ({ showEditions = true }) else null,
+            onOpenDescription = if (PlaybackSession.description.isNotBlank()) ({ showDescription = true }) else null,
+            onToggleFavorite = { PlaybackSession.toggleFavorite() },
             onParse = if (parseEngines.isEmpty()) null else ({ showParse = true }),
             onOpenQuality = if (PlaybackSession.qualityOptions.size > 1) ({ showQuality = true }) else null,
             onSwitchLine = if (PlaybackSession.hasAlternatives) ({ PlaybackSession.switchLine() }) else null,
@@ -433,10 +448,10 @@ fun PlayerControls(
         resContext,
     )
 
-    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, showDlna, showParse, showQuality, showTracks, showDanmakuPanel, showSubtitlePanel) {
+    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, showDlna, showParse, showQuality, showTracks, showDanmakuPanel, showSubtitlePanel, showChapters, showEditions, showDescription) {
         if (!controlsVisible) return@LaunchedEffect
         // 菜单打开或暂停时不自动隐藏；播放中则 10 秒无操作才隐藏。
-        if (!PlaybackSession.isPlaying || showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel || showSubtitlePanel) return@LaunchedEffect
+        if (!PlaybackSession.isPlaying || showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel || showSubtitlePanel || showChapters || showEditions || showDescription) return@LaunchedEffect
         // 重新开始计时：暂停后恢复、弹窗关闭都要从当下重新数 10 秒。
         lastInteractionAt = SystemClock.uptimeMillis()
         while (true) {
@@ -451,12 +466,15 @@ fun PlayerControls(
     // 控制栏弹出来，导致隐藏态按左右键既快进又显示控制栏。用户主动暂停时，
     // 按键处理本身就会唤出控制栏。
     // 面板打开时把焦点移进去，关闭后还给菜单行；否则遥控器焦点会留在已移除的节点上。
-    LaunchedEffect(showEpisodes, showParse, showQuality, showTracks, showDanmakuPanel, showSubtitlePanel) {
-        val open = showEpisodes || showParse || showQuality || showTracks || showDanmakuPanel || showSubtitlePanel
+    LaunchedEffect(showEpisodes, showParse, showQuality, showTracks, showDanmakuPanel, showSubtitlePanel, showChapters, showEditions, showDescription) {
+        val open = showEpisodes || showParse || showQuality || showTracks || showDanmakuPanel || showSubtitlePanel || showChapters || showEditions || showDescription
         if (open) {
             panelWasOpen = true
             delay(80)
             val first = when {
+                showDescription -> descriptionFirstFocus
+                showChapters -> chaptersFirstFocus
+                showEditions -> editionsFirstFocus
                 showSubtitlePanel -> subtitleFirstFocus
                 showTracks -> tracksFirstFocus
                 showDanmakuPanel -> danmakuFirstFocus
@@ -509,7 +527,7 @@ fun PlayerControls(
                     inline = inline,
                     actions = PlayerKeyActions(
                         hidden = { !controlsVisible },
-                        overlayOpen = { showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel || showSubtitlePanel },
+                        overlayOpen = { showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel || showSubtitlePanel || showChapters || showEditions || showDescription },
                         seek = { deltaMs -> seekWithHint(deltaMs) },
                         reveal = {
                             revealToMenu = false
@@ -874,6 +892,85 @@ fun PlayerControls(
                         }
                     }
                 }
+            }
+        }
+
+        if (showChapters) {
+            PanelScrim(onDismiss = { showChapters = false }) {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(5),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
+                ) {
+                    itemsIndexed(PlaybackSession.chapters) { index, chapter ->
+                        FlatTile(
+                            text = if (chapter.timeMs >= 0) {
+                                "${chapter.label} [${formatTime(chapter.timeMs)}]"
+                            } else {
+                                chapter.label
+                            },
+                            emphasis = chapter.selected,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .then(if (index == 0) Modifier.focusRequester(chaptersFirstFocus) else Modifier),
+                        ) { PlaybackSession.selectChapter(index) }
+                    }
+                }
+            }
+        }
+
+        if (showEditions) {
+            PanelScrim(onDismiss = { showEditions = false }) {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(5),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
+                ) {
+                    itemsIndexed(PlaybackSession.editions) { index, edition ->
+                        FlatTile(
+                            text = if (edition.durationMs >= 0) {
+                                "${edition.label} [${formatTime(edition.durationMs)}]"
+                            } else {
+                                edition.label
+                            },
+                            emphasis = edition.selected,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .then(if (index == 0) Modifier.focusRequester(editionsFirstFocus) else Modifier),
+                        ) { PlaybackSession.selectEdition(index) }
+                    }
+                }
+            }
+        }
+
+        if (showDescription) {
+            PanelScrim(onDismiss = { showDescription = false }) {
+                val scrollState = rememberScrollState()
+                Text(
+                    text = PlaybackSession.description,
+                    color = Ink,
+                    fontSize = 13.sp,
+                    lineHeight = 20.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 320.dp)
+                        .focusRequester(descriptionFirstFocus)
+                        .focusable()
+                        .onPreviewKeyEvent { event ->
+                            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                            val delta = when (event.key) {
+                                Key.DirectionDown -> 120f
+                                Key.DirectionUp -> -120f
+                                else -> return@onPreviewKeyEvent false
+                            }
+                            scrollState.dispatchRawDelta(delta)
+                            true
+                        }
+                        .verticalScroll(scrollState)
+                        .padding(4.dp),
+                )
             }
         }
 

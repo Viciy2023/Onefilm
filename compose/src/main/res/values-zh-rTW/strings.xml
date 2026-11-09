@@ -405,4 +405,9 @@
     <string name="player_subtitle_import">匯入字幕</string>
     <string name="player_subtitle_searching">正在搜尋字幕…</string>
     <string name="player_subtitle_empty">沒有找到字幕</string>
+    <string name="player_chapter">章節</string>
+    <string name="player_edition">版次</string>
+    <string name="player_description">簡介</string>
+    <string name="player_favorite">收藏</string>
+    <string name="player_favorited">已收藏</string>
 </resources>

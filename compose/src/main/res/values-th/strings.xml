@@ -405,4 +405,9 @@
     <string name="player_subtitle_import">นำเข้าคำบรรยาย</string>
     <string name="player_subtitle_searching">กำลังค้นหาคำบรรยาย…</string>
     <string name="player_subtitle_empty">ไม่พบคำบรรยาย</string>
+    <string name="player_chapter">บท</string>
+    <string name="player_edition">เวอร์ชัน</string>
+    <string name="player_description">เรื่องย่อ</string>
+    <string name="player_favorite">เพิ่มในรายการโปรด</string>
+    <string name="player_favorited">อยู่ในรายการโปรด</string>
 </resources>
