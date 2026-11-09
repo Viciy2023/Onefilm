@@ -480,7 +480,7 @@ object PlaybackSession {
         if (!resolved.needParse) return resolved
         val parseEngine = ComposeDependencies.parseEngine
         if (!parseEngine.available) return resolved
-        val outcome = parseEngine.parse(episodeUrl, null)
+        val outcome = parseEngine.parse(episodeUrl, null, resolved.headers, flag, key)
         if (!outcome.isSuccess) return null
         return ResolvedPlayback(outcome.url, outcome.headers)
     }
@@ -493,7 +493,7 @@ object PlaybackSession {
         if (!parseEngine.available) return false
         parsing = true
         val outcome = try {
-            parseEngine.parse(source, engine)
+            parseEngine.parse(source, engine, currentHeaders, flagName, siteKey)
         } catch (e: Exception) {
             ParseOutcome.failure
         } finally {

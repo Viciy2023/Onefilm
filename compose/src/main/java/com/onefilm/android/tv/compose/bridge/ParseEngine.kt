@@ -27,6 +27,15 @@ interface ParseEngine {
      * 解析网页地址。
      *
      * @param engine 引擎名称；为空表示使用配置里的默认解析。
+     * @param headers 站点请求头（Referer/UA），解析接口需要时一并带上。
+     * @param flag 线路名，神解析按线路筛选引擎时使用。
+     * @param siteKey 站点 key，用于取站点的 click 脚本。
      */
-    suspend fun parse(url: String, engine: String? = null): ParseOutcome
+    suspend fun parse(
+        url: String,
+        engine: String? = null,
+        headers: Map<String, String> = emptyMap(),
+        flag: String = "",
+        siteKey: String = "",
+    ): ParseOutcome
 }
