@@ -95,6 +95,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.Player
+import androidx.media3.common.C
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import androidx.media3.ui.danmaku.DanmakuView
@@ -234,6 +235,9 @@ fun PlayerControls(
     var showDlna by remember { mutableStateOf(false) }
     var showParse by remember { mutableStateOf(false) }
     var showQuality by remember { mutableStateOf(false) }
+    var showTracks by remember { mutableStateOf(false) }
+    var showDanmakuPanel by remember { mutableStateOf(false) }
+    var trackList by remember { mutableStateOf<List<com.onefilm.android.tv.compose.bridge.LegacyTrack>>(emptyList()) }
     var parseHint by remember { mutableStateOf<String?>(null) }
     // 解析引擎列表来自配置，配置变更后重新进入播放页即可刷新。
     val parseEngines = remember {
@@ -254,6 +258,8 @@ fun PlayerControls(
     val episodesFirstFocus = remember { FocusRequester() }
     val parseFirstFocus = remember { FocusRequester() }
     val qualityFirstFocus = remember { FocusRequester() }
+    val tracksFirstFocus = remember { FocusRequester() }
+    val danmakuFirstFocus = remember { FocusRequester() }
     // 面板打开时把焦点移进去，关闭后还给菜单行；否则遥控器焦点会留在已移除的节点上。
     var panelWasOpen by remember { mutableStateOf(false) }
     // 任何按键/点击都算一次操作，控制栏只在 10 秒无操作后才隐藏。
@@ -265,7 +271,7 @@ fun PlayerControls(
         TvPlayerKeyState.fullscreenActive = !inline
         TvPlayerKeyState.controlsVisible = controlsVisible
         if (!controlsVisible) TvPlayerKeyState.playFocused = false
-        TvPlayerKeyState.menuOpen = showEpisodes || showMore || showDlna || showParse || showQuality
+        TvPlayerKeyState.menuOpen = showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel
         TvPlayerKeyState.requestControls = {
             if (!controlsVisible) revealToMenu = false
             controlsVisible = true
@@ -281,6 +287,8 @@ fun PlayerControls(
                 showMore -> { showMore = false; true }
                 showParse -> { showParse = false; true }
                 showQuality -> { showQuality = false; true }
+                showTracks -> { showTracks = false; true }
+                showDanmakuPanel -> { showDanmakuPanel = false; true }
                 showEpisodes -> { showEpisodes = false; true }
                 else -> false
             }
@@ -332,7 +340,6 @@ fun PlayerControls(
     }
 
     fun startParse(engine: String?) {
-        showParse = false
         scope.launch {
             val ok = PlaybackSession.parseAndPlay(engine)
             if (!ok) parseHint = resContext.getString(R.string.player_parse_failed)
@@ -347,6 +354,11 @@ fun PlayerControls(
             onParse = if (parseEngines.isEmpty()) null else ({ showParse = true }),
             onOpenQuality = if (PlaybackSession.qualityOptions.size > 1) ({ showQuality = true }) else null,
             onSwitchLine = if (PlaybackSession.hasAlternatives) ({ PlaybackSession.switchLine() }) else null,
+            onOpenTracks = ({
+                trackList = PlaybackSession.tracks()
+                showTracks = true
+            }),
+            onOpenDanmaku = ({ showDanmakuPanel = true }),
             danmakuOn = danmakuOn,
             onToggleDanmaku = {
                 danmakuOn = !danmakuOn
@@ -388,10 +400,10 @@ fun PlayerControls(
         resContext,
     )
 
-    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, showDlna, showParse, showQuality) {
+    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, showDlna, showParse, showQuality, showTracks, showDanmakuPanel) {
         if (!controlsVisible) return@LaunchedEffect
         // 菜单打开或暂停时不自动隐藏；播放中则 10 秒无操作才隐藏。
-        if (!PlaybackSession.isPlaying || showEpisodes || showMore || showDlna || showParse || showQuality) return@LaunchedEffect
+        if (!PlaybackSession.isPlaying || showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel) return@LaunchedEffect
         // 重新开始计时：暂停后恢复、弹窗关闭都要从当下重新数 10 秒。
         lastInteractionAt = SystemClock.uptimeMillis()
         while (true) {
@@ -406,12 +418,14 @@ fun PlayerControls(
     // 控制栏弹出来，导致隐藏态按左右键既快进又显示控制栏。用户主动暂停时，
     // 按键处理本身就会唤出控制栏。
     // 面板打开时把焦点移进去，关闭后还给菜单行；否则遥控器焦点会留在已移除的节点上。
-    LaunchedEffect(showEpisodes, showParse, showQuality) {
-        val open = showEpisodes || showParse || showQuality
+    LaunchedEffect(showEpisodes, showParse, showQuality, showTracks, showDanmakuPanel) {
+        val open = showEpisodes || showParse || showQuality || showTracks || showDanmakuPanel
         if (open) {
             panelWasOpen = true
             delay(80)
             val first = when {
+                showTracks -> tracksFirstFocus
+                showDanmakuPanel -> danmakuFirstFocus
                 showQuality -> qualityFirstFocus
                 showParse -> parseFirstFocus
                 else -> episodesFirstFocus
@@ -461,7 +475,7 @@ fun PlayerControls(
                     inline = inline,
                     actions = PlayerKeyActions(
                         hidden = { !controlsVisible },
-                        overlayOpen = { showEpisodes || showMore || showDlna || showParse || showQuality },
+                        overlayOpen = { showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel },
                         seek = { deltaMs -> seekWithHint(deltaMs) },
                         reveal = {
                             revealToMenu = false
@@ -740,9 +754,94 @@ fun PlayerControls(
                                 .fillMaxWidth()
                                 .then(if (index == 0) Modifier.focusRequester(qualityFirstFocus) else Modifier),
                         ) {
-                            showQuality = false
                             PlaybackSession.selectQuality(index)
                         }
+                    }
+                }
+            }
+        }
+
+        if (showTracks) {
+            PanelScrim(onDismiss = { showTracks = false }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.player_track_panel),
+                        color = Ink,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    TextAction(stringResource(R.string.common_close)) { showTracks = false }
+                }
+                Spacer(Modifier.height(12.dp))
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(150.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
+                ) {
+                    itemsIndexed(trackList) { index, track ->
+                        FlatTile(
+                            text = trackLabel(track),
+                            emphasis = track.selected,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .then(if (index == 0) Modifier.focusRequester(tracksFirstFocus) else Modifier),
+                        ) {
+                            PlaybackSession.selectTrack(track)
+                            trackList = PlaybackSession.tracks()
+                        }
+                    }
+                }
+            }
+        }
+
+        if (showDanmakuPanel) {
+            PanelScrim(onDismiss = { showDanmakuPanel = false }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.player_danmaku_settings),
+                        color = Ink,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    TextAction(stringResource(R.string.common_close)) { showDanmakuPanel = false }
+                }
+                Spacer(Modifier.height(12.dp))
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(150.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
+                ) {
+                    item {
+                        FlatTile(
+                            text = stringResource(R.string.settings_danmaku_show) + " " +
+                                (if (DanmakuController.enabled) stringResource(R.string.common_on) else stringResource(R.string.common_off)),
+                            modifier = Modifier.fillMaxWidth().focusRequester(danmakuFirstFocus),
+                        ) {
+                            DanmakuController.toggle(context, danmakuKey, ComposeDependencies.danmakuDataSource)
+                            danmakuOn = DanmakuController.enabled
+                        }
+                    }
+                    item {
+                        FlatTile(
+                            text = stringResource(R.string.settings_danmaku_size) + " ${DanmakuController.textScale}x",
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { DanmakuController.cycleScale() }
+                    }
+                    item {
+                        FlatTile(
+                            text = stringResource(R.string.settings_danmaku_opacity) + " ${(DanmakuController.transparency * 100).toInt()}%",
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { DanmakuController.cycleTransparency() }
+                    }
+                    item {
+                        FlatTile(
+                            text = stringResource(R.string.settings_danmaku_max_on_screen) + " ${DanmakuController.densityLines}",
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { DanmakuController.cycleDensity() }
                     }
                 }
             }
@@ -829,6 +928,18 @@ fun PlayerControls(
                 )
             }
         }
+    }
+}
+
+/** 轨道面板行文案：视频轨 / 音轨 / 字幕 + 名称。 */
+@Composable
+private fun trackLabel(track: com.onefilm.android.tv.compose.bridge.LegacyTrack): String {
+    val name = track.name.ifBlank { track.format }
+    return when (track.type) {
+        C.TRACK_TYPE_VIDEO -> stringResource(R.string.player_video_track, name)
+        C.TRACK_TYPE_AUDIO -> stringResource(R.string.player_audio_track, name)
+        C.TRACK_TYPE_TEXT -> stringResource(R.string.player_subtitle, name)
+        else -> name
     }
 }
 

@@ -111,6 +111,9 @@ interface SettingsDataSource {
 
     /** 探活弹幕接口：先试 /api/config，再按真实请求方式发一次极轻量搜索。 */
     suspend fun probeDanmakuApi(url: String): DanmakuProbeResult = DanmakuProbeResult(false, "")
+
+    /** 倍速预设（来自 SpeedSetting），播放器菜单循环使用。 */
+    fun speedPresets(): FloatArray = floatArrayOf(0.5f, 0.8f, 1f, 1.2f, 1.5f, 2f, 3f, 5f)
     fun setDanmakuScale(scale: Float)
     fun setDanmakuTransparency(value: Float)
     fun setDanmakuDuration(ms: Long)

@@ -399,4 +399,6 @@
     <string name="player_quality">Quality: %1$s</string>
     <string name="player_quality_title">Quality</string>
     <string name="player_line">Line: %1$s</string>
+    <string name="player_track_panel">Tracks</string>
+    <string name="player_danmaku_settings">Danmaku settings</string>
 </resources>

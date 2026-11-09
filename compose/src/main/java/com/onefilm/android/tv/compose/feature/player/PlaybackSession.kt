@@ -109,6 +109,8 @@ object PlaybackSession {
     private var alternatives: List<Pair<String, List<PlaybackEpisode>>> = emptyList()
     private var resolverRef: PlaybackResolver? = null
     private var lineSwitchUsed = 0
+    /** 长按加速前的倍速，用于松开后恢复。 */
+    private var speedBeforeBoost = 1f
     var resizeMode by mutableIntStateOf(AspectRatioFrameLayout.RESIZE_MODE_FIT)
         private set
     var softwareDecode by mutableStateOf(false)
@@ -570,9 +572,30 @@ object PlaybackSession {
     }
 
     fun cycleSpeed() {
-        val values = listOf(0.75f, 1f, 1.25f, 1.5f, 2f)
-        val next = values[(values.indexOf(speed).takeIf { it >= 0 }?.plus(1) ?: 1) % values.size]
+        val values = runCatching { ComposeDependencies.settingsDataSource.speedPresets().toList() }
+            .getOrDefault(listOf(0.5f, 0.8f, 1f, 1.2f, 1.5f, 2f, 3f, 5f))
+        if (values.isEmpty()) return
+        val current = values.indexOfFirst { kotlin.math.abs(it - speed) < 0.011f }
+        val next = values[(current.takeIf { it >= 0 }?.plus(1) ?: values.indexOfFirst { it >= 1f }.coerceAtLeast(0)) % values.size]
         updateSpeed(next)
+    }
+
+    /** 长按倍速：没有加速时切到 2x，已加速则恢复。与旧播放器长按「倍速」一致。 */
+    fun toggleBoost() {
+        if (speed >= 2f - 0.011f) {
+            updateSpeed(speedBeforeBoost.coerceAtLeast(1f))
+        } else {
+            speedBeforeBoost = speed
+            updateSpeed(2f)
+        }
+    }
+
+    /** 当前媒体的全部轨道（音轨/字幕/视频轨），供轨道面板使用。 */
+    fun tracks(): List<LegacyTrack> = legacy?.tracks().orEmpty()
+
+    /** 选择指定轨道。 */
+    fun selectTrack(track: LegacyTrack) {
+        legacy?.selectTrack(track)
     }
 
     fun retry() {

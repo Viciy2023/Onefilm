@@ -29,6 +29,10 @@ class PlayerMenuActions(
     val onOpenQuality: (() -> Unit)?,
     /** 手动换线路；详情页没提供多线路时为 null。 */
     val onSwitchLine: (() -> Unit)?,
+    /** 打开轨道面板（音轨/字幕/视频轨）；没有轨道时为 null。 */
+    val onOpenTracks: (() -> Unit)?,
+    /** 打开弹幕设置面板。 */
+    val onOpenDanmaku: (() -> Unit)?,
     val danmakuOn: Boolean,
     val onToggleDanmaku: () -> Unit,
     val onPip: () -> Unit,
@@ -71,13 +75,15 @@ fun buildPlayerMenu(actions: PlayerMenuActions, context: Context): List<PlayerMe
             onLongClick = { PlaybackSession.clearEnding() },
         ),
     )
-    add(PlayerMenuEntry("${PlaybackSession.speed}x") { PlaybackSession.cycleSpeed() })
+    add(PlayerMenuEntry("${PlaybackSession.speed}x", onLongClick = { PlaybackSession.toggleBoost() }) { PlaybackSession.cycleSpeed() })
     add(
         PlayerMenuEntry(
             if (PlaybackSession.repeatMode == Player.REPEAT_MODE_ONE) s(R.string.player_loop_on) else s(R.string.player_loop_off),
         ) { PlaybackSession.toggleRepeat() },
     )
     add(PlayerMenuEntry(if (actions.danmakuOn) s(R.string.player_danmaku_on) else s(R.string.player_danmaku_off)) { actions.onToggleDanmaku() })
+    add(PlayerMenuEntry(s(R.string.player_danmaku_settings), actions.onOpenDanmaku != null) { actions.onOpenDanmaku?.invoke() })
+    add(PlayerMenuEntry(s(R.string.player_track_panel), actions.onOpenTracks != null) { actions.onOpenTracks?.invoke() })
     add(PlayerMenuEntry(s(R.string.player_pip)) { actions.onPip() })
     add(PlayerMenuEntry(s(R.string.player_cast)) { actions.onDlna() })
     add(PlayerMenuEntry(s(R.string.player_resize, PlaybackSession.resizeLabel)) { PlaybackSession.cycleResizeMode() })

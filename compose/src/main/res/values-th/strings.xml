@@ -399,4 +399,6 @@
     <string name="player_quality">คุณภาพ: %1$s</string>
     <string name="player_quality_title">คุณภาพ</string>
     <string name="player_line">เส้นทาง: %1$s</string>
+    <string name="player_track_panel">แทร็ก</string>
+    <string name="player_danmaku_settings">ตั้งค่าแดนมากุ</string>
 </resources>

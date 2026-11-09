@@ -228,15 +228,15 @@ internal fun MenuRow(
         val density = LocalDensity.current
         val measurer = rememberTextMeasurer()
         val textStyle = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Medium)
-        val spacing = 4.dp
+        val spacing = 2.dp
         val fullscreenWidth = 52.dp
-        val moreWidth = 58.dp
-        val minWidth = if (inline) 54.dp else 58.dp
+        val moreWidth = 52.dp
+        val minWidth = if (inline) 40.dp else 44.dp
         val widths = entries.map { entry ->
             val textWidth = with(density) {
                 measurer.measure(entry.label, textStyle).size.width.toDp()
             }
-            maxOf(textWidth + 22.dp, minWidth)
+            maxOf(textWidth + 18.dp, minWidth)
         }
         val available = (maxWidth - fullscreenWidth).coerceAtLeast(0.dp)
         var used = 0.dp
@@ -356,10 +356,14 @@ internal fun MenuText(entry: PlayerMenuEntry, width: Dp, focusRequester: FocusRe
             .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
             .then(longPressKey(entry.enabled, entry.onLongClick))
             .width(width)
-            .height(40.dp)
-            .scale(if (focused) 1.06f else 1f)
+            .height(30.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(if (focused) Press else Color.Transparent)
+            .background(if (focused) Color.White else Color.White.copy(alpha = 0.08f))
+            .border(
+                1.dp,
+                if (focused) Color.Transparent else Color.White.copy(alpha = 0.16f),
+                RoundedCornerShape(8.dp),
+            )
             .combinedClickable(
                 interactionSource = interaction,
                 indication = null,
@@ -463,12 +467,10 @@ internal fun OverflowPopup(
                         onLongClick = entry.onLongClick?.let { handler ->
                             {
                                 handler()
-                                onDismiss()
                             }
                         },
                     ) {
                         entry.onClick()
-                        onDismiss()
                     }
                 }
             }

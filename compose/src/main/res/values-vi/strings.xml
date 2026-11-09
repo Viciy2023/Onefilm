@@ -399,4 +399,6 @@
     <string name="player_quality">Chất lượng: %1$s</string>
     <string name="player_quality_title">Chất lượng</string>
     <string name="player_line">Nguồn: %1$s</string>
+    <string name="player_track_panel">Track</string>
+    <string name="player_danmaku_settings">Cài đặt danmaku</string>
 </resources>

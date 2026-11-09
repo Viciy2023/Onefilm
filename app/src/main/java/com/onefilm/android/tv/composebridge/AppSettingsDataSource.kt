@@ -32,6 +32,7 @@ import com.onefilm.android.tv.setting.DecodeSetting
 import com.onefilm.android.tv.setting.PlayerSetting
 import com.onefilm.android.tv.setting.PreloadSetting
 import com.onefilm.android.tv.setting.Setting
+import com.onefilm.android.tv.setting.SpeedSetting
 import com.onefilm.android.tv.setting.SubtitleSetting
 import com.onefilm.android.tv.utils.FileUtil
 import com.github.catvod.utils.Path
@@ -244,6 +245,8 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
     override fun setDanmakuApi(url: String) {
         DanmakuSetting.putApiUrl(url.trim())
     }
+
+    override fun speedPresets(): FloatArray = SpeedSetting.getPresets()
 
     override suspend fun probeDanmakuApi(url: String): DanmakuProbeResult = withContext(Dispatchers.IO) {
         val target = url.trim()
