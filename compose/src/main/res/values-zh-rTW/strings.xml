@@ -401,4 +401,8 @@
     <string name="player_line">線路：%1$s</string>
     <string name="player_track_panel">軌道</string>
     <string name="player_danmaku_settings">彈幕設定</string>
+    <string name="player_subtitle_search">搜尋字幕</string>
+    <string name="player_subtitle_import">匯入字幕</string>
+    <string name="player_subtitle_searching">正在搜尋字幕…</string>
+    <string name="player_subtitle_empty">沒有找到字幕</string>
 </resources>

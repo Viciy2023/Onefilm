@@ -401,4 +401,8 @@
     <string name="player_line">Line: %1$s</string>
     <string name="player_track_panel">Tracks</string>
     <string name="player_danmaku_settings">Danmaku settings</string>
+    <string name="player_subtitle_search">Search subtitles</string>
+    <string name="player_subtitle_import">Import subtitle</string>
+    <string name="player_subtitle_searching">Searching subtitles…</string>
+    <string name="player_subtitle_empty">No subtitles found</string>
 </resources>

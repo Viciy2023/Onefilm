@@ -598,6 +598,11 @@ object PlaybackSession {
         legacy?.selectTrack(track)
     }
 
+    /** 挂载外挂字幕（本地文件路径或 http 地址）。 */
+    fun addSubtitle(name: String, url: String, lang: String = "") {
+        legacy?.addSubtitle(name.ifBlank { "Subtitle" }, url, lang)
+    }
+
     fun retry() {
         val target = legacy ?: return
         val url = currentUrl ?: return

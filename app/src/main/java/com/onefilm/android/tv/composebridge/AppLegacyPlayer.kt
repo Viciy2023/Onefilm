@@ -230,6 +230,11 @@ class AppLegacyPlayer : LegacyPlayer {
         manager?.preload(spec, 0L)
     }
 
+    override fun addSubtitle(name: String, url: String, lang: String) {
+        val format = com.onefilm.android.tv.player.track.TrackUtil.getSubtitleMimeType(name)
+        manager?.setSub(com.onefilm.android.tv.bean.Sub.from(name, url, lang, format))
+    }
+
     override fun subtitleScale(): Float = SubtitleSetting.getScale()
 
     override fun cycleSubtitleScale() {

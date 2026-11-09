@@ -401,4 +401,8 @@
     <string name="player_line">เส้นทาง: %1$s</string>
     <string name="player_track_panel">แทร็ก</string>
     <string name="player_danmaku_settings">ตั้งค่าแดนมากุ</string>
+    <string name="player_subtitle_search">ค้นหาคำบรรยาย</string>
+    <string name="player_subtitle_import">นำเข้าคำบรรยาย</string>
+    <string name="player_subtitle_searching">กำลังค้นหาคำบรรยาย…</string>
+    <string name="player_subtitle_empty">ไม่พบคำบรรยาย</string>
 </resources>

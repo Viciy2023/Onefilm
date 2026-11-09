@@ -33,6 +33,10 @@ class PlayerMenuActions(
     val onOpenTracks: (() -> Unit)?,
     /** 打开弹幕设置面板。 */
     val onOpenDanmaku: (() -> Unit)?,
+    /** 在线搜索字幕（未配置字幕接口 token 时为 null）。 */
+    val onSearchSubtitle: (() -> Unit)?,
+    /** 导入本地字幕文件。 */
+    val onImportSubtitle: (() -> Unit)?,
     val danmakuOn: Boolean,
     val onToggleDanmaku: () -> Unit,
     val onPip: () -> Unit,
@@ -43,24 +47,9 @@ class PlayerMenuActions(
 fun buildPlayerMenu(actions: PlayerMenuActions, context: Context): List<PlayerMenuEntry> = buildList {
     fun s(id: Int, vararg args: Any): String = context.getString(id, *args)
     val defaultLabel = s(R.string.common_default)
+    // 第一排固定顺序：上集-下集-片头-片尾-快进-弹幕-刷新-重播，其余按使用频率排列。
     add(PlayerMenuEntry(s(R.string.player_prev_ep), actions.onPrevious != null) { actions.onPrevious?.invoke() })
     add(PlayerMenuEntry(s(R.string.player_next_ep), actions.onNext != null) { actions.onNext?.invoke() })
-    add(PlayerMenuEntry(s(R.string.player_replay)) { PlaybackSession.replay() })
-    add(PlayerMenuEntry(s(R.string.player_refresh)) { PlaybackSession.refresh() })
-    add(PlayerMenuEntry(s(R.string.player_select_episode), PlaybackSession.queue.size > 1) { actions.onOpenEpisodes() })
-    add(PlayerMenuEntry(s(R.string.player_parse), actions.onParse != null) { actions.onParse?.invoke() })
-    add(
-        PlayerMenuEntry(
-            s(R.string.player_quality, PlaybackSession.qualityLabel),
-            actions.onOpenQuality != null,
-        ) { actions.onOpenQuality?.invoke() },
-    )
-    add(
-        PlayerMenuEntry(
-            s(R.string.player_line, PlaybackSession.flagName.ifBlank { defaultLabel }),
-            actions.onSwitchLine != null,
-        ) { actions.onSwitchLine?.invoke() },
-    )
     add(
         PlayerMenuEntry(
             s(R.string.player_opening, formatTime(PlaybackSession.openingMs)),
@@ -75,17 +64,37 @@ fun buildPlayerMenu(actions: PlayerMenuActions, context: Context): List<PlayerMe
             onLongClick = { PlaybackSession.clearEnding() },
         ),
     )
+    add(PlayerMenuEntry("${s(R.string.player_forward)} 5s") { PlaybackSession.seekBy(5_000L) })
+    add(PlayerMenuEntry(if (actions.danmakuOn) s(R.string.player_danmaku_on) else s(R.string.player_danmaku_off)) { actions.onToggleDanmaku() })
+    add(PlayerMenuEntry(s(R.string.player_refresh)) { PlaybackSession.refresh() })
+    add(PlayerMenuEntry(s(R.string.player_replay)) { PlaybackSession.replay() })
+
+    add(PlayerMenuEntry(s(R.string.player_select_episode), PlaybackSession.queue.size > 1) { actions.onOpenEpisodes() })
+    add(PlayerMenuEntry(s(R.string.player_parse), actions.onParse != null) { actions.onParse?.invoke() })
+    add(
+        PlayerMenuEntry(
+            s(R.string.player_quality, PlaybackSession.qualityLabel),
+            actions.onOpenQuality != null,
+        ) { actions.onOpenQuality?.invoke() },
+    )
+    add(
+        PlayerMenuEntry(
+            s(R.string.player_line, PlaybackSession.flagName.ifBlank { defaultLabel }),
+            actions.onSwitchLine != null,
+        ) { actions.onSwitchLine?.invoke() },
+    )
     add(PlayerMenuEntry("${PlaybackSession.speed}x", onLongClick = { PlaybackSession.toggleBoost() }) { PlaybackSession.cycleSpeed() })
     add(
         PlayerMenuEntry(
             if (PlaybackSession.repeatMode == Player.REPEAT_MODE_ONE) s(R.string.player_loop_on) else s(R.string.player_loop_off),
         ) { PlaybackSession.toggleRepeat() },
     )
-    add(PlayerMenuEntry(if (actions.danmakuOn) s(R.string.player_danmaku_on) else s(R.string.player_danmaku_off)) { actions.onToggleDanmaku() })
-    add(PlayerMenuEntry(s(R.string.player_danmaku_settings), actions.onOpenDanmaku != null) { actions.onOpenDanmaku?.invoke() })
     add(PlayerMenuEntry(s(R.string.player_track_panel), actions.onOpenTracks != null) { actions.onOpenTracks?.invoke() })
-    add(PlayerMenuEntry(s(R.string.player_pip)) { actions.onPip() })
+    add(PlayerMenuEntry(s(R.string.player_danmaku_settings), actions.onOpenDanmaku != null) { actions.onOpenDanmaku?.invoke() })
+    add(PlayerMenuEntry(s(R.string.player_subtitle_search), actions.onSearchSubtitle != null) { actions.onSearchSubtitle?.invoke() })
+    add(PlayerMenuEntry(s(R.string.player_subtitle_import), actions.onImportSubtitle != null) { actions.onImportSubtitle?.invoke() })
     add(PlayerMenuEntry(s(R.string.player_cast)) { actions.onDlna() })
+    add(PlayerMenuEntry(s(R.string.player_pip)) { actions.onPip() })
     add(PlayerMenuEntry(s(R.string.player_resize, PlaybackSession.resizeLabel)) { PlaybackSession.cycleResizeMode() })
     add(PlayerMenuEntry(s(R.string.player_engine, if (PlaybackSession.engineMpv) "MPV" else "Exo")) {
         PlaybackSession.setEngine(!PlaybackSession.engineMpv)

@@ -49,6 +49,9 @@ interface LegacyPlayer {
     fun audioOffset(): Long
     fun setDanmakuEnabled(enabled: Boolean)
     fun preload(url: String, key: String, title: String)
+
+    /** 挂载外挂字幕（本地路径或远程 http 地址）。 */
+    fun addSubtitle(name: String, url: String, lang: String) {}
     fun subtitleScale(): Float
     fun cycleSubtitleScale()
     fun subtitlePosition(): Float

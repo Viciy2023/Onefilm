@@ -11,6 +11,7 @@ object ComposeDependencies {
     lateinit var sourceDataSource: SourceDataSource
     lateinit var playbackResolver: PlaybackResolver
     lateinit var parseEngine: ParseEngine
+    lateinit var subtitleRepository: SubtitleRepository
     lateinit var playbackHistoryStore: PlaybackHistoryStore
     lateinit var danmakuDataSource: DanmakuDataSource
     lateinit var legacyPlayerFactory: LegacyPlayerFactory

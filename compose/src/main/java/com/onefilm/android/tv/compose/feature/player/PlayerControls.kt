@@ -94,6 +94,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.media3.common.Player
 import androidx.media3.common.C
 import androidx.media3.ui.AspectRatioFrameLayout
@@ -237,6 +239,11 @@ fun PlayerControls(
     var showQuality by remember { mutableStateOf(false) }
     var showTracks by remember { mutableStateOf(false) }
     var showDanmakuPanel by remember { mutableStateOf(false) }
+    var showSubtitlePanel by remember { mutableStateOf(false) }
+    var subtitleLoading by remember { mutableStateOf(false) }
+    var subtitleList by remember {
+        mutableStateOf<List<com.onefilm.android.tv.compose.bridge.SubtitleCandidate>>(emptyList())
+    }
     var trackList by remember { mutableStateOf<List<com.onefilm.android.tv.compose.bridge.LegacyTrack>>(emptyList()) }
     var parseHint by remember { mutableStateOf<String?>(null) }
     // 解析引擎列表来自配置，配置变更后重新进入播放页即可刷新。
@@ -260,6 +267,7 @@ fun PlayerControls(
     val qualityFirstFocus = remember { FocusRequester() }
     val tracksFirstFocus = remember { FocusRequester() }
     val danmakuFirstFocus = remember { FocusRequester() }
+    val subtitleFirstFocus = remember { FocusRequester() }
     // 面板打开时把焦点移进去，关闭后还给菜单行；否则遥控器焦点会留在已移除的节点上。
     var panelWasOpen by remember { mutableStateOf(false) }
     // 任何按键/点击都算一次操作，控制栏只在 10 秒无操作后才隐藏。
@@ -271,7 +279,7 @@ fun PlayerControls(
         TvPlayerKeyState.fullscreenActive = !inline
         TvPlayerKeyState.controlsVisible = controlsVisible
         if (!controlsVisible) TvPlayerKeyState.playFocused = false
-        TvPlayerKeyState.menuOpen = showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel
+        TvPlayerKeyState.menuOpen = showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel || showSubtitlePanel
         TvPlayerKeyState.requestControls = {
             if (!controlsVisible) revealToMenu = false
             controlsVisible = true
@@ -289,6 +297,7 @@ fun PlayerControls(
                 showQuality -> { showQuality = false; true }
                 showTracks -> { showTracks = false; true }
                 showDanmakuPanel -> { showDanmakuPanel = false; true }
+                showSubtitlePanel -> { showSubtitlePanel = false; true }
                 showEpisodes -> { showEpisodes = false; true }
                 else -> false
             }
@@ -308,6 +317,14 @@ fun PlayerControls(
     }
 
     val resContext = LocalContext.current
+
+    // 本地字幕：系统文件选择器，选中后直接挂载。
+    val importSubtitleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            val name = uri.lastPathSegment?.substringAfterLast('/')?.takeIf { it.isNotBlank() } ?: "subtitle"
+            PlaybackSession.addSubtitle(name, uri.toString())
+        }
+    }
 
     fun seekWithHint(deltaMs: Long) {
         PlaybackSession.seekBy(deltaMs)
@@ -359,6 +376,20 @@ fun PlayerControls(
                 showTracks = true
             }),
             onOpenDanmaku = ({ showDanmakuPanel = true }),
+            onSearchSubtitle = if (runCatching { ComposeDependencies.subtitleRepository.available }.getOrDefault(false)) ({
+                subtitleLoading = true
+                showSubtitlePanel = true
+                subtitleList = emptyList()
+                scope.launch {
+                    val repo = ComposeDependencies.subtitleRepository
+                    val keyword = com.onefilm.android.tv.core.danmaku.DanmakuQuery.bestName(PlaybackSession.title)
+                    subtitleList = runCatching { repo.search(keyword) }.getOrDefault(emptyList())
+                    subtitleLoading = false
+                }
+            }) else null,
+            onImportSubtitle = ({
+                importSubtitleLauncher.launch(arrayOf("text/*", "application/octet-stream"))
+            }),
             danmakuOn = danmakuOn,
             onToggleDanmaku = {
                 danmakuOn = !danmakuOn
@@ -400,10 +431,10 @@ fun PlayerControls(
         resContext,
     )
 
-    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, showDlna, showParse, showQuality, showTracks, showDanmakuPanel) {
+    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, showDlna, showParse, showQuality, showTracks, showDanmakuPanel, showSubtitlePanel) {
         if (!controlsVisible) return@LaunchedEffect
         // 菜单打开或暂停时不自动隐藏；播放中则 10 秒无操作才隐藏。
-        if (!PlaybackSession.isPlaying || showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel) return@LaunchedEffect
+        if (!PlaybackSession.isPlaying || showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel || showSubtitlePanel) return@LaunchedEffect
         // 重新开始计时：暂停后恢复、弹窗关闭都要从当下重新数 10 秒。
         lastInteractionAt = SystemClock.uptimeMillis()
         while (true) {
@@ -418,12 +449,13 @@ fun PlayerControls(
     // 控制栏弹出来，导致隐藏态按左右键既快进又显示控制栏。用户主动暂停时，
     // 按键处理本身就会唤出控制栏。
     // 面板打开时把焦点移进去，关闭后还给菜单行；否则遥控器焦点会留在已移除的节点上。
-    LaunchedEffect(showEpisodes, showParse, showQuality, showTracks, showDanmakuPanel) {
-        val open = showEpisodes || showParse || showQuality || showTracks || showDanmakuPanel
+    LaunchedEffect(showEpisodes, showParse, showQuality, showTracks, showDanmakuPanel, showSubtitlePanel) {
+        val open = showEpisodes || showParse || showQuality || showTracks || showDanmakuPanel || showSubtitlePanel
         if (open) {
             panelWasOpen = true
             delay(80)
             val first = when {
+                showSubtitlePanel -> subtitleFirstFocus
                 showTracks -> tracksFirstFocus
                 showDanmakuPanel -> danmakuFirstFocus
                 showQuality -> qualityFirstFocus
@@ -475,7 +507,7 @@ fun PlayerControls(
                     inline = inline,
                     actions = PlayerKeyActions(
                         hidden = { !controlsVisible },
-                        overlayOpen = { showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel },
+                        overlayOpen = { showEpisodes || showMore || showDlna || showParse || showQuality || showTracks || showDanmakuPanel || showSubtitlePanel },
                         seek = { deltaMs -> seekWithHint(deltaMs) },
                         reveal = {
                             revealToMenu = false
@@ -842,6 +874,68 @@ fun PlayerControls(
                             text = stringResource(R.string.settings_danmaku_max_on_screen) + " ${DanmakuController.densityLines}",
                             modifier = Modifier.fillMaxWidth(),
                         ) { DanmakuController.cycleDensity() }
+                    }
+                }
+            }
+        }
+
+        if (showSubtitlePanel) {
+            PanelScrim(onDismiss = { showSubtitlePanel = false }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.player_subtitle_search),
+                        color = Ink,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    TextAction(stringResource(R.string.common_close)) { showSubtitlePanel = false }
+                }
+                Spacer(Modifier.height(12.dp))
+                when {
+                    subtitleLoading -> Text(
+                        text = stringResource(R.string.player_subtitle_searching),
+                        color = InkDim,
+                        fontSize = 12.sp,
+                    )
+
+                    subtitleList.isEmpty() -> Text(
+                        text = stringResource(R.string.player_subtitle_empty),
+                        color = InkDim,
+                        fontSize = 12.sp,
+                    )
+
+                    else -> LazyVerticalGrid(
+                        columns = GridCells.Adaptive(150.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
+                    ) {
+                        itemsIndexed(subtitleList) { index, item ->
+                            FlatTile(
+                                text = item.name.ifBlank { item.lang.ifBlank { "Subtitle" } },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .then(if (index == 0) Modifier.focusRequester(subtitleFirstFocus) else Modifier),
+                            ) {
+                                scope.launch {
+                                    subtitleLoading = true
+                                    val repo = ComposeDependencies.subtitleRepository
+                                    val files = runCatching { repo.files(item.id) }.getOrDefault(emptyList())
+                                    val target = files.firstOrNull { it.url.isNotBlank() }
+                                    val path = if (target != null) {
+                                        runCatching { repo.download(target) }.getOrNull()
+                                    } else {
+                                        null
+                                    }
+                                    subtitleLoading = false
+                                    if (!path.isNullOrBlank() && target != null) {
+                                        PlaybackSession.addSubtitle(target.name, path, target.lang)
+                                        showSubtitlePanel = false
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

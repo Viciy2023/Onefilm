@@ -356,7 +356,7 @@ internal fun MenuText(entry: PlayerMenuEntry, width: Dp, focusRequester: FocusRe
             .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
             .then(longPressKey(entry.enabled, entry.onLongClick))
             .width(width)
-            .height(30.dp)
+            .heightIn(min = 22.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(if (focused) Color.White else Color.White.copy(alpha = 0.08f))
             .border(
@@ -370,7 +370,8 @@ internal fun MenuText(entry: PlayerMenuEntry, width: Dp, focusRequester: FocusRe
                 enabled = entry.enabled,
                 onClick = entry.onClick,
                 onLongClick = entry.onLongClick,
-            ),
+            )
+            .padding(vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -447,34 +448,63 @@ internal fun OverflowPopup(
                 .background(Panel)
                 .padding(8.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.common_more), color = Ink, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                Spacer(Modifier.weight(1f))
-                TextAction(stringResource(R.string.settings_off), onClick = onDismiss)
-            }
-            Spacer(Modifier.height(6.dp))
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+                columns = GridCells.Fixed(5),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
                 modifier = Modifier.fillMaxWidth().heightIn(max = 280.dp).focusGroup(),
             ) {
                 itemsIndexed(entries) { index, entry ->
-                    FlatTile(
-                        text = entry.label,
-                        enabled = entry.enabled,
-                        modifier = if (index == 0) Modifier.focusRequester(firstFocus) else Modifier,
-                        onLongClick = entry.onLongClick?.let { handler ->
-                            {
-                                handler()
-                            }
-                        },
-                    ) {
-                        entry.onClick()
-                    }
+                    MenuChip(
+                        entry = entry,
+                        modifier = Modifier.fillMaxWidth().then(
+                            if (index == 0) Modifier.focusRequester(firstFocus) else Modifier,
+                        ),
+                    )
                 }
             }
         }
+    }
+}
+
+/** 「更多」面板里与菜单行同款的扁平标签（自适应宽度）。 */
+@Composable
+internal fun MenuChip(entry: PlayerMenuEntry, modifier: Modifier = Modifier) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    Box(
+        modifier
+            .then(longPressKey(entry.enabled, entry.onLongClick))
+            .heightIn(min = 22.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (focused) Color.White else Color.White.copy(alpha = 0.08f))
+            .border(
+                1.dp,
+                if (focused) Color.Transparent else Color.White.copy(alpha = 0.16f),
+                RoundedCornerShape(8.dp),
+            )
+            .combinedClickable(
+                interactionSource = interaction,
+                indication = null,
+                enabled = entry.enabled,
+                onClick = entry.onClick,
+                onLongClick = entry.onLongClick,
+            )
+            .padding(vertical = 4.dp, horizontal = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = entry.label,
+            color = when {
+                focused -> Color.Black
+                entry.enabled -> Ink.copy(alpha = 0.92f)
+                else -> InkFaint
+            },
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

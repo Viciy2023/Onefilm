@@ -401,4 +401,8 @@
     <string name="player_line">Nguồn: %1$s</string>
     <string name="player_track_panel">Track</string>
     <string name="player_danmaku_settings">Cài đặt danmaku</string>
+    <string name="player_subtitle_search">Tìm phụ đề</string>
+    <string name="player_subtitle_import">Nhập phụ đề</string>
+    <string name="player_subtitle_searching">Đang tìm phụ đề…</string>
+    <string name="player_subtitle_empty">Không tìm thấy phụ đề</string>
 </resources>
