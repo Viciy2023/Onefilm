@@ -21,4 +21,5 @@ object ComposeDependencies {
     lateinit var netdiskDataSource: NetdiskDataSource
     lateinit var updateDataSource: UpdateDataSource
     var dlnaDataSource: DlnaDataSource? = null
+    var fileLauncher: FileLauncher? = null
 }

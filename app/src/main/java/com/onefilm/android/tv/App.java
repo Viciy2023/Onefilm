@@ -102,7 +102,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setPlaybackResolver(new com.onefilm.android.tv.composebridge.AppPlaybackResolver());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setParseEngine(new com.onefilm.android.tv.composebridge.AppParseEngine());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setSubtitleRepository(new com.onefilm.android.tv.composebridge.AppSubtitleRepository());
-        com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setPlaybackHistoryStore(new com.onefilm.android.tv.composebridge.AppPlaybackHistoryStore());
+        com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setFileLauncher(new com.onefilm.android.tv.composebridge.AppFileLauncher());        com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setPlaybackHistoryStore(new com.onefilm.android.tv.composebridge.AppPlaybackHistoryStore());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setDanmakuDataSource(new com.onefilm.android.tv.composebridge.AppDanmakuDataSource());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setLegacyPlayerFactory(new com.onefilm.android.tv.composebridge.AppLegacyPlayerFactory());
         com.onefilm.android.tv.compose.bridge.ComposeDependencies.INSTANCE.setSettingsDataSource(new com.onefilm.android.tv.composebridge.AppSettingsDataSource(this));

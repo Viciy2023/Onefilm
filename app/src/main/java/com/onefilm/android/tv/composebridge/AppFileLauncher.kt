@@ -9,4 +9,6 @@ class AppFileLauncher : FileLauncher {
     override fun open(context: Context) {
         context.startActivity(Intent(context, FileActivity::class.java))
     }
+
+    override fun intent(context: Context): Intent = Intent(context, FileActivity::class.java)
 }

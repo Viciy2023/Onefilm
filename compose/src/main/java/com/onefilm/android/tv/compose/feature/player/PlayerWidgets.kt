@@ -269,6 +269,8 @@ internal fun MenuRow(
             horizontalArrangement = Arrangement.spacedBy(spacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val latestVisible = remember { androidx.compose.runtime.mutableStateOf(visible) }
+            androidx.compose.runtime.SideEffect { latestVisible.value = visible }
             var menuRequesterAssigned = false
             val visibleEntries = entries.take(visible)
             val firstEnabledIndex = visibleEntries.indexOfFirst { it.enabled }
@@ -284,7 +286,12 @@ internal fun MenuRow(
                 MenuText(entry, widths[index], requester)
             }
             if (hasOverflow) {
-                MenuText(PlayerMenuEntry(stringResource(R.string.common_more)) { onMore(entries.drop(visible)) }, moreWidth)
+                MenuText(
+                    PlayerMenuEntry(stringResource(R.string.common_more)) {
+                        onMore(entries.drop(latestVisible.value.coerceIn(0, entries.size)))
+                    },
+                    moreWidth,
+                )
             }
             Spacer(Modifier.weight(1f))
             IconAction(
@@ -405,21 +412,16 @@ internal fun DlnaPopup(
                 .widthIn(max = 380.dp)
                 .clip(RoundedCornerShape(14.dp))
                 .background(Panel)
-                .padding(10.dp),
+                .focusGroup()
+                .padding(8.dp),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.cast_device), color = Ink, fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                Spacer(Modifier.weight(1f))
-                TextAction(stringResource(R.string.settings_off), onClick = onDismiss)
-            }
-            Spacer(Modifier.height(6.dp))
             when {
                 loading -> Text(stringResource(R.string.cast_searching), color = InkDim, fontSize = 12.sp)
                 devices.isEmpty() -> Text(stringResource(R.string.cast_none), color = InkDim, fontSize = 12.sp)
                 else -> devices.forEach { device ->
                     FlatTile(
                         text = device.name.ifBlank { device.id },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
                     ) { onPick(device) }
                 }
             }
@@ -516,12 +518,12 @@ internal fun PanelScrim(onDismiss: () -> Unit, content: @Composable () -> Unit) 
     ) {
         Column(
             Modifier
-                .fillMaxWidth(0.9f)
-                .clip(RoundedCornerShape(20.dp))
+                .widthIn(max = 380.dp)
+                .clip(RoundedCornerShape(14.dp))
                 .background(Panel)
                 .focusGroup()
                 .pointerInput(Unit) { detectTapGestures { } }
-                .padding(18.dp),
+                .padding(8.dp),
         ) {
             content()
         }
@@ -594,14 +596,19 @@ internal fun FlatTile(
     Box(
         modifier
             .then(longPressKey(enabled, onLongClick))
-            .clip(RoundedCornerShape(10.dp))
-            .heightIn(min = 44.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .heightIn(min = 22.dp)
             .background(
                 when {
                     emphasis -> Ink
-                    focused -> Press
-                    else -> Color.White.copy(alpha = 0.06f)
+                    focused -> Color.White
+                    else -> Color.White.copy(alpha = 0.08f)
                 },
+            )
+            .border(
+                1.dp,
+                if (focused) Color.Transparent else Color.White.copy(alpha = 0.16f),
+                RoundedCornerShape(8.dp),
             )
             .combinedClickable(
                 interactionSource = interaction,
@@ -610,7 +617,7 @@ internal fun FlatTile(
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
-            .padding(horizontal = 10.dp, vertical = 10.dp),        contentAlignment = Alignment.Center,
+            .padding(horizontal = 4.dp, vertical = 4.dp),        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,

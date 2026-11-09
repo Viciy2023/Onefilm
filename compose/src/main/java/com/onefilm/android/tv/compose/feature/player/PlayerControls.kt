@@ -318,9 +318,10 @@ fun PlayerControls(
 
     val resContext = LocalContext.current
 
-    // 本地字幕：系统文件选择器，选中后直接挂载。
-    val importSubtitleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
+    // 本地字幕：用应用内文件浏览页（电视上没有 DocumentsUI，OpenDocument 会崩）。
+    val subtitlePicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val uri = result.data?.data
+        if (result.resultCode == android.app.Activity.RESULT_OK && uri != null) {
             val name = uri.lastPathSegment?.substringAfterLast('/')?.takeIf { it.isNotBlank() } ?: "subtitle"
             PlaybackSession.addSubtitle(name, uri.toString())
         }
@@ -388,7 +389,8 @@ fun PlayerControls(
                 }
             }) else null,
             onImportSubtitle = ({
-                importSubtitleLauncher.launch(arrayOf("text/*", "application/octet-stream"))
+                val intent = runCatching { ComposeDependencies.fileLauncher?.intent(context) }.getOrNull()
+                if (intent != null) runCatching { subtitlePicker.launch(intent) }
             }),
             danmakuOn = danmakuOn,
             onToggleDanmaku = {
@@ -689,19 +691,8 @@ fun PlayerControls(
 
         if (showEpisodes) {
             PanelScrim(onDismiss = { showEpisodes = false }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = stringResource(R.string.player_episodes, PlaybackSession.queue.size),
-                        color = Ink,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    TextAction(stringResource(R.string.common_close)) { showEpisodes = false }
-                }
-                Spacer(Modifier.height(12.dp))
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(76.dp),
+                    columns = GridCells.Fixed(5),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
@@ -725,19 +716,8 @@ fun PlayerControls(
 
         if (showParse) {
             PanelScrim(onDismiss = { showParse = false }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = stringResource(R.string.player_parse),
-                        color = Ink,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    TextAction(stringResource(R.string.common_close)) { showParse = false }
-                }
-                Spacer(Modifier.height(12.dp))
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(96.dp),
+                    columns = GridCells.Fixed(5),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
@@ -761,19 +741,8 @@ fun PlayerControls(
 
         if (showQuality) {
             PanelScrim(onDismiss = { showQuality = false }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = stringResource(R.string.player_quality_title),
-                        color = Ink,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    TextAction(stringResource(R.string.common_close)) { showQuality = false }
-                }
-                Spacer(Modifier.height(12.dp))
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(96.dp),
+                    columns = GridCells.Fixed(5),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
@@ -795,19 +764,8 @@ fun PlayerControls(
 
         if (showTracks) {
             PanelScrim(onDismiss = { showTracks = false }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = stringResource(R.string.player_track_panel),
-                        color = Ink,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    TextAction(stringResource(R.string.common_close)) { showTracks = false }
-                }
-                Spacer(Modifier.height(12.dp))
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(150.dp),
+                    columns = GridCells.Fixed(5),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
@@ -830,19 +788,8 @@ fun PlayerControls(
 
         if (showDanmakuPanel) {
             PanelScrim(onDismiss = { showDanmakuPanel = false }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = stringResource(R.string.player_danmaku_settings),
-                        color = Ink,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    TextAction(stringResource(R.string.common_close)) { showDanmakuPanel = false }
-                }
-                Spacer(Modifier.height(12.dp))
                 LazyVerticalGrid(
-                    columns = GridCells.Adaptive(150.dp),
+                    columns = GridCells.Fixed(5),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
@@ -881,17 +828,6 @@ fun PlayerControls(
 
         if (showSubtitlePanel) {
             PanelScrim(onDismiss = { showSubtitlePanel = false }) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = stringResource(R.string.player_subtitle_search),
-                        color = Ink,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    Spacer(Modifier.weight(1f))
-                    TextAction(stringResource(R.string.common_close)) { showSubtitlePanel = false }
-                }
-                Spacer(Modifier.height(12.dp))
                 when {
                     subtitleLoading -> Text(
                         text = stringResource(R.string.player_subtitle_searching),
@@ -906,7 +842,7 @@ fun PlayerControls(
                     )
 
                     else -> LazyVerticalGrid(
-                        columns = GridCells.Adaptive(150.dp),
+                        columns = GridCells.Fixed(5),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
