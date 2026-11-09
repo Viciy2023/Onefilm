@@ -118,7 +118,7 @@ private fun VerticalOverlayPoster(
         ),
         label = "poster-focus",
     )
-    val shape = RoundedCornerShape(12.dp)
+    val cardShape = RoundedCornerShape(12.dp)
     val sizeModifier = if (width != null) Modifier.width(width) else Modifier.fillMaxWidth()
     Box(
         modifier
@@ -133,10 +133,14 @@ private fun VerticalOverlayPoster(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
+                    // 阴影必须跟随圆角形状，否则会从矩形层投出 4 个直角的暗边
+                    this.shape = cardShape
+                    clip = true
+                    ambientShadowColor = Color.Black
+                    spotShadowColor = Color.Black
                     shadowElevation = if (focused) 18.dp.toPx() else 0f
                 }
-                .clip(shape)
-                .border(if (focused) 3.dp else 0.dp, Color.White, shape),
+                .border(if (focused) 3.dp else 0.dp, Color.White, cardShape),
         ) {
             Box(
                 Modifier
@@ -235,7 +239,7 @@ private fun HorizontalPoster(
         ),
         label = "poster-focus-h",
     )
-    val shape = RoundedCornerShape(14.dp)
+    val cardShape = RoundedCornerShape(14.dp)
     var landscapeOk by remember(landscapeUrl, posterUrl) {
         mutableStateOf(!landscapeUrl.isNullOrBlank() && landscapeUrl != posterUrl)
     }
@@ -252,10 +256,14 @@ private fun HorizontalPoster(
                 .graphicsLayer {
                     scaleX = scale
                     scaleY = scale
+                    // 阴影必须跟随圆角形状，否则会从矩形层投出 4 个直角的暗边
+                    this.shape = cardShape
+                    clip = true
+                    ambientShadowColor = Color.Black
+                    spotShadowColor = Color.Black
                     shadowElevation = if (focused) 18.dp.toPx() else 0f
                 }
-                .clip(shape)
-                .border(if (focused) 3.dp else 0.dp, Color.White, shape)
+                .border(if (focused) 3.dp else 0.dp, Color.White, cardShape)
                 .aspectRatio(16f / 9f)
                 .background(MaterialTheme.colorScheme.surfaceVariant),
         ) {
