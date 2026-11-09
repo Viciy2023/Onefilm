@@ -18,6 +18,7 @@ object HomeFeedMapper {
             posterUrl = vod.pic.orEmpty().ifBlank { null },
             landscapeUrl = vod.picSlide.orEmpty().ifBlank { null },
             siteName = runCatching { VodConfig.get().getSite(siteKey).name }.getOrNull(),
+            folder = vod.isFolder,
         )
     }
 

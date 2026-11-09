@@ -34,11 +34,11 @@ fun dispatchPlayerKey(event: KeyEvent, inline: Boolean, actions: PlayerKeyAction
     if (actions.overlayOpen() || !actions.hidden()) return false
     return when (event.key) {
         Key.DirectionLeft -> {
-            actions.seek(-5_000L)
+            actions.seek(-10_000L)
             true
         }
         Key.DirectionRight -> {
-            actions.seek(5_000L)
+            actions.seek(10_000L)
             true
         }
         Key.DirectionUp, Key.DirectionDown -> {

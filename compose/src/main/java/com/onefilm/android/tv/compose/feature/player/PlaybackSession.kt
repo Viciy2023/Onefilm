@@ -627,13 +627,25 @@ object PlaybackSession {
     }
 
     fun cycleSpeed() {
-        val values = runCatching { ComposeDependencies.settingsDataSource.speedPresets().toList() }
-            .getOrDefault(listOf(0.5f, 0.8f, 1f, 1.2f, 1.5f, 2f, 3f, 5f))
+        val values = speedPresets
         if (values.isEmpty()) return
         val current = values.indexOfFirst { kotlin.math.abs(it - speed) < 0.011f }
         val next = values[(current.takeIf { it >= 0 }?.plus(1) ?: values.indexOfFirst { it >= 1f }.coerceAtLeast(0)) % values.size]
         updateSpeed(next)
     }
+
+    /** 倍速面板的预设档位（来自旧 SpeedSetting）。 */
+    val speedPresets: List<Float>
+        get() = runCatching { ComposeDependencies.settingsDataSource.speedPresets().toList() }
+            .getOrDefault(listOf(0.5f, 0.8f, 1f, 1.2f, 1.5f, 2f, 3f, 5f))
+
+    /** 倍速文案：与旧播放器一致，一位小数（1.0x / 0.8x），两位小数时保留两位。 */
+    fun speedText(value: Float): String =
+        if (kotlin.math.abs(value * 10 - kotlin.math.round(value * 10)) < 0.001f) {
+            "%.1fx".format(value)
+        } else {
+            "%.2fx".format(value)
+        }
 
     /** 长按倍速：没有加速时切到 2x，已加速则恢复。与旧播放器长按「倍速」一致。 */
     fun toggleBoost() {

@@ -50,6 +50,7 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -358,6 +359,7 @@ internal fun longPressKey(enabled: Boolean, onLongClick: (() -> Unit)?): Modifie
 internal fun MenuText(entry: PlayerMenuEntry, width: Dp, focusRequester: FocusRequester? = null) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
+    val scheme = MaterialTheme.colorScheme
     Box(
         Modifier
             .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
@@ -365,10 +367,16 @@ internal fun MenuText(entry: PlayerMenuEntry, width: Dp, focusRequester: FocusRe
             .width(width)
             .heightIn(min = 22.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(if (focused) Color.White else Color.White.copy(alpha = 0.08f))
+            .background(
+                when {
+                    focused -> scheme.primary
+                    entry.enabled -> scheme.surfaceVariant.copy(alpha = 0.7f)
+                    else -> scheme.surfaceVariant.copy(alpha = 0.35f)
+                },
+            )
             .border(
                 1.dp,
-                if (focused) Color.Transparent else Color.White.copy(alpha = 0.16f),
+                if (focused) Color.Transparent else scheme.outline.copy(alpha = 0.4f),
                 RoundedCornerShape(8.dp),
             )
             .combinedClickable(
@@ -384,9 +392,9 @@ internal fun MenuText(entry: PlayerMenuEntry, width: Dp, focusRequester: FocusRe
         Text(
             text = entry.label,
             color = when {
-                focused -> Color.Black
-                entry.enabled -> Ink.copy(alpha = 0.92f)
-                else -> InkFaint
+                focused -> scheme.onPrimary
+                entry.enabled -> scheme.onSurface
+                else -> scheme.onSurface.copy(alpha = 0.38f)
             },
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
@@ -416,15 +424,16 @@ internal fun DlnaPopup(
     ) {
         Column(
             Modifier
-                .widthIn(max = 380.dp)
+                .widthIn(max = 475.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(Panel)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f))
                 .focusGroup()
+                .trapDirectionalFocus()
                 .padding(8.dp),
         ) {
             when {
-                loading -> Text(stringResource(R.string.cast_searching), color = InkDim, fontSize = 12.sp)
-                devices.isEmpty() -> Text(stringResource(R.string.cast_none), color = InkDim, fontSize = 12.sp)
+                loading -> Text(stringResource(R.string.cast_searching), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                devices.isEmpty() -> Text(stringResource(R.string.cast_none), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 else -> devices.forEachIndexed { index, device ->
                     FlatTile(
                         text = device.name.ifBlank { device.id },
@@ -443,14 +452,9 @@ internal fun DlnaPopup(
 internal fun OverflowPopup(
     entries: List<PlayerMenuEntry>,
     inline: Boolean,
+    firstFocus: FocusRequester,
     onDismiss: () -> Unit,
 ) {
-    val firstFocus = remember { FocusRequester() }
-    LaunchedEffect(Unit) {
-        // 等 AnimatedVisibility 完成首帧布局再请求焦点，否则焦点会留在「更多」按钮上
-        kotlinx.coroutines.delay(120)
-        runCatching { firstFocus.requestFocus() }
-    }
     Box(
         Modifier
             .fillMaxSize()
@@ -459,9 +463,11 @@ internal fun OverflowPopup(
     ) {
         Column(
             Modifier
-                .widthIn(max = 380.dp)
+                .widthIn(max = 475.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(Panel)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f))
+                .focusGroup()
+                .trapDirectionalFocus()
                 .padding(8.dp),
         ) {
             LazyVerticalGrid(
@@ -488,15 +494,22 @@ internal fun OverflowPopup(
 internal fun MenuChip(entry: PlayerMenuEntry, modifier: Modifier = Modifier) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
+    val scheme = MaterialTheme.colorScheme
     Box(
         modifier
             .then(longPressKey(entry.enabled, entry.onLongClick))
             .heightIn(min = 22.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(if (focused) Color.White else Color.White.copy(alpha = 0.08f))
+            .background(
+                when {
+                    focused -> scheme.primary
+                    entry.enabled -> scheme.surfaceVariant.copy(alpha = 0.7f)
+                    else -> scheme.surfaceVariant.copy(alpha = 0.35f)
+                },
+            )
             .border(
                 1.dp,
-                if (focused) Color.Transparent else Color.White.copy(alpha = 0.16f),
+                if (focused) Color.Transparent else scheme.outline.copy(alpha = 0.4f),
                 RoundedCornerShape(8.dp),
             )
             .combinedClickable(
@@ -512,9 +525,9 @@ internal fun MenuChip(entry: PlayerMenuEntry, modifier: Modifier = Modifier) {
         Text(
             text = entry.label,
             color = when {
-                focused -> Color.Black
-                entry.enabled -> Ink.copy(alpha = 0.92f)
-                else -> InkFaint
+                focused -> scheme.onPrimary
+                entry.enabled -> scheme.onSurface
+                else -> scheme.onSurface.copy(alpha = 0.38f)
             },
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
@@ -532,10 +545,11 @@ internal fun PanelScrim(onDismiss: () -> Unit, content: @Composable () -> Unit) 
     ) {
         Column(
             Modifier
-                .widthIn(max = 380.dp)
+                .widthIn(max = 475.dp)
                 .clip(RoundedCornerShape(14.dp))
-                .background(Panel)
+                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f))
                 .focusGroup()
+                .trapDirectionalFocus()
                 .pointerInput(Unit) { detectTapGestures { } }
                 .padding(8.dp),
         ) {
@@ -607,6 +621,7 @@ internal fun FlatTile(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
+    val scheme = MaterialTheme.colorScheme
     Box(
         modifier
             .then(longPressKey(enabled, onLongClick))
@@ -614,14 +629,15 @@ internal fun FlatTile(
             .heightIn(min = 22.dp)
             .background(
                 when {
-                    emphasis -> Ink
-                    focused -> Color.White
-                    else -> Color.White.copy(alpha = 0.08f)
+                    emphasis -> scheme.primary.copy(alpha = 0.85f)
+                    focused -> scheme.primary
+                    enabled -> scheme.surfaceVariant.copy(alpha = 0.7f)
+                    else -> scheme.surfaceVariant.copy(alpha = 0.35f)
                 },
             )
             .border(
                 1.dp,
-                if (focused) Color.Transparent else Color.White.copy(alpha = 0.16f),
+                if (focused || emphasis) Color.Transparent else scheme.outline.copy(alpha = 0.4f),
                 RoundedCornerShape(8.dp),
             )
             .combinedClickable(
@@ -636,16 +652,27 @@ internal fun FlatTile(
         Text(
             text = text,
             color = when {
-                focused -> Color.Black
-                !enabled -> InkFaint
-                emphasis -> Color.Black
-                else -> Ink
+                focused || emphasis -> scheme.onPrimary
+                !enabled -> scheme.onSurface.copy(alpha = 0.38f)
+                else -> scheme.onSurface
             },
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+    }
+}
+
+/**
+ * 面板内消费未被处理的上下左右键：网格到达边缘时不让焦点逃到面板背后的播放器控件。
+ * 子节点（网格/输入框）先处理；只有它们处理不了（已在边缘）才会冒泡到这里。
+ */
+internal fun Modifier.trapDirectionalFocus(): Modifier = onKeyEvent { event ->
+    if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
+    when (event.key) {
+        Key.DirectionLeft, Key.DirectionRight, Key.DirectionUp, Key.DirectionDown -> true
+        else -> false
     }
 }
 

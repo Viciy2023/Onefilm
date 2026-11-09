@@ -41,12 +41,12 @@ class PlayerMenuActions(
     val onOpenTracks: (() -> Unit)?,
     /** 打开弹幕设置面板。 */
     val onOpenDanmaku: (() -> Unit)?,
+    /** 打开倍速面板。 */
+    val onOpenSpeed: () -> Unit,
     /** 在线搜索字幕（未配置字幕接口 token 时为 null）。 */
     val onSearchSubtitle: (() -> Unit)?,
     /** 导入本地字幕文件。 */
     val onImportSubtitle: (() -> Unit)?,
-    val danmakuOn: Boolean,
-    val onToggleDanmaku: () -> Unit,
     val onPip: () -> Unit,
     val onDlna: () -> Unit,
 )
@@ -55,7 +55,7 @@ class PlayerMenuActions(
 fun buildPlayerMenu(actions: PlayerMenuActions, context: Context): List<PlayerMenuEntry> = buildList {
     fun s(id: Int, vararg args: Any): String = context.getString(id, *args)
     val defaultLabel = s(R.string.common_default)
-    // 第一排固定顺序：上集-下集-片头-片尾-快进-弹幕-刷新-重播，其余按使用频率排列。
+    // 第一排固定顺序：上集-下集-片头-片尾-倍速-弹幕设置-刷新-重播，其余按使用频率排列。
     add(PlayerMenuEntry(s(R.string.player_prev_ep), actions.onPrevious != null) { actions.onPrevious?.invoke() })
     add(PlayerMenuEntry(s(R.string.player_next_ep), actions.onNext != null) { actions.onNext?.invoke() })
     add(
@@ -72,8 +72,14 @@ fun buildPlayerMenu(actions: PlayerMenuActions, context: Context): List<PlayerMe
             onLongClick = { PlaybackSession.clearEnding() },
         ),
     )
-    add(PlayerMenuEntry("${s(R.string.player_forward)} 5s") { PlaybackSession.seekBy(5_000L) })
-    add(PlayerMenuEntry(if (actions.danmakuOn) s(R.string.player_danmaku_on) else s(R.string.player_danmaku_off)) { actions.onToggleDanmaku() })
+    add(
+        PlayerMenuEntry(
+            PlaybackSession.speedText(PlaybackSession.speed),
+            onLongClick = { PlaybackSession.toggleBoost() },
+        ) { actions.onOpenSpeed() },
+    )
+    // 弹幕开关移入弹幕设置面板（面板第一项）；菜单行只保留面板入口。
+    add(PlayerMenuEntry(s(R.string.player_danmaku_settings), actions.onOpenDanmaku != null) { actions.onOpenDanmaku?.invoke() })
     add(PlayerMenuEntry(s(R.string.player_refresh)) { PlaybackSession.refresh() })
     add(PlayerMenuEntry(s(R.string.player_replay)) { PlaybackSession.replay() })
 
@@ -100,14 +106,12 @@ fun buildPlayerMenu(actions: PlayerMenuActions, context: Context): List<PlayerMe
             actions.onSwitchLine != null,
         ) { actions.onSwitchLine?.invoke() },
     )
-    add(PlayerMenuEntry("${PlaybackSession.speed}x", onLongClick = { PlaybackSession.toggleBoost() }) { PlaybackSession.cycleSpeed() })
     add(
         PlayerMenuEntry(
             if (PlaybackSession.repeatMode == Player.REPEAT_MODE_ONE) s(R.string.player_loop_on) else s(R.string.player_loop_off),
         ) { PlaybackSession.toggleRepeat() },
     )
     add(PlayerMenuEntry(s(R.string.player_track_panel), actions.onOpenTracks != null) { actions.onOpenTracks?.invoke() })
-    add(PlayerMenuEntry(s(R.string.player_danmaku_settings), actions.onOpenDanmaku != null) { actions.onOpenDanmaku?.invoke() })
     add(PlayerMenuEntry(s(R.string.player_subtitle_search), actions.onSearchSubtitle != null) { actions.onSearchSubtitle?.invoke() })
     add(PlayerMenuEntry(s(R.string.player_subtitle_import), actions.onImportSubtitle != null) { actions.onImportSubtitle?.invoke() })
     add(PlayerMenuEntry(s(R.string.player_cast)) { actions.onDlna() })

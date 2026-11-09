@@ -108,6 +108,11 @@ object DanmakuController {
         )
     }
 
+    /** 设置页/播放器面板改完弹幕配置后调用，重新读取并立即生效。 */
+    fun refreshSettings() {
+        syncSettings()
+    }
+
     fun cycleDensity() {
         val next = when (densityLines) {
             4 -> 8
