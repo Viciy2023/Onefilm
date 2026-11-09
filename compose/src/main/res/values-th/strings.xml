@@ -396,4 +396,7 @@
     <string name="settings_danmaku_probe_ok">เชื่อมต่อสำเร็จ (%1$s)</string>
     <string name="settings_danmaku_probe_fail">เชื่อมต่อไม่สำเร็จ (%1$s)</string>
     <string name="settings_danmaku_probe_empty">ยังไม่ได้ตั้งค่าที่อยู่ API แดนมากุ</string>
+    <string name="player_quality">คุณภาพ: %1$s</string>
+    <string name="player_quality_title">คุณภาพ</string>
+    <string name="player_line">เส้นทาง: %1$s</string>
 </resources>

@@ -25,6 +25,10 @@ class PlayerMenuActions(
     val onOpenEpisodes: () -> Unit,
     /** 打开「解析」引擎选择面板；没有可用解析引擎时为 null。 */
     val onParse: (() -> Unit)?,
+    /** 打开「清晰度」选择面板；只有一个地址时为 null。 */
+    val onOpenQuality: (() -> Unit)?,
+    /** 手动换线路；详情页没提供多线路时为 null。 */
+    val onSwitchLine: (() -> Unit)?,
     val danmakuOn: Boolean,
     val onToggleDanmaku: () -> Unit,
     val onPip: () -> Unit,
@@ -41,6 +45,18 @@ fun buildPlayerMenu(actions: PlayerMenuActions, context: Context): List<PlayerMe
     add(PlayerMenuEntry(s(R.string.player_refresh)) { PlaybackSession.refresh() })
     add(PlayerMenuEntry(s(R.string.player_select_episode), PlaybackSession.queue.size > 1) { actions.onOpenEpisodes() })
     add(PlayerMenuEntry(s(R.string.player_parse), actions.onParse != null) { actions.onParse?.invoke() })
+    add(
+        PlayerMenuEntry(
+            s(R.string.player_quality, PlaybackSession.qualityLabel),
+            actions.onOpenQuality != null,
+        ) { actions.onOpenQuality?.invoke() },
+    )
+    add(
+        PlayerMenuEntry(
+            s(R.string.player_line, PlaybackSession.flagName.ifBlank { defaultLabel }),
+            actions.onSwitchLine != null,
+        ) { actions.onSwitchLine?.invoke() },
+    )
     add(
         PlayerMenuEntry(
             s(R.string.player_opening, formatTime(PlaybackSession.openingMs)),

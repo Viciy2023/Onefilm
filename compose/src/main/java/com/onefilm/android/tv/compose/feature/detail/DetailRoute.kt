@@ -128,7 +128,7 @@ fun DetailRoute(
                 } else {
                     PlaybackSession.setMarks(0L, 0L)
                 }
-                PlaybackSession.play(context, resolved.url, start, resolved.headers)
+                PlaybackSession.play(context, resolved.url, start, resolved.headers, resolved.options)
                 PlaybackSession.preloadNext(playbackResolver)
                 if (resumeFromHistory) PlaybackSession.updateSpeed(history!!.speed)
                 playingUrl = resolved.url

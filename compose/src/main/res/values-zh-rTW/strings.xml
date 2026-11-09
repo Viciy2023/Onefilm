@@ -396,4 +396,7 @@
     <string name="settings_danmaku_probe_ok">連線成功（%1$s）</string>
     <string name="settings_danmaku_probe_fail">連線失敗（%1$s）</string>
     <string name="settings_danmaku_probe_empty">還沒有可用的彈幕介面位址</string>
+    <string name="player_quality">畫質：%1$s</string>
+    <string name="player_quality_title">畫質</string>
+    <string name="player_line">線路：%1$s</string>
 </resources>

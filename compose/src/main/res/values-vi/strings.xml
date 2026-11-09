@@ -396,4 +396,7 @@
     <string name="settings_danmaku_probe_ok">Kết nối thành công (%1$s)</string>
     <string name="settings_danmaku_probe_fail">Kết nối thất bại (%1$s)</string>
     <string name="settings_danmaku_probe_empty">Chưa cấu hình địa chỉ API danmaku</string>
+    <string name="player_quality">Chất lượng: %1$s</string>
+    <string name="player_quality_title">Chất lượng</string>
+    <string name="player_line">Nguồn: %1$s</string>
 </resources>

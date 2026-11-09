@@ -396,4 +396,7 @@
     <string name="settings_danmaku_probe_ok">Connected (%1$s)</string>
     <string name="settings_danmaku_probe_fail">Cannot connect (%1$s)</string>
     <string name="settings_danmaku_probe_empty">No danmaku API configured</string>
+    <string name="player_quality">Quality: %1$s</string>
+    <string name="player_quality_title">Quality</string>
+    <string name="player_line">Line: %1$s</string>
 </resources>

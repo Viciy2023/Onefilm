@@ -20,6 +20,7 @@ import com.onefilm.android.tv.compose.bridge.LegacyPlayer
 import com.onefilm.android.tv.compose.bridge.LegacyPlayerListener
 import com.onefilm.android.tv.compose.bridge.LegacyTrack
 import com.onefilm.android.tv.compose.bridge.ParseOutcome
+import com.onefilm.android.tv.compose.bridge.PlayOption
 import com.onefilm.android.tv.compose.bridge.PlaybackHistoryStore
 import com.onefilm.android.tv.compose.bridge.PlaybackResolver
 import com.onefilm.android.tv.compose.bridge.ResolvedPlayback
@@ -86,6 +87,18 @@ object PlaybackSession {
     /** 正在用解析引擎处理当前网页地址。 */
     var parsing by mutableStateOf(false)
         private set
+
+    /** 当前集可切换的播放地址（清晰度/备用源）。 */
+    var qualityOptions: List<PlayOption> = emptyList()
+        private set
+    var qualityIndex by mutableIntStateOf(0)
+        private set
+
+    val qualityLabel: String
+        get() = qualityOptions.getOrNull(qualityIndex)?.name?.takeIf { it.isNotBlank() }
+            ?: str(R.string.common_default)
+
+    val hasAlternatives: Boolean get() = alternatives.size > 1
     /** 当前 error 是否为"可自愈"的中间态（同源重试/线路切换），详情页据此跳过站点回退。 */
     var errorTransient by mutableStateOf(false)
         private set
@@ -378,9 +391,32 @@ object PlaybackSession {
         lineSwitchUsed = 0
     }
 
+    /** 手动切换清晰度 / 备用地址（保持当前播放进度与请求头）。 */
+    fun selectQuality(index: Int) {
+        val ctx = appContext ?: return
+        val option = qualityOptions.getOrNull(index) ?: return
+        if (option.url.isBlank()) return
+        play(ctx, option.url, positionMs(), currentHeaders, qualityOptions)
+    }
+
+    /** 手动切换线路：循环到下一路，与旧播放器「换源」一致。 */
+    fun switchLine() {
+        val ctx = appContext ?: return
+        val resolver = resolverRef ?: ComposeDependencies.playbackResolver
+        if (alternatives.size < 2) return
+        val current = alternatives.indexOfFirst { it.first == flagName }
+        val next = alternatives.getOrNull((current.coerceAtLeast(0) + 1) % alternatives.size) ?: return
+        flagName = next.first
+        queue = next.second
+        currentIndex = currentIndex.coerceIn(0, (next.second.size - 1).coerceAtLeast(0))
+        error = null
+        lineSwitchUsed = 0
+        scope.launch { playEpisode(ctx, currentIndex, resolver) }
+    }
+
     private fun tryNextLine(): Boolean {
         val ctx = appContext ?: return false
-        val resolver = resolverRef ?: return false
+        val resolver = resolverRef ?: ComposeDependencies.playbackResolver
         val current = alternatives.indexOfFirst { it.first == flagName }
         if (current < 0) return false
         val next = alternatives.getOrNull(current + 1) ?: return false
@@ -399,9 +435,12 @@ object PlaybackSession {
         url: String,
         startMs: Long = 0L,
         headers: Map<String, String> = emptyMap(),
+        options: List<PlayOption> = emptyList(),
     ) {
         appContext = context.applicationContext
         currentHeaders = headers
+        qualityOptions = options
+        qualityIndex = options.indexOfFirst { it.url == url }.coerceAtLeast(0)
         val target = ensureLegacy() ?: return
         if (currentUrl != url) {
             currentUrl = url
@@ -445,7 +484,7 @@ object PlaybackSession {
             } else {
                 setMarks(0L, 0L)
             }
-            play(context, resolved.url, start, resolved.headers)
+            play(context, resolved.url, start, resolved.headers, resolved.options)
             // 切集后播放器可能重建或重置参数，这里必须重新应用倍速
             applySpeed(playerHolder)
             if (history?.episodeUrl == item.url && history.speed > 0f) {

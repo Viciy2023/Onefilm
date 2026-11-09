@@ -233,6 +233,7 @@ fun PlayerControls(
     var showMore by remember { mutableStateOf(false) }
     var showDlna by remember { mutableStateOf(false) }
     var showParse by remember { mutableStateOf(false) }
+    var showQuality by remember { mutableStateOf(false) }
     var parseHint by remember { mutableStateOf<String?>(null) }
     // 解析引擎列表来自配置，配置变更后重新进入播放页即可刷新。
     val parseEngines = remember {
@@ -252,6 +253,7 @@ fun PlayerControls(
     val menuFirstFocus = remember { FocusRequester() }
     val episodesFirstFocus = remember { FocusRequester() }
     val parseFirstFocus = remember { FocusRequester() }
+    val qualityFirstFocus = remember { FocusRequester() }
     // 面板打开时把焦点移进去，关闭后还给菜单行；否则遥控器焦点会留在已移除的节点上。
     var panelWasOpen by remember { mutableStateOf(false) }
     // 任何按键/点击都算一次操作，控制栏只在 10 秒无操作后才隐藏。
@@ -263,7 +265,7 @@ fun PlayerControls(
         TvPlayerKeyState.fullscreenActive = !inline
         TvPlayerKeyState.controlsVisible = controlsVisible
         if (!controlsVisible) TvPlayerKeyState.playFocused = false
-        TvPlayerKeyState.menuOpen = showEpisodes || showMore || showDlna || showParse
+        TvPlayerKeyState.menuOpen = showEpisodes || showMore || showDlna || showParse || showQuality
         TvPlayerKeyState.requestControls = {
             if (!controlsVisible) revealToMenu = false
             controlsVisible = true
@@ -278,6 +280,7 @@ fun PlayerControls(
                 showDlna -> { showDlna = false; true }
                 showMore -> { showMore = false; true }
                 showParse -> { showParse = false; true }
+                showQuality -> { showQuality = false; true }
                 showEpisodes -> { showEpisodes = false; true }
                 else -> false
             }
@@ -342,6 +345,8 @@ fun PlayerControls(
             onNext = onNext,
             onOpenEpisodes = { showEpisodes = true },
             onParse = if (parseEngines.isEmpty()) null else ({ showParse = true }),
+            onOpenQuality = if (PlaybackSession.qualityOptions.size > 1) ({ showQuality = true }) else null,
+            onSwitchLine = if (PlaybackSession.hasAlternatives) ({ PlaybackSession.switchLine() }) else null,
             danmakuOn = danmakuOn,
             onToggleDanmaku = {
                 danmakuOn = !danmakuOn
@@ -383,10 +388,10 @@ fun PlayerControls(
         resContext,
     )
 
-    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, showDlna, showParse) {
+    LaunchedEffect(player, controlsVisible, PlaybackSession.isPlaying, showEpisodes, showMore, showDlna, showParse, showQuality) {
         if (!controlsVisible) return@LaunchedEffect
         // 菜单打开或暂停时不自动隐藏；播放中则 10 秒无操作才隐藏。
-        if (!PlaybackSession.isPlaying || showEpisodes || showMore || showDlna || showParse) return@LaunchedEffect
+        if (!PlaybackSession.isPlaying || showEpisodes || showMore || showDlna || showParse || showQuality) return@LaunchedEffect
         // 重新开始计时：暂停后恢复、弹窗关闭都要从当下重新数 10 秒。
         lastInteractionAt = SystemClock.uptimeMillis()
         while (true) {
@@ -401,12 +406,17 @@ fun PlayerControls(
     // 控制栏弹出来，导致隐藏态按左右键既快进又显示控制栏。用户主动暂停时，
     // 按键处理本身就会唤出控制栏。
     // 面板打开时把焦点移进去，关闭后还给菜单行；否则遥控器焦点会留在已移除的节点上。
-    LaunchedEffect(showEpisodes, showParse) {
-        val open = showEpisodes || showParse
+    LaunchedEffect(showEpisodes, showParse, showQuality) {
+        val open = showEpisodes || showParse || showQuality
         if (open) {
             panelWasOpen = true
             delay(80)
-            runCatching { (if (showParse) parseFirstFocus else episodesFirstFocus).requestFocus() }
+            val first = when {
+                showQuality -> qualityFirstFocus
+                showParse -> parseFirstFocus
+                else -> episodesFirstFocus
+            }
+            runCatching { first.requestFocus() }
         } else if (panelWasOpen) {
             panelWasOpen = false
             delay(80)
@@ -451,7 +461,7 @@ fun PlayerControls(
                     inline = inline,
                     actions = PlayerKeyActions(
                         hidden = { !controlsVisible },
-                        overlayOpen = { showEpisodes || showMore || showDlna || showParse },
+                        overlayOpen = { showEpisodes || showMore || showDlna || showParse || showQuality },
                         seek = { deltaMs -> seekWithHint(deltaMs) },
                         reveal = {
                             revealToMenu = false
@@ -698,6 +708,41 @@ fun PlayerControls(
                             emphasis = entry.god,
                             modifier = Modifier.fillMaxWidth(),
                         ) { startParse(entry.name) }
+                    }
+                }
+            }
+        }
+
+        if (showQuality) {
+            PanelScrim(onDismiss = { showQuality = false }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(R.string.player_quality_title),
+                        color = Ink,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                    )
+                    Spacer(Modifier.weight(1f))
+                    TextAction(stringResource(R.string.common_close)) { showQuality = false }
+                }
+                Spacer(Modifier.height(12.dp))
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(96.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 340.dp),
+                ) {
+                    itemsIndexed(PlaybackSession.qualityOptions) { index, option ->
+                        FlatTile(
+                            text = option.name.ifBlank { "${index + 1}" },
+                            emphasis = index == PlaybackSession.qualityIndex,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .then(if (index == 0) Modifier.focusRequester(qualityFirstFocus) else Modifier),
+                        ) {
+                            showQuality = false
+                            PlaybackSession.selectQuality(index)
+                        }
                     }
                 }
             }
