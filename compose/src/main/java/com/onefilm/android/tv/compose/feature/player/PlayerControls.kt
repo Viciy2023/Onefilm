@@ -73,6 +73,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.CornerRadius
@@ -718,6 +719,11 @@ fun PlayerControls(
                 Box(
                     Modifier
                         .size(if (inline) 46.dp else 64.dp)
+                        // 全屏下键固定落到菜单行，避免跑到底部右侧的全屏按钮。
+                        .then(
+                            if (inline) Modifier
+                            else Modifier.focusProperties { down = menuFirstFocus },
+                        )
                         .focusRequester(playFocus)
                         .onFocusChanged {
                             playButtonFocused = it.isFocused

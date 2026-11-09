@@ -428,7 +428,6 @@ internal fun DlnaPopup(
                 .clip(RoundedCornerShape(14.dp))
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f))
                 .focusGroup()
-                .trapDirectionalFocus()
                 .padding(8.dp),
         ) {
             when {
@@ -467,7 +466,6 @@ internal fun OverflowPopup(
                 .clip(RoundedCornerShape(14.dp))
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f))
                 .focusGroup()
-                .trapDirectionalFocus()
                 .padding(8.dp),
         ) {
             LazyVerticalGrid(
@@ -540,7 +538,12 @@ internal fun MenuChip(entry: PlayerMenuEntry, modifier: Modifier = Modifier) {
 @Composable
 internal fun PanelScrim(onDismiss: () -> Unit, content: @Composable () -> Unit) {
     Box(
-        Modifier.fillMaxSize().background(Color(0xCC000000)).clickable(onClick = onDismiss),
+        // 用 pointerInput 而不是 clickable：遮罩本身不能成为焦点目标，
+        // 否则方向键会把焦点从面板移到遮罩上。
+        Modifier
+            .fillMaxSize()
+            .background(Color(0xCC000000))
+            .pointerInput(onDismiss) { detectTapGestures { onDismiss() } },
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -549,7 +552,6 @@ internal fun PanelScrim(onDismiss: () -> Unit, content: @Composable () -> Unit) 
                 .clip(RoundedCornerShape(14.dp))
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.97f))
                 .focusGroup()
-                .trapDirectionalFocus()
                 .pointerInput(Unit) { detectTapGestures { } }
                 .padding(8.dp),
         ) {
@@ -661,18 +663,6 @@ internal fun FlatTile(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-    }
-}
-
-/**
- * 面板内消费未被处理的上下左右键：网格到达边缘时不让焦点逃到面板背后的播放器控件。
- * 子节点（网格/输入框）先处理；只有它们处理不了（已在边缘）才会冒泡到这里。
- */
-internal fun Modifier.trapDirectionalFocus(): Modifier = onKeyEvent { event ->
-    if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
-    when (event.key) {
-        Key.DirectionLeft, Key.DirectionRight, Key.DirectionUp, Key.DirectionDown -> true
-        else -> false
     }
 }
 
