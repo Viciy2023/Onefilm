@@ -250,6 +250,10 @@ fun PlayerControls(
     val playFocus = remember { FocusRequester() }
     val fullscreenFocus = remember { FocusRequester() }
     val menuFirstFocus = remember { FocusRequester() }
+    val episodesFirstFocus = remember { FocusRequester() }
+    val parseFirstFocus = remember { FocusRequester() }
+    // 面板打开时把焦点移进去，关闭后还给菜单行；否则遥控器焦点会留在已移除的节点上。
+    var panelWasOpen by remember { mutableStateOf(false) }
     // 任何按键/点击都算一次操作，控制栏只在 10 秒无操作后才隐藏。
     var lastInteractionAt by remember { mutableLongStateOf(SystemClock.uptimeMillis()) }
     // 用上下键唤出控制栏时，焦点直接落到菜单行第一项。
@@ -396,6 +400,19 @@ fun PlayerControls(
     // 不要再在“暂停时自动显示控制栏”：seek 引起的瞬时 isPlaying=false 会把
     // 控制栏弹出来，导致隐藏态按左右键既快进又显示控制栏。用户主动暂停时，
     // 按键处理本身就会唤出控制栏。
+    // 面板打开时把焦点移进去，关闭后还给菜单行；否则遥控器焦点会留在已移除的节点上。
+    LaunchedEffect(showEpisodes, showParse) {
+        val open = showEpisodes || showParse
+        if (open) {
+            panelWasOpen = true
+            delay(80)
+            runCatching { (if (showParse) parseFirstFocus else episodesFirstFocus).requestFocus() }
+        } else if (panelWasOpen) {
+            panelWasOpen = false
+            delay(80)
+            runCatching { menuFirstFocus.requestFocus() }
+        }
+    }
     LaunchedEffect(showMore, isTv, inline) {
         // The inline player must not steal focus from the detail actions.
         // Only the dedicated full-screen route owns the initial player focus.
@@ -638,7 +655,9 @@ fun PlayerControls(
                         FlatTile(
                             text = episode.name.ifBlank { "${index + 1}" },
                             emphasis = selected,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .then(if (index == 0) Modifier.focusRequester(episodesFirstFocus) else Modifier),
                         ) {
                             showEpisodes = false
                             onSelectEpisode?.invoke(index)
@@ -670,7 +689,7 @@ fun PlayerControls(
                     item {
                         FlatTile(
                             text = stringResource(R.string.player_parse_default),
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxWidth().focusRequester(parseFirstFocus),
                         ) { startParse(null) }
                     }
                     items(parseEngines) { entry ->

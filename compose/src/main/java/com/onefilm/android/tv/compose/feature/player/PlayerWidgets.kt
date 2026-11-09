@@ -487,6 +487,7 @@ internal fun PanelScrim(onDismiss: () -> Unit, content: @Composable () -> Unit) 
                 .fillMaxWidth(0.9f)
                 .clip(RoundedCornerShape(20.dp))
                 .background(Panel)
+                .focusGroup()
                 .pointerInput(Unit) { detectTapGestures { } }
                 .padding(18.dp),
         ) {
