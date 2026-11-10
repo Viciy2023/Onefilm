@@ -1,16 +1,14 @@
 ﻿<#
 .SYNOPSIS
-    上传单个文件到 R2（Cloudflare REST API），用于放置发版辅助工具。
+    上传单个文件到对象存储，用于放置发版辅助工具。
 
 .DESCRIPTION
-    凭据与目标桶按以下优先级解析：
+    凭据按以下优先级读取，仓库内不保存任何凭据：
       1. 命令行参数 -AccountId / -Bucket / -Token
       2. 环境变量 R2_ACCOUNT_ID / R2_BUCKET / R2_API_TOKEN / R2_TOKEN_FILE
-      3. 仓库根目录的 .r2token（仅 Token，已加入 .gitignore）
-      4. 本项目的默认账号与桶（onefilmapk）
+      3. 本地凭据文件（路径由 R2_TOKEN_FILE 指定，已加入 .gitignore）
 
 .EXAMPLE
-    # 全部使用默认凭据与目标
     .\tools\upload-r2-file.ps1 -Path .\tools\bugly\buglyqq-upload-symbol.jar -Key tools/buglyqq-upload-symbol.jar
 #>
 [CmdletBinding()]
@@ -41,7 +39,7 @@ if (-not $Token) { $Token = Read-TokenFromFile $TokenFile }
 if (-not $Token) { $Token = Read-TokenFromFile (Join-Path $root '.r2token') }
 
 if (-not (Test-Path $Path)) { Write-Host "错误：文件不存在 $Path" -ForegroundColor Red; exit 1 }
-if (-not $Token) { Write-Host "错误：没有可用 Token（参数 / 环境变量 / .r2token 都没有）" -ForegroundColor Red; exit 1 }
+if (-not $Token) { Write-Host "错误：没有可用凭据（参数 / 环境变量 / 凭据文件都没有）" -ForegroundColor Red; exit 1 }
 
 $file = Get-Item $Path
 $escapedKey = ($Key -split '/' | ForEach-Object { [Uri]::EscapeDataString($_) }) -join '/'
