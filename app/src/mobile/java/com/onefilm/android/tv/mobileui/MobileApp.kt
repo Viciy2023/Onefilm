@@ -752,12 +752,22 @@ private fun MobileLibraryScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             listOf(stringResource(R.string.mobile_tab_library), stringResource(R.string.mobile_library_history)).forEachIndexed { index, label ->
-                TextButton(onClick = { onTabChange(index) }) {
-                    Text(
-                        label,
-                        fontWeight = if (initialTab == index) FontWeight.SemiBold else FontWeight.Normal,
-                    )
-                }
+                val active = initialTab == index
+                Text(
+                    text = label,
+                    color = if (active) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 14.sp,
+                    fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(
+                            if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                            else Color.Transparent,
+                        )
+                        .clickable { onTabChange(index) }
+                        .padding(horizontal = 14.dp, vertical = 7.dp),
+                )
             }
         }
         if (data == null) {
