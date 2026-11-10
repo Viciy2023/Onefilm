@@ -24,6 +24,7 @@ fun MobileRemoteImage(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
+    onSize: ((Int, Int) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val source = remember(rawUrl) { parseMobileImageSource(rawUrl) }
@@ -46,6 +47,10 @@ fun MobileRemoteImage(
                 contentDescription = contentDescription,
                 contentScale = contentScale,
                 modifier = Modifier.fillMaxSize(),
+                onSuccess = { state ->
+                    val drawable = state.result.drawable
+                    onSize?.invoke(drawable.intrinsicWidth, drawable.intrinsicHeight)
+                },
                 onError = { state ->
                     android.util.Log.e(
                         "MobileRemoteImage",

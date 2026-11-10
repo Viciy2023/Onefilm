@@ -1,6 +1,7 @@
-﻿package com.onefilm.android.tv.mobileui.component
+package com.onefilm.android.tv.mobileui.component
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
@@ -18,12 +20,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -47,6 +55,13 @@ fun MobileLandscapeCard(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
 ) {
+    // 与 TV 横版海报一致：优先用横版剧照；没有横版图、或加载到的其实是竖图时，
+    // 改为「放大压暗的竖版海报做背景 + 居中完整显示竖版海报」，避免直接把竖版海报裁成 16:9。
+    val landscapeUrl = card.landscapeUrl?.takeIf { it.isNotBlank() && it != card.posterUrl }
+    var landscapeOk by remember(card.landscapeUrl, card.posterUrl) {
+        mutableStateOf(landscapeUrl != null)
+    }
+
     Box(
         modifier
             .fillMaxWidth()
@@ -58,12 +73,19 @@ fun MobileLandscapeCard(
                 onLongClick = onLongClick,
             ),
     ) {
-        MobileRemoteImage(
-            rawUrl = card.landscapeUrl?.takeIf { it.isNotBlank() } ?: card.posterUrl,
-            contentDescription = card.title,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
-        )
+        if (landscapeOk && landscapeUrl != null) {
+            MobileRemoteImage(
+                rawUrl = landscapeUrl,
+                contentDescription = card.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+                onSize = { width, height ->
+                    if (width > 0 && height > 0 && width <= height) landscapeOk = false
+                },
+            )
+        } else {
+            MobileLandscapeFallback(posterUrl = card.posterUrl, title = card.title)
+        }
         Box(
             Modifier
                 .fillMaxSize()
@@ -160,4 +182,39 @@ fun MobileLandscapeGrid(
             )
         }
     }
+}
+
+
+/** 没有横版剧照时的兜底：竖版海报放大压暗做背景 + 居中完整显示竖版海报（与 TV 一致）。 */
+@Composable
+private fun MobileLandscapeFallback(posterUrl: String?, title: String) {
+    if (posterUrl.isNullOrBlank()) {
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Image(
+                painter = painterResource(R.drawable.splash_logo),
+                contentDescription = null,
+                modifier = Modifier.size(44.dp),
+            )
+        }
+        return
+    }
+    MobileRemoteImage(
+        rawUrl = posterUrl,
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer {
+                scaleX = 1.25f
+                scaleY = 1.25f
+                alpha = 0.5f
+            },
+    )
+    Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.35f)))
+    MobileRemoteImage(
+        rawUrl = posterUrl,
+        contentDescription = title,
+        contentScale = ContentScale.Fit,
+        modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp),
+    )
 }
