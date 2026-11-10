@@ -119,6 +119,7 @@ fun SettingsScreen(
     var showContact by remember { mutableStateOf(false) }
     var reloadingDanmaku by remember { mutableStateOf(false) }
     var panelPage by remember { mutableStateOf(0) }
+    var uaDraft by remember { mutableStateOf("") }
     var latestVersion by remember { mutableStateOf<String?>(null) }
     BackHandler(enabled = panelMode) {
         if (panelPage != 0) panelPage = 0 else onRequestClose()
@@ -130,6 +131,7 @@ fun SettingsScreen(
     val configRowFocus = remember { List(3) { FocusRequester() } }
     val danmakuApiFocus = remember { FocusRequester() }
     val blockWordsFocus = remember { FocusRequester() }
+    val uaRowFocus = remember { FocusRequester() }
     val contactQrBringIntoView = remember { BringIntoViewRequester() }
     val listState = rememberLazyGridState()
     val firstSettingFocus = remember { FocusRequester() }
@@ -282,6 +284,31 @@ fun SettingsScreen(
                                 runCatching { configRowFocus[type].requestFocus() }
                             }
                         }
+                    }
+                },
+            )
+            panelPage == 4 -> UaEditPanel(
+                value = uaDraft,
+                onValueChange = { uaDraft = it },
+                onSave = {
+                    dataSource.setUa(uaDraft)
+                    snapshot = dataSource.load()
+                    panelPage = 0
+                    android.widget.Toast.makeText(
+                        resContext,
+                        resContext.getString(R.string.settings_saved),
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                    scope.launch {
+                        delay(200)
+                        runCatching { uaRowFocus.requestFocus() }
+                    }
+                },
+                onBack = {
+                    panelPage = 0
+                    scope.launch {
+                        delay(200)
+                        runCatching { uaRowFocus.requestFocus() }
                     }
                 },
             )
@@ -907,7 +934,26 @@ fun SettingsScreen(
             }
             item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
-                ActionRow(stringResource(R.string.settings_reset_ua), stringResource(R.string.settings_clear_custom)) { refresh { resetUa() } }
+                ActionRow(
+                    title = stringResource(R.string.settings_custom_ua),
+                    value = snapshot.ua.ifBlank { stringResource(R.string.common_default) },
+                    modifier = Modifier.focusRequester(uaRowFocus),
+                ) {
+                    uaDraft = snapshot.ua
+                    panelPage = 4
+                }
+            }
+            }
+            item(span = { GridItemSpan(1) }) {
+            SettingsPanelRow {
+                ActionRow(stringResource(R.string.settings_reset_ua), stringResource(R.string.settings_clear_custom)) {
+                    refresh { resetUa() }
+                    android.widget.Toast.makeText(
+                        resContext,
+                        resContext.getString(R.string.settings_reset_ua_done),
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                }
             }
             }
             item(span = { GridItemSpan(1) }) {
@@ -1097,35 +1143,19 @@ private fun ConfigEditPanel(
         Modifier.fillMaxSize().padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            SettingsButton(text = stringResource(R.string.settings_back), onClick = onBack)
-            Spacer(Modifier.weight(1f))
-            Text(
-                when (type) {
-                    0 -> stringResource(R.string.settings_vod_url)
-                    1 -> stringResource(R.string.settings_live_url)
-                    2 -> stringResource(R.string.settings_wall_url)
-                    else -> stringResource(R.string.settings_danmaku_api)
-                },
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        }
         if (type != 3) {
-            CompactTextField(
+            ConfigTextField(
                 value = name,
                 onValueChange = onNameChange,
                 placeholder = stringResource(R.string.settings_line_name),
-                modifier = Modifier.fillMaxWidth().focusRequester(firstFieldFocus),
+                fieldModifier = Modifier.focusRequester(firstFieldFocus),
             )
         }
-        CompactTextField(
+        ConfigTextField(
             value = url,
             onValueChange = onUrlChange,
             placeholder = stringResource(R.string.settings_config_url),
-            modifier = Modifier.fillMaxWidth().then(
-                if (type == 3) Modifier.focusRequester(firstFieldFocus) else Modifier,
-            ),
+            fieldModifier = if (type == 3) Modifier.focusRequester(firstFieldFocus) else Modifier,
         )
         qrBitmap?.let { bitmap ->
             Image(
@@ -1150,9 +1180,13 @@ private fun ConfigEditPanel(
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 SettingsButton(
+                    text = stringResource(R.string.settings_back),
+                    onClick = onBack,
+                    enabled = !loading,
+                )
+                SettingsButton(
                     text = if (loading) stringResource(R.string.settings_saving) else stringResource(R.string.settings_save),
                     onClick = onSave,
-                    primary = true,
                     enabled = !loading && url.isNotBlank(),
                 )
                 SettingsButton(
@@ -1160,6 +1194,80 @@ private fun ConfigEditPanel(
                     onClick = onBack,
                     enabled = !loading,
                 )
+            }
+        }
+    }
+}
+
+/** 接口/UA 编辑页的输入框：与设置列表里的设置项同一套背景、圆角、边框和聚焦态。 */
+@Composable
+private fun ConfigTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    placeholder: String,
+    fieldModifier: Modifier = Modifier,
+) {
+    SettingsPanelRow(Modifier.fillMaxWidth()) {
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = TextStyle(fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            modifier = fieldModifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp),
+            decorationBox = { inner ->
+                Box(contentAlignment = Alignment.CenterStart) {
+                    if (value.isBlank()) {
+                        Text(
+                            placeholder,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    inner()
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun UaEditPanel(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSave: () -> Unit,
+    onBack: () -> Unit,
+) {
+    val fieldFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        delay(150)
+        runCatching { fieldFocus.requestFocus() }
+    }
+    Column(
+        Modifier.fillMaxSize().padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        ConfigTextField(
+            value = value,
+            onValueChange = onValueChange,
+            placeholder = stringResource(R.string.settings_custom_ua),
+            fieldModifier = Modifier.focusRequester(fieldFocus),
+        )
+        Text(
+            stringResource(R.string.settings_ua_hint),
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                SettingsButton(text = stringResource(R.string.settings_back), onClick = onBack)
+                SettingsButton(text = stringResource(R.string.settings_save), onClick = onSave)
+                SettingsButton(text = stringResource(R.string.settings_cancel), onClick = onBack)
             }
         }
     }

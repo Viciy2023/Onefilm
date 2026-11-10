@@ -78,7 +78,7 @@
     <string name="settings_wall_switch">Đổi hình nền</string>
     <string name="settings_follow_config">Theo cấu hình</string>
     <string name="settings_cache_size">Kích thước bộ nhớ đệm</string>
-    <string name="settings_cache_days">Số ngày lưu đệm</string>
+    <string name="settings_cache_days">Số ngày lưu lịch sử</string>
     <string name="settings_cache_clear">Xoá bộ nhớ đệm</string>
     <string name="settings_search_threads">Luồng tìm kiếm</string>
     <string name="settings_search_sites">Trang tìm kiếm</string>
@@ -113,7 +113,7 @@
     <string name="settings_saving">Đang lưu…</string>
     <string name="settings_back">‹ Quay lại</string>
     <string name="settings_dv_output">Xuất Dolby Vision</string>
-    <string name="settings_hdmi_passthrough">Truyền HDMI / âm ly</string>
+    <string name="settings_hdmi_passthrough">Truyền HDMI / âm ly (chỉ MPV)</string>
     <string name="settings_mpv_legacy">MPV và Exo dùng chung PlayerManager cũ</string>
     <string name="settings_home_behavior">Hành vi khi nhấn Home</string>
     <string name="settings_threads_hint">Nhiều luồng nhanh hơn nhưng tốn tài nguyên hơn</string>
@@ -164,6 +164,9 @@
     <string name="settings_style_choices">Gốc / Hệ thống / Tuỳ chỉnh</string>
     <string name="settings_original">Gốc</string>
     <string name="settings_reset_ua">Đặt lại UA</string>
+    <string name="settings_custom_ua">UA tùy chỉnh</string>
+    <string name="settings_ua_hint">Để trống để dùng UA mặc định của trình phát</string>
+    <string name="settings_reset_ua_done">Đã khôi phục UA mặc định</string>
     <string name="settings_subtitle_outline">Viền phụ đề</string>
     <string name="settings_days">%1$d ngày</string>
     <string name="settings_rows">%1$d dòng</string>

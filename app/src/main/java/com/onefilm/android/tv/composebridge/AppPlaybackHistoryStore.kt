@@ -4,10 +4,13 @@ import com.onefilm.android.tv.api.config.VodConfig
 import com.onefilm.android.tv.bean.History
 import com.onefilm.android.tv.compose.bridge.PlaybackHistoryInfo
 import com.onefilm.android.tv.compose.bridge.PlaybackHistoryStore
+import com.onefilm.android.tv.setting.Setting
 
 class AppPlaybackHistoryStore : PlaybackHistoryStore {
 
     override fun find(key: String, id: String): PlaybackHistoryInfo? {
+        // 隐身模式：不读取也不恢复历史
+        if (Setting.isIncognito()) return null
         val history = History.find(fullKey(key, id)) ?: return null
         return PlaybackHistoryInfo(
             positionMs = history.position.coerceAtLeast(0L),
@@ -33,6 +36,8 @@ class AppPlaybackHistoryStore : PlaybackHistoryStore {
         openingMs: Long,
         endingMs: Long,
     ) {
+        // 隐身模式：不写入历史
+        if (Setting.isIncognito()) return
         if (positionMs <= 0L || durationMs <= 0L) return
         val cid = VodConfig.getCid()
         val fullKey = fullKey(key, id)

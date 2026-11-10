@@ -78,7 +78,7 @@
     <string name="settings_wall_switch">Switch wallpaper</string>
     <string name="settings_follow_config">Follow config</string>
     <string name="settings_cache_size">Cache size</string>
-    <string name="settings_cache_days">Cache days</string>
+    <string name="settings_cache_days">History retention days</string>
     <string name="settings_cache_clear">Clear cache</string>
     <string name="settings_search_threads">Search threads</string>
     <string name="settings_search_sites">Search sites</string>
@@ -113,7 +113,7 @@
     <string name="settings_saving">Saving…</string>
     <string name="settings_back">‹ Back</string>
     <string name="settings_dv_output">Dolby Vision output</string>
-    <string name="settings_hdmi_passthrough">HDMI / receiver passthrough</string>
+    <string name="settings_hdmi_passthrough">HDMI / receiver passthrough (MPV only)</string>
     <string name="settings_mpv_legacy">MPV and Exo share the legacy PlayerManager</string>
     <string name="settings_home_behavior">Behavior after pressing Home</string>
     <string name="settings_threads_hint">More threads are faster but use more resources</string>
@@ -164,6 +164,9 @@
     <string name="settings_style_choices">Original / System / Custom</string>
     <string name="settings_original">Original</string>
     <string name="settings_reset_ua">Reset UA</string>
+    <string name="settings_custom_ua">Custom UA</string>
+    <string name="settings_ua_hint">Leave empty to use the player default UA</string>
+    <string name="settings_reset_ua_done">Default UA restored</string>
     <string name="settings_subtitle_outline">Subtitle outline</string>
     <string name="settings_days">%1$d days</string>
     <string name="settings_rows">%1$d rows</string>

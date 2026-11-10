@@ -78,7 +78,7 @@
     <string name="settings_wall_switch">เปลี่ยนวอลเปเปอร์</string>
     <string name="settings_follow_config">ตามการตั้งค่า</string>
     <string name="settings_cache_size">ขนาดแคช</string>
-    <string name="settings_cache_days">จำนวนวันแคช</string>
+    <string name="settings_cache_days">จำนวนวันเก็บประวัติ</string>
     <string name="settings_cache_clear">ล้างแคช</string>
     <string name="settings_search_threads">เธรดค้นหา</string>
     <string name="settings_search_sites">เว็บที่ค้นหา</string>
@@ -113,7 +113,7 @@
     <string name="settings_saving">กำลังบันทึก…</string>
     <string name="settings_back">‹ ย้อนกลับ</string>
     <string name="settings_dv_output">เอาต์พุต Dolby Vision</string>
-    <string name="settings_hdmi_passthrough">ส่งผ่าน HDMI / เครื่องขยายเสียง</string>
+    <string name="settings_hdmi_passthrough">ส่งผ่าน HDMI / เครื่องขยายเสียง (เฉพาะ MPV)</string>
     <string name="settings_mpv_legacy">MPV และ Exo ใช้ PlayerManager แบบเดิมร่วมกัน</string>
     <string name="settings_home_behavior">การทำงานหลังกด Home</string>
     <string name="settings_threads_hint">เธรดมากเร็วขึ้นแต่ใช้ทรัพยากรมากขึ้น</string>
@@ -164,6 +164,9 @@
     <string name="settings_style_choices">ต้นฉบับ / ระบบ / กำหนดเอง</string>
     <string name="settings_original">ต้นฉบับ</string>
     <string name="settings_reset_ua">รีเซ็ต UA</string>
+    <string name="settings_custom_ua">UA กำหนดเอง</string>
+    <string name="settings_ua_hint">เว้นว่างเพื่อใช้ UA เริ่มต้นของเครื่องเล่น</string>
+    <string name="settings_reset_ua_done">คืนค่า UA เริ่มต้นแล้ว</string>
     <string name="settings_subtitle_outline">ขอบคำบรรยาย</string>
     <string name="settings_days">%1$d วัน</string>
     <string name="settings_rows">%1$d แถว</string>

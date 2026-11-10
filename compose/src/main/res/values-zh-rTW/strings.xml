@@ -78,7 +78,7 @@
     <string name="settings_wall_switch">切換桌布</string>
     <string name="settings_follow_config">跟隨設定</string>
     <string name="settings_cache_size">快取大小</string>
-    <string name="settings_cache_days">快取天數</string>
+    <string name="settings_cache_days">歷史保留天數</string>
     <string name="settings_cache_clear">清除快取</string>
     <string name="settings_search_threads">搜尋執行緒</string>
     <string name="settings_search_sites">參與搜尋的站點</string>
@@ -113,7 +113,7 @@
     <string name="settings_saving">儲存中…</string>
     <string name="settings_back">‹ 返回</string>
     <string name="settings_dv_output">Dolby Vision 輸出</string>
-    <string name="settings_hdmi_passthrough">HDMI / 擴大機直通</string>
+    <string name="settings_hdmi_passthrough">HDMI / 擴大機直通（僅 MPV 生效）</string>
     <string name="settings_mpv_legacy">MPV 與 Exo 共用舊 PlayerManager</string>
     <string name="settings_home_behavior">按下 Home 後的行為</string>
     <string name="settings_threads_hint">併發越高越快，越佔資源</string>
@@ -164,6 +164,9 @@
     <string name="settings_style_choices">原始 / 系統 / 自訂</string>
     <string name="settings_original">原始</string>
     <string name="settings_reset_ua">重設 UA</string>
+    <string name="settings_custom_ua">自訂 UA</string>
+    <string name="settings_ua_hint">留空表示使用播放器預設 UA</string>
+    <string name="settings_reset_ua_done">已恢復預設 UA</string>
     <string name="settings_subtitle_outline">字幕描邊</string>
     <string name="settings_days">%1$d 天</string>
     <string name="settings_rows">%1$d 行</string>

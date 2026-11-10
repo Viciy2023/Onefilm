@@ -357,6 +357,12 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
         Setting.putUa("")
     }
 
+    override fun setUa(ua: String) {
+        Setting.putUa(ua.trim())
+    }
+
+    override fun backgroundMode(): Int = PlayerSetting.getBackground()
+
     override fun loadConfig(
         type: Int,
         url: String,
@@ -496,6 +502,8 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
         val current = items.indexOf(Doh.objectFrom(Setting.getDoh()))
         val next = items[(current + 1).takeIf { it >= 0 }?.mod(items.size) ?: 0]
         Setting.putDoh(next.toString())
+        // 立即重新初始化 OkHttp 的 DNS，无需重启 App。
+        runCatching { OkHttp.dns().setDoh { Doh.objectFrom(Setting.getDoh()) } }
     }
 
     override fun cyclePlayTimeout() {

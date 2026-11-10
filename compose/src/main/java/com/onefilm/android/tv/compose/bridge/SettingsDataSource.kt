@@ -132,6 +132,10 @@ interface SettingsDataSource {
     fun setPreloadSizeMb(sizeMb: Int)
 
     fun resetUa()
+    /** 设置自定义 UA；空串表示恢复默认。 */
+    fun setUa(ua: String) {}
+    /** 后台播放模式：0=关，1=后台播放，2=画中画。 */
+    fun backgroundMode(): Int = 2
 
     /** 播放时的 m3u8 广告过滤开关。 */
     fun setAdblock(enabled: Boolean) {}

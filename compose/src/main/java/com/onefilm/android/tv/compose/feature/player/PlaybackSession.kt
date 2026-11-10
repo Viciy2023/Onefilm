@@ -610,6 +610,12 @@ object PlaybackSession {
         }
     }
 
+    /** 应用退到后台且“后台播放=关”时调用：暂停并保存一次进度。 */
+    fun pause() {
+        playerHolder?.pause()
+        saveHistory()
+    }
+
     fun seekTo(positionMs: Long) {
         playerHolder?.seekTo(positionMs.coerceAtLeast(0L))
     }

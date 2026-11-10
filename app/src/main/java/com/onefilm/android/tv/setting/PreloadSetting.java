@@ -38,7 +38,7 @@ public class PreloadSetting {
     }
 
     public static int getSizeMb() {
-        int size = Math.clamp(Prefers.getInt("preload_size", MIN_SIZE_MB), MIN_SIZE_MB, MAX_SIZE_MB);
+        int size = Math.clamp(Prefers.getInt("preload_size", 512), MIN_SIZE_MB, MAX_SIZE_MB);
         return Math.clamp(MIN_SIZE_MB + (long) Math.round((float) (size - MIN_SIZE_MB) / STEP_SIZE_MB) * STEP_SIZE_MB, MIN_SIZE_MB, MAX_SIZE_MB);
     }
 

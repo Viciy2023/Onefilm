@@ -189,6 +189,15 @@ class ComposeMainActivity : ComponentActivity() {
 
     private fun enterPipIfPossible() {
         if (!playerRouteActive || isInPictureInPictureMode) return
+        when (ComposeDependencies.settingsDataSource.backgroundMode()) {
+            // 关：暂停播放，留在后台但不继续出声
+            0 -> {
+                PlaybackSession.pause()
+                return
+            }
+            // 后台：继续播放（音频），不进画中画
+            1 -> return
+        }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         runCatching {
             enterPictureInPictureMode(
