@@ -156,6 +156,14 @@ if (isTv) {
 - Code review 必须检查是否存在跨端 UI 复用。
 - 不允许以“减少代码”为由绕过 UI 隔离规则。
 
+## 7.1 发版规则
+
+- 发新版本时，GitHub Release 与 R2 更新清单必须使用同一批本地构建产物（先 TV 包、再手机包）。
+- 新版本发布成功后，**必须**清理 R2 桶里的旧版本，保持桶内只有一个版本的 APK：
+  `.\tools\publish-r2-manifest.ps1 ... -PruneOldApks -PruneOldMappings`
+- `.github/workflows/release.yml` 已带 `-PruneOldApks`；本地手动发版同样必须加这两个参数。
+- 清理前确认新版本清单已在线上（脚本内置回读校验），避免把客户端指向不存在的包。
+
 ## 8. 一句话原则
 
 > **共享业务，不共享屏幕；TV 只做横屏遥控器体验，Mobile 只做竖屏触控体验。**
