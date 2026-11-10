@@ -143,6 +143,10 @@ The process was never killed, and system available memory stayed above ~677 MB, 
 |---|---|
 | ![Mobile home](docs/screenshots/readme/mobile-home.jpg) | ![Mobile search](docs/screenshots/readme/mobile-search.jpg) |
 
+| Landscape home | Landscape search |
+|---|---|
+| ![Mobile landscape home](docs/screenshots/readme/mobile-horizontal-home.jpg) | ![Mobile landscape search](docs/screenshots/readme/mobile-horizontal-search.jpg) |
+
 | Favorites | History |
 |---|---|
 | ![Mobile favorites](docs/screenshots/readme/mobile-favorites.jpg) | ![Mobile history](docs/screenshots/readme/mobile-history.jpg) |

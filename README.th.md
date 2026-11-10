@@ -143,6 +143,10 @@ OneFilm คือโปรแกรมเล่นวิดีโอที่ส
 |---|---|
 | ![หน้าแรกบนมือถือ](docs/screenshots/readme/mobile-home.jpg) | ![ค้นหาบนมือถือ](docs/screenshots/readme/mobile-search.jpg) |
 
+| หน้าแรกแนวนอน | ค้นหาแนวนอน |
+|---|---|
+| ![หน้าแรกแนวนอนบนมือถือ](docs/screenshots/readme/mobile-horizontal-home.jpg) | ![ค้นหาแนวนอนบนมือถือ](docs/screenshots/readme/mobile-horizontal-search.jpg) |
+
 | รายการโปรด | ประวัติ |
 |---|---|
 | ![รายการโปรดบนมือถือ](docs/screenshots/readme/mobile-favorites.jpg) | ![ประวัติบนมือถือ](docs/screenshots/readme/mobile-history.jpg) |

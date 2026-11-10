@@ -143,6 +143,10 @@ Tiến trình không bị hệ thống kill, bộ nhớ trống thấp nhất kh
 |---|---|
 | ![Trang chủ trên điện thoại](docs/screenshots/readme/mobile-home.jpg) | ![Tìm kiếm trên điện thoại](docs/screenshots/readme/mobile-search.jpg) |
 
+| Trang chủ ngang | Tìm kiếm ngang |
+|---|---|
+| ![Trang chủ ngang trên điện thoại](docs/screenshots/readme/mobile-horizontal-home.jpg) | ![Tìm kiếm ngang trên điện thoại](docs/screenshots/readme/mobile-horizontal-search.jpg) |
+
 | Yêu thích | Lịch sử |
 |---|---|
 | ![Yêu thích trên điện thoại](docs/screenshots/readme/mobile-favorites.jpg) | ![Lịch sử trên điện thoại](docs/screenshots/readme/mobile-history.jpg) |

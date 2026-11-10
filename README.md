@@ -143,6 +143,10 @@
 |---|---|
 | ![手机首页](docs/screenshots/readme/mobile-home.jpg) | ![手机搜索](docs/screenshots/readme/mobile-search.jpg) |
 
+| 横版首页 | 横版搜索 |
+|---|---|
+| ![手机横版首页](docs/screenshots/readme/mobile-horizontal-home.jpg) | ![手机横版搜索](docs/screenshots/readme/mobile-horizontal-search.jpg) |
+
 | 收藏 | 历史 |
 |---|---|
 | ![手机收藏](docs/screenshots/readme/mobile-favorites.jpg) | ![手机历史](docs/screenshots/readme/mobile-history.jpg) |
