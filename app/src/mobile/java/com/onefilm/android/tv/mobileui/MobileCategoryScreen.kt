@@ -126,25 +126,33 @@ fun MobileCategoryScreen(
                     Text(stringResource(R.string.mobile_retry))
                 }
             }
-            is MobileCategoryState.Content -> BoxWithConstraints(Modifier.fillMaxSize()) {
-                // 统一的左右滑动网格：4 行起步（平板按高度自动加行），左右连续滑动，不分页。
-                val rowGap = 8.dp
-                val colGap = 8.dp
-                val rows = ((maxHeight - 16.dp) / TARGET_ROW_HEIGHT).toInt().coerceAtLeast(MIN_ROWS)
-                val rowHeight = ((maxHeight - rowGap * (rows - 1) - 16.dp) / rows)
-                    .coerceAtLeast(96.dp)
-                val cardWidth = (rowHeight * 2f / 3f).coerceAtLeast(72.dp)
-                MobileHorizontalGrid(
-                    items = current.page.items,
-                    rows = rows,
-                    rowHeight = rowHeight,
-                    cardWidth = cardWidth,
-                    rowGap = rowGap,
-                    colGap = colGap,
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                    onCardClick = onCardClick,
-                )
+            is MobileCategoryState.Content -> {
+                if (com.onefilm.android.tv.compose.design.PosterStyleController.horizontal) {
+                    // 横版海报：一行两列，行数随可用高度滚动。
+                    com.onefilm.android.tv.mobileui.component.MobileLandscapeGrid(
+                        items = current.page.items,
+                        onCardClick = onCardClick,
+                    )
+                } else BoxWithConstraints(Modifier.fillMaxSize()) {
+                    // 统一的左右滑动网格：4 行起步（平板按高度自动加行），左右连续滑动，不分页。
+                    val rowGap = 8.dp
+                    val colGap = 8.dp
+                    val rows = ((maxHeight - 16.dp) / TARGET_ROW_HEIGHT).toInt().coerceAtLeast(MIN_ROWS)
+                    val rowHeight = ((maxHeight - rowGap * (rows - 1) - 16.dp) / rows)
+                        .coerceAtLeast(96.dp)
+                    val cardWidth = (rowHeight * 2f / 3f).coerceAtLeast(72.dp)
+                    MobileHorizontalGrid(
+                        items = current.page.items,
+                        rows = rows,
+                        rowHeight = rowHeight,
+                        cardWidth = cardWidth,
+                        rowGap = rowGap,
+                        colGap = colGap,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        onCardClick = onCardClick,
+                    )
+                }
             }
         }
     }

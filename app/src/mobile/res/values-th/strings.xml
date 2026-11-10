@@ -64,6 +64,7 @@
     <!-- Mobile App -->
     <string name="mobile_app_brand">OneFilm</string>
     <string name="mobile_tab_home">หน้าแรก</string>
+    <string name="mobile_tab_continue">รับชมต่อ</string>
     <string name="mobile_tab_library">รายการโปรด</string>
     <string name="mobile_home_empty">ไม่มีเนื้อหา</string>
     <string name="mobile_home_recommend">แนะนำ</string>
@@ -75,6 +76,7 @@
     <string name="mobile_search_empty">ไม่พบผลลัพธ์สำหรับ “%1$s”</string>
     <string name="mobile_search_result_count">%1$d ผลลัพธ์</string>
     <string name="mobile_search_searching">กำลังค้นหา</string>
+    <string name="mobile_library_delete_confirm">ลบรายการนี้หรือไม่?</string>
     <string name="mobile_library_history">ประวัติ</string>
     <string name="mobile_library_empty">ยังไม่มีอะไรที่นี่</string>
     <string name="mobile_library_swipe_hint">ปัดซ้ายหรือขวาบนรายการเพื่อลบ</string>

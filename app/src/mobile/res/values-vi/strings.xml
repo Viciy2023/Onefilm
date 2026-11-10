@@ -64,6 +64,7 @@
     <!-- Mobile App -->
     <string name="mobile_app_brand">OneFilm</string>
     <string name="mobile_tab_home">Trang chủ</string>
+    <string name="mobile_tab_continue">Xem tiếp</string>
     <string name="mobile_tab_library">Yêu thích</string>
     <string name="mobile_home_empty">Không có nội dung</string>
     <string name="mobile_home_recommend">Đề xuất</string>
@@ -75,6 +76,7 @@
     <string name="mobile_search_empty">Không có kết quả cho “%1$s”</string>
     <string name="mobile_search_result_count">%1$d kết quả</string>
     <string name="mobile_search_searching">Đang tìm</string>
+    <string name="mobile_library_delete_confirm">Xóa mục này?</string>
     <string name="mobile_library_history">Lịch sử</string>
     <string name="mobile_library_empty">Chưa có gì ở đây</string>
     <string name="mobile_library_swipe_hint">Vuốt sang trái hoặc phải trên mục để xoá</string>

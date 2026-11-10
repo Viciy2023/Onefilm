@@ -3,6 +3,7 @@ package com.onefilm.android.tv.mobileui
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -24,6 +25,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -74,6 +79,7 @@ import com.onefilm.android.tv.compose.feature.home.HomeUiState
 import com.onefilm.android.tv.compose.feature.player.PlaybackSession
 import com.onefilm.android.tv.compose.feature.search.SearchSession
 import com.onefilm.android.tv.compose.feature.search.SearchUiState
+import com.onefilm.android.tv.compose.feature.settings.SettingsScreen
 import com.onefilm.android.tv.mobileui.component.MobileHorizontalGrid
 import com.onefilm.android.tv.mobileui.component.MobileRemoteImage
 import com.onefilm.android.tv.mobileui.player.MobilePlayerScreen
@@ -86,7 +92,7 @@ import kotlin.math.roundToInt
 private enum class MobileTab(val labelRes: Int) {
     HOME(R.string.mobile_tab_home),
     SEARCH(R.string.menu_search),
-    LIBRARY(R.string.mobile_tab_library),
+    LIBRARY(R.string.mobile_tab_continue),
     LIVE(R.string.nav_live),
     SETTINGS(R.string.nav_setting),
 }
@@ -216,7 +222,22 @@ fun MobileApp() {
                 ?: if (tab == MobileTab.HOME) stringResource(R.string.mobile_app_brand)
                 else stringResource(tab.labelRes),
         )
-        Box(Modifier.weight(1f)) {
+        // 导航从底部移到品牌行下方。
+        MobileNavBar(
+            selected = tab,
+            onSelect = { selected ->
+                val wasSearch = tab == MobileTab.SEARCH
+                if (selected == MobileTab.LIVE) {
+                    if (wasSearch) resetSearch()
+                    openLive()
+                } else {
+                    if (wasSearch && selected != MobileTab.SEARCH) resetSearch()
+                    categoryTarget = null
+                    tab = selected
+                }
+            },
+        )
+        Box(Modifier.weight(1f).navigationBarsPadding()) {
             val category = categoryTarget
             if (category != null) {
                 MobileCategoryScreen(
@@ -245,37 +266,27 @@ fun MobileApp() {
                         onCardClick = ::openCard,
                     )
                     MobileTab.LIVE -> MobileLiveScreen(onOpen = ::openLive)
-                    MobileTab.SETTINGS -> MobileSettingsScreen(
+                    // 手机设置直接复用 TV 的设置页：同一套分组与设置项，TV 侧更新自动同步。
+                    MobileTab.SETTINGS -> SettingsScreen(
                         dataSource = ComposeDependencies.settingsDataSource,
                         onConfigChanged = { homeRefresh++ },
+                        panelMode = true,
+                        onRequestClose = { tab = MobileTab.HOME },
                     )
                 }
             }
         }
-        MobileBottomBar(
-            selected = tab,
-            onSelect = { selected ->
-                val wasSearch = tab == MobileTab.SEARCH
-                if (selected == MobileTab.LIVE) {
-                    if (wasSearch) resetSearch()
-                    openLive()
-                } else {
-                    if (wasSearch && selected != MobileTab.SEARCH) resetSearch()
-                    categoryTarget = null
-                    tab = selected
-                }
-            },
-        )
     }
 }
 
+/** 顶部品牌行：品牌与当前栏目都居中显示。 */
 @Composable
 private fun MobileTopBar(title: String) {
-    Row(
+    Column(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(horizontal = 18.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = "ONEFILM",
@@ -283,11 +294,10 @@ private fun MobileTopBar(title: String) {
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
         )
-        Spacer(Modifier.width(12.dp))
         Text(
             text = title,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 16.sp,
+            fontSize = 13.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -295,11 +305,10 @@ private fun MobileTopBar(title: String) {
 }
 
 @Composable
-private fun MobileBottomBar(selected: MobileTab, onSelect: (MobileTab) -> Unit) {
+private fun MobileNavBar(selected: MobileTab, onSelect: (MobileTab) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
             .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
@@ -351,12 +360,8 @@ private fun MobileHomeContent(
     }
     val recommendation = feed.sections.getOrNull(recommendationIndex)?.items
         ?: feed.hero.takeIf { it.isNotEmpty() }
-    // 首页只保留「推荐」和「继续观看」；收藏交给底部导航，不再占用首页。
-    val continueWatching = feed.sections.firstOrNull {
-        it.key == "history" && it.items.isNotEmpty()
-    }
+    // 首页只保留「推荐」；收藏/历史/继续观看统一收进导航栏的「继续观看」页面。
     val hasRecommend = !recommendation.isNullOrEmpty()
-    val continueItems = continueWatching?.items.orEmpty()
 
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val hPad = 16.dp
@@ -365,63 +370,115 @@ private fun MobileHomeContent(
         val sectionGap = 12.dp
         val titleGap = 6.dp
         val titleHeight = 24.dp
-        val chipsHeight = if (feed.categories.isNotEmpty()) 46.dp else 0.dp
-        val sectionCount = (if (hasRecommend) 1 else 0) + 1
-        val childCount = (if (feed.categories.isNotEmpty()) 1 else 0) + sectionCount
-        // 把标题、分区间距、行间距都算进固定高度，避免最后一行被裁掉。
-        val fixed = chipsHeight + titleHeight * sectionCount + titleGap * sectionCount +
-            sectionGap * (childCount - 1) + rowGap * 2 + vPad * 2
-        val totalRows = (if (hasRecommend) 3 else 0) + 1
-        val rowHeight = ((maxHeight - fixed) / totalRows).coerceAtLeast(96.dp)
-        val cardWidth = (rowHeight * 2f / 3f).coerceAtLeast(64.dp)
+        val hasChips = feed.categories.isNotEmpty()
+        val chipsHeight = if (hasChips) 46.dp else 0.dp
+        val horizontal = com.onefilm.android.tv.compose.design.PosterStyleController.horizontal
 
-        Column(
-            Modifier.fillMaxSize().padding(horizontal = hPad, vertical = vPad),
-            verticalArrangement = Arrangement.spacedBy(sectionGap),
-        ) {
-            if (feed.categories.isNotEmpty()) {
-                LazyRow(
-                    Modifier.height(chipsHeight - 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(feed.categories) { category ->
-                        Text(
-                            text = category.name,
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
-                                .clickable { onCategoryClick(category) }
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
+        if (horizontal) {
+            // 横版海报：一行两列，行数随内容自然滚动（一屏可见行数由可用高度决定）。
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = hPad, vertical = vPad),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (hasChips) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        MobileHomeCategoryChips(feed, chipsHeight, onCategoryClick)
+                    }
+                }
+                if (hasRecommend) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        MobileHomeSectionTitle(stringResource(R.string.mobile_home_recommend))
+                    }
+                    itemsIndexed(recommendation!!) { _, card ->
+                        com.onefilm.android.tv.mobileui.component.MobileLandscapeCard(
+                            card = card,
+                            onClick = { onCardClick(card) },
                         )
                     }
                 }
             }
-            if (hasRecommend) {
-                MobileHomeSection(
-                    title = stringResource(R.string.mobile_home_recommend),
-                    items = recommendation!!,
-                    rows = 3,
-                    rowHeight = rowHeight,
-                    cardWidth = cardWidth,
-                    rowGap = rowGap,
-                    onCardClick = onCardClick,
-                )
+        } else {
+            // 把标题、分区间距、行间距都算进固定高度，避免最后一行被裁掉。
+            val fixed = chipsHeight + titleHeight + titleGap +
+                sectionGap * (if (hasChips) 1 else 0) + rowGap * 2 + vPad * 2
+            val rowHeight = ((maxHeight - fixed) / 3).coerceAtLeast(96.dp)
+            val cardWidth = (rowHeight * 2f / 3f).coerceAtLeast(64.dp)
+
+            Column(
+                Modifier.fillMaxSize().padding(horizontal = hPad, vertical = vPad),
+                verticalArrangement = Arrangement.spacedBy(sectionGap),
+            ) {
+                MobileHomeCategoryChips(feed, chipsHeight, onCategoryClick)
+                if (hasRecommend) {
+                    MobileHomeSection(
+                        title = stringResource(R.string.mobile_home_recommend),
+                        items = recommendation!!,
+                        rows = 3,
+                        rowHeight = rowHeight,
+                        cardWidth = cardWidth,
+                        rowGap = rowGap,
+                        onCardClick = onCardClick,
+                    )
+                }
             }
-            MobileHomeSection(
-                title = stringResource(R.string.mobile_home_continue),
-                items = continueItems,
-                rows = 1,
-                rowHeight = rowHeight,
-                cardWidth = cardWidth,
-                rowGap = rowGap,
-                onCardClick = onCardClick,
-                placeholder = if (continueItems.isEmpty()) stringResource(R.string.mobile_home_continue_empty) else null,
+        }
+    }
+}
+
+/** 首页分类 chips：首个固定为「主页」，其后是接口分类。 */
+@Composable
+private fun MobileHomeCategoryChips(
+    feed: com.onefilm.android.tv.compose.bridge.HomeFeed,
+    chipsHeight: Dp,
+    onCategoryClick: (HomeCategory) -> Unit,
+) {
+    if (feed.categories.isEmpty()) return
+    val homeLabel = stringResource(com.onefilm.android.tv.compose.R.string.category_home)
+    LazyRow(
+        Modifier.height(chipsHeight - 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        item {
+            Text(
+                text = homeLabel,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            )
+        }
+        items(feed.categories) { category ->
+            Text(
+                text = category.name,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
+                    .clickable { onCategoryClick(category) }
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
             )
         }
     }
+}
+
+/** 首页分区标题：竖版/横版海报共用。 */
+@Composable
+private fun MobileHomeSectionTitle(title: String) {
+    Text(
+        text = title,
+        fontSize = 17.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onBackground,
+        modifier = Modifier.padding(top = 2.dp),
+    )
 }
 
 /**
@@ -533,8 +590,13 @@ private fun MobileSearchScreen(
                     Box(
                         Modifier
                             .fillMaxSize()
-                            .clip(RoundedCornerShape(22.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                                RoundedCornerShape(10.dp),
+                            )
                             .padding(horizontal = 14.dp),
                         contentAlignment = Alignment.CenterStart,
                     ) {
@@ -551,6 +613,7 @@ private fun MobileSearchScreen(
             )
             Button(
                 onClick = { submit() },
+                shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.height(44.dp),
                 contentPadding = PaddingValues(horizontal = 18.dp, vertical = 0.dp),
             ) { Text(stringResource(R.string.menu_search)) }
@@ -600,7 +663,14 @@ private fun MobileSearchScreen(
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
+                if (com.onefilm.android.tv.compose.design.PosterStyleController.horizontal) {
+                    com.onefilm.android.tv.mobileui.component.MobileLandscapeGrid(
+                        items = current.items,
+                        modifier = Modifier.weight(1f),
+                        showSite = true,
+                        onCardClick = onCardClick,
+                    )
+                } else BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
                     // 4 行起步，屏幕更高时按可用高度增加行数（平板），列的宽度跟随行高。
                     val rowGap = 8.dp
                     val minRowHeight = 120.dp
@@ -634,6 +704,7 @@ private fun MobileLibraryScreen(
     onCardClick: (MediaCard) -> Unit,
 ) {
     var data by remember { mutableStateOf<LibraryData?>(null) }
+    var pendingDelete by remember { mutableStateOf<MediaCard?>(null) }
     val scope = rememberCoroutineScope()
     LaunchedEffect(Unit) { data = runCatching { dataSource.load() }.getOrNull() }
     val items = if (initialTab == 1) data?.history.orEmpty() else data?.favorites.orEmpty()
@@ -656,6 +727,35 @@ private fun MobileLibraryScreen(
             MobileLoading()
         } else if (items.isEmpty()) {
             MobileHint(stringResource(R.string.mobile_library_empty))
+        } else if (com.onefilm.android.tv.compose.design.PosterStyleController.horizontal) {
+            // 横版海报：收藏/历史与首页统一为一行两列 16:9，长按删除。
+            com.onefilm.android.tv.mobileui.component.MobileLandscapeGrid(
+                items = items,
+                modifier = Modifier.weight(1f),
+                onCardClick = onCardClick,
+                onCardLongClick = { pendingDelete = it },
+            )
+            pendingDelete?.let { card ->
+                androidx.compose.material3.AlertDialog(
+                    onDismissRequest = { pendingDelete = null },
+                    text = { Text(stringResource(R.string.mobile_library_delete_confirm)) },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            pendingDelete = null
+                            scope.launch {
+                                if (initialTab == 1) dataSource.deleteHistory(card)
+                                else dataSource.deleteFavorite(card)
+                                data = runCatching { dataSource.load() }.getOrNull()
+                            }
+                        }) { Text(stringResource(R.string.menu_delete)) }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { pendingDelete = null }) {
+                            Text(stringResource(com.onefilm.android.tv.compose.R.string.settings_cancel))
+                        }
+                    },
+                )
+            }
         } else {
             Text(
                 text = stringResource(R.string.mobile_library_swipe_hint),
@@ -886,7 +986,13 @@ private fun MobileSearchResultsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
-                BoxWithConstraints(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
+                if (com.onefilm.android.tv.compose.design.PosterStyleController.horizontal) {
+                    com.onefilm.android.tv.mobileui.component.MobileLandscapeGrid(
+                        items = current.items,
+                        showSite = true,
+                        onCardClick = onCardClick,
+                    )
+                } else BoxWithConstraints(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
                     val rowGap = 8.dp
                     val minRowHeight = 120.dp
                     val rows = ((maxHeight + rowGap) / (minRowHeight + rowGap))

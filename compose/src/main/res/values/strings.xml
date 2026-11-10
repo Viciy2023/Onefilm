@@ -413,4 +413,6 @@
     <string name="player_description">Synopsis</string>
     <string name="player_favorite">Add to favorites</string>
     <string name="player_favorited">Favorited</string>
+    <string name="settings_saved_lines">Saved lines</string>
+    <string name="settings_depot_lines">Repo lines</string>
 </resources>

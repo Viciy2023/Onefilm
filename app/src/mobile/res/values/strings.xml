@@ -64,6 +64,7 @@
     <!-- Mobile App -->
     <string name="mobile_app_brand">OneFilm</string>
     <string name="mobile_tab_home">Home</string>
+    <string name="mobile_tab_continue">Continue</string>
     <string name="mobile_tab_library">Favorites</string>
     <string name="mobile_home_empty">No content</string>
     <string name="mobile_home_recommend">Recommended</string>
@@ -75,6 +76,7 @@
     <string name="mobile_search_empty">No results for “%1$s”</string>
     <string name="mobile_search_result_count">%1$d results</string>
     <string name="mobile_search_searching">Searching</string>
+    <string name="mobile_library_delete_confirm">Delete this record?</string>
     <string name="mobile_library_history">History</string>
     <string name="mobile_library_empty">Nothing here yet</string>
     <string name="mobile_library_swipe_hint">Swipe left or right on an item to delete</string>

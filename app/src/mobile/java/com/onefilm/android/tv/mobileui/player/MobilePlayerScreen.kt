@@ -21,6 +21,14 @@ import com.onefilm.android.tv.compose.feature.player.PlaybackSession
 import com.onefilm.android.tv.compose.feature.player.PlayerControls
 
 /**
+ * 手机全屏播放器是否在前台；供 PiP（后台播放设置）判断当前是否能进入画中画。
+ */
+object MobilePlayerState {
+    @Volatile
+    var active: Boolean = false
+}
+
+/**
  * 手机全屏播放器：只负责横屏/沉浸和渲染视频层；
  * 控制条、菜单、面板全部复用 TV 的 PlayerControls（host=null 时只走触摸）。
  */
@@ -28,6 +36,11 @@ import com.onefilm.android.tv.compose.feature.player.PlayerControls
 fun MobilePlayerScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
+
+    DisposableEffect(Unit) {
+        MobilePlayerState.active = true
+        onDispose { MobilePlayerState.active = false }
+    }
 
     DisposableEffect(activity) {
         val window = activity?.window

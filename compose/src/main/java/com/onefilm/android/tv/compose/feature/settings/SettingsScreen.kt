@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
@@ -60,6 +61,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -84,6 +86,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.onefilm.android.tv.compose.bridge.SettingsDataSource
 import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
+import com.onefilm.android.tv.compose.bridge.ConfigLine
 import com.onefilm.android.tv.compose.design.component.TvTagButton
 import com.onefilm.android.tv.compose.bridge.ServerEventBridge
 import com.onefilm.android.tv.compose.bridge.SEARCH_THREAD_OPTIONS
@@ -113,6 +116,10 @@ fun SettingsScreen(
     var qrBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var editBlockWords by remember { mutableStateOf(false) }
     var blockWordsDraft by remember { mutableStateOf("") }
+    /** 当前接口类型下已保存的线路，以及所属仓库的线路（手机/ TV 共享同一套设置 UI）。 */
+    var editLines by remember { mutableStateOf<List<ConfigLine>>(emptyList()) }
+    var editDepotLines by remember { mutableStateOf<List<ConfigLine>>(emptyList()) }
+    var editDepotTitle by remember { mutableStateOf("") }
     var showClearCacheConfirm by remember { mutableStateOf(false) }
     var showSearchSites by remember { mutableStateOf(false) }
     var showPosterStyleHint by remember { mutableStateOf(false) }
@@ -138,6 +145,8 @@ fun SettingsScreen(
     val editFieldFocus = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
     val resContext = LocalContext.current
+    // 手机（窄屏）用更大的行高，TV 保持紧凑布局。
+    val touchRows = LocalConfiguration.current.screenWidthDp < 600
     LaunchedEffect(Unit) {
         // 只请求一次初始焦点：反复请求会在用户已经向下移动后把焦点拽回第一项。
         delay(200)
@@ -187,6 +196,13 @@ fun SettingsScreen(
         editType = type
         editUrl = url
         editName = dataSource.configLines(type).firstOrNull { it.current }?.name.orEmpty()
+        editLines = runCatching { dataSource.configLines(type) }.getOrDefault(emptyList())
+        editDepotLines = if (type == 0) {
+            runCatching { dataSource.depotLines() }.getOrDefault(emptyList())
+        } else {
+            emptyList()
+        }
+        editDepotTitle = runCatching { dataSource.depotName() }.getOrDefault("")
         configError = null
         qrBitmap = dataSource.qrBitmap(dataSource.configPushUrl(), 720)
         panelPage = 1
@@ -234,6 +250,54 @@ fun SettingsScreen(
                 error = configError,
                 qrBitmap = qrBitmap,
                 firstFieldFocus = editFieldFocus,
+                savedLines = if (type == 3) emptyList() else editLines,
+                depotLines = if (type == 3) emptyList() else editDepotLines,
+                depotTitle = editDepotTitle,
+                onLoadSaved = { line ->
+                    configLoading = true
+                    configError = null
+                    dataSource.loadConfig(type, line.url, line.name) { ok, message ->
+                        configLoading = false
+                        if (ok) {
+                            onConfigChanged()
+                            snapshot = dataSource.load()
+                            editType = null
+                            panelPage = 0
+                            reportConfig(type, line.name.ifBlank { line.url }, true, message)
+                            scope.launch {
+                                delay(150)
+                                runCatching { configRowFocus.getOrNull(type)?.requestFocus() }
+                            }
+                        } else {
+                            configError = message
+                        }
+                    }
+                },
+                onDeleteSaved = { line ->
+                    runCatching { dataSource.deleteConfigLine(type, line.url) }
+                    editLines = runCatching { dataSource.configLines(type) }.getOrDefault(emptyList())
+                    snapshot = dataSource.load()
+                },
+                onLoadDepot = { line ->
+                    configLoading = true
+                    configError = null
+                    dataSource.selectDepotLine(line.url, line.name) { ok, message ->
+                        configLoading = false
+                        if (ok) {
+                            onConfigChanged()
+                            snapshot = dataSource.load()
+                            editType = null
+                            panelPage = 0
+                            reportConfig(0, line.name.ifBlank { line.url }, true, message)
+                            scope.launch {
+                                delay(150)
+                                runCatching { configRowFocus[0].requestFocus() }
+                            }
+                        } else {
+                            configError = message
+                        }
+                    }
+                },
                 onSave = {
                     if (type == 3) {
                         dataSource.setDanmakuApi(editUrl.trim())
@@ -333,6 +397,7 @@ fun SettingsScreen(
                 },
             )
             else -> {
+                // 与 TV 同一套 2 列设置布局。
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier.fillMaxSize(),
@@ -340,12 +405,12 @@ fun SettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsGroupTitle(stringResource(R.string.settings_network))
             }
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(32.dp),
+                modifier = Modifier.fillMaxWidth().height(if (touchRows) 44.dp else 34.dp),
                 title = stringResource(R.string.settings_vod_url),
                 value = snapshot.configUrl,
                 loading = reloadingType == 0,
@@ -368,9 +433,9 @@ fun SettingsScreen(
                 },
             )
             }
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(32.dp),
+                modifier = Modifier.fillMaxWidth().height(if (touchRows) 44.dp else 34.dp),
                 title = stringResource(R.string.settings_live_url),
                 value = snapshot.liveConfigUrl,
                 loading = reloadingType == 1,
@@ -393,9 +458,9 @@ fun SettingsScreen(
                 },
             )
             }
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(32.dp),
+                modifier = Modifier.fillMaxWidth().height(if (touchRows) 44.dp else 34.dp),
                 title = stringResource(R.string.settings_wall_url),
                 value = snapshot.wallConfigUrl,
                 loading = reloadingType == 2,
@@ -418,9 +483,9 @@ fun SettingsScreen(
                 },
             )
             }
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(32.dp),
+                modifier = Modifier.fillMaxWidth().height(if (touchRows) 44.dp else 34.dp),
                 title = stringResource(R.string.settings_danmaku_api),
                 value = snapshot.danmakuApi.ifBlank { stringResource(R.string.settings_danmaku_api_default) },
                 loading = reloadingDanmaku,
@@ -466,7 +531,7 @@ fun SettingsScreen(
             )
             }
 
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsGroupTitle(stringResource(R.string.settings_appearance))
             }
             item(span = { GridItemSpan(1) }) {
@@ -540,7 +605,7 @@ fun SettingsScreen(
             }
             }
 
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsGroupTitle(stringResource(R.string.settings_subtitle))
             }
             item(span = { GridItemSpan(1) }) {
@@ -580,7 +645,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setSubtitleScale(listOf(0.8f, 1.0f, 1.2f, 1.5f)[index]) } }
             }
             }
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_subtitle_style),
@@ -594,7 +659,7 @@ fun SettingsScreen(
             }
             }
 
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsGroupTitle(stringResource(R.string.settings_danmaku))
             }
             item(span = { GridItemSpan(1) }) {
@@ -730,7 +795,7 @@ fun SettingsScreen(
                 ) { index -> refresh { setDanmakuMaxOnScreen(listOf(50, 100, 150, 200, 300)[index]) } }
             }
             }
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsPanelRow {
                 ActionRow(
                     stringResource(R.string.settings_danmaku_block),
@@ -743,7 +808,7 @@ fun SettingsScreen(
             }
             }
 
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsGroupTitle(stringResource(R.string.settings_playback))
             }
             item(span = { GridItemSpan(1) }) {
@@ -816,7 +881,7 @@ fun SettingsScreen(
             }
             }
 
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsGroupTitle(stringResource(R.string.settings_audio))
             }
             item(span = { GridItemSpan(1) }) {
@@ -833,7 +898,7 @@ fun SettingsScreen(
                 }
             }
             }
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsPanelRow {
                 SwitchRow(stringResource(R.string.settings_video_soft), stringResource(R.string.settings_soft_video_hint), snapshot.videoPrefer) {
                     refresh { setVideoPrefer(it) }
@@ -841,7 +906,7 @@ fun SettingsScreen(
             }
             }
 
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsGroupTitle(stringResource(R.string.settings_search))
             }
             item(span = { GridItemSpan(1) }) {
@@ -883,7 +948,7 @@ fun SettingsScreen(
                 }
             }
             }
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsPanelRow {
                 ExpandableChoiceRow(
                     title = stringResource(R.string.settings_preload_threads),
@@ -892,7 +957,7 @@ fun SettingsScreen(
             }
             }
 
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsGroupTitle(stringResource(R.string.settings_storage))
             }
             item(span = { GridItemSpan(1) }) {
@@ -966,7 +1031,7 @@ fun SettingsScreen(
             }
             }
 
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsGroupTitle(stringResource(R.string.settings_about))
             }
             item(span = { GridItemSpan(1) }) {
@@ -982,7 +1047,7 @@ fun SettingsScreen(
                 )
             }
             }
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
                 if (showContact) {
                     Box(
                         Modifier
@@ -1000,7 +1065,7 @@ fun SettingsScreen(
                     }
                 }
             }
-            item(span = { GridItemSpan(2) }) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
             SettingsPanelRow {
                 ActionRow(
                     stringResource(R.string.settings_contact_us),
@@ -1132,17 +1197,64 @@ private fun ConfigEditPanel(
     error: String?,
     qrBitmap: android.graphics.Bitmap?,
     firstFieldFocus: FocusRequester,
+    savedLines: List<ConfigLine>,
+    depotLines: List<ConfigLine>,
+    depotTitle: String,
+    onLoadSaved: (ConfigLine) -> Unit,
+    onDeleteSaved: (ConfigLine) -> Unit,
+    onLoadDepot: (ConfigLine) -> Unit,
     onSave: () -> Unit,
     onBack: () -> Unit,
 ) {
+    // 触屏设备不自动聚焦输入框，避免进入编辑页就弹出软键盘遮挡内容。
+    val touch = LocalConfiguration.current.screenWidthDp < 600
     LaunchedEffect(Unit) {
+        if (touch) return@LaunchedEffect
         delay(120)
         runCatching { firstFieldFocus.requestFocus() }
     }
     Column(
-        Modifier.fillMaxSize().padding(12.dp),
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
+        if (depotLines.isNotEmpty()) {
+            Text(
+                depotTitle.ifBlank { stringResource(R.string.settings_depot_lines) },
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            depotLines.forEach { line ->
+                SavedLineRow(
+                    name = line.name,
+                    url = line.url,
+                    enabled = !loading,
+                    onLoad = { onLoadDepot(line) },
+                )
+            }
+        }
+        if (savedLines.isNotEmpty()) {
+            Text(
+                stringResource(R.string.settings_saved_lines),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            savedLines.forEach { line ->
+                SavedLineRow(
+                    name = line.name,
+                    url = line.url,
+                    enabled = !loading,
+                    current = line.current,
+                    onLoad = { onLoadSaved(line) },
+                    onDelete = { onDeleteSaved(line) },
+                )
+            }
+            Spacer(Modifier.height(2.dp))
+        }
         if (type != 3) {
             ConfigTextField(
                 value = name,
@@ -1233,6 +1345,67 @@ private fun ConfigTextField(
     }
 }
 
+/** 已保存线路 / 仓库线路的一行：点击载入，右侧可删除。 */
+@Composable
+private fun SavedLineRow(
+    name: String,
+    url: String,
+    enabled: Boolean,
+    current: Boolean = false,
+    onLoad: () -> Unit,
+    onDelete: (() -> Unit)? = null,
+) {
+    SettingsPanelRow(
+        Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled, onClick = onLoad),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // 名字与 URL 同一行：名字保留约 1/3 宽度，URL 占其余并截断。
+            val hasName = name.isNotBlank() && name != url
+            Text(
+                if (hasName) name else url,
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                color = if (current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(if (hasName) 0.38f else 1f),
+            )
+            if (hasName) {
+                Text(
+                    url,
+                    fontSize = 10.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(0.62f).padding(start = 6.dp),
+                )
+            }
+            if (current) {
+                Text(
+                    stringResource(R.string.common_current),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 8.dp),
+                )
+            } else if (onDelete != null) {
+                Text(
+                    stringResource(R.string.common_delete),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(enabled = enabled) { onDelete() }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun UaEditPanel(
     value: String,
@@ -1241,7 +1414,9 @@ private fun UaEditPanel(
     onBack: () -> Unit,
 ) {
     val fieldFocus = remember { FocusRequester() }
+    val touch = LocalConfiguration.current.screenWidthDp < 600
     LaunchedEffect(Unit) {
+        if (touch) return@LaunchedEffect
         delay(150)
         runCatching { fieldFocus.requestFocus() }
     }
@@ -1291,7 +1466,9 @@ private fun BlockWordsEditPanel(
     onBack: () -> Unit,
 ) {
     val fieldFocus = remember { FocusRequester() }
+    val touch = LocalConfiguration.current.screenWidthDp < 600
     LaunchedEffect(Unit) {
+        if (touch) return@LaunchedEffect
         delay(150)
         runCatching { fieldFocus.requestFocus() }
     }
@@ -1339,10 +1516,11 @@ private fun SettingsPanelRow(
     content: @Composable () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
+    val touch = LocalConfiguration.current.screenWidthDp < 600
     Box(
         modifier
             .fillMaxWidth()
-            .heightIn(min = 34.dp)
+            .heightIn(min = if (touch) 44.dp else 34.dp)
             .onFocusChanged { focused = it.hasFocus }
             .clip(RoundedCornerShape(10.dp))
             .background(

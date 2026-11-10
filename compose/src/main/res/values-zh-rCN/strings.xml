@@ -413,4 +413,6 @@
     <string name="player_description">简介</string>
     <string name="player_favorite">收藏</string>
     <string name="player_favorited">已收藏</string>
+    <string name="settings_saved_lines">已保存线路</string>
+    <string name="settings_depot_lines">仓库线路</string>
 </resources>
