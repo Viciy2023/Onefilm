@@ -508,6 +508,11 @@ object PlaybackSession {
         headers: Map<String, String> = emptyMap(),
         options: List<PlayOption> = emptyList(),
     ) {
+        // 解析失败时个别站点会返回 "null"/空串，交给播放器会触发 okhttp/引擎异常，这里直接拦掉。
+        if (url.isBlank() || url.equals("null", ignoreCase = true)) {
+            error = str(R.string.player_episode_resolve_failed)
+            return
+        }
         appContext = context.applicationContext
         currentHeaders = headers
         qualityOptions = options

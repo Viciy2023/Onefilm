@@ -296,4 +296,62 @@ class M3u8AdFilterTest {
         assertTrue(result.changed)
         assertFalse(result.text.contains("adjump"))
     }
+
+    @Test
+    fun `long playlist beyond old cap still removes foreign prefix segment`() {
+        val main = (1..500).map { seg("4.0", "https://cdn.ffzy/v/seg_$it.ts") }
+        val ad = seg("4.0", "https://ad.other.net/ad_01.ts")
+        val text = playlist(*(main + ad).toTypedArray())
+
+        val result = M3u8AdFilter.filter("https://cdn.ffzy/v/index.m3u8", text, emptyList())
+        assertTrue(result.changed)
+        assertTrue(result.heuristic)
+        assertEquals(1, result.removedSegments)
+        assertFalse(result.text.contains("ad.other.net"))
+        assertTrue(result.text.contains("cdn.ffzy/v/seg_500.ts"))
+    }
+
+    @Test
+    fun `encrypted playlist removes short middle group between long groups`() {
+        val g1 = (1..10).map { seg("60.0", "https://cdn.ql/v/seg_$it.ts") }
+        val ad = (11..14).map { seg("5.0", "https://cdn.ql/v/seg_$it.ts") }
+        val g2 = (15..24).map { seg("60.0", "https://cdn.ql/v/seg_$it.ts") }
+        val text = buildString {
+            append("#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:60\n")
+            append("#EXT-X-KEY:METHOD=AES-128,URI=\"key.bin\"\n")
+            append(g1.joinToString("\n")).append('\n')
+            append("#EXT-X-DISCONTINUITY\n")
+            append(ad.joinToString("\n")).append('\n')
+            append("#EXT-X-DISCONTINUITY\n")
+            append(g2.joinToString("\n")).append('\n')
+            append("#EXT-X-ENDLIST\n")
+        }
+
+        val result = M3u8AdFilter.filter("https://cdn.ql/v/index.m3u8", text, emptyList())
+        assertTrue(result.changed)
+        assertEquals(4, result.removedSegments)
+        assertEquals(20.0, result.removedSeconds, 0.001)
+        assertTrue(result.text.contains("seg_10.ts"))
+        assertTrue(result.text.contains("seg_15.ts"))
+    }
+
+    @Test
+    fun `short group with short neighbour is kept`() {
+        val g1 = (1..10).map { seg("60.0", "https://cdn.ql/v/s_$it.ts") }
+        val short1 = (11..16).map { seg("10.0", "https://cdn.ql/v/s_$it.ts") }
+        val short2 = (17..22).map { seg("10.0", "https://cdn.ql/v/s_$it.ts") }
+        val text = buildString {
+            append("#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:60\n")
+            append("#EXT-X-KEY:METHOD=AES-128,URI=\"key.bin\"\n")
+            append(g1.joinToString("\n")).append('\n')
+            append("#EXT-X-DISCONTINUITY\n")
+            append(short1.joinToString("\n")).append('\n')
+            append("#EXT-X-DISCONTINUITY\n")
+            append(short2.joinToString("\n")).append('\n')
+            append("#EXT-X-ENDLIST\n")
+        }
+
+        val result = M3u8AdFilter.filter("https://cdn.ql/v/index.m3u8", text, emptyList())
+        assertFalse(result.changed)
+    }
 }

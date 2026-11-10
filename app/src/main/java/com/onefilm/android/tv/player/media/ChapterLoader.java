@@ -21,6 +21,7 @@ import okio.BufferedSource;
 /** Loads Matroska chapters using a bounded HTTP range / local prefix read. */
 public final class ChapterLoader {
 
+    private static final String TAG = "ChapterLoader";
     private static final int MAX_BYTES = 4 * 1024 * 1024;
     private static final OkHttpClient CLIENT = new OkHttpClient();
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
@@ -38,8 +39,19 @@ public final class ChapterLoader {
             return;
         }
         String scheme = uri.getScheme();
-        if (scheme == null || "http".equals(scheme) || "https".equals(scheme)) {
+        if ("http".equalsIgnoreCase(scheme) || "https".equalsIgnoreCase(scheme)) {
+            // 只有带主机名的 http(s) 地址才走网络；否则跳过，避免 okhttp 直接抛
+            // IllegalArgumentException 把 chapter-http 线程打死导致整个 App 崩溃。
+            if (uri.getHost() == null || uri.getHost().isBlank()) {
+                android.util.Log.w(TAG, "skip chapters, invalid http uri: " + uri);
+                deliver(callback, Collections.emptyList());
+                return;
+            }
             loadHttp(uri, callback);
+        } else if (scheme == null) {
+            // 相对地址或 "null" 之类的非法地址，无法解析，直接跳过。
+            android.util.Log.w(TAG, "skip chapters, no scheme: " + uri);
+            deliver(callback, Collections.emptyList());
         } else {
             new Thread(() -> deliver(callback, readLocal(context, uri)), "chapter-local").start();
         }
@@ -48,25 +60,28 @@ public final class ChapterLoader {
     private static void loadHttp(Uri uri, Callback callback) {
         new Thread(() -> {
             List<MediaChapter> chapters = Collections.emptyList();
-            Request request = new Request.Builder()
-                    .url(uri.toString())
-                    .header("Range", "bytes=0-" + (MAX_BYTES - 1))
-                    .build();
-            try (Response response = CLIENT.newCall(request).execute()) {
-                if (response.body() != null) {
-                    BufferedSource source = response.body().source();
-                    byte[] buffer = new byte[MAX_BYTES];
-                    int read = 0;
-                    while (read < buffer.length) {
-                        int n = source.read(buffer, read, buffer.length - read);
-                        if (n < 0) break;
-                        read += n;
+            try {
+                Request request = new Request.Builder()
+                        .url(uri.toString())
+                        .header("Range", "bytes=0-" + (MAX_BYTES - 1))
+                        .build();
+                try (Response response = CLIENT.newCall(request).execute()) {
+                    if (response.body() != null) {
+                        BufferedSource source = response.body().source();
+                        byte[] buffer = new byte[MAX_BYTES];
+                        int read = 0;
+                        while (read < buffer.length) {
+                            int n = source.read(buffer, read, buffer.length - read);
+                            if (n < 0) break;
+                            read += n;
+                        }
+                        byte[] data = new byte[read];
+                        System.arraycopy(buffer, 0, data, 0, read);
+                        chapters = MkvChapterParser.parse(data);
                     }
-                    byte[] data = new byte[read];
-                    System.arraycopy(buffer, 0, data, 0, read);
-                    chapters = MkvChapterParser.parse(data);
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                android.util.Log.w(TAG, "chapter load failed: " + uri, e);
             }
             deliver(callback, chapters);
         }, "chapter-http").start();

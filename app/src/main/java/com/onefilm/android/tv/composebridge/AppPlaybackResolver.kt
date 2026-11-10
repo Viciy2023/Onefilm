@@ -14,7 +14,7 @@ class AppPlaybackResolver : PlaybackResolver {
             runCatching {
                 val result = SiteApi.playerContent(key, flag, episodeUrl)
                 val url = result.realUrl
-                if (url.isBlank()) return@runCatching null
+                if (url.isBlank() || url.equals("null", ignoreCase = true)) return@runCatching null
                 ResolvedPlayback(
                     url = url,
                     headers = result.header,

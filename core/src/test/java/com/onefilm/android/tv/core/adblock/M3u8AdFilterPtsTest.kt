@@ -98,7 +98,7 @@ class M3u8AdFilterPtsTest {
     }
 
     @Test
-    fun `encrypted playlists are never probed`() {
+    fun `encrypted playlists are never probed but still cleaned by group heuristic`() {
         val text = playlist(
             ffzyGroups(),
             listOf("#EXT-X-KEY:METHOD=AES-128,URI=\"https://cdn.ffzy/key\""),
@@ -110,38 +110,47 @@ class M3u8AdFilterPtsTest {
         }
 
         val result = M3u8AdFilter.filter("https://cdn.ffzy/v/index.m3u8", text, emptyList(), probe = probe)
-        assertFalse(result.changed)
         assertEquals(0, calls.get())
+        assertTrue(result.changed)
+        assertTrue(result.heuristic)
+        assertFalse(result.pts)
+        assertEquals(9, result.removedSegments)
     }
 
     @Test
-    fun `too many groups are skipped`() {
+    fun `groups above the old cap are still probed in one batch`() {
         val groups = (0 until 9).map { group(2, 5.0, "n${it}_") }
         val text = playlist(groups)
         val calls = AtomicInteger()
+        val probed = AtomicInteger()
         val probe = M3u8AdFilter.PtsProbe { urls ->
             calls.addAndGet(1)
+            probed.set(urls.size)
             urls.map { null }
         }
 
         val result = M3u8AdFilter.filter("https://cdn.ffzy/v/index.m3u8", text, emptyList(), probe = probe)
         assertFalse(result.changed)
-        assertEquals(0, calls.get())
+        assertEquals(1, calls.get())
+        assertEquals(9, probed.get())
     }
 
     @Test
-    fun `inconclusive probe leaves playlist untouched`() {
+    fun `inconclusive probe falls back to group heuristic`() {
         val text = playlist(ffzyGroups())
         val probe = M3u8AdFilter.PtsProbe { urls -> urls.map { null } }
 
         val result = M3u8AdFilter.filter("https://cdn.ffzy/v/index.m3u8", text, emptyList(), probe = probe)
-        assertFalse(result.changed)
-        assertEquals(text, result.text)
+        assertTrue(result.changed)
+        assertTrue(result.heuristic)
+        assertFalse(result.pts)
+        assertEquals(9, result.removedSegments)
     }
 
     @Test
     fun `ad break longer than 60s is rejected by safety valve`() {
-        // 片段数 > 400 以跳过前缀聚类，确保进入 PTS 阶段
+        // 关闭前缀聚类（上限设为 0），确保进入 PTS 阶段验证安全阀
+        val limits = M3u8AdFilter.Limits(maxSegmentsForHeuristic = 0)
         val groups = listOf(
             group(200, 0.5, "main0_"),
             group(61, 1.0, "ad_"),
@@ -155,7 +164,13 @@ class M3u8AdFilterPtsTest {
         val text = playlist(groups)
         val probe = M3u8AdFilter.PtsProbe { urls -> urls.map { pts[it] } }
 
-        val result = M3u8AdFilter.filter("https://cdn.ffzy/v/index.m3u8", text, emptyList(), probe = probe)
+        val result = M3u8AdFilter.filter(
+            "https://cdn.ffzy/v/index.m3u8",
+            text,
+            emptyList(),
+            limits,
+            probe,
+        )
         assertFalse(result.changed)
         assertEquals(text, result.text)
     }

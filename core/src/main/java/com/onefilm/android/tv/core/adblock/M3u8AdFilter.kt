@@ -18,6 +18,25 @@ import java.util.regex.Pattern
  */
 object M3u8AdFilter {
 
+    /** 时长不超过该值的分组视为「短组」，组数很多时优先探测这些组。 */
+    private const val SHORT_GROUP_MILLIS = 120_000L
+
+    /** 分片数不超过该值的分组视为「短组」。 */
+    private const val SHORT_GROUP_SEGMENTS = 30
+
+    /** 锚点聚类时，LCP 至少达到该长度才算「同簇」。 */
+    private const val MIN_ANCHOR_LCP = 16
+
+    /** 分组兜底：中插广告组的最短/最长时长（毫秒）。 */
+    private const val MIN_BREAK_MILLIS = 4_000L
+    private const val MAX_BREAK_MILLIS = 120_000L
+
+    /** 分组兜底：中插广告组的最多分片数。 */
+    private const val MAX_BREAK_SEGMENTS = 40
+
+    /** 分组兜底：广告组左右相邻组至少要有的时长（毫秒）。 */
+    private const val MIN_NEIGHBOR_MILLIS = 180_000L
+
     /**
      * PTS 探测钩子（由 App 层实现网络与预算控制）。
      *
@@ -35,10 +54,10 @@ object M3u8AdFilter {
         val maxRemovedSeconds: Double = 90.0,
         /** 处理后至少保留的分片数。 */
         val minRemainingSegments: Int = 3,
-        /** 超过这个分片数不做启发式，避免 O(n²) 卡顿。 */
-        val maxSegmentsForHeuristic: Int = 400,
-        /** PTS 阶段最多探测的组数。 */
-        val maxPtsGroups: Int = 8,
+        /** 超过这个分片数不做启发式。锚点聚类为 O(n)，长剧集也能覆盖。 */
+        val maxSegmentsForHeuristic: Int = 3000,
+        /** PTS 阶段最多探测的组数（组数在此范围内则全部探测）。 */
+        val maxPtsGroups: Int = 16,
     )
 
     data class Result(
@@ -81,16 +100,17 @@ object M3u8AdFilter {
             return Result(heuristic.text.withNewline(newline), heuristic.removed, heuristic.seconds, null, true)
         }
 
-        val pts = applyPts(normalized, playlistUrl, limits, probe) ?: return unchanged(text)
-        if (!isSafe(normalized, pts, limits)) return unchanged(text)
-        return Result(
-            pts.text.withNewline(newline),
-            pts.removed,
-            pts.seconds,
-            null,
-            false,
-            true,
-        )
+        val pts = applyPts(normalized, playlistUrl, limits, probe)
+        if (pts != null && isSafe(normalized, pts, limits)) {
+            return Result(pts.text.withNewline(newline), pts.removed, pts.seconds, null, false, true)
+        }
+
+        // 末级兜底：加密 / fMP4 / PTS 探测无证据时，用 discontinuity 分组时长判断中插广告。
+        val groupBreak = applyGroupBreak(normalized, playlistUrl, limits)
+        if (groupBreak != null && isSafe(normalized, groupBreak, limits)) {
+            return Result(groupBreak.text.withNewline(newline), groupBreak.removed, groupBreak.seconds, null, true)
+        }
+        return unchanged(text)
     }
 
     // ---------------------------------------------------------------- rule
@@ -152,22 +172,28 @@ object M3u8AdFilter {
         if (segments.size < 5 || segments.size > limits.maxSegmentsForHeuristic) return null
 
         val urls = segments.map { absolute(playlistUrl, it.url) }
-        val maxLcp = IntArray(urls.size) { i ->
-            var best = 0
-            for (j in urls.indices) if (i != j) best = maxOf(best, lcp(urls[i], urls[j]))
-            best
+        // 锚点支持度聚类：从首/中/尾取候选锚点，选「同簇分片最多」的锚点，
+        // 再按簇内 LCP 中位数作为阈值剔除异簇分片。整体 O(n)，可覆盖上千分片的长剧集。
+        val candidates = listOf(urls.first(), urls[urls.size / 2], urls.last()).distinct()
+        var anchor = candidates.first()
+        var support = emptyList<Int>()
+        for (candidate in candidates) {
+            val members = urls.indices.filter { lcp(urls[it], candidate) >= MIN_ANCHOR_LCP }
+            if (members.size > support.size) {
+                anchor = candidate
+                support = members
+            }
         }
-        val groups = maxLcp.toList().groupingBy { it }.eachCount()
-        val entry = groups.maxByOrNull { it.value } ?: return null
-        if (entry.value < urls.size * 0.6) return null // 没有明显主簇，放弃
-        val majority = urls.indices.filter { maxLcp[it] == entry.key }
-        if (majority.size >= urls.size) return null
+        if (support.size < urls.size * 0.6) return null // 没有明显主簇，放弃
+        if (support.size >= urls.size) return null
 
-        val anchor = urls[majority.first()]
-        val threshold = minOf(lcp(anchor, urls[majority.last()]), anchor.length - 1).coerceAtLeast(8)
+        val anchorLcps = support.map { lcp(urls[it], anchor) }.sorted()
+        val threshold = anchorLcps[anchorLcps.size / 2]
+            .coerceAtLeast(MIN_ANCHOR_LCP)
+            .coerceAtMost(anchor.length - 1)
         val remove = mutableSetOf<Int>()
         for (i in urls.indices) {
-            if (i in majority) continue
+            if (i in support) continue
             if (lcp(anchor, urls[i]) < threshold) {
                 remove.add(segments[i].extinfIndex)
                 remove.add(segments[i].urlIndex)
@@ -199,18 +225,39 @@ object M3u8AdFilter {
 
         val lines = text.split("\n")
         val groups = parseGroups(lines, playlistUrl)
-        if (groups.size < 2 || groups.size > limits.maxPtsGroups) return null
+        if (groups.size < 2) return null
         if (groups.any { it.segmentCount <= 0 }) return null
 
+        // 组数不多就全部探测；组数很多时只探测「短组」（插播广告通常很短）及其相邻组，
+        // 把网络探测次数控制在 maxPtsGroups 以内。
+        val targets: List<Int> = if (groups.size <= limits.maxPtsGroups) {
+            groups.indices.toList()
+        } else {
+            val picked = LinkedHashSet<Int>()
+            groups.forEachIndexed { index, group ->
+                val short = group.durationMillis <= SHORT_GROUP_MILLIS ||
+                    group.segmentCount <= SHORT_GROUP_SEGMENTS
+                if (short) {
+                    picked.add(index)
+                    if (index > 0) picked.add(index - 1)
+                    if (index + 1 < groups.size) picked.add(index + 1)
+                }
+            }
+            picked.add(0)
+            picked.add(groups.size - 1)
+            picked.take(limits.maxPtsGroups).sorted()
+        }
+
         val ptsValues = try {
-            probe.probe(groups.map { it.firstSegmentUrl })
+            probe.probe(targets.map { groups[it].firstSegmentUrl })
         } catch (t: Throwable) {
             return null
         }
-        if (ptsValues.size != groups.size) return null
+        if (ptsValues.size != targets.size) return null
 
         val probed = groups.mapIndexed { index, group ->
-            group.copy(ptsMillis = ptsValues[index])
+            val position = targets.indexOf(index)
+            group.copy(ptsMillis = if (position >= 0) ptsValues[position] else null)
         }
         if (probed.count { it.ptsMillis != null } < 2) return null
 
@@ -228,6 +275,42 @@ object M3u8AdFilter {
         }
         if (remove.isEmpty()) return null
         val out = lines.filterIndexed { index, _ -> index !in remove }.joinToString("\n")
+        return diff(text, out)
+    }
+
+    /**
+     * 末级兜底：按 `#EXT-X-DISCONTINUITY` 分组，中间出现「短组」（4s–120s、分片 ≤ 40）
+     * 且左右相邻组都很长（≥180s）时，视为中插广告整组删除。
+     *
+     * 用于加密（`#EXT-X-KEY`）、fMP4（`#EXT-X-MAP`）、BYTERANGE 等无法做 PTS 探测的播放列表。
+     */
+    private fun applyGroupBreak(text: String, playlistUrl: String?, limits: Limits): Applied? {
+        val lines = text.split("\n")
+        val groups = parseGroups(lines, playlistUrl)
+        if (groups.size < 3) return null
+
+        val remove = LinkedHashSet<Int>()
+        var removedMs = 0L
+        for (i in 1 until groups.size - 1) {
+            val group = groups[i]
+            if (group.durationMillis < MIN_BREAK_MILLIS) continue
+            if (group.durationMillis > MAX_BREAK_MILLIS) continue
+            if (group.segmentCount > MAX_BREAK_SEGMENTS) continue
+            val prev = groups[i - 1].durationMillis
+            val next = groups[i + 1].durationMillis
+            if (prev < MIN_NEIGHBOR_MILLIS || next < MIN_NEIGHBOR_MILLIS) continue
+            remove.add(i)
+            removedMs += group.durationMillis
+        }
+        if (remove.isEmpty()) return null
+        if (removedMs > (limits.maxRemovedSeconds * 1000).toLong()) return null
+
+        val drop = HashSet<Int>()
+        for (index in remove) {
+            for (line in groups[index].startLine..groups[index].endLine) drop.add(line)
+        }
+        if (drop.isEmpty()) return null
+        val out = lines.filterIndexed { index, _ -> index !in drop }.joinToString("\n")
         return diff(text, out)
     }
 
