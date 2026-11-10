@@ -197,4 +197,9 @@
     <string name="mobile_settings_load">載入</string>
     <string name="mobile_settings_repo_lines">倉庫線路</string>
 
+    <string name="mobile_line_title">線路</string>
+    <string name="mobile_speed_title">倍速</string>
+    <string name="mobile_subtitle_title">字幕</string>
+    <string name="mobile_searching_source">正在搜尋可用站點…</string>
+    <string name="mobile_no_source">沒有找到播放源</string>
 </resources>

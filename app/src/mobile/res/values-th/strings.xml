@@ -197,4 +197,9 @@
     <string name="mobile_settings_load">โหลด</string>
     <string name="mobile_settings_repo_lines">สายในคลัง</string>
 
+    <string name="mobile_line_title">สาย</string>
+    <string name="mobile_speed_title">ความเร็ว</string>
+    <string name="mobile_subtitle_title">คำบรรยาย</string>
+    <string name="mobile_searching_source">กำลังค้นหาแหล่งที่เล่นได้…</string>
+    <string name="mobile_no_source">ไม่พบแหล่งที่เล่นได้</string>
 </resources>

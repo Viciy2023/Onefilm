@@ -75,8 +75,8 @@ import com.onefilm.android.tv.compose.feature.search.SearchSession
 import com.onefilm.android.tv.compose.feature.search.SearchUiState
 import com.onefilm.android.tv.mobileui.component.MobileHorizontalGrid
 import com.onefilm.android.tv.mobileui.component.MobileRemoteImage
+import com.onefilm.android.tv.mobileui.player.MobilePlayerScreen
 import com.onefilm.android.tv.ui.activity.LiveActivity
-import com.onefilm.android.tv.ui.activity.VideoActivity
 import com.onefilm.android.tv.R
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -88,6 +88,13 @@ private enum class MobileTab(val labelRes: Int) {
     LIBRARY(R.string.mobile_tab_library),
     LIVE(R.string.nav_live),
     SETTINGS(R.string.nav_setting),
+}
+
+/** 手机端页面栈：列表 → 详情 → 播放器。 */
+sealed interface MobileScreen {
+    data object Root : MobileScreen
+    data class Detail(val key: String, val id: String, val title: String, val poster: String?) : MobileScreen
+    data class Player(val detail: Detail) : MobileScreen
 }
 
 @Composable
@@ -103,21 +110,17 @@ fun MobileApp() {
     var libraryTab by rememberSaveable { mutableIntStateOf(0) }
     var categoryTarget by remember { mutableStateOf<HomeCategory?>(null) }
     var searchResetToken by remember { mutableIntStateOf(0) }
+    var screen by remember { mutableStateOf<MobileScreen>(MobileScreen.Root) }
 
     fun resetSearch() {
         SearchSession.cancel()
         searchResetToken++
     }
 
-    fun playCard(card: MediaCard) {
-        val activity = context as? Activity ?: return
-        if (card.key.isNotBlank() && card.id.isNotBlank()) {
-            VideoActivity.start(activity, card.key, card.id, card.title, card.posterUrl)
-        }
-    }
-
     fun openCard(card: MediaCard) {
-        playCard(card)
+        if (card.key.isNotBlank() && card.id.isNotBlank()) {
+            screen = MobileScreen.Detail(card.key, card.id, card.title, card.posterUrl)
+        }
     }
 
     fun openLive() {
@@ -145,6 +148,33 @@ fun MobileApp() {
     }
 
     BackHandler(enabled = categoryTarget != null) { categoryTarget = null }
+
+    when (val current = screen) {
+        is MobileScreen.Detail -> {
+            MobileDetailScreen(
+                key = current.key,
+                id = current.id,
+                title = current.title,
+                poster = current.poster,
+                onBack = {
+                    screen = MobileScreen.Root
+                    homeRefresh++
+                },
+                onOpenPlayer = { screen = MobileScreen.Player(current) },
+                onSwitchSite = { newKey, newId, newTitle, newPoster ->
+                    screen = MobileScreen.Detail(newKey, newId, newTitle, newPoster)
+                },
+            )
+            return
+        }
+
+        is MobileScreen.Player -> {
+            MobilePlayerScreen(onBack = { screen = current.detail })
+            return
+        }
+
+        MobileScreen.Root -> Unit
+    }
 
     Column(
         Modifier

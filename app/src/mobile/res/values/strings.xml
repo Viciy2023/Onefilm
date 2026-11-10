@@ -197,4 +197,9 @@
     <string name="mobile_settings_load">Load</string>
     <string name="mobile_settings_repo_lines">Repo lines</string>
 
+    <string name="mobile_line_title">Line</string>
+    <string name="mobile_speed_title">Speed</string>
+    <string name="mobile_subtitle_title">Subtitles</string>
+    <string name="mobile_searching_source">Searching available sources…</string>
+    <string name="mobile_no_source">No playable source found</string>
 </resources>

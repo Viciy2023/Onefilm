@@ -154,6 +154,8 @@ tasks.withType(JavaCompile).configureEach {
 dependencies {
     implementation platform(libs.compose.bom)
     implementation libs.activity.compose
+    implementation libs.lifecycle.viewmodel.compose
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7'
     implementation libs.compose.ui
     implementation libs.compose.ui.tooling.preview
     implementation libs.compose.material3

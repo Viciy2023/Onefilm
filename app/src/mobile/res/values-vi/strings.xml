@@ -197,4 +197,9 @@
     <string name="mobile_settings_load">Tải</string>
     <string name="mobile_settings_repo_lines">Kênh trong kho</string>
 
+    <string name="mobile_line_title">Tuyến</string>
+    <string name="mobile_speed_title">Tốc độ</string>
+    <string name="mobile_subtitle_title">Phụ đề</string>
+    <string name="mobile_searching_source">Đang tìm nguồn phát…</string>
+    <string name="mobile_no_source">Không tìm thấy nguồn phát</string>
 </resources>

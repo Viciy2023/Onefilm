@@ -468,6 +468,23 @@ object PlaybackSession {
         scope.launch { playEpisode(ctx, currentIndex, resolver) }
     }
 
+    /** 当前可用的线路名（供播放器线路面板使用）。 */
+    val lineNames: List<String> get() = alternatives.map { it.first }
+
+    /** 切换到指定线路。 */
+    fun switchLineTo(name: String) {
+        val ctx = appContext ?: return
+        if (name == flagName) return
+        val target = alternatives.firstOrNull { it.first == name } ?: return
+        val resolver = resolverRef ?: ComposeDependencies.playbackResolver
+        flagName = target.first
+        queue = target.second
+        currentIndex = currentIndex.coerceIn(0, (target.second.size - 1).coerceAtLeast(0))
+        error = null
+        lineSwitchUsed = 0
+        scope.launch { playEpisode(ctx, currentIndex, resolver) }
+    }
+
     private fun tryNextLine(): Boolean {
         val ctx = appContext ?: return false
         val resolver = resolverRef ?: ComposeDependencies.playbackResolver
