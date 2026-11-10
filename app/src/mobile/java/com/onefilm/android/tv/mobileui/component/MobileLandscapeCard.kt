@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,6 +43,7 @@ fun MobileLandscapeCard(
     card: MediaCard,
     modifier: Modifier = Modifier,
     showSite: Boolean = false,
+    hero: Boolean = false,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
 ) {
@@ -94,14 +96,20 @@ fun MobileLandscapeCard(
             Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(horizontal = 7.dp, vertical = 6.dp),
-            verticalArrangement = Arrangement.spacedBy(1.dp),
+                .padding(
+                    start = if (hero) 14.dp else 8.dp,
+                    end = if (hero) 14.dp else 8.dp,
+                    bottom = 2.dp,
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(if (hero) 3.dp else 1.dp),
         ) {
             Text(
                 text = card.title.ifBlank { stringResource(R.string.mobile_unnamed) },
                 color = Color.White,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontSize = if (hero) 20.sp else 12.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.fillMaxWidth(),
@@ -111,8 +119,9 @@ fun MobileLandscapeCard(
             if (sub != null) {
                 Text(
                     text = sub,
-                    color = Color.White.copy(alpha = 0.78f),
-                    fontSize = 10.sp,
+                    color = Color.White.copy(alpha = 0.82f),
+                    fontSize = if (hero) 13.sp else 10.sp,
+                    textAlign = TextAlign.Center,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.fillMaxWidth(),

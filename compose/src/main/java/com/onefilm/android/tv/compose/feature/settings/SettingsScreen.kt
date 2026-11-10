@@ -145,8 +145,6 @@ fun SettingsScreen(
     val editFieldFocus = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
     val resContext = LocalContext.current
-    // 手机（窄屏）用更大的行高，TV 保持紧凑布局。
-    val touchRows = LocalConfiguration.current.screenWidthDp < 600
     LaunchedEffect(Unit) {
         // 只请求一次初始焦点：反复请求会在用户已经向下移动后把焦点拽回第一项。
         delay(200)
@@ -410,7 +408,7 @@ fun SettingsScreen(
             }
             item(span = { GridItemSpan(maxLineSpan) }) {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(if (touchRows) 44.dp else 34.dp),
+                modifier = Modifier.fillMaxWidth().height(34.dp),
                 title = stringResource(R.string.settings_vod_url),
                 value = snapshot.configUrl,
                 loading = reloadingType == 0,
@@ -435,7 +433,7 @@ fun SettingsScreen(
             }
             item(span = { GridItemSpan(maxLineSpan) }) {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(if (touchRows) 44.dp else 34.dp),
+                modifier = Modifier.fillMaxWidth().height(34.dp),
                 title = stringResource(R.string.settings_live_url),
                 value = snapshot.liveConfigUrl,
                 loading = reloadingType == 1,
@@ -460,7 +458,7 @@ fun SettingsScreen(
             }
             item(span = { GridItemSpan(maxLineSpan) }) {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(if (touchRows) 44.dp else 34.dp),
+                modifier = Modifier.fillMaxWidth().height(34.dp),
                 title = stringResource(R.string.settings_wall_url),
                 value = snapshot.wallConfigUrl,
                 loading = reloadingType == 2,
@@ -485,7 +483,7 @@ fun SettingsScreen(
             }
             item(span = { GridItemSpan(maxLineSpan) }) {
             ConfigBlock(
-                modifier = Modifier.fillMaxWidth().height(if (touchRows) 44.dp else 34.dp),
+                modifier = Modifier.fillMaxWidth().height(34.dp),
                 title = stringResource(R.string.settings_danmaku_api),
                 value = snapshot.danmakuApi.ifBlank { stringResource(R.string.settings_danmaku_api_default) },
                 loading = reloadingDanmaku,
@@ -1516,11 +1514,10 @@ private fun SettingsPanelRow(
     content: @Composable () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
-    val touch = LocalConfiguration.current.screenWidthDp < 600
     Box(
         modifier
             .fillMaxWidth()
-            .heightIn(min = if (touch) 44.dp else 34.dp)
+            .heightIn(min = 34.dp)
             .onFocusChanged { focused = it.hasFocus }
             .clip(RoundedCornerShape(10.dp))
             .background(

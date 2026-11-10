@@ -34,6 +34,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.LiveTv
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -55,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -89,12 +95,11 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-private enum class MobileTab(val labelRes: Int) {
-    HOME(R.string.mobile_tab_home),
-    SEARCH(R.string.menu_search),
-    LIBRARY(R.string.mobile_tab_continue),
-    LIVE(R.string.nav_live),
-    SETTINGS(R.string.nav_setting),
+private enum class MobileTab(val labelRes: Int, val icon: ImageVector) {
+    HOME(R.string.mobile_tab_home, Icons.Outlined.Home),
+    LIBRARY(R.string.mobile_tab_continue, Icons.Outlined.History),
+    LIVE(R.string.nav_live, Icons.Outlined.LiveTv),
+    SETTINGS(R.string.nav_setting, Icons.Outlined.Settings),
 }
 
 /** 手机端页面栈：列表 → 详情 → 播放器。 */
@@ -121,14 +126,27 @@ fun MobileApp() {
     }
     var homeRefresh by remember { mutableIntStateOf(0) }
     var tab by rememberSaveable { mutableStateOf(MobileTab.HOME) }
-    var libraryTab by rememberSaveable { mutableIntStateOf(0) }
+    // 「继续观看」页默认打开「历史」。
+    var libraryTab by rememberSaveable { mutableIntStateOf(1) }
     var categoryTarget by remember { mutableStateOf<HomeCategory?>(null) }
-    var searchResetToken by remember { mutableIntStateOf(0) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var searchHistory by remember { mutableStateOf(MobileSearchHistory.load(context)) }
+    var searchActive by remember { mutableStateOf(false) }
     var screen by remember { mutableStateOf<MobileScreen>(MobileScreen.Root) }
 
-    fun resetSearch() {
+    fun exitSearch() {
         SearchSession.cancel()
-        searchResetToken++
+        searchActive = false
+    }
+
+    fun submitSearch(keywordValue: String = searchQuery) {
+        val keyword = keywordValue.trim()
+        if (keyword.isEmpty()) return
+        searchQuery = keyword
+        searchHistory = MobileSearchHistory.add(context, keyword)
+        searchActive = true
+        categoryTarget = null
+        SearchSession.start(ComposeDependencies.searchDataSource, keyword)
     }
 
     fun openCard(card: MediaCard) {
@@ -168,6 +186,7 @@ fun MobileApp() {
     }
 
     BackHandler(enabled = categoryTarget != null) { categoryTarget = null }
+    BackHandler(enabled = searchActive) { exitSearch() }
 
     when (val current = screen) {
         is MobileScreen.SearchResults -> {
@@ -217,47 +236,37 @@ fun MobileApp() {
             .background(MaterialTheme.colorScheme.background)
             .statusBarsPadding(),
     ) {
-        MobileTopBar(
-            title = categoryTarget?.name
-                ?: if (tab == MobileTab.HOME) stringResource(R.string.mobile_app_brand)
-                else stringResource(tab.labelRes),
+        MobileTopBar()
+        // 搜索栏长期固定在品牌行下方，占满整行。
+        MobileSearchBar(
+            query = searchQuery,
+            onQueryChange = { searchQuery = it },
+            onSubmit = { submitSearch() },
         )
-        // 导航从底部移到品牌行下方。
-        MobileNavBar(
-            selected = tab,
-            onSelect = { selected ->
-                val wasSearch = tab == MobileTab.SEARCH
-                if (selected == MobileTab.LIVE) {
-                    if (wasSearch) resetSearch()
-                    openLive()
-                } else {
-                    if (wasSearch && selected != MobileTab.SEARCH) resetSearch()
-                    categoryTarget = null
-                    tab = selected
-                }
-            },
-        )
-        Box(Modifier.weight(1f).navigationBarsPadding()) {
+        Box(Modifier.weight(1f)) {
             val category = categoryTarget
-            if (category != null) {
-                MobileCategoryScreen(
+            when {
+                searchActive -> MobileSearchScreen(
+                    history = searchHistory,
+                    onClearHistory = {
+                        MobileSearchHistory.clear(context)
+                        searchHistory = emptyList()
+                    },
+                    onSubmit = { submitSearch(it) },
+                    onCardClick = ::openCard,
+                )
+                category != null -> MobileCategoryScreen(
                     category = category,
                     dataSource = ComposeDependencies.categoryDataSource,
                     onBack = { categoryTarget = null },
                     onCardClick = ::openCard,
                 )
-            } else {
-                when (tab) {
+                else -> when (tab) {
                     MobileTab.HOME -> MobileHomeScreen(
                         state = homeState,
                         onRetry = { homeRefresh++ },
                         onCardClick = ::openCard,
                         onCategoryClick = { categoryTarget = it },
-                    )
-                    MobileTab.SEARCH -> MobileSearchScreen(
-                        dataSource = ComposeDependencies.searchDataSource,
-                        resetToken = searchResetToken,
-                        onCardClick = ::openCard,
                     )
                     MobileTab.LIBRARY -> MobileLibraryScreen(
                         dataSource = ComposeDependencies.libraryDataSource,
@@ -276,17 +285,38 @@ fun MobileApp() {
                 }
             }
         }
+        // 导航栏与内容之间加一条细分隔线。
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
+        )
+        MobileNavBar(
+            selected = tab,
+            onSelect = { selected ->
+                exitSearch()
+                if (selected == MobileTab.LIVE) {
+                    openLive()
+                } else {
+                    categoryTarget = null
+                    tab = selected
+                }
+            },
+        )
     }
 }
 
-/** 顶部品牌行：品牌与当前栏目都居中显示。 */
+/** 顶部品牌行：ONEFILM 与「壹影」同一行居中。 */
 @Composable
-private fun MobileTopBar(title: String) {
-    Column(
+private fun MobileTopBar() {
+    Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 18.dp, vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .padding(horizontal = 18.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.Center,
+        // 壹影与 ONEFILM 底端对齐。
+        verticalAlignment = Alignment.Bottom,
     ) {
         Text(
             text = "ONEFILM",
@@ -294,41 +324,116 @@ private fun MobileTopBar(title: String) {
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
         )
+        Spacer(Modifier.width(8.dp))
         Text(
-            text = title,
+            text = stringResource(R.string.mobile_app_brand),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 13.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            fontSize = 14.sp,
+            modifier = Modifier.padding(bottom = 1.dp),
         )
     }
 }
 
+/** 品牌行下的搜索输入框：长条、与设置项统一的边框与高度。 */
+@Composable
+private fun MobileSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onSubmit: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        BasicTextField(
+            value = query,
+            onValueChange = onQueryChange,
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+            ),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(onSearch = { onSubmit() }),
+            modifier = Modifier.weight(1f).height(34.dp),
+            decorationBox = { innerTextField ->
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                            RoundedCornerShape(10.dp),
+                        )
+                        .padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    if (query.isEmpty()) {
+                        Text(
+                            stringResource(R.string.mobile_search_hint),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                        )
+                    }
+                    innerTextField()
+                }
+            },
+        )
+        Button(
+            onClick = onSubmit,
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.height(34.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+        ) { Text(stringResource(R.string.menu_search), fontSize = 13.sp) }
+    }
+}
+
+/** 底部导航：无边框，选中项用主题色高亮；图标在左、文字在右。 */
 @Composable
 private fun MobileNavBar(selected: MobileTab, onSelect: (MobileTab) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
+            .navigationBarsPadding()
             .padding(horizontal = 8.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         MobileTab.entries.forEach { tab ->
-            Text(
-                text = stringResource(tab.labelRes),
-                color = if (tab == selected) MaterialTheme.colorScheme.onPrimary
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 14.sp,
-                fontWeight = if (tab == selected) FontWeight.SemiBold else FontWeight.Normal,
+            val active = tab == selected
+            val tint = if (active) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant
+            Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(18.dp))
+                    .clip(RoundedCornerShape(10.dp))
                     .background(
-                        if (tab == selected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        if (active) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                        else Color.Transparent,
                     )
                     .clickable { onSelect(tab) }
-                    .padding(horizontal = 14.dp, vertical = 9.dp),
-            )
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                androidx.compose.material3.Icon(
+                    imageVector = tab.icon,
+                    contentDescription = stringResource(tab.labelRes),
+                    tint = tint,
+                    modifier = Modifier.size(18.dp),
+                )
+                Text(
+                    text = stringResource(tab.labelRes),
+                    color = tint,
+                    fontSize = 13.sp,
+                    fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+                )
+            }
         }
     }
 }
@@ -368,14 +473,12 @@ private fun MobileHomeContent(
         val vPad = 8.dp
         val rowGap = 8.dp
         val sectionGap = 12.dp
-        val titleGap = 6.dp
-        val titleHeight = 24.dp
         val hasChips = feed.categories.isNotEmpty()
         val chipsHeight = if (hasChips) 46.dp else 0.dp
         val horizontal = com.onefilm.android.tv.compose.design.PosterStyleController.horizontal
 
         if (horizontal) {
-            // 横版海报：一行两列，行数随内容自然滚动（一屏可见行数由可用高度决定）。
+            // 横版海报：一行两列；第一张是占满整行的英雄卡片，其余按 2 列排列。
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
                 modifier = Modifier.fillMaxSize(),
@@ -389,10 +492,15 @@ private fun MobileHomeContent(
                     }
                 }
                 if (hasRecommend) {
+                    val items = recommendation!!
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        MobileHomeSectionTitle(stringResource(R.string.mobile_home_recommend))
+                        com.onefilm.android.tv.mobileui.component.MobileLandscapeCard(
+                            card = items.first(),
+                            hero = true,
+                            onClick = { onCardClick(items.first()) },
+                        )
                     }
-                    itemsIndexed(recommendation!!) { _, card ->
+                    itemsIndexed(items.drop(1)) { _, card ->
                         com.onefilm.android.tv.mobileui.component.MobileLandscapeCard(
                             card = card,
                             onClick = { onCardClick(card) },
@@ -401,9 +509,8 @@ private fun MobileHomeContent(
                 }
             }
         } else {
-            // 把标题、分区间距、行间距都算进固定高度，避免最后一行被裁掉。
-            val fixed = chipsHeight + titleHeight + titleGap +
-                sectionGap * (if (hasChips) 1 else 0) + rowGap * 2 + vPad * 2
+            // 把行间距、内边距算进固定高度，避免最后一行被裁掉。
+            val fixed = chipsHeight + sectionGap * (if (hasChips) 1 else 0) + rowGap * 2 + vPad * 2
             val rowHeight = ((maxHeight - fixed) / 3).coerceAtLeast(96.dp)
             val cardWidth = (rowHeight * 2f / 3f).coerceAtLeast(64.dp)
 
@@ -414,7 +521,7 @@ private fun MobileHomeContent(
                 MobileHomeCategoryChips(feed, chipsHeight, onCategoryClick)
                 if (hasRecommend) {
                     MobileHomeSection(
-                        title = stringResource(R.string.mobile_home_recommend),
+                        title = null,
                         items = recommendation!!,
                         rows = 3,
                         rowHeight = rowHeight,
@@ -428,7 +535,7 @@ private fun MobileHomeContent(
     }
 }
 
-/** 首页分类 chips：首个固定为「主页」，其后是接口分类。 */
+/** 首页分类 chips：首个固定为「主页」（展示接口推荐数据），其后是接口分类。 */
 @Composable
 private fun MobileHomeCategoryChips(
     feed: com.onefilm.android.tv.compose.bridge.HomeFeed,
@@ -442,14 +549,16 @@ private fun MobileHomeCategoryChips(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
+            // 「主页」= 当前页，展示接口推荐；不需要跳转。
             Text(
                 text = homeLabel,
                 fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimary,
                 maxLines = 1,
                 modifier = Modifier
                     .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
+                    .background(MaterialTheme.colorScheme.primary)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
             )
         }
@@ -469,25 +578,13 @@ private fun MobileHomeCategoryChips(
     }
 }
 
-/** 首页分区标题：竖版/横版海报共用。 */
-@Composable
-private fun MobileHomeSectionTitle(title: String) {
-    Text(
-        text = title,
-        fontSize = 17.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.onBackground,
-        modifier = Modifier.padding(top = 2.dp),
-    )
-}
-
 /**
  * 首页分区：固定行数的横向网格（非分页），左右连续滑动。
  * 每列是一个纵向 strip，避免出现「一屏一页」的跳转感。
  */
 @Composable
 private fun MobileHomeSection(
-    title: String,
+    title: String?,
     items: List<MediaCard>,
     rows: Int,
     rowHeight: Dp,
@@ -498,12 +595,14 @@ private fun MobileHomeSection(
 ) {
     if (items.isEmpty() && placeholder == null) return
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            text = title,
-            fontSize = 17.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
+        if (!title.isNullOrBlank()) {
+            Text(
+                text = title,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+        }
         if (items.isEmpty()) {
             MobileHomePlaceholderCard(cardWidth, rowHeight, placeholder.orEmpty())
         } else {
@@ -549,79 +648,20 @@ private fun MobileHomePlaceholderCard(width: Dp, height: Dp, label: String) {
 
 @Composable
 private fun MobileSearchScreen(
-    dataSource: SearchDataSource,
-    resetToken: Int,
+    history: List<String>,
+    onClearHistory: () -> Unit,
     onCardClick: (MediaCard) -> Unit,
+    onSubmit: (String) -> Unit,
 ) {
-    val context = LocalContext.current
-    var query by rememberSaveable(resetToken) { mutableStateOf("") }
-    var history by remember { mutableStateOf(MobileSearchHistory.load(context)) }
     val state by SearchSession.state.collectAsState()
-
-    fun submit(keywordValue: String = query) {
-        val keyword = keywordValue.trim()
-        if (keyword.isEmpty()) return
-        query = keyword
-        history = MobileSearchHistory.add(context, keyword)
-        SearchSession.start(dataSource, keyword)
-    }
 
     Column(
         Modifier.fillMaxSize().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            BasicTextField(
-                value = query,
-                onValueChange = { query = it },
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
-                ),
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { submit() }),
-                modifier = Modifier.weight(1f).height(44.dp),
-                decorationBox = { innerTextField ->
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
-                            .border(
-                                1.dp,
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
-                                RoundedCornerShape(10.dp),
-                            )
-                            .padding(horizontal = 14.dp),
-                        contentAlignment = Alignment.CenterStart,
-                    ) {
-                        if (query.isEmpty()) {
-                            Text(
-                                stringResource(R.string.mobile_search_hint),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 14.sp,
-                            )
-                        }
-                        innerTextField()
-                    }
-                },
-            )
-            Button(
-                onClick = { submit() },
-                shape = RoundedCornerShape(10.dp),
-                modifier = Modifier.height(44.dp),
-                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 0.dp),
-            ) { Text(stringResource(R.string.menu_search)) }
-        }
-
         if (history.isNotEmpty()) {
             Row(
-                Modifier.fillMaxWidth(),
+                Modifier.fillMaxWidth().padding(top = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 LazyRow(
@@ -637,17 +677,14 @@ private fun MobileSearchScreen(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                .clickable { submit(keyword) }
+                                .clickable { onSubmit(keyword) }
                                 .padding(horizontal = 10.dp, vertical = 7.dp),
                         )
                     }
                 }
-                TextButton(
-                    onClick = {
-                        MobileSearchHistory.clear(context)
-                        history = emptyList()
-                    },
-                ) { Text(stringResource(R.string.mobile_search_clear), fontSize = 12.sp) }
+                TextButton(onClick = onClearHistory) {
+                    Text(stringResource(R.string.mobile_search_clear), fontSize = 12.sp)
+                }
             }
         }
 

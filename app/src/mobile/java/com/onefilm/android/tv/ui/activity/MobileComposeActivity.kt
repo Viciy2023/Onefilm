@@ -67,6 +67,8 @@ class MobileComposeActivity : ComponentActivity() {
             recreate()
         }
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        // 播放历史写入依赖这个桥接：TV 宿主在 setContent 里设置，手机宿主此前漏了，导致历史页一直为空。
+        PlaybackSession.historyStore = ComposeDependencies.playbackHistoryStore
         PosterStyleController.apply(ComposeDependencies.settingsDataSource.load().posterStyle)
         setContent {
             ThemeController.apply(ComposeDependencies.settingsDataSource.load().themeMode)
