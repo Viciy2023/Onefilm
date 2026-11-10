@@ -24,6 +24,7 @@ fun MobileRemoteImage(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
+    showBackground: Boolean = true,
     onSize: ((Int, Int) -> Unit)? = null,
 ) {
     val context = LocalContext.current
@@ -38,10 +39,12 @@ fun MobileRemoteImage(
         }
     }
     if (request == null) {
-        Box(modifier.background(MaterialTheme.colorScheme.surfaceVariant))
+        Box(if (showBackground) modifier.background(MaterialTheme.colorScheme.surfaceVariant) else modifier)
     } else {
         Box(modifier) {
-            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant))
+            if (showBackground) {
+                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceVariant))
+            }
             AsyncImage(
                 model = request,
                 contentDescription = contentDescription,

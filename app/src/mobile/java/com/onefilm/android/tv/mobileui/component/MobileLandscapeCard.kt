@@ -202,6 +202,7 @@ private fun MobileLandscapeFallback(posterUrl: String?, title: String) {
         rawUrl = posterUrl,
         contentDescription = null,
         contentScale = ContentScale.Crop,
+        showBackground = false,
         modifier = Modifier
             .fillMaxSize()
             .graphicsLayer {
@@ -215,6 +216,7 @@ private fun MobileLandscapeFallback(posterUrl: String?, title: String) {
         rawUrl = posterUrl,
         contentDescription = title,
         contentScale = ContentScale.Fit,
+        showBackground = false,
         modifier = Modifier.fillMaxSize().padding(horizontal = 28.dp),
     )
 }
