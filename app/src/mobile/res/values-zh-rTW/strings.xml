@@ -202,4 +202,5 @@
     <string name="mobile_subtitle_title">字幕</string>
     <string name="mobile_searching_source">正在搜尋可用站點…</string>
     <string name="mobile_no_source">沒有找到播放源</string>
+    <string name="mobile_other_sites">其他可用站點</string>
 </resources>

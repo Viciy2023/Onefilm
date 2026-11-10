@@ -71,6 +71,7 @@ import com.onefilm.android.tv.compose.bridge.LibraryDataSource
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.bridge.SearchDataSource
 import com.onefilm.android.tv.compose.feature.home.HomeUiState
+import com.onefilm.android.tv.compose.feature.player.PlaybackSession
 import com.onefilm.android.tv.compose.feature.search.SearchSession
 import com.onefilm.android.tv.compose.feature.search.SearchUiState
 import com.onefilm.android.tv.mobileui.component.MobileHorizontalGrid
@@ -93,7 +94,14 @@ private enum class MobileTab(val labelRes: Int) {
 /** 手机端页面栈：列表 → 详情 → 播放器。 */
 sealed interface MobileScreen {
     data object Root : MobileScreen
-    data class Detail(val key: String, val id: String, val title: String, val poster: String?) : MobileScreen
+    data class SearchResults(val keyword: String) : MobileScreen
+    data class Detail(
+        val key: String,
+        val id: String,
+        val title: String,
+        val poster: String?,
+        val returnTo: MobileScreen? = null,
+    ) : MobileScreen
     data class Player(val detail: Detail) : MobileScreen
 }
 
@@ -119,7 +127,13 @@ fun MobileApp() {
 
     fun openCard(card: MediaCard) {
         if (card.key.isNotBlank() && card.id.isNotBlank()) {
-            screen = MobileScreen.Detail(card.key, card.id, card.title, card.posterUrl)
+            // 首页/分类的榜单条目（豆瓣）没有播放源：先进入搜索结果页，从结果里选站点再进详情。
+            val meta = card.key == "onefilm_home" || card.id.startsWith("douban:")
+            screen = if (meta) {
+                MobileScreen.SearchResults(card.title)
+            } else {
+                MobileScreen.Detail(card.key, card.id, card.title, card.posterUrl)
+            }
         }
     }
 
@@ -150,6 +164,23 @@ fun MobileApp() {
     BackHandler(enabled = categoryTarget != null) { categoryTarget = null }
 
     when (val current = screen) {
+        is MobileScreen.SearchResults -> {
+            MobileSearchResultsScreen(
+                keyword = current.keyword,
+                onBack = { screen = MobileScreen.Root },
+                onCardClick = { card ->
+                    screen = MobileScreen.Detail(
+                        key = card.key,
+                        id = card.id,
+                        title = card.title,
+                        poster = card.posterUrl,
+                        returnTo = current,
+                    )
+                },
+            )
+            return
+        }
+
         is MobileScreen.Detail -> {
             MobileDetailScreen(
                 key = current.key,
@@ -157,13 +188,11 @@ fun MobileApp() {
                 title = current.title,
                 poster = current.poster,
                 onBack = {
-                    screen = MobileScreen.Root
-                    homeRefresh++
+                    PlaybackSession.pause()
+                    screen = current.returnTo ?: MobileScreen.Root
+                    if (current.returnTo == null) homeRefresh++
                 },
                 onOpenPlayer = { screen = MobileScreen.Player(current) },
-                onSwitchSite = { newKey, newId, newTitle, newPoster ->
-                    screen = MobileScreen.Detail(newKey, newId, newTitle, newPoster)
-                },
             )
             return
         }
@@ -801,5 +830,83 @@ private fun MobileStatus(text: String, onRetry: () -> Unit) {
         Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(12.dp))
         Button(onClick = onRetry) { Text(stringResource(R.string.mobile_retry)) }
+    }
+}
+
+
+/** 从首页/分类榜单卡片进入的搜索结果页：选中一个站点后再进详情。 */
+@Composable
+private fun MobileSearchResultsScreen(
+    keyword: String,
+    onBack: () -> Unit,
+    onCardClick: (MediaCard) -> Unit,
+) {
+    val state by SearchSession.state.collectAsState()
+    LaunchedEffect(keyword) {
+        SearchSession.start(ComposeDependencies.searchDataSource, keyword)
+    }
+    BackHandler { onBack() }
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding(),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "‹",
+                fontSize = 34.sp,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(onClick = onBack)
+                    .padding(horizontal = 8.dp),
+            )
+            Text(
+                stringResource(R.string.menu_search) + " · " + keyword,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        when (val current = state) {
+            SearchUiState.Idle, SearchUiState.Loading -> MobileLoading()
+            is SearchUiState.Empty -> MobileHint(stringResource(R.string.mobile_search_empty, current.keyword))
+            is SearchUiState.Error -> MobileHint(current.message)
+            is SearchUiState.Content -> {
+                Text(
+                    stringResource(R.string.mobile_search_result_count, current.items.size) +
+                        if (!current.done) " · " + stringResource(R.string.mobile_search_searching) else "",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+                BoxWithConstraints(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
+                    val rowGap = 8.dp
+                    val minRowHeight = 120.dp
+                    val rows = ((maxHeight + rowGap) / (minRowHeight + rowGap))
+                        .toInt()
+                        .coerceAtLeast(4)
+                    val rowHeight = ((maxHeight - rowGap * (rows - 1)) / rows)
+                        .coerceAtLeast(96.dp)
+                    val cardWidth = rowHeight * 2f / 3f
+                    MobileHorizontalGrid(
+                        items = current.items,
+                        rows = rows,
+                        rowHeight = rowHeight,
+                        cardWidth = cardWidth,
+                        rowGap = rowGap,
+                        colGap = 10.dp,
+                        showSite = true,
+                        onCardClick = onCardClick,
+                    )
+                }
+            }
+        }
     }
 }

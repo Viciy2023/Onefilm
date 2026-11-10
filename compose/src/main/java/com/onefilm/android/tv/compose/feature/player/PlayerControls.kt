@@ -100,6 +100,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.media3.common.Player
@@ -231,10 +232,12 @@ fun PlayerControls(
     onSelectEpisode: ((Int) -> Unit)? = null,
     onPrevious: (() -> Unit)? = null,
     onNext: (() -> Unit)? = null,
+    host: PlayerChromeHost? = null,
     modifier: Modifier = Modifier,
 ) {
     val player = PlaybackSession.player
     val context = LocalContext.current
+    val useFocus = host?.usesFocus == true
     val danmakuKey = "${PlaybackSession.siteKey}:${PlaybackSession.vodId}:${PlaybackSession.currentEpisode?.url.orEmpty()}"
     val configuration = LocalConfiguration.current
     val isTv = (configuration.uiMode and android.content.res.Configuration.UI_MODE_TYPE_MASK) ==
@@ -302,66 +305,6 @@ fun PlayerControls(
         showTracks || showDanmakuPanel || showSubtitlePanel || showChapters ||
         showEditions || showDescription || showSpeed
 
-    SideEffect {
-        TvPlayerKeyState.fullscreenActive = !inline
-        TvPlayerKeyState.controlsVisible = controlsVisible
-        if (!controlsVisible) TvPlayerKeyState.playFocused = false
-        TvPlayerKeyState.menuOpen = overlayOpen
-        TvPlayerKeyState.requestControls = {
-            if (!controlsVisible) revealToMenu = false
-            controlsVisible = true
-        }
-        TvPlayerKeyState.requestControlsToMenu = {
-            if (!controlsVisible) revealToMenu = true
-            controlsVisible = true
-        }
-        TvPlayerKeyState.hideControls = { controlsVisible = false }
-        TvPlayerKeyState.closeOverlay = {
-            // 从「更多」打开的子面板关闭后，返回上一层「更多」，再按一次才真正收起。
-            fun restoreMore() {
-                if (moreParent) {
-                    moreParent = false
-                    showMore = true
-                }
-            }
-            when {
-                showDlna -> { showDlna = false; restoreMore(); true }
-                showParse -> { showParse = false; restoreMore(); true }
-                showQuality -> { showQuality = false; restoreMore(); true }
-                showTracks -> { showTracks = false; restoreMore(); true }
-                showDanmakuPanel -> {
-                    if (danmakuPage != -1) {
-                        danmakuPage = -1
-                    } else {
-                        showDanmakuPanel = false
-                        restoreMore()
-                    }
-                    true
-                }
-                showSubtitlePanel -> { showSubtitlePanel = false; restoreMore(); true }
-                showChapters -> { showChapters = false; restoreMore(); true }
-                showEditions -> { showEditions = false; restoreMore(); true }
-                showDescription -> { showDescription = false; restoreMore(); true }
-                showSpeed -> { showSpeed = false; restoreMore(); true }
-                showEpisodes -> { showEpisodes = false; restoreMore(); true }
-                showMore -> { showMore = false; moreParent = false; true }
-                else -> false
-            }
-        }
-        TvPlayerKeyState.onUserInteraction = { lastInteractionAt = SystemClock.uptimeMillis() }
-    }
-    DisposableEffect(Unit) {
-        onDispose {
-            TvPlayerKeyState.fullscreenActive = false
-            TvPlayerKeyState.requestControls = null
-            TvPlayerKeyState.requestControlsToMenu = null
-            TvPlayerKeyState.hideControls = null
-            TvPlayerKeyState.closeOverlay = null
-            TvPlayerKeyState.seekBy = null
-            TvPlayerKeyState.onUserInteraction = null
-        }
-    }
-
     val resContext = LocalContext.current
 
     // 本地字幕：用应用内文件浏览页（电视上没有 DocumentsUI，OpenDocument 会崩）。
@@ -387,8 +330,61 @@ fun PlayerControls(
         )
     }
 
+    fun closeTopOverlay(): Boolean {
+        // 从「更多」打开的子面板关闭后，返回上一层「更多」，再按一次才真正收起。
+        fun restoreMore() {
+            if (moreParent) {
+                moreParent = false
+                showMore = true
+            }
+        }
+        return when {
+            showDlna -> { showDlna = false; restoreMore(); true }
+            showParse -> { showParse = false; restoreMore(); true }
+            showQuality -> { showQuality = false; restoreMore(); true }
+            showTracks -> { showTracks = false; restoreMore(); true }
+            showDanmakuPanel -> {
+                if (danmakuPage != -1) {
+                    danmakuPage = -1
+                } else {
+                    showDanmakuPanel = false
+                    restoreMore()
+                }
+                true
+            }
+            showSubtitlePanel -> { showSubtitlePanel = false; restoreMore(); true }
+            showChapters -> { showChapters = false; restoreMore(); true }
+            showEditions -> { showEditions = false; restoreMore(); true }
+            showDescription -> { showDescription = false; restoreMore(); true }
+            showSpeed -> { showSpeed = false; restoreMore(); true }
+            showEpisodes -> { showEpisodes = false; restoreMore(); true }
+            showMore -> { showMore = false; moreParent = false; true }
+            else -> false
+        }
+    }
+
+    // 触摸端：返回键关闭最上层图层；TV 端由 Activity 的 dispatchKeyEvent 先行处理。
+    BackHandler(enabled = !inline) {
+        if (!closeTopOverlay()) onBack?.invoke()
+    }
+
     SideEffect {
-        TvPlayerKeyState.seekBy = { deltaMs -> seekWithHint(deltaMs) }
+        host?.onControlsVisible(controlsVisible)
+        host?.onMenuOpen(overlayOpen)
+        host?.bind(
+            reveal = {
+                if (!controlsVisible) revealToMenu = false
+                controlsVisible = true
+            },
+            revealToMenu = {
+                if (!controlsVisible) revealToMenu = true
+                controlsVisible = true
+            },
+            hide = { controlsVisible = false },
+            closeTop = { closeTopOverlay() },
+            seekBy = { deltaMs -> seekWithHint(deltaMs) },
+            userInteraction = { lastInteractionAt = SystemClock.uptimeMillis() },
+        )
     }
     LaunchedEffect(seekHint) {
         if (seekHint != null) {
@@ -521,6 +517,7 @@ fun PlayerControls(
     // 按键处理本身就会唤出控制栏。
     // 面板打开时把焦点移进去，关闭后还给菜单行；否则遥控器焦点会留在已移除的节点上。
     LaunchedEffect(showEpisodes, showParse, showQuality, showTracks, showDanmakuPanel, showSubtitlePanel, showChapters, showEditions, showDescription, showSpeed) {
+        if (!useFocus) return@LaunchedEffect
         val open = overlayOpen
         if (open) {
             panelWasOpen = true
@@ -546,6 +543,7 @@ fun PlayerControls(
     }
     // 弹幕面板有根页/选项页/屏蔽词页三级，翻页后要重新把焦点放到第一项。
     LaunchedEffect(showDanmakuPanel, danmakuPage) {
+        if (!useFocus) return@LaunchedEffect
         if (showDanmakuPanel) {
             delay(80)
             runCatching { danmakuFirstFocus.requestFocus() }
@@ -554,6 +552,7 @@ fun PlayerControls(
     // 「更多」是从菜单行点开的，必须显式把焦点送进面板的第一项。
     // 首帧可能还没完成布局，requestFocus 会抛异常，这里短间隔重试两次。
     LaunchedEffect(showMore) {
+        if (!useFocus) return@LaunchedEffect
         if (showMore) {
             delay(120)
             if (runCatching { moreFirstFocus.requestFocus() }.isFailure) {
@@ -563,6 +562,7 @@ fun PlayerControls(
         }
     }
     LaunchedEffect(showMore, isTv, inline) {
+        if (!useFocus) return@LaunchedEffect
         // The inline player must not steal focus from the detail actions.
         // Only the dedicated full-screen route owns the initial player focus.
         if (!inline && !showMore && isTv) {
@@ -570,6 +570,7 @@ fun PlayerControls(
         }
     }
     LaunchedEffect(player, controlsVisible, isTv, inline) {
+        if (!useFocus) return@LaunchedEffect
         if (!inline && controlsVisible && isTv) {
             // 等控件完成淡入后再请求焦点，避免暂停后确认键落空。
             delay(100)
@@ -594,27 +595,6 @@ fun PlayerControls(
     Box(
         modifier
             .fillMaxSize()
-            .onPreviewKeyEvent { event ->
-                dispatchPlayerKey(
-                    event = event,
-                    inline = inline,
-                    actions = PlayerKeyActions(
-                        hidden = { !controlsVisible },
-                        overlayOpen = { overlayOpen },
-                        seek = { deltaMs -> seekWithHint(deltaMs) },
-                        reveal = {
-                            revealToMenu = false
-                            controlsVisible = true
-                        },
-                        revealToMenu = {
-                            revealToMenu = true
-                            controlsVisible = true
-                        },
-                        togglePlay = { PlaybackSession.toggle() },
-                        touch = { lastInteractionAt = SystemClock.uptimeMillis() },
-                    ),
-                )
-            }
             .pointerInput(inline) {
                 detectTapGestures(
                     onTap = {
@@ -727,7 +707,7 @@ fun PlayerControls(
                         .focusRequester(playFocus)
                         .onFocusChanged {
                             playButtonFocused = it.isFocused
-                            TvPlayerKeyState.playFocused = it.isFocused
+                            host?.onPlayFocused(it.isFocused)
                         }
                         .focusable()
                         .clip(CircleShape)
@@ -1178,7 +1158,11 @@ private fun trackLabel(track: com.onefilm.android.tv.compose.bridge.LegacyTrack)
 
 /** 详情页顶部小窗播放器。 */
 @Composable
-fun InlinePlayer(onExpand: () -> Unit, modifier: Modifier = Modifier) {
+fun InlinePlayer(
+    onExpand: () -> Unit,
+    modifier: Modifier = Modifier,
+    video: @Composable () -> Unit = { VideoSurface(Modifier.fillMaxSize()) },
+) {
     var focused by remember { mutableStateOf(false) }
     Box(
         modifier
@@ -1200,7 +1184,7 @@ fun InlinePlayer(onExpand: () -> Unit, modifier: Modifier = Modifier) {
                 } else false
             },
     ) {
-        VideoSurface(Modifier.fillMaxSize())
+        video()
         PlayerControls(
             inline = true,
             onToggleFullscreen = onExpand,

@@ -202,4 +202,5 @@
     <string name="mobile_subtitle_title">คำบรรยาย</string>
     <string name="mobile_searching_source">กำลังค้นหาแหล่งที่เล่นได้…</string>
     <string name="mobile_no_source">ไม่พบแหล่งที่เล่นได้</string>
+    <string name="mobile_other_sites">แหล่งอื่น</string>
 </resources>

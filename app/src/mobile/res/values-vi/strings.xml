@@ -202,4 +202,5 @@
     <string name="mobile_subtitle_title">Phụ đề</string>
     <string name="mobile_searching_source">Đang tìm nguồn phát…</string>
     <string name="mobile_no_source">Không tìm thấy nguồn phát</string>
+    <string name="mobile_other_sites">Nguồn khác</string>
 </resources>

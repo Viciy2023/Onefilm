@@ -202,4 +202,5 @@
     <string name="mobile_subtitle_title">Subtitles</string>
     <string name="mobile_searching_source">Searching available sources…</string>
     <string name="mobile_no_source">No playable source found</string>
+    <string name="mobile_other_sites">Other sources</string>
 </resources>

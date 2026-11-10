@@ -15,6 +15,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -63,33 +64,62 @@ fun PlayerRoute(onBack: () -> Unit) {
         }
     }
 
+    val host = remember { TvPlayerChromeHost() }
+    DisposableEffect(host) {
+        TvPlayerKeyState.fullscreenActive = true
+        onDispose {
+            host.clear()
+        }
+    }
+
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         VideoSurface(Modifier.fillMaxSize())
-        PlayerControls(
-            inline = false,
-            onToggleFullscreen = onBack,
-            onBack = onBack,
-            onSelectEpisode = { index ->
-                PlaybackSession.playEpisode(
-                    context,
-                    index,
-                    com.onefilm.android.tv.compose.bridge.ComposeDependencies.playbackResolver,
-                )
-            },
-            onPrevious = {
-                PlaybackSession.playPrevious(
-                    context,
-                    com.onefilm.android.tv.compose.bridge.ComposeDependencies.playbackResolver,
-                )
-            },
-            onNext = {
-                PlaybackSession.playNext(
-                    context,
-                    com.onefilm.android.tv.compose.bridge.ComposeDependencies.playbackResolver,
-                )
-            },
-            modifier = Modifier.fillMaxSize(),
-        )
+        Box(
+            Modifier
+                .fillMaxSize()
+                .onPreviewKeyEvent { event ->
+                    dispatchPlayerKey(
+                        event = event,
+                        inline = false,
+                        actions = PlayerKeyActions(
+                            hidden = { !host.controlsVisible },
+                            overlayOpen = { host.overlayOpen },
+                            seek = { deltaMs -> TvPlayerKeyState.seekBy?.invoke(deltaMs) },
+                            reveal = { TvPlayerKeyState.requestControls?.invoke() },
+                            revealToMenu = { TvPlayerKeyState.requestControlsToMenu?.invoke() },
+                            togglePlay = { PlaybackSession.toggle() },
+                            touch = { TvPlayerKeyState.onUserInteraction?.invoke() },
+                        ),
+                    )
+                },
+        ) {
+            PlayerControls(
+                inline = false,
+                onToggleFullscreen = onBack,
+                onBack = onBack,
+                onSelectEpisode = { index ->
+                    PlaybackSession.playEpisode(
+                        context,
+                        index,
+                        com.onefilm.android.tv.compose.bridge.ComposeDependencies.playbackResolver,
+                    )
+                },
+                onPrevious = {
+                    PlaybackSession.playPrevious(
+                        context,
+                        com.onefilm.android.tv.compose.bridge.ComposeDependencies.playbackResolver,
+                    )
+                },
+                onNext = {
+                    PlaybackSession.playNext(
+                        context,
+                        com.onefilm.android.tv.compose.bridge.ComposeDependencies.playbackResolver,
+                    )
+                },
+                host = host,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
     }
 }
 
