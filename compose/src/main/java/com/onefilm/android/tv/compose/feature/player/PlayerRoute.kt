@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -27,6 +28,12 @@ fun PlayerRoute(onBack: () -> Unit) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
     val previousOrientation = remember(activity) { activity?.requestedOrientation }
+    // 记录进入全屏前系统栏是否可见：TV 宿主是全屏（状态栏隐藏），退出时必须恢复原状态，
+    // 否则状态栏会被重新显示，配合 statusBarsPadding() 会在所有页面顶部顶出一条空白。
+    val systemBarsVisibleOnEnter = remember(activity) {
+        activity?.window?.decorView?.rootWindowInsets
+            ?.isVisible(WindowInsetsCompat.Type.systemBars()) ?: false
+    }
 
     DisposableEffect(activity) {
         val window = activity?.window
@@ -50,8 +57,17 @@ fun PlayerRoute(onBack: () -> Unit) {
         }
         onDispose {
             if (activity?.isChangingConfigurations != true) {
-                controller?.show(WindowInsetsCompat.Type.systemBars())
-                if (window != null) WindowCompat.setDecorFitsSystemWindows(window, true)
+                // 恢复进入前的系统栏可见性：TV 宿主原本全屏，就不能在这里把状态栏留在屏幕上。
+                if (systemBarsVisibleOnEnter) {
+                    controller?.show(WindowInsetsCompat.Type.systemBars())
+                } else {
+                    controller?.hide(WindowInsetsCompat.Type.systemBars())
+                }
+                if (window != null) {
+                    WindowCompat.setDecorFitsSystemWindows(window, true)
+                    // 立即刷新 inset 分发，避免 Compose 继续沿用全屏时的旧 inset。
+                    ViewCompat.requestApplyInsets(window.decorView)
+                }
                 // 恢复进入全屏前由宿主设置的方向，TV 必须回到横屏详情，手机才回到竖屏。
                 activity?.requestedOrientation = previousOrientation
                     ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
