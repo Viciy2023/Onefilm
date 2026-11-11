@@ -211,4 +211,58 @@ class M3u8AdFilterPtsTest {
         assertFalse(result.changed)
         assertEquals(text, result.text)
     }
+
+    @Test
+    fun `stream probe stops early once ad and following main group are known`() {
+        val groups = listOf(
+            group(5, 4.36, "c0_"),
+            group(5, 4.36, "c1_"),
+            group(3, 4.87, "a0_"),
+            group(2, 2.55, "a1_"),
+            group(5, 4.36, "c2_"),
+            group(5, 4.36, "c3_"),
+            group(5, 4.36, "c4_"),
+        )
+        val pts = mapOf(
+            "https://cdn.ffzy/v/c0_0.ts" to 100_000L,
+            "https://cdn.ffzy/v/c1_0.ts" to 121_800L,
+            "https://cdn.ffzy/v/a0_0.ts" to 1_466L,
+            "https://cdn.ffzy/v/a1_0.ts" to 16_066L,
+            "https://cdn.ffzy/v/c2_0.ts" to 163_300L,
+            "https://cdn.ffzy/v/c3_0.ts" to 185_100L,
+            "https://cdn.ffzy/v/c4_0.ts" to 206_900L,
+        )
+        val probed = AtomicInteger()
+        val stream = object : M3u8AdFilter.PtsStreamProbe {
+            override fun probeStream(
+                groupFirstSegmentUrls: List<String>,
+                callback: M3u8AdFilter.PtsProbeCallback,
+                stop: M3u8AdFilter.PtsProbeStop,
+            ): List<Long?> {
+                val values = arrayOfNulls<Long>(groupFirstSegmentUrls.size)
+                for (i in groupFirstSegmentUrls.indices) {
+                    if (stop.shouldStop()) break
+                    val value = pts[groupFirstSegmentUrls[i]]
+                    values[i] = value
+                    probed.incrementAndGet()
+                    callback.onResult(i, value)
+                }
+                return values.toList()
+            }
+        }
+
+        val result = M3u8AdFilter.filter(
+            "https://cdn.ffzy/v/index.m3u8",
+            playlist(groups),
+            emptyList(),
+            M3u8AdFilter.Limits(maxSegmentsForHeuristic = 0),
+            stream,
+        )
+        assertTrue(result.changed)
+        assertTrue(result.pts)
+        assertEquals(19.71, result.removedSeconds, 0.05)
+        // 确认「广告段 + 其后正片组」后即停，不会把 7 个组全部探测完
+        assertTrue("probed=${probed.get()}", probed.get() < groups.size)
+        assertEquals(5, probed.get())
+    }
 }

@@ -37,7 +37,7 @@ import okhttp3.ResponseBody;
  *
  * <p>本方法运行在 media3 的 loader 线程，允许有限阻塞。
  */
-public final class HlsPtsProbe implements M3u8AdFilter.PtsProbe {
+public final class HlsPtsProbe implements M3u8AdFilter.PtsProbe, M3u8AdFilter.PtsStreamProbe {
 
     private static final String TAG = "HlsPtsProbe";
 
@@ -82,6 +82,18 @@ public final class HlsPtsProbe implements M3u8AdFilter.PtsProbe {
 
     @Override
     public List<Long> probe(List<String> groupFirstSegmentUrls) {
+        return probeStream(
+                groupFirstSegmentUrls,
+                (index, ptsMillis) -> {
+                },
+                () -> false);
+    }
+
+    @Override
+    public List<Long> probeStream(
+            List<String> groupFirstSegmentUrls,
+            M3u8AdFilter.PtsProbeCallback callback,
+            M3u8AdFilter.PtsProbeStop stop) {
         long startedAt = SystemClock.elapsedRealtime();
         int size = groupFirstSegmentUrls == null ? 0 : groupFirstSegmentUrls.size();
         Long[] result = new Long[size];
@@ -94,6 +106,7 @@ public final class HlsPtsProbe implements M3u8AdFilter.PtsProbe {
             CacheEntry entry = url == null ? null : CACHE.get(url);
             if (entry != null && now - entry.storedAt <= CACHE_TTL_MS) {
                 result[i] = entry.ptsMillis;
+                callback.onResult(i, entry.ptsMillis);
             } else {
                 misses.add(i);
             }
@@ -101,41 +114,72 @@ public final class HlsPtsProbe implements M3u8AdFilter.PtsProbe {
         if (misses.isEmpty()) return Arrays.asList(result);
 
         long deadline = SystemClock.elapsedRealtime() + TOTAL_BUDGET_MS;
-        CountDownLatch latch = new CountDownLatch(misses.size());
-        for (int index : misses) {
-            String url = groupFirstSegmentUrls.get(index);
-            fetch(url, deadline, pts -> {
-                result[index] = pts;
-                latch.countDown();
-            });
-        }
-
-        try {
-            latch.await(TOTAL_BUDGET_MS, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        // 分批探测：每批最多 MAX_CONCURRENCY 个，批间检查早停信号。
+        // 这样一旦分类器确认广告，后续批次不会再发请求，起播等待显著缩短。
+        for (int start = 0; start < misses.size(); start += MAX_CONCURRENCY) {
+            if (stop.shouldStop()) break;
+            if (SystemClock.elapsedRealtime() >= deadline) break;
+            int end = Math.min(start + MAX_CONCURRENCY, misses.size());
+            List<Integer> chunk = misses.subList(start, end);
+            CountDownLatch latch = new CountDownLatch(chunk.size());
+            for (int index : chunk) {
+                if (stop.shouldStop()) {
+                    latch.countDown();
+                    continue;
+                }
+                String url = groupFirstSegmentUrls.get(index);
+                fetch(url, deadline, pts -> {
+                    result[index] = pts;
+                    callback.onResult(index, pts);
+                    latch.countDown();
+                });
+            }
+            long remaining = deadline - SystemClock.elapsedRealtime();
+            if (remaining <= 0) break;
+            long waitUntil = SystemClock.elapsedRealtime() + remaining;
+            try {
+                // 短轮询：批内一旦确认广告就立刻返回，不必等这批里最慢的请求。
+                while (latch.getCount() > 0
+                        && SystemClock.elapsedRealtime() < waitUntil
+                        && !stop.shouldStop()) {
+                    latch.await(20, TimeUnit.MILLISECONDS);
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+            if (stop.shouldStop()) break;
         }
 
         // 预算内再补测一次首轮超时/失败的组，避免广告所在组恰好落在失败集合里。
-        List<Integer> retry = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            String url = groupFirstSegmentUrls.get(i);
-            if (result[i] == null && url != null && !url.isEmpty()) retry.add(i);
-        }
-        if (!retry.isEmpty()) {
-            long remaining = deadline - SystemClock.elapsedRealtime();
-            if (remaining > 300) {
-                CountDownLatch second = new CountDownLatch(retry.size());
-                for (int index : retry) {
-                    fetch(groupFirstSegmentUrls.get(index), deadline, pts -> {
-                        if (pts != null) result[index] = pts;
-                        second.countDown();
-                    });
-                }
-                try {
-                    second.await(remaining, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+        if (!stop.shouldStop()) {
+            List<Integer> retry = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
+                String url = groupFirstSegmentUrls.get(i);
+                if (result[i] == null && url != null && !url.isEmpty()) retry.add(i);
+            }
+            if (!retry.isEmpty()) {
+                long remaining = deadline - SystemClock.elapsedRealtime();
+                if (remaining > 300) {
+                    CountDownLatch second = new CountDownLatch(retry.size());
+                    for (int index : retry) {
+                        if (stop.shouldStop()) {
+                            second.countDown();
+                            continue;
+                        }
+                        fetch(groupFirstSegmentUrls.get(index), deadline, pts -> {
+                            if (pts != null) {
+                                result[index] = pts;
+                                callback.onResult(index, pts);
+                            }
+                            second.countDown();
+                        });
+                    }
+                    try {
+                        second.await(remaining, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
                 }
             }
         }
@@ -146,7 +190,8 @@ public final class HlsPtsProbe implements M3u8AdFilter.PtsProbe {
         }
         Log.d(TAG, "probe groups=" + size
                 + " hits=" + hits
-                + " cost=" + (SystemClock.elapsedRealtime() - startedAt) + "ms");
+                + " cost=" + (SystemClock.elapsedRealtime() - startedAt) + "ms"
+                + (stop.shouldStop() ? " earlyStop" : ""));
         return Arrays.asList(result);
     }
 

@@ -41,6 +41,34 @@ object M3u8AdFilter {
         fun probe(groupFirstSegmentUrls: List<String>): List<Long?>
     }
 
+    /** 流式探测回调：每拿到一个分组的结果回调一次。 */
+    fun interface PtsProbeCallback {
+        fun onResult(index: Int, ptsMillis: Long?)
+    }
+
+    /** 早停信号：返回 true 表示其余尚未发出的探测可以不再发起。 */
+    fun interface PtsProbeStop {
+        fun shouldStop(): Boolean
+    }
+
+    /**
+     * 可流式返回结果的 PTS 探测（实现 [PtsStreamProbe] 时优先使用）。
+     *
+     * 过滤器每拿到一组结果就会尝试分类；一旦确认「广告段 + 其后已回归正片」，
+     * 会通过 [PtsProbeStop] 通知实现停止剩余请求，缩短起播等待。
+     */
+    interface PtsStreamProbe : PtsProbe {
+        fun probeStream(
+            groupFirstSegmentUrls: List<String>,
+            callback: PtsProbeCallback,
+            stop: PtsProbeStop,
+        ): List<Long?>
+
+        /** 兼容批量调用（不支持早停），子类可覆盖。 */
+        override fun probe(groupFirstSegmentUrls: List<String>): List<Long?> =
+            probeStream(groupFirstSegmentUrls, { _, _ -> }, { false })
+    }
+
     data class Limits(
         /** 最多删除分片比例。 */
         val maxRemovedRatio: Double = 0.20,
@@ -222,9 +250,8 @@ object M3u8AdFilter {
         if (groups.size < 2) return null
         if (groups.any { it.segmentCount <= 0 }) return null
 
-        // 组数在上限内则全部探测；超过上限时等距抽样，保证覆盖整条时间轴，
-        // 避免像之前那样只探测前 N 组而漏掉 6 分钟处的插播。
-        val limited: List<Int> = if (groups.size <= limits.maxPtsGroups) {
+        // 组数在上限内则全部探测；超过上限时等距抽样。
+        val targets: List<Int> = if (groups.size <= limits.maxPtsGroups) {
             groups.indices.toList()
         } else {
             val budget = limits.maxPtsGroups
@@ -238,41 +265,77 @@ object M3u8AdFilter {
             picked.add(groups.size - 1)
             picked.take(budget).sorted()
         }
-        // 探测顺序：先用等距铺开的 16 个组覆盖整条时间轴（并发首波就能覆盖到 6 分钟这类位置），
-        // 其余组随后补测。避免像之前那样首波全是前 24 组、广告组恰好超时的情况。
-        val positions = limited.indices.toList()
-        val wave = minOf(16, positions.size)
-        val spread = if (wave > 0) (0 until wave).map { positions[(it * positions.size) / wave] } else emptyList()
-        val targets: List<Int> = (spread + positions).distinct().map { limited[it] }
 
-        val ptsValues = try {
-            probe.probe(targets.map { groups[it].firstSegmentUrl })
-        } catch (t: Throwable) {
-            return null
-        }
-        if (ptsValues.size != targets.size) return null
+        val results = arrayOfNulls<Long>(groups.size)
+        val urls = targets.map { groups[it].firstSegmentUrl }
+        val finished = java.util.concurrent.atomic.AtomicBoolean(false)
 
-        val probed = groups.mapIndexed { index, group ->
-            val position = targets.indexOf(index)
-            group.copy(ptsMillis = if (position >= 0) ptsValues[position] else null)
-        }
-        if (probed.count { it.ptsMillis != null } < 2) return null
-
-        val verdict = HlsPtsContinuity.classify(probed) ?: return null
-        if (verdict.adGroups.isEmpty()) return null
-        if (HlsPtsContinuity.longestAdBreakMillis(probed, verdict.adGroups) >
-            HlsPtsContinuity.MAX_AD_BREAK_MILLIS
-        ) {
-            return null
+        fun snapshot(): List<HlsPtsContinuity.Group> = groups.mapIndexed { index, group ->
+            group.copy(ptsMillis = results[index])
         }
 
-        val remove = HashSet<Int>()
-        for (index in verdict.adGroups) {
-            for (line in groups[index].startLine..groups[index].endLine) remove.add(line)
+        /** 与最终返回完全一致的判定：分类 + 广告时长上限 + 安全阀。 */
+        fun decide(probed: List<HlsPtsContinuity.Group>): Applied? {
+            if (probed.count { it.ptsMillis != null } < 2) return null
+            val verdict = HlsPtsContinuity.classify(probed) ?: return null
+            if (verdict.adGroups.isEmpty()) return null
+            if (HlsPtsContinuity.longestAdBreakMillis(probed, verdict.adGroups) >
+                HlsPtsContinuity.MAX_AD_BREAK_MILLIS
+            ) {
+                return null
+            }
+            val remove = HashSet<Int>()
+            for (index in verdict.adGroups) {
+                for (line in groups[index].startLine..groups[index].endLine) remove.add(line)
+            }
+            if (remove.isEmpty()) return null
+            val out = lines.filterIndexed { index, _ -> index !in remove }.joinToString("\n")
+            val applied = diff(text, out) ?: return null
+            if (!isSafe(text, applied, limits)) return null
+            return applied
         }
-        if (remove.isEmpty()) return null
-        val out = lines.filterIndexed { index, _ -> index !in remove }.joinToString("\n")
-        return diff(text, out)
+
+        val stream = probe as? PtsStreamProbe
+        if (stream != null) {
+            val stop = java.util.concurrent.atomic.AtomicBoolean(false)
+            try {
+                stream.probeStream(
+                    urls,
+                    PtsProbeCallback { position, pts ->
+                        val groupIndex = targets.getOrNull(position) ?: return@PtsProbeCallback
+                        synchronized(results) {
+                            if (finished.get()) return@synchronized
+                            results[groupIndex] = pts
+                            if (pts == null || stop.get()) return@synchronized
+                            // 用与最终返回相同的判定（含安全阀）决定是否早停，
+                            // 避免「提前停止但最终又被安全阀拒绝」导致广告漏删。
+                            val snap = snapshot()
+                            val verdict = HlsPtsContinuity.classify(snap) ?: return@synchronized
+                            if (verdict.adGroups.isEmpty()) return@synchronized
+                            // 广告段紧邻的下一组必须已探测到，否则可能把「只探测到一半的广告」当成完整广告。
+                            val lastAd = verdict.adGroups.max()
+                            if (snap.getOrNull(lastAd + 1)?.ptsMillis == null) return@synchronized
+                            if (decide(snap) != null) stop.set(true)
+                        }
+                    },
+                    PtsProbeStop { stop.get() },
+                )
+            } catch (t: Throwable) {
+                return null
+            }
+        } else {
+            val values = try {
+                probe.probe(urls)
+            } catch (t: Throwable) {
+                return null
+            }
+            if (values.size != targets.size) return null
+            targets.forEachIndexed { position, groupIndex -> results[groupIndex] = values[position] }
+        }
+
+        finished.set(true)
+        val probed = synchronized(results) { snapshot() }
+        return decide(probed)
     }
 
     /**

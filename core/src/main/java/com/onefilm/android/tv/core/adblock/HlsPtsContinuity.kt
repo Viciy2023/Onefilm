@@ -127,8 +127,12 @@ object HlsPtsContinuity {
             for (i in 1 until groups.size) {
                 if (i in ads || groups[i].ptsMillis != null) continue
                 if ((i - 1) in ads || (i + 1) in ads) {
-                    ads.add(i)
-                    expanded = true
+                    // 只有后面还有探测到的组时才扩展，避免早停后把尾部整段未探测内容都当广告。
+                    val hasProbedAfter = (i + 1 until groups.size).any { groups[it].ptsMillis != null }
+                    if (hasProbedAfter) {
+                        ads.add(i)
+                        expanded = true
+                    }
                 }
             }
         }
