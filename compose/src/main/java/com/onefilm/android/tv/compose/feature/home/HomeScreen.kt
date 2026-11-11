@@ -64,7 +64,7 @@ import com.onefilm.android.tv.compose.design.component.PosterItem
 import com.onefilm.android.tv.compose.design.PosterStyleController
 import com.onefilm.android.tv.compose.design.component.PosterCard
 import com.onefilm.android.tv.compose.design.component.SectionRow
-import com.onefilm.android.tv.compose.design.component.TvHeroRow
+import com.onefilm.android.tv.compose.design.component.TvHeroBlock
 import com.onefilm.android.tv.compose.R
 import androidx.compose.ui.res.stringResource
 
@@ -275,16 +275,15 @@ private fun TvHomeContent(
         ?: state.feed.sections.firstOrNull { it.items.isNotEmpty() }
         ?: return
     val horizontal = PosterStyleController.horizontal
-    // 横版模式：首行两张英雄卡（优先取 hero，其次取推荐段前两条），并避免在下方网格重复出现。
-    val heroes = if (horizontal) {
-        (state.feed.hero.ifEmpty { section.items })
-            .distinctBy { "${it.key}@${it.id}" }
-            .take(1)
+    // 横版模式首行：左侧英雄卡（2 列 × 2 行）+ 右侧 2×2 四张普通卡；其余条目继续普通网格。
+    val ordered = if (horizontal) {
+        (state.feed.hero + section.items).distinctBy { "${it.key}@${it.id}" }
     } else {
-        emptyList()
+        section.items
     }
-    val heroIds = heroes.map { "${it.key}@${it.id}" }.toSet()
-    val rest = section.items.filterNot { "${it.key}@${it.id}" in heroIds }
+    val hero = if (horizontal) ordered.firstOrNull() else null
+    val sideCards = if (hero != null) ordered.drop(1).take(4) else emptyList()
+    val rest = ordered.drop(if (hero != null) 1 + sideCards.size else 0)
     LazyVerticalGrid(
         columns = GridCells.Fixed(if (horizontal) 4 else 6),
         modifier = Modifier.fillMaxSize(),
@@ -292,9 +291,13 @@ private fun TvHomeContent(
         horizontalArrangement = Arrangement.spacedBy(if (horizontal) 12.dp else 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (heroes.isNotEmpty()) {
+        if (hero != null) {
             item(key = "home-hero", span = { GridItemSpan(maxLineSpan) }) {
-                TvHeroRow(items = heroes, onCardClick = onCardClick)
+                TvHeroBlock(
+                    hero = hero,
+                    sideCards = sideCards,
+                    onCardClick = onCardClick,
+                )
             }
         }
         gridItemsIndexed(
