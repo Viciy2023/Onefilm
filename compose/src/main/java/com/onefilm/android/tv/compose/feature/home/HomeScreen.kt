@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -63,6 +64,7 @@ import com.onefilm.android.tv.compose.design.component.PosterItem
 import com.onefilm.android.tv.compose.design.PosterStyleController
 import com.onefilm.android.tv.compose.design.component.PosterCard
 import com.onefilm.android.tv.compose.design.component.SectionRow
+import com.onefilm.android.tv.compose.design.component.TvHeroRow
 import com.onefilm.android.tv.compose.R
 import androidx.compose.ui.res.stringResource
 
@@ -272,23 +274,31 @@ private fun TvHomeContent(
     val section = state.feed.sections.firstOrNull { it.key == "recommend" && it.items.isNotEmpty() }
         ?: state.feed.sections.firstOrNull { it.items.isNotEmpty() }
         ?: return
-    TvPosterSection(section.items, onCardClick)
-}
-
-@Composable
-private fun TvPosterSection(
-    items: List<MediaCard>,
-    onCardClick: (MediaCard) -> Unit,
-) {
+    val horizontal = PosterStyleController.horizontal
+    // 横版模式：首行两张英雄卡（优先取 hero，其次取推荐段前两条），并避免在下方网格重复出现。
+    val heroes = if (horizontal) {
+        (state.feed.hero.ifEmpty { section.items })
+            .distinctBy { "${it.key}@${it.id}" }
+            .take(1)
+    } else {
+        emptyList()
+    }
+    val heroIds = heroes.map { "${it.key}@${it.id}" }.toSet()
+    val rest = section.items.filterNot { "${it.key}@${it.id}" in heroIds }
     LazyVerticalGrid(
-        columns = GridCells.Fixed(if (PosterStyleController.horizontal) 4 else 6),
+        columns = GridCells.Fixed(if (horizontal) 4 else 6),
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(if (PosterStyleController.horizontal) 12.dp else 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (horizontal) 12.dp else 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (heroes.isNotEmpty()) {
+            item(key = "home-hero", span = { GridItemSpan(maxLineSpan) }) {
+                TvHeroRow(items = heroes, onCardClick = onCardClick)
+            }
+        }
         gridItemsIndexed(
-            items = items,
+            items = rest,
             key = { index, card -> "${card.key}:${card.id}:$index" },
         ) { _, item ->
             PosterCard(
