@@ -31,8 +31,16 @@ fun PlayerRoute(onBack: () -> Unit) {
     // 记录进入全屏前系统栏是否可见：TV 宿主是全屏（状态栏隐藏），退出时必须恢复原状态，
     // 否则状态栏会被重新显示，配合 statusBarsPadding() 会在所有页面顶部顶出一条空白。
     val systemBarsVisibleOnEnter = remember(activity) {
-        activity?.window?.decorView?.rootWindowInsets
-            ?.isVisible(WindowInsetsCompat.Type.systemBars()) ?: false
+        val view = activity?.window?.decorView
+        val platformInsets = view?.rootWindowInsets
+        if (view == null || platformInsets == null) {
+            false
+        } else {
+            // 必须经 WindowInsetsCompat 包装，直接调平台 WindowInsets.isVisible(int)
+            // 只有 API 30+ 才有，Android 9 上会抛 NoSuchMethodError。
+            WindowInsetsCompat.toWindowInsetsCompat(platformInsets, view)
+                .isVisible(WindowInsetsCompat.Type.systemBars())
+        }
     }
 
     DisposableEffect(activity) {
