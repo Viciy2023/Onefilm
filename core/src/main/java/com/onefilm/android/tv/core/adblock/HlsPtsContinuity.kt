@@ -119,6 +119,20 @@ object HlsPtsContinuity {
             if (independent) ads.add(i)
         }
 
+        // 探测预算有限时，广告段里可能有组没探测到（PTS 为 null）；
+        // 与已判定为广告的组相邻的未探测组，按同一段广告处理。
+        var expanded = true
+        while (expanded) {
+            expanded = false
+            for (i in 1 until groups.size) {
+                if (i in ads || groups[i].ptsMillis != null) continue
+                if ((i - 1) in ads || (i + 1) in ads) {
+                    ads.add(i)
+                    expanded = true
+                }
+            }
+        }
+
         return Verdict(ads, main)
     }
 

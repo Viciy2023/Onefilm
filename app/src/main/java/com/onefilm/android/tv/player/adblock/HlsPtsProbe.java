@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -42,9 +43,9 @@ public final class HlsPtsProbe implements M3u8AdFilter.PtsProbe {
 
     private static final int RANGE_BYTES = 2048;
     private static final int READ_BYTES = 4096;
-    private static final long REQUEST_TIMEOUT_MS = 800L;
-    private static final long TOTAL_BUDGET_MS = 800L;
-    private static final int MAX_CONCURRENCY = 8;
+    private static final long REQUEST_TIMEOUT_MS = 2500L;
+    private static final long TOTAL_BUDGET_MS = 5000L;
+    private static final int MAX_CONCURRENCY = 16;
     private static final long CACHE_TTL_MS = 10 * 60 * 1000L;
     private static final int CACHE_MAX_ENTRIES = 512;
     private static final String USER_AGENT =
@@ -115,6 +116,30 @@ public final class HlsPtsProbe implements M3u8AdFilter.PtsProbe {
             Thread.currentThread().interrupt();
         }
 
+        // 预算内再补测一次首轮超时/失败的组，避免广告所在组恰好落在失败集合里。
+        List<Integer> retry = new ArrayList<>();
+        for (int i = 0; i < size; i++) {
+            String url = groupFirstSegmentUrls.get(i);
+            if (result[i] == null && url != null && !url.isEmpty()) retry.add(i);
+        }
+        if (!retry.isEmpty()) {
+            long remaining = deadline - SystemClock.elapsedRealtime();
+            if (remaining > 300) {
+                CountDownLatch second = new CountDownLatch(retry.size());
+                for (int index : retry) {
+                    fetch(groupFirstSegmentUrls.get(index), deadline, pts -> {
+                        if (pts != null) result[index] = pts;
+                        second.countDown();
+                    });
+                }
+                try {
+                    second.await(remaining, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+
         int hits = 0;
         for (Long value : result) {
             if (value != null) hits++;
@@ -134,12 +159,24 @@ public final class HlsPtsProbe implements M3u8AdFilter.PtsProbe {
 
         Request request;
         try {
-            request = new Request.Builder()
+            Request.Builder builder = new Request.Builder()
                     .url(url)
                     .header("Range", "bytes=0-" + (RANGE_BYTES - 1))
-                    .header("User-Agent", USER_AGENT)
-                    .header("Accept", "*/*")
-                    .build();
+                    .header("Accept", "*/*");
+            // 复用播放器的请求头（Referer/Cookie 等），否则部分 CDN 会 403 或超时。
+            boolean hasUserAgent = false;
+            for (Map.Entry<String, String> entry
+                    : com.onefilm.android.tv.compose.bridge.PlaybackHttpHeaders.INSTANCE
+                    .getHeaders().entrySet()) {
+                String name = entry.getKey();
+                String value = entry.getValue();
+                if (name == null || value == null || value.isEmpty()) continue;
+                if (name.equalsIgnoreCase("Range") || name.equalsIgnoreCase("Accept-Encoding")) continue;
+                if (name.equalsIgnoreCase("User-Agent")) hasUserAgent = true;
+                builder.header(name, value);
+            }
+            if (!hasUserAgent) builder.header("User-Agent", USER_AGENT);
+            request = builder.build();
         } catch (Throwable t) {
             onDone.accept(null);
             return;
@@ -149,6 +186,7 @@ public final class HlsPtsProbe implements M3u8AdFilter.PtsProbe {
         call.enqueue(new Callback() {
             @Override
             public void onFailure(Call call, java.io.IOException e) {
+                Log.d(TAG, "probe fail " + url + " : " + e);
                 onDone.accept(null);
             }
 
@@ -156,9 +194,14 @@ public final class HlsPtsProbe implements M3u8AdFilter.PtsProbe {
             public void onResponse(Call call, Response response) {
                 Long pts = null;
                 try (ResponseBody body = response.body()) {
-                    if (response.isSuccessful() && body != null) {
+                    if (!response.isSuccessful()) {
+                        Log.d(TAG, "probe http=" + response.code() + " " + url);
+                    } else if (body != null) {
                         byte[] bytes = readAtMost(body, READ_BYTES);
                         pts = TsPtsReader.INSTANCE.readPtsMillis(bytes);
+                        if (pts == null) {
+                            Log.d(TAG, "probe no-pts bytes=" + bytes.length + " " + url);
+                        }
                     }
                 } catch (Throwable ignored) {
                     // 探测失败不产生任何副作用

@@ -68,6 +68,43 @@ class M3u8AdFilterPtsTest {
     }
 
     @Test
+    fun `ffzy style ad with reset timeline is removed`() {
+        // 真实 FF 线路的结构：广告段 PTS 重置到 1.4s，随后按自身时长推进，再回到正片时间轴。
+        val groups = listOf(
+            group(5, 4.36, "c0_"),
+            group(14, 3.99, "c1_"),
+            group(3, 4.87, "a0_"),
+            group(2, 2.55, "a1_"),
+            group(10, 3.94, "c2_"),
+        )
+        val pts = mapOf(
+            "https://cdn.ffzy/v/c0_0.ts" to 283_640L,
+            "https://cdn.ffzy/v/c1_0.ts" to 305_453L,
+            "https://cdn.ffzy/v/a0_0.ts" to 1_466L,
+            "https://cdn.ffzy/v/a1_0.ts" to 16_033L,
+            "https://cdn.ffzy/v/c2_0.ts" to 361_342L,
+        )
+        val text = playlist(groups)
+        val limits = M3u8AdFilter.Limits(maxSegmentsForHeuristic = 0)
+        val probe = M3u8AdFilter.PtsProbe { urls -> urls.map { pts[it] } }
+
+        val result = M3u8AdFilter.filter(
+            "https://cdn.ffzy/v/index.m3u8",
+            text,
+            emptyList(),
+            limits,
+            probe,
+        )
+        assertTrue(result.changed)
+        assertTrue(result.pts)
+        assertEquals(5, result.removedSegments)
+        assertEquals(19.71, result.removedSeconds, 0.05)
+        assertFalse(result.text.contains("a0_"))
+        assertFalse(result.text.contains("a1_"))
+        assertTrue(result.text.contains("c2_0.ts"))
+    }
+
+    @Test
     fun `rule hit does not trigger any probe`() {
         val rule = AdBlockRule(
             "♻️量非",

@@ -20,6 +20,7 @@ import com.onefilm.android.tv.compose.bridge.LegacyChapter
 import com.onefilm.android.tv.compose.bridge.LegacyEdition
 import com.onefilm.android.tv.compose.bridge.LegacyPlayer
 import com.onefilm.android.tv.compose.bridge.LegacyPlayerListener
+import com.onefilm.android.tv.compose.bridge.PlaybackHttpHeaders
 import com.onefilm.android.tv.compose.bridge.LegacyTrack
 import com.onefilm.android.tv.compose.bridge.ParseOutcome
 import com.onefilm.android.tv.compose.bridge.PlayOption
@@ -515,6 +516,8 @@ object PlaybackSession {
         }
         appContext = context.applicationContext
         currentHeaders = headers
+        // 广告过滤的 PTS 探测需要同一套请求头，否则部分 CDN 会 403/超时。
+        PlaybackHttpHeaders.headers = headers
         qualityOptions = options
         qualityIndex = options.indexOfFirst { it.url == url }.coerceAtLeast(0)
         val target = ensureLegacy() ?: return

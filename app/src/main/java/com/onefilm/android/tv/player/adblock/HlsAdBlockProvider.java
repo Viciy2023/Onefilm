@@ -4,6 +4,7 @@ import android.util.Log;
 
 import androidx.media3.exoplayer.hls.playlist.HlsAdFilter;
 
+import com.onefilm.android.tv.App;
 import com.onefilm.android.tv.api.config.RuleConfig;
 import com.onefilm.android.tv.bean.Rule;
 import com.onefilm.android.tv.core.adblock.AdBlockRule;
@@ -11,9 +12,15 @@ import com.onefilm.android.tv.core.adblock.AdFilterNotifier;
 import com.onefilm.android.tv.core.adblock.M3u8AdFilter;
 import com.onefilm.android.tv.setting.Setting;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * 把配置里的广告规则接到 media3 的 HLS 过滤钩子上。
@@ -24,8 +31,11 @@ import java.util.Locale;
 public final class HlsAdBlockProvider implements HlsAdFilter.Provider {
 
     private static final String TAG = "HlsAdBlock";
-    private static final M3u8AdFilter.Limits LIMITS = new M3u8AdFilter.Limits(0.20, 90.0, 3, 3000, 16);
+    private static final M3u8AdFilter.Limits LIMITS = new M3u8AdFilter.Limits(0.20, 90.0, 3, 3000, 64);
     private static final M3u8AdFilter.PtsProbe PROBE = new HlsPtsProbe();
+    private static final Set<String> DUMPED = Collections.synchronizedSet(new HashSet<>());
+    private static final int DUMP_LIMIT = 20;
+    private static final int DUMP_MAX_CHARS = 512 * 1024;
 
     private volatile List<Rule> cachedSource = List.of();
     private volatile List<AdBlockRule> cachedRules = List.of();
@@ -45,6 +55,7 @@ public final class HlsAdBlockProvider implements HlsAdFilter.Provider {
             if (!result.getChanged()) {
                 // 未命中时输出一行摘要，便于定位「广告没被过滤」是识别问题还是规则问题。
                 Log.d(TAG, "pass " + describe(playlistUrl, playlistText));
+                dumpPlaylist(playlistUrl, playlistText);
                 return null;
             }
             String hit = result.getRule() != null
@@ -62,9 +73,39 @@ public final class HlsAdBlockProvider implements HlsAdFilter.Provider {
         }
     }
 
+    /** 未命中时把播放列表落到应用私有目录，便于用 adb 拉出来离线分析（最多 20 份）。 */
+    private static void dumpPlaylist(String playlistUrl, String text) {
+        try {
+            if (playlistUrl == null || text == null) return;
+            if (text.length() > DUMP_MAX_CHARS) return;
+            if (!DUMPED.add(playlistUrl)) return;
+            if (DUMPED.size() > DUMP_LIMIT) return;
+            File base = App.get().getExternalFilesDir("adblock");
+            if (base == null) return;
+            File dir = new File(base, "playlist");
+            if (!dir.exists() && !dir.mkdirs()) return;
+            String host = "unknown";
+            try {
+                java.net.URI uri = java.net.URI.create(playlistUrl);
+                if (uri.getHost() != null) host = uri.getHost();
+            } catch (Throwable ignored) {
+            }
+            String name = host.replaceAll("[^A-Za-z0-9._-]", "_") + "-"
+                    + Integer.toHexString(playlistUrl.hashCode()) + ".m3u8";
+            File out = new File(dir, name);
+            try (FileOutputStream stream = new FileOutputStream(out);
+                 OutputStreamWriter writer = new OutputStreamWriter(stream, "UTF-8")) {
+                writer.write("# source: " + playlistUrl + "\n");
+                writer.write(text);
+            }
+            Log.d(TAG, "playlist dumped: " + out.getAbsolutePath());
+        } catch (Throwable t) {
+            Log.w(TAG, "dump playlist failed", t);
+        }
+    }
+
     /** 未命中时的诊断摘要：主机、分片数、主/媒体列表、ENDLIST、断点、前若干分片时长。 */
-    private static String describe(String playlistUrl, String text) {
-        String host = "";
+    private static String describe(String playlistUrl, String text) {        String host = "";
         try {
             String u = playlistUrl == null ? "" : playlistUrl;
             int start = u.indexOf("://");

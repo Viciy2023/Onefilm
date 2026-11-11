@@ -18,12 +18,6 @@ import java.util.regex.Pattern
  */
 object M3u8AdFilter {
 
-    /** 时长不超过该值的分组视为「短组」，组数很多时优先探测这些组。 */
-    private const val SHORT_GROUP_MILLIS = 120_000L
-
-    /** 分片数不超过该值的分组视为「短组」。 */
-    private const val SHORT_GROUP_SEGMENTS = 30
-
     /** 锚点聚类时，LCP 至少达到该长度才算「同簇」。 */
     private const val MIN_ANCHOR_LCP = 16
 
@@ -57,7 +51,7 @@ object M3u8AdFilter {
         /** 超过这个分片数不做启发式。锚点聚类为 O(n)，长剧集也能覆盖。 */
         val maxSegmentsForHeuristic: Int = 3000,
         /** PTS 阶段最多探测的组数（组数在此范围内则全部探测）。 */
-        val maxPtsGroups: Int = 16,
+        val maxPtsGroups: Int = 64,
     )
 
     data class Result(
@@ -228,25 +222,28 @@ object M3u8AdFilter {
         if (groups.size < 2) return null
         if (groups.any { it.segmentCount <= 0 }) return null
 
-        // 组数不多就全部探测；组数很多时只探测「短组」（插播广告通常很短）及其相邻组，
-        // 把网络探测次数控制在 maxPtsGroups 以内。
-        val targets: List<Int> = if (groups.size <= limits.maxPtsGroups) {
+        // 组数在上限内则全部探测；超过上限时等距抽样，保证覆盖整条时间轴，
+        // 避免像之前那样只探测前 N 组而漏掉 6 分钟处的插播。
+        val limited: List<Int> = if (groups.size <= limits.maxPtsGroups) {
             groups.indices.toList()
         } else {
+            val budget = limits.maxPtsGroups
+            val step = kotlin.math.ceil(groups.size.toDouble() / budget).toInt().coerceAtLeast(1)
             val picked = LinkedHashSet<Int>()
-            groups.forEachIndexed { index, group ->
-                val short = group.durationMillis <= SHORT_GROUP_MILLIS ||
-                    group.segmentCount <= SHORT_GROUP_SEGMENTS
-                if (short) {
-                    picked.add(index)
-                    if (index > 0) picked.add(index - 1)
-                    if (index + 1 < groups.size) picked.add(index + 1)
-                }
+            var index = 0
+            while (index < groups.size && picked.size < budget) {
+                picked.add(index)
+                index += step
             }
-            picked.add(0)
             picked.add(groups.size - 1)
-            picked.take(limits.maxPtsGroups).sorted()
+            picked.take(budget).sorted()
         }
+        // 探测顺序：先用等距铺开的 16 个组覆盖整条时间轴（并发首波就能覆盖到 6 分钟这类位置），
+        // 其余组随后补测。避免像之前那样首波全是前 24 组、广告组恰好超时的情况。
+        val positions = limited.indices.toList()
+        val wave = minOf(16, positions.size)
+        val spread = if (wave > 0) (0 until wave).map { positions[(it * positions.size) / wave] } else emptyList()
+        val targets: List<Int> = (spread + positions).distinct().map { limited[it] }
 
         val ptsValues = try {
             probe.probe(targets.map { groups[it].firstSegmentUrl })
