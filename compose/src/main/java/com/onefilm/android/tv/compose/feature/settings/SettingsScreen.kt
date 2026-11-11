@@ -155,7 +155,11 @@ fun SettingsScreen(
         if (panelPage == 0) {
             val type = editType ?: return@LaunchedEffect
             delay(150)
-            if (type in configRowFocus.indices) runCatching { configRowFocus[type].requestFocus() }
+            if (type in configRowFocus.indices) {
+                runCatching { listState.scrollToItem(type + 1) }
+                delay(60)
+                runCatching { configRowFocus[type].requestFocus() }
+            }
         }
     }
     LaunchedEffect(showContact) {
@@ -263,7 +267,9 @@ fun SettingsScreen(
                             panelPage = 0
                             reportConfig(type, line.name.ifBlank { line.url }, true, message)
                             scope.launch {
-                                delay(150)
+                                delay(120)
+                                runCatching { listState.scrollToItem(type + 1) }
+                                delay(80)
                                 runCatching { configRowFocus.getOrNull(type)?.requestFocus() }
                             }
                         } else {
@@ -288,7 +294,9 @@ fun SettingsScreen(
                             panelPage = 0
                             reportConfig(0, line.name.ifBlank { line.url }, true, message)
                             scope.launch {
-                                delay(150)
+                                delay(120)
+                                runCatching { listState.scrollToItem(1) }
+                                delay(80)
                                 runCatching { configRowFocus[0].requestFocus() }
                             }
                         } else {
@@ -325,7 +333,9 @@ fun SettingsScreen(
                                 editType = null
                                 panelPage = 0
                                 scope.launch {
-                                    delay(150)
+                                    delay(120)
+                                    runCatching { listState.scrollToItem(type + 1) }
+                                    delay(80)
                                     runCatching { configRowFocus[type].requestFocus() }
                                 }
                             } else {
@@ -339,10 +349,14 @@ fun SettingsScreen(
                         editType = null
                         panelPage = 0
                         scope.launch {
-                            delay(200)
+                            delay(160)
                             if (type == 3) {
+                                runCatching { listState.scrollToItem(4) }
+                                delay(80)
                                 runCatching { danmakuApiFocus.requestFocus() }
                             } else if (type in configRowFocus.indices) {
+                                runCatching { listState.scrollToItem(type + 1) }
+                                delay(80)
                                 runCatching { configRowFocus[type].requestFocus() }
                             }
                         }
@@ -1343,7 +1357,11 @@ private fun ConfigTextField(
     }
 }
 
-/** 已保存线路 / 仓库线路的一行：点击载入，右侧可删除。 */
+/**
+ * 已保存线路 / 仓库线路的一行：
+ * 左侧是「载入」行（可聚焦，确定键载入），右侧是独立的「删除」按钮（同样可聚焦），
+ * 与网络接口第一页的「加载」按钮保持一致的交互。
+ */
 @Composable
 private fun SavedLineRow(
     name: String,
@@ -1353,53 +1371,61 @@ private fun SavedLineRow(
     onLoad: () -> Unit,
     onDelete: (() -> Unit)? = null,
 ) {
-    SettingsPanelRow(
-        Modifier
-            .fillMaxWidth()
-            .clickable(enabled = enabled, onClick = onLoad),
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        SettingsPanelRow(
+            Modifier
+                .weight(1f)
+                .clickable(enabled = enabled, onClick = onLoad),
         ) {
-            // 名字与 URL 同一行：名字保留约 1/3 宽度，URL 占其余并截断。
-            val hasName = name.isNotBlank() && name != url
-            Text(
-                if (hasName) name else url,
-                fontSize = 12.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = if (current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(if (hasName) 0.38f else 1f),
-            )
-            if (hasName) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // 名字与 URL 同一行：名字保留约 1/3 宽度，URL 占其余并截断。
+                val hasName = name.isNotBlank() && name != url
                 Text(
-                    url,
-                    fontSize = 10.sp,
+                    if (hasName) name else url,
+                    fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(0.62f).padding(start = 6.dp),
+                    color = if (current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(if (hasName) 0.38f else 1f),
                 )
+                if (hasName) {
+                    Text(
+                        url,
+                        fontSize = 10.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(0.62f).padding(start = 6.dp),
+                    )
+                }
             }
-            if (current) {
+        }
+        if (current) {
+            // 「当前」只是状态标记，不可聚焦；占位宽度与删除按钮一致，保证各行对齐。
+            Box(
+                Modifier.width(72.dp).heightIn(min = 34.dp),
+                contentAlignment = Alignment.Center,
+            ) {
                 Text(
                     stringResource(R.string.common_current),
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                )
-            } else if (onDelete != null) {
-                Text(
-                    stringResource(R.string.common_delete),
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable(enabled = enabled) { onDelete() }
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
             }
+        } else if (onDelete != null) {
+            TvTagButton(
+                text = stringResource(R.string.common_delete),
+                modifier = Modifier.width(72.dp),
+                enabled = enabled,
+                onClick = { onDelete() },
+            )
         }
     }
 }
@@ -1521,15 +1547,11 @@ private fun SettingsPanelRow(
             .onFocusChanged { focused = it.hasFocus }
             .clip(RoundedCornerShape(10.dp))
             .background(
+                // 统一用纯色：之前的左右渐变会让两列底色不一致（左暗右白）。
                 if (focused) {
-                    SolidColor(MaterialTheme.colorScheme.surfaceVariant)
+                    MaterialTheme.colorScheme.surfaceVariant
                 } else {
-                    Brush.horizontalGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.surface,
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-                        ),
-                    )
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
                 },
             )
             .border(
