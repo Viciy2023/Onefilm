@@ -1376,13 +1376,13 @@ private fun SavedLineRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SettingsPanelRow(
-            Modifier
-                .weight(1f)
-                .clickable(enabled = enabled, onClick = onLoad),
-        ) {
+        SettingsPanelRow(Modifier.weight(1f)) {
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
+                Modifier
+                    .fillMaxWidth()
+                    // clickable 放在内容里（与其它设置项一致），外层的 onFocusChanged 才能观察到焦点并高亮边框。
+                    .clickable(enabled = enabled, onClick = onLoad)
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // 名字与 URL 同一行：名字保留约 1/3 宽度，URL 占其余并截断。
