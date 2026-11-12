@@ -62,6 +62,7 @@ import com.onefilm.android.tv.compose.bridge.NetdiskDataSource
 import com.onefilm.android.tv.compose.bridge.NetdiskDrive
 import com.onefilm.android.tv.compose.bridge.NetdiskEntry
 import com.onefilm.android.tv.compose.bridge.NetdiskPlayback
+import com.onefilm.android.tv.compose.bridge.NetdiskSort
 import com.onefilm.android.tv.compose.design.component.TvTagButton
 import org.json.JSONObject
 import kotlinx.coroutines.launch
@@ -95,7 +96,7 @@ fun NetdiskScreen(
     var sortKey by remember { mutableIntStateOf(dataSource.sortKey()) }
     var sortAscending by remember { mutableStateOf(dataSource.sortAscending()) }
     val shown = remember(entries, sortKey, sortAscending) {
-        sortNetdiskEntries(entries, sortKey, sortAscending)
+        NetdiskSort.sorted(entries, sortKey, sortAscending)
     }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -272,25 +273,6 @@ private fun SortControls(
     }
 }
 
-/** 文件夹永远排在最前，其余按所选字段排序（与桌面资源管理器一致）。 */
-private fun sortNetdiskEntries(
-    items: List<NetdiskEntry>,
-    key: Int,
-    ascending: Boolean,
-): List<NetdiskEntry> {
-    val byKey: Comparator<NetdiskEntry> = when (key) {
-        1 -> compareBy<NetdiskEntry> { it.modified }.thenBy { it.name.lowercase() }
-        2 -> compareBy<NetdiskEntry> { it.name.substringAfterLast('.', "").lowercase() }
-            .thenBy { it.name.lowercase() }
-        3 -> compareBy<NetdiskEntry> { it.size }.thenBy { it.name.lowercase() }
-        else -> compareBy { it.name.lowercase() }
-    }
-    val ordered = if (ascending) byKey else byKey.reversed()
-    return items.sortedWith(
-        compareBy<NetdiskEntry> { if (it.isDirectory) 0 else 1 }.then(ordered),
-    )
-}
-
 @Composable
 private fun DriveList(
     drives: List<NetdiskDrive>,
@@ -315,24 +297,22 @@ private fun DriveList(
                 runCatching { JSONObject(drive.configJson).optString("url") }.getOrDefault("")
             }
             Row(
-                Modifier
-                    .fillMaxWidth()
-                    .height(NetdiskRowHeight)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
-                    .border(
-                        if (bodyFocused) 2.dp else 1.dp,
-                        if (bodyFocused) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
-                        RoundedCornerShape(10.dp),
-                    ),
+                Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
                     Modifier
                         .weight(1f)
-                        .fillMaxHeight()
+                        .height(NetdiskRowHeight)
                         .onFocusChanged { bodyFocused = it.isFocused }
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+                        .border(
+                            if (bodyFocused) 2.dp else 1.dp,
+                            if (bodyFocused) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                            RoundedCornerShape(10.dp),
+                        )
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
@@ -341,8 +321,11 @@ private fun DriveList(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = if (drive.type == 1) stringResource(R.string.netdisk_type_webdav)
-                        else stringResource(R.string.netdisk_type_alist),
+                        text = when (drive.type) {
+                            0 -> stringResource(R.string.netdisk_local_dir)
+                            1 -> stringResource(R.string.netdisk_type_webdav)
+                            else -> stringResource(R.string.netdisk_type_alist)
+                        },
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -370,7 +353,6 @@ private fun DriveList(
                 TvTagButton(text = stringResource(R.string.netdisk_edit), onClick = { onEdit(drive) })
                 Spacer(Modifier.width(6.dp))
                 TvTagButton(text = stringResource(R.string.common_delete), onClick = { onDelete(drive) })
-                Spacer(Modifier.width(6.dp))
             }
         }
     }
@@ -433,7 +415,7 @@ private fun NetdiskEntryRow(entry: NetdiskEntry, onClick: () -> Unit) {
             modifier = Modifier.width(84.dp),
         )
         Text(
-            text = if (entry.isDirectory) "" else formatNetdiskSize(entry.size),
+            text = if (entry.isDirectory) "" else NetdiskSort.formatSize(entry.size),
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -454,16 +436,6 @@ private fun netdiskTypeLabel(entry: NetdiskEntry): String {
     if (entry.isDirectory) return stringResource(R.string.netdisk_type_folder)
     val ext = entry.name.substringAfterLast('.', "")
     return if (ext.isBlank() || ext == entry.name) "—" else ext.uppercase(Locale.getDefault())
-}
-
-private fun formatNetdiskSize(bytes: Long): String {
-    if (bytes <= 0L) return "—"
-    val kb = bytes / 1024.0
-    return when {
-        kb < 1024 -> String.format(Locale.US, "%.0f KB", kb)
-        kb < 1024 * 1024 -> String.format(Locale.US, "%.1f MB", kb / 1024)
-        else -> String.format(Locale.US, "%.2f GB", kb / 1024 / 1024)
-    }
 }
 
 @Composable
