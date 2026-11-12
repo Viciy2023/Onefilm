@@ -139,6 +139,8 @@
     <string name="settings_danmaku_qr">Scan to set danmaku API</string>
     <string name="settings_danmaku_qr_desc">Push the danmaku API from your phone</string>
     <string name="settings_danmaku_qr_hint">Open the address on your phone, enter the danmaku API as the push content with name “danmaku”, then push</string>
+    <string name="settings_update_check">Check for updates</string>
+    <string name="settings_update_check_hint">Turn off to stop checking for new versions entirely</string>
     <string name="settings_force_update_hint">Download and force update when a new version is found</string>
     <string name="settings_clear_cache_hint">Deletes image cache and temporary files; favorites and history are kept.</string>
     <string name="settings_exo_only">Only affects the Exo path</string>

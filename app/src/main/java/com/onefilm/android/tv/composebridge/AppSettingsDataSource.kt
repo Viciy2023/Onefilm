@@ -143,6 +143,7 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
             else -> context.getString(R.string.settings_wall_solid, Setting.getWall())
         },
         forceUpdate = Setting.getForceUpdate(),
+        updateCheck = Setting.getUpdate(),
         searchThreads = SearchSettings.threads(),
         adblock = Setting.isAdblock(),
         )
@@ -518,6 +519,10 @@ class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
 
     override fun setForceUpdate(enabled: Boolean) {
         Setting.putForceUpdate(enabled)
+    }
+
+    override fun setUpdateCheck(enabled: Boolean) {
+        Setting.putUpdate(enabled)
     }
 
     override fun setThemeMode(mode: Int) {

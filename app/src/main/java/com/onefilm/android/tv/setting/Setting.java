@@ -137,6 +137,15 @@ public class Setting {
         Prefers.put("force_update", forceUpdate);
     }
 
+    /** 用户点过「以后再说」的版本号；只跳过这一个版本，不影响「检查更新」总开关。 */
+    public static int getIgnoredVersion() {
+        return Prefers.getInt("ignored_version", 0);
+    }
+
+    public static void putIgnoredVersion(int versionCode) {
+        Prefers.put("ignored_version", versionCode);
+    }
+
     /** 首次启动的存储权限说明是否已展示过。 */
     public static boolean getStorageIntroDone() {
         return Prefers.getBoolean("storage_intro_done", false);

@@ -397,6 +397,8 @@ class ComposeMainActivity : ComponentActivity() {
                 updateInfo?.let { info ->
                     BackHandler(enabled = true) {
                         if (!info.force && updateProgress < 0) {
+                            // 「以后再说」只跳过当前版本，不再关闭检查更新总开关。
+                            ComposeDependencies.updateDataSource.ignore()
                             updateInfo = null
                             updateError = null
                         }
@@ -425,6 +427,8 @@ class ComposeMainActivity : ComponentActivity() {
                         },
                         onDismiss = {
                             if (!info.force) {
+                                // 「以后再说」只跳过当前版本，不再关闭检查更新总开关。
+                                ComposeDependencies.updateDataSource.ignore()
                                 ComposeDependencies.updateDataSource.cancelDownload()
                                 updateProgress = -1
                                 updateError = null

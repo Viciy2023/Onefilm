@@ -139,6 +139,8 @@
     <string name="settings_danmaku_qr">掃碼設定彈幕介面</string>
     <string name="settings_danmaku_qr_desc">手機掃碼後推送彈幕 API</string>
     <string name="settings_danmaku_qr_hint">手機開啟該位址，在推送內容中填入彈幕 API，名稱填 danmaku，再按推送</string>
+    <string name="settings_update_check">檢查更新</string>
+    <string name="settings_update_check_hint">關閉後將完全不再檢查新版本</string>
     <string name="settings_force_update_hint">偵測到新版本後自動下載並強制更新</string>
     <string name="settings_clear_cache_hint">將刪除圖片快取和暫存檔，不會刪除收藏和觀看紀錄。</string>
     <string name="settings_exo_only">僅 Exo 路徑生效</string>

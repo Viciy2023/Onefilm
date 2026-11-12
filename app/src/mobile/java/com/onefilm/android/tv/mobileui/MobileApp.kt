@@ -81,6 +81,7 @@ import com.onefilm.android.tv.compose.bridge.LibraryData
 import com.onefilm.android.tv.compose.bridge.LibraryDataSource
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.bridge.SearchDataSource
+import com.onefilm.android.tv.compose.bridge.UpdateInfo
 import com.onefilm.android.tv.compose.feature.home.HomeUiState
 import com.onefilm.android.tv.compose.feature.player.PlaybackSession
 import com.onefilm.android.tv.compose.feature.search.SearchSession
@@ -91,6 +92,7 @@ import com.onefilm.android.tv.mobileui.component.MobileRemoteImage
 import com.onefilm.android.tv.mobileui.player.MobilePlayerScreen
 import com.onefilm.android.tv.ui.activity.LiveActivity
 import com.onefilm.android.tv.R
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -133,6 +135,14 @@ fun MobileApp() {
     var searchHistory by remember { mutableStateOf(MobileSearchHistory.load(context)) }
     var searchActive by remember { mutableStateOf(false) }
     var screen by remember { mutableStateOf<MobileScreen>(MobileScreen.Root) }
+    // 手机端更新检查：进主界面 30 秒后查一次，是否强制由数据源按设置判定。
+    var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
+    var updateProgress by remember { mutableIntStateOf(-1) }
+    var updateError by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        delay(30_000L)
+        runCatching { ComposeDependencies.updateDataSource.check { info -> updateInfo = info } }
+    }
 
     fun exitSearch() {
         SearchSession.cancel()
@@ -187,6 +197,54 @@ fun MobileApp() {
 
     BackHandler(enabled = categoryTarget != null) { categoryTarget = null }
     BackHandler(enabled = searchActive) { exitSearch() }
+
+    // 更新弹窗：放在子页面 return 之前渲染，详情/播放页同样能弹出。
+    updateInfo?.let { info ->
+        BackHandler(enabled = true) {
+            if (!info.force && updateProgress < 0) {
+                // 「以后再说」只跳过当前版本，不再关闭检查更新总开关。
+                ComposeDependencies.updateDataSource.ignore()
+                updateProgress = -1
+                updateError = null
+                updateInfo = null
+            }
+        }
+        MobileUpdateDialog(
+            version = info.version,
+            notes = info.notes,
+            progress = updateProgress,
+            error = updateError,
+            force = info.force,
+            onConfirm = {
+                updateProgress = 0
+                updateError = null
+                ComposeDependencies.updateDataSource.download(
+                    url = info.url,
+                    onProgress = { updateProgress = it },
+                    onSuccess = {
+                        updateProgress = -1
+                        updateInfo = null
+                    },
+                    onError = { message ->
+                        updateProgress = -1
+                        updateError = message.ifBlank {
+                            context.getString(com.onefilm.android.tv.compose.R.string.app_update_failed)
+                        }
+                    },
+                )
+            },
+            onDismiss = {
+                if (!info.force) {
+                    // 「以后再说」只跳过当前版本，不再关闭检查更新总开关。
+                    ComposeDependencies.updateDataSource.ignore()
+                    ComposeDependencies.updateDataSource.cancelDownload()
+                    updateProgress = -1
+                    updateError = null
+                    updateInfo = null
+                }
+            },
+        )
+    }
 
     when (val current = screen) {
         is MobileScreen.SearchResults -> {

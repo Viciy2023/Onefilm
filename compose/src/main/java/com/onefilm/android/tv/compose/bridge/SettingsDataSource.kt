@@ -44,6 +44,8 @@ data class SettingsSnapshot(
     val cacheSizeLabel: String,
     val wallpaperLabel: String,
     val forceUpdate: Boolean,
+    /** 「检查更新」总开关，默认开。 */
+    val updateCheck: Boolean = true,
     val searchThreads: Int = 16,
     val adblock: Boolean = true,
     val danmakuStyle: Int = 1,
@@ -167,6 +169,9 @@ interface SettingsDataSource {
     fun cyclePlayTimeout()
     fun setIncognito(enabled: Boolean)
     fun setForceUpdate(enabled: Boolean)
+
+    /** 「检查更新」总开关：关掉后彻底不再检查版本。 */
+    fun setUpdateCheck(enabled: Boolean) {}
     fun configPushUrl(): String
     fun qrBitmap(content: String, size: Int): Bitmap?
     fun setThemeMode(mode: Int)

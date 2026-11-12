@@ -1065,6 +1065,15 @@ fun SettingsScreen(
             item(span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 SwitchRow(
+                    stringResource(R.string.settings_update_check),
+                    stringResource(R.string.settings_update_check_hint),
+                    snapshot.updateCheck,
+                ) { refresh { setUpdateCheck(it) } }
+            }
+            }
+            item(span = { GridItemSpan(1) }) {
+            SettingsPanelRow {
+                SwitchRow(
                     stringResource(R.string.settings_force_update),
                     stringResource(R.string.settings_force_update_hint),
                     snapshot.forceUpdate,

@@ -14,6 +14,8 @@ import java.io.File
 class AppUpdateDataSource : UpdateDataSource {
 
     private var download: Download? = null
+    /** 最近一次提示的版本号，供 ignore() 精确跳过这一个版本。 */
+    private var lastPromptCode: Int = 0
 
     override fun check(onResult: (UpdateInfo?) -> Unit) {
         if (!Setting.getUpdate()) {
@@ -23,12 +25,18 @@ class AppUpdateDataSource : UpdateDataSource {
         Task.execute {
             val info = runCatching { UpdateManifest.fetch() }.getOrNull()
             val result = if (info != null && UpdateManifest.isNewer(info)) {
-                UpdateInfo(
-                    version = info.version,
-                    notes = info.notes.orEmpty(),
-                    url = info.url,
-                    force = Setting.getForceUpdate(),
-                )
+                // 用户点过「以后再说」的版本不再追问；换新版本仍然提示。
+                if (info.code > 0 && info.code <= Setting.getIgnoredVersion()) {
+                    null
+                } else {
+                    lastPromptCode = info.code
+                    UpdateInfo(
+                        version = info.version,
+                        notes = info.notes.orEmpty(),
+                        url = info.url,
+                        force = Setting.getForceUpdate(),
+                    )
+                }
             } else {
                 null
             }
@@ -67,6 +75,7 @@ class AppUpdateDataSource : UpdateDataSource {
     }
 
     override fun ignore() {
-        Setting.putUpdate(false)
+        // 只忽略刚才提示的那个版本，绝不再关掉「检查更新」总开关。
+        if (lastPromptCode > 0) Setting.putIgnoredVersion(lastPromptCode)
     }
 }
