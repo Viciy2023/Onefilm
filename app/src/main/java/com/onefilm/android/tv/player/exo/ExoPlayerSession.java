@@ -60,20 +60,23 @@ final class ExoPlayerSession {
         SecondaryTextOutput secondaryTextOutput = new SecondaryTextOutput();
         this.libassEnabled = PlayerSetting.isLibass();
         this.libassPlaybackSession = createLibassPlaybackSession(libassEnabled);
-        DefaultPreloadManager.Builder builder = createPreloadManagerBuilder(audioProcessor, secondaryTextTrackSelectorFactory, secondaryTextOutput);
-        this.preloadManager = builder.build();
-        this.preloadManager.addListener(new PreloadListener());
-        this.player = ExoUtil.buildPlayer(listener, builder);
+        // AssHandler 必须提前创建：媒体源工厂要用它挂 ASS 提取器，晚于预加载构建器会拿到 null。
         if (libassEnabled) {
             int w = App.get().getResources().getDisplayMetrics().widthPixels;
             int h = App.get().getResources().getDisplayMetrics().heightPixels;
             this.assOverlay = new SubtitleOverlayView(App.get());
             this.assHandler = new AssHandler(App.get(), assOverlay, w, h);
-            this.assHandler.setPlayer(player);
-            this.assHandler.setOnAssTrackDetected(() -> { assHandler.selectTrack(0); return kotlin.Unit.INSTANCE; });
         } else {
             this.assOverlay = null;
             this.assHandler = null;
+        }
+        DefaultPreloadManager.Builder builder = createPreloadManagerBuilder(audioProcessor, secondaryTextTrackSelectorFactory, secondaryTextOutput);
+        this.preloadManager = builder.build();
+        this.preloadManager.addListener(new PreloadListener());
+        this.player = ExoUtil.buildPlayer(listener, builder);
+        if (this.assHandler != null) {
+            this.assHandler.setPlayer(player);
+            this.assHandler.setOnAssTrackDetected(() -> { assHandler.selectTrack(0); return kotlin.Unit.INSTANCE; });
         }
         this.libassSubtitleController = new LibassSubtitleController(player, libassPlaybackSession, secondaryTextTrackSelectorFactory, secondaryTextOutput);
     }
@@ -151,7 +154,9 @@ final class ExoPlayerSession {
     }
 
     private DefaultPreloadManager.Builder createPreloadManagerBuilder(AudioProcessor audioProcessor, SecondaryTextTrackSelector.Factory secondaryTextTrackSelectorFactory, SecondaryTextOutput secondaryTextOutput) {
-        return new DefaultPreloadManager.Builder(App.get(), ignored -> DefaultPreloadManager.PreloadStatus.specifiedRangeLoaded(getPreloadStartPositionMs(), PRELOAD_DURATION_MS)).setRenderersFactory(ExoUtil.buildRenderersFactory(audioProcessor, secondaryTextOutput, libassPlaybackSession)).setTrackSelectorFactory(secondaryTextTrackSelectorFactory).setLoadControl(ExoUtil.buildLoadControl(MAX_PRELOAD_BUFFER_BYTES));
+        return new DefaultPreloadManager.Builder(App.get(), ignored -> DefaultPreloadManager.PreloadStatus.specifiedRangeLoaded(getPreloadStartPositionMs(), PRELOAD_DURATION_MS)).setRenderersFactory(ExoUtil.buildRenderersFactory(audioProcessor, secondaryTextOutput, libassPlaybackSession)).setTrackSelectorFactory(secondaryTextTrackSelectorFactory).setLoadControl(ExoUtil.buildLoadControl(MAX_PRELOAD_BUFFER_BYTES))
+                // 关键：把带请求头的媒体源工厂装到播放器上，否则 WebDAV/白名单源拿不到 Authorization/Referer。
+                .setMediaSourceFactory(ExoMediaSourceFactory.supplier(libassPlaybackSession, assHandler).get());
     }
 
     private static LibassPlaybackSession createLibassPlaybackSession(boolean libassEnabled) {
