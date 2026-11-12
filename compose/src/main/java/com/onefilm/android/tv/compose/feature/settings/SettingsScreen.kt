@@ -127,10 +127,11 @@ fun SettingsScreen(
     var reloadingDanmaku by remember { mutableStateOf(false) }
     var panelPage by remember { mutableStateOf(0) }
     var uaDraft by remember { mutableStateOf("") }
+    /** 进入 UA 编辑页时记录的列表下标，返回时用它把该行滚回可视区域。 */
+    var uaRowIndex by remember { mutableStateOf(-1) }
+    /** 同上，弹幕屏蔽词行。 */
+    var blockWordsRowIndex by remember { mutableStateOf(-1) }
     var latestVersion by remember { mutableStateOf<String?>(null) }
-    BackHandler(enabled = panelMode) {
-        if (panelPage != 0) panelPage = 0 else onRequestClose()
-    }
     var configMessage by remember { mutableStateOf<String?>(null) }
     var configMessageSuccess by remember { mutableStateOf(true) }
     var configMessageTitle by remember { mutableStateOf<String?>(null) }
@@ -145,6 +146,40 @@ fun SettingsScreen(
     val editFieldFocus = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
     val resContext = LocalContext.current
+    /**
+     * 从二级页回到设置列表后，把目标行滚回可视区域再请求焦点。
+     *
+     * LazyVerticalGrid 只组合可视区域内的 item：列表回顶时靠后的行（自定义 UA、屏蔽词）
+     * 不在组合树里，FocusRequester 没有附着，requestFocus() 会抛 IllegalStateException
+     * 并被 runCatching 吞掉，表现就是「返回/保存后焦点不见了」。这里按进入编辑页时
+     * 记录的下标滚回去，并在网格重新布局完成前重试几次，与接口行/弹幕行返回时的处理一致。
+     */
+    fun restoreRowFocus(index: Int, requester: FocusRequester) {
+        scope.launch {
+            delay(150)
+            if (index >= 0) runCatching { listState.scrollToItem(index) }
+            delay(60)
+            repeat(6) {
+                if (runCatching { requester.requestFocus() }.isSuccess) return@launch
+                delay(60)
+            }
+        }
+    }
+    BackHandler(enabled = panelMode) {
+        when {
+            // 系统返回与页内「返回」按钮走同一条恢复路径，否则 UA / 屏蔽词行会丢焦点。
+            panelPage == 4 -> {
+                panelPage = 0
+                restoreRowFocus(uaRowIndex, uaRowFocus)
+            }
+            panelPage == 2 -> {
+                panelPage = 0
+                restoreRowFocus(blockWordsRowIndex, blockWordsFocus)
+            }
+            panelPage != 0 -> panelPage = 0
+            else -> onRequestClose()
+        }
+    }
     LaunchedEffect(Unit) {
         // 只请求一次初始焦点：反复请求会在用户已经向下移动后把焦点拽回第一项。
         delay(200)
@@ -375,17 +410,11 @@ fun SettingsScreen(
                         resContext.getString(R.string.settings_saved),
                         android.widget.Toast.LENGTH_SHORT,
                     ).show()
-                    scope.launch {
-                        delay(200)
-                        runCatching { uaRowFocus.requestFocus() }
-                    }
+                    restoreRowFocus(uaRowIndex, uaRowFocus)
                 },
                 onBack = {
                     panelPage = 0
-                    scope.launch {
-                        delay(200)
-                        runCatching { uaRowFocus.requestFocus() }
-                    }
+                    restoreRowFocus(uaRowIndex, uaRowFocus)
                 },
             )
             panelPage == 2 -> BlockWordsEditPanel(
@@ -395,17 +424,11 @@ fun SettingsScreen(
                     dataSource.setDanmakuBlockWords(blockWordsDraft.trim())
                     snapshot = dataSource.load()
                     panelPage = 0
-                    scope.launch {
-                        delay(200)
-                        runCatching { blockWordsFocus.requestFocus() }
-                    }
+                    restoreRowFocus(blockWordsRowIndex, blockWordsFocus)
                 },
                 onBack = {
                     panelPage = 0
-                    scope.launch {
-                        delay(200)
-                        runCatching { blockWordsFocus.requestFocus() }
-                    }
+                    restoreRowFocus(blockWordsRowIndex, blockWordsFocus)
                 },
             )
             else -> {
@@ -807,13 +830,16 @@ fun SettingsScreen(
                 ) { index -> refresh { setDanmakuMaxOnScreen(listOf(50, 100, 150, 200, 300)[index]) } }
             }
             }
-            item(span = { GridItemSpan(maxLineSpan) }) {
+            item(key = "settings-block-words", span = { GridItemSpan(maxLineSpan) }) {
             SettingsPanelRow {
                 ActionRow(
                     stringResource(R.string.settings_danmaku_block),
                     snapshot.danmakuBlockWords.ifBlank { stringResource(R.string.settings_not_set) },
                     modifier = Modifier.focusRequester(blockWordsFocus),
                 ) {
+                    // 记住本行在列表中的下标，返回时先用它滚回可视区域再要焦点。
+                    blockWordsRowIndex = listState.layoutInfo.visibleItemsInfo
+                        .firstOrNull { it.key == "settings-block-words" }?.index ?: -1
                     blockWordsDraft = snapshot.danmakuBlockWords
                     panelPage = 2
                 }
@@ -1009,13 +1035,16 @@ fun SettingsScreen(
                 }
             }
             }
-            item(span = { GridItemSpan(1) }) {
+            item(key = "settings-ua", span = { GridItemSpan(1) }) {
             SettingsPanelRow {
                 ActionRow(
                     title = stringResource(R.string.settings_custom_ua),
                     value = snapshot.ua.ifBlank { stringResource(R.string.common_default) },
                     modifier = Modifier.focusRequester(uaRowFocus),
                 ) {
+                    // 记住本行在列表中的下标，返回时先用它滚回可视区域再要焦点。
+                    uaRowIndex = listState.layoutInfo.visibleItemsInfo
+                        .firstOrNull { it.key == "settings-ua" }?.index ?: -1
                     uaDraft = snapshot.ua
                     panelPage = 4
                 }
