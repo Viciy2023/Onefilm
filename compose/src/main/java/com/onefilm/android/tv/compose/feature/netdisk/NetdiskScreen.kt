@@ -13,17 +13,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -31,6 +29,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -39,6 +41,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -50,7 +53,6 @@ import androidx.compose.ui.res.stringResource
 import com.onefilm.android.tv.compose.R
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -64,6 +66,15 @@ import com.onefilm.android.tv.compose.design.component.TvTagButton
 import org.json.JSONObject
 import kotlinx.coroutines.launch
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+
+/** 弹窗里左侧标题列的宽度，标题与右侧输入框共用同一列宽。 */
+private val FieldLabelWidth = 110.dp
+
+/** 网盘列表行高：与侧栏导航按钮一致（32dp）。 */
+private val NetdiskRowHeight = 32.dp
 
 @Composable
 fun NetdiskScreen(
@@ -80,6 +91,12 @@ fun NetdiskScreen(
     var adding by remember { mutableStateOf(false) }
     var page by remember { mutableStateOf(1) }
     var loadingMore by remember { mutableStateOf(false) }
+    // 排序：默认「文件夹优先 + 名称升序」，与资源管理器一致。
+    var sortKey by remember { mutableIntStateOf(dataSource.sortKey()) }
+    var sortAscending by remember { mutableStateOf(dataSource.sortAscending()) }
+    val shown = remember(entries, sortKey, sortAscending) {
+        sortNetdiskEntries(entries, sortKey, sortAscending)
+    }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -111,6 +128,19 @@ fun NetdiskScreen(
                     if (currentPath.isBlank()) currentDrive = null
                     else currentPath = currentPath.substringBeforeLast('/', "")
                 }
+                Spacer(Modifier.weight(1f))
+                SortControls(
+                    key = sortKey,
+                    ascending = sortAscending,
+                    onKeyChange = {
+                        sortKey = it
+                        dataSource.setSortKey(it)
+                    },
+                    onToggleOrder = {
+                        sortAscending = !sortAscending
+                        dataSource.setSortAscending(sortAscending)
+                    },
+                )
             }
         }
         Text(
@@ -143,18 +173,16 @@ fun NetdiskScreen(
             loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 com.onefilm.android.tv.compose.design.component.AppLoadingState()
             }
-            entries.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            shown.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(stringResource(R.string.netdisk_empty_dir), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            else -> LazyVerticalGrid(
-                columns = GridCells.Fixed(5),
+            else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
+                contentPadding = PaddingValues(vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                items(entries, key = { "${it.path}:${it.name}" }) { entry ->
-                    NetdiskEntryCard(entry) {
+                items(shown, key = { "${it.path}:${it.name}" }) { entry ->
+                    NetdiskEntryRow(entry) {
                         if (entry.isDirectory) {
                             currentPath = entry.path
                         } else {
@@ -170,7 +198,7 @@ fun NetdiskScreen(
                     }
                 }
                 if (drive.type == 2 && entries.size >= 100) {
-                    item(span = { GridItemSpan(maxLineSpan) }) {
+                    item {
                         Box(Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
                             TvTagButton(
                                 text = if (loadingMore) stringResource(R.string.settings_loading) else stringResource(R.string.netdisk_load_more),
@@ -222,6 +250,48 @@ fun NetdiskScreen(
 }
 
 @Composable
+private fun SortControls(
+    key: Int,
+    ascending: Boolean,
+    onKeyChange: (Int) -> Unit,
+    onToggleOrder: () -> Unit,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        listOf(
+            0 to stringResource(R.string.netdisk_sort_name),
+            1 to stringResource(R.string.netdisk_sort_date),
+            2 to stringResource(R.string.netdisk_sort_type),
+            3 to stringResource(R.string.netdisk_sort_size),
+        ).forEach { (value, label) ->
+            TvTagButton(text = label, selected = key == value) { onKeyChange(value) }
+        }
+        TvTagButton(text = if (ascending) "↑" else "↓", onClick = onToggleOrder)
+    }
+}
+
+/** 文件夹永远排在最前，其余按所选字段排序（与桌面资源管理器一致）。 */
+private fun sortNetdiskEntries(
+    items: List<NetdiskEntry>,
+    key: Int,
+    ascending: Boolean,
+): List<NetdiskEntry> {
+    val byKey: Comparator<NetdiskEntry> = when (key) {
+        1 -> compareBy<NetdiskEntry> { it.modified }.thenBy { it.name.lowercase() }
+        2 -> compareBy<NetdiskEntry> { it.name.substringAfterLast('.', "").lowercase() }
+            .thenBy { it.name.lowercase() }
+        3 -> compareBy<NetdiskEntry> { it.size }.thenBy { it.name.lowercase() }
+        else -> compareBy { it.name.lowercase() }
+    }
+    val ordered = if (ascending) byKey else byKey.reversed()
+    return items.sortedWith(
+        compareBy<NetdiskEntry> { if (it.isDirectory) 0 else 1 }.then(ordered),
+    )
+}
+
+@Composable
 private fun DriveList(
     drives: List<NetdiskDrive>,
     onOpen: (NetdiskDrive) -> Unit,
@@ -234,103 +304,165 @@ private fun DriveList(
         }
         return
     }
-    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+    Column(
+        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
         drives.forEach { drive ->
-            // 行本身不再 clickable：主体、编辑、删除必须是同级焦点，否则遥控器进不到按钮上
+            // 主体、编辑、删除是三个同级焦点：遥控器可以直接移到按钮上确认。
             var bodyFocused by remember(drive.id) { mutableStateOf(false) }
+            val url = remember(drive.configJson) {
+                runCatching { JSONObject(drive.configJson).optString("url") }.getOrDefault("")
+            }
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 5.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(MaterialTheme.colorScheme.surface)
+                    .height(NetdiskRowHeight)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
                     .border(
                         if (bodyFocused) 2.dp else 1.dp,
                         if (bodyFocused) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
-                        RoundedCornerShape(18.dp),
-                    )
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                        RoundedCornerShape(10.dp),
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Row(
                     Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            if (bodyFocused) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
-                            else Color.Transparent,
-                        )
+                        .fillMaxHeight()
                         .onFocusChanged { bodyFocused = it.isFocused }
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                         ) { onOpen(drive) }
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                        .padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Box(
-                        Modifier.size(44.dp).clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center,
-                    ) { Text(if (drive.type == 1) "DAV" else "AL", fontSize = 13.sp, fontWeight = FontWeight.Bold) }
-                    Spacer(Modifier.size(14.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text(drive.name.ifBlank { stringResource(R.string.netdisk_unnamed) }, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            if (drive.type == 1) stringResource(R.string.netdisk_type_webdav) else stringResource(R.string.netdisk_type_alist),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 13.sp,
-                        )
-                    }
+                    Text(
+                        text = if (drive.type == 1) stringResource(R.string.netdisk_type_webdav)
+                        else stringResource(R.string.netdisk_type_alist),
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = drive.name.ifBlank { stringResource(R.string.netdisk_unnamed) },
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    // 地址过长时省略显示，不挤掉右侧按钮。
+                    Text(
+                        text = url,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
                 }
-                DriveActionButton(stringResource(R.string.netdisk_edit)) { onEdit(drive) }
-                DriveActionButton(stringResource(R.string.common_delete)) { onDelete(drive) }
+                Spacer(Modifier.width(8.dp))
+                TvTagButton(text = stringResource(R.string.netdisk_edit), onClick = { onEdit(drive) })
+                Spacer(Modifier.width(6.dp))
+                TvTagButton(text = stringResource(R.string.common_delete), onClick = { onDelete(drive) })
+                Spacer(Modifier.width(6.dp))
             }
         }
     }
 }
 
+/** 资源管理器式列表行：小图标 + 名称 + 修改时间 + 类型 + 大小。 */
 @Composable
-private fun DriveActionButton(text: String, onClick: () -> Unit) {
-    TvTagButton(
-        text = text,
-        modifier = Modifier.padding(start = 4.dp),
-        onClick = onClick,
-    )
-}
-
-@Composable
-private fun NetdiskEntryCard(entry: NetdiskEntry, onClick: () -> Unit) {
+private fun NetdiskEntryRow(entry: NetdiskEntry, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
-    Column(
+    Row(
         Modifier
             .fillMaxWidth()
-            .height(150.dp)
-            .clip(RoundedCornerShape(20.dp))
-            .background(if (focused) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface)
+            .height(NetdiskRowHeight)
+            .clip(RoundedCornerShape(10.dp))
+            .background(
+                if (focused) MaterialTheme.colorScheme.surfaceVariant
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            )
             .border(
                 if (focused) 2.dp else 1.dp,
-                if (focused) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                RoundedCornerShape(20.dp),
+                if (focused) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                RoundedCornerShape(10.dp),
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(14.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+            .padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(if (entry.isDirectory) "📁" else "🎬", fontSize = 34.sp)
-        Spacer(Modifier.height(8.dp))
+        Icon(
+            imageVector = if (entry.isDirectory) Icons.Outlined.Folder else Icons.Outlined.Movie,
+            contentDescription = null,
+            tint = if (entry.isDirectory) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(10.dp))
         Text(
             text = entry.name,
             fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
+            fontWeight = if (focused) FontWeight.SemiBold else FontWeight.Normal,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
         )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = if (entry.modified > 0L) rememberModified(entry.modified) else "—",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            modifier = Modifier.width(132.dp),
+        )
+        Text(
+            text = netdiskTypeLabel(entry),
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            modifier = Modifier.width(84.dp),
+        )
+        Text(
+            text = if (entry.isDirectory) "" else formatNetdiskSize(entry.size),
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(92.dp),
+        )
+    }
+}
+
+@Composable
+private fun rememberModified(millis: Long): String {
+    val formatter = remember { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()) }
+    return remember(millis) { formatter.format(Date(millis)) }
+}
+
+@Composable
+private fun netdiskTypeLabel(entry: NetdiskEntry): String {
+    if (entry.isDirectory) return stringResource(R.string.netdisk_type_folder)
+    val ext = entry.name.substringAfterLast('.', "")
+    return if (ext.isBlank() || ext == entry.name) "—" else ext.uppercase(Locale.getDefault())
+}
+
+private fun formatNetdiskSize(bytes: Long): String {
+    if (bytes <= 0L) return "—"
+    val kb = bytes / 1024.0
+    return when {
+        kb < 1024 -> String.format(Locale.US, "%.0f KB", kb)
+        kb < 1024 * 1024 -> String.format(Locale.US, "%.1f MB", kb / 1024)
+        else -> String.format(Locale.US, "%.2f GB", kb / 1024 / 1024)
     }
 }
 
@@ -347,6 +479,7 @@ private fun DriveDialog(
     var initPath by remember(drive?.id) { mutableStateOf("") }
     var username by remember(drive?.id) { mutableStateOf("") }
     var password by remember(drive?.id) { mutableStateOf("") }
+    var token by remember(drive?.id) { mutableStateOf("") }
     var localUri by remember(drive?.id) { mutableStateOf("") }
     var showFolderPicker by remember(drive?.id) { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -359,6 +492,7 @@ private fun DriveDialog(
                     initPath = json.optString("initPath")
                     username = json.optString("username")
                     password = json.optString("password")
+                    token = json.optString("token")
                     localUri = json.optString("uri")
                 }
             }
@@ -379,23 +513,26 @@ private fun DriveDialog(
                 Modifier.padding(horizontal = 24.dp, vertical = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(0 to stringResource(R.string.netdisk_local_dir), 1 to stringResource(R.string.netdisk_type_webdav), 2 to stringResource(R.string.netdisk_type_alist)).forEach { (value, label) ->
-                        val selected = type == value
-                        Text(
-                            text = label,
-                            color = if (selected) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface,
-                            fontSize = 13.sp,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(percent = 50))
-                                .background(if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable { type = value; error = null }
-                                .padding(horizontal = 13.dp, vertical = 5.dp),
-                        )
+                // 类型选择：与侧栏导航按钮同一套样式（32dp、10dp 圆角、聚焦高亮），
+                // 左边缘与下面各行的输入框列对齐。
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(Modifier.width(FieldLabelWidth))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(
+                            0 to stringResource(R.string.netdisk_local_dir),
+                            1 to stringResource(R.string.netdisk_type_webdav),
+                            2 to stringResource(R.string.netdisk_type_alist),
+                        ).forEach { (value, label) ->
+                            TvTagButton(
+                                text = label,
+                                selected = type == value,
+                                onClick = { type = value; error = null },
+                            )
+                        }
                     }
                 }
                 FieldRow(stringResource(R.string.netdisk_space_name)) {
-                    CompactField(name, stringResource(R.string.netdisk_name_hint), { name = it })
+                    SettingsField(name, stringResource(R.string.netdisk_name_hint), { name = it })
                 }
                 when (type) {
                     0 -> FieldRow(stringResource(R.string.netdisk_local_dir)) {
@@ -413,15 +550,16 @@ private fun DriveDialog(
                         }
                     }
                     1 -> {
-                        FieldRow(stringResource(R.string.netdisk_webdav_url)) { CompactField(url, "https://example.com/dav/", { url = it }) }
-                        FieldRow(stringResource(R.string.netdisk_init_path)) { CompactField(initPath, stringResource(R.string.netdisk_init_path_hint), { initPath = it }) }
-                        FieldRow(stringResource(R.string.netdisk_username)) { CompactField(username, stringResource(R.string.netdisk_optional), { username = it }) }
-                        FieldRow(stringResource(R.string.netdisk_password)) { CompactField(password, stringResource(R.string.netdisk_optional), { password = it }) }
+                        FieldRow(stringResource(R.string.netdisk_webdav_url)) { SettingsField(url, "https://example.com/dav/", { url = it }) }
+                        FieldRow(stringResource(R.string.netdisk_init_path)) { SettingsField(initPath, stringResource(R.string.netdisk_init_path_hint), { initPath = it }) }
+                        FieldRow(stringResource(R.string.netdisk_username)) { SettingsField(username, stringResource(R.string.netdisk_optional), { username = it }) }
+                        FieldRow(stringResource(R.string.netdisk_password)) { SettingsField(password, stringResource(R.string.netdisk_optional), { password = it }) }
                     }
                     else -> {
-                        FieldRow(stringResource(R.string.netdisk_alist_url)) { CompactField(url, "https://alist.example.com/", { url = it }) }
-                        FieldRow(stringResource(R.string.netdisk_init_path)) { CompactField(initPath, stringResource(R.string.netdisk_init_path_hint), { initPath = it }) }
-                        FieldRow(stringResource(R.string.netdisk_password)) { CompactField(password, stringResource(R.string.netdisk_optional), { password = it }) }
+                        FieldRow(stringResource(R.string.netdisk_alist_url)) { SettingsField(url, "https://alist.example.com/", { url = it }) }
+                        FieldRow(stringResource(R.string.netdisk_init_path)) { SettingsField(initPath, stringResource(R.string.netdisk_init_path_hint), { initPath = it }) }
+                        FieldRow(stringResource(R.string.netdisk_password)) { SettingsField(password, stringResource(R.string.netdisk_optional), { password = it }) }
+                        FieldRow(stringResource(R.string.netdisk_alist_token)) { SettingsField(token, stringResource(R.string.netdisk_alist_token_hint), { token = it }) }
                     }
                 }
                 error?.let {
@@ -454,6 +592,7 @@ private fun DriveDialog(
                                         put("url", url.trim().trimEnd('/') + "/")
                                         put("initPath", initPath.trim().trim('/'))
                                         put("password", password)
+                                        put("token", token.trim())
                                     }
                                 }
                             }
@@ -563,43 +702,75 @@ private fun FieldRow(label: String, content: @Composable () -> Unit) {
         Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = label,
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(width = 120.dp, height = 40.dp),
-        )
+        // 标题与右侧输入框垂直居中对齐，避免字号基线差异造成"标题偏高"。
+        Box(
+            Modifier.width(FieldLabelWidth),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Text(
+                text = label,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         Box(Modifier.weight(1f)) { content() }
     }
 }
 
+/**
+ * 输入框：与设置面板的输入项保持同一套样式
+ * （34dp 最小高度、10dp 圆角、surfaceVariant 底色、聚焦 2dp 主色描边）。
+ */
 @Composable
-private fun CompactField(
+private fun SettingsField(
     value: String,
     hint: String,
     onValueChange: (String) -> Unit,
 ) {
-    androidx.compose.foundation.text.BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        singleLine = true,
-        textStyle = androidx.compose.ui.text.TextStyle(
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurface,
-        ),
-        modifier = Modifier
+    var focused by remember { mutableStateOf(false) }
+    Box(
+        Modifier
             .fillMaxWidth()
-            .height(40.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.55f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp, vertical = 9.dp),
-        decorationBox = { inner ->
-            Box(contentAlignment = Alignment.CenterStart) {
-                if (value.isBlank()) {
-                    Text(hint, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            .heightIn(min = 34.dp)
+            .onFocusChanged { focused = it.hasFocus }
+            .clip(RoundedCornerShape(10.dp))
+            .background(
+                if (focused) MaterialTheme.colorScheme.surfaceVariant
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+            )
+            .border(
+                if (focused) 2.dp else 1.dp,
+                if (focused) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                RoundedCornerShape(10.dp),
+            ),
+    ) {
+        androidx.compose.foundation.text.BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = androidx.compose.ui.text.TextStyle(
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+            ),
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 9.dp),
+            decorationBox = { inner ->
+                Box(contentAlignment = Alignment.CenterStart) {
+                    if (value.isBlank()) {
+                        Text(
+                            hint,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    inner()
                 }
-                inner()
-            }
-        },
-    )
+            },
+        )
+    }
 }

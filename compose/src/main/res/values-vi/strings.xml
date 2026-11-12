@@ -273,6 +273,11 @@
     <string name="netdisk_type_alist">Trang Alist</string>
     <string name="netdisk_edit">Sửa</string>
     <string name="netdisk_local_dir">Thư mục cục bộ</string>
+    <string name="netdisk_type_folder">Thư mục</string>
+    <string name="netdisk_sort_name">Tên</string>
+    <string name="netdisk_sort_date">Ngày</string>
+    <string name="netdisk_sort_type">Loại</string>
+    <string name="netdisk_sort_size">Kích thước</string>
     <string name="netdisk_space_name">Tên không gian</string>
     <string name="netdisk_name_hint">ví dụ: NAS tại nhà</string>
     <string name="netdisk_no_dir">Chưa chọn thư mục</string>
@@ -367,6 +372,11 @@
     <string name="netdisk_err_open_local_dir">Không mở được thư mục cục bộ</string>
     <string name="netdisk_err_webdav_url">URL WebDAV trống</string>
     <string name="netdisk_err_webdav_code">WebDAV trả về %1$d</string>
+    <string name="netdisk_alist_token">Token (tùy chọn)</string>
+    <string name="netdisk_alist_token_hint">Cài đặt → Khác → Token</string>
+    <string name="netdisk_err_alist_auth">OpenList yêu cầu token: hãy điền trong cài đặt ổ mạng, hoặc bật truy cập khách trên máy chủ</string>
+    <string name="netdisk_err_alist_html">Máy chủ trả về trang web thay vì dữ liệu API: hãy kiểm tra địa chỉ và phiên bản máy chủ</string>
+    <string name="netdisk_err_alist_empty">Máy chủ trả về phản hồi rỗng</string>
     <string name="netdisk_err_alist_url">URL Alist trống</string>
     <string name="netdisk_err_alist_code">Alist trả về %1$d</string>
     <string name="netdisk_err_alist_failed">Yêu cầu Alist thất bại</string>

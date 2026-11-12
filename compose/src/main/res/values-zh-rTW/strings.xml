@@ -273,6 +273,11 @@
     <string name="netdisk_type_alist">Alist 網頁</string>
     <string name="netdisk_edit">編輯</string>
     <string name="netdisk_local_dir">本機目錄</string>
+    <string name="netdisk_type_folder">資料夾</string>
+    <string name="netdisk_sort_name">名稱</string>
+    <string name="netdisk_sort_date">時間</string>
+    <string name="netdisk_sort_type">類型</string>
+    <string name="netdisk_sort_size">大小</string>
     <string name="netdisk_space_name">空間名稱</string>
     <string name="netdisk_name_hint">例如：家庭 NAS</string>
     <string name="netdisk_no_dir">未選擇目錄</string>
@@ -367,6 +372,11 @@
     <string name="netdisk_err_open_local_dir">無法開啟本機目錄</string>
     <string name="netdisk_err_webdav_url">WebDAV 位址為空</string>
     <string name="netdisk_err_webdav_code">WebDAV 傳回 %1$d</string>
+    <string name="netdisk_alist_token">權杖（選填）</string>
+    <string name="netdisk_alist_token_hint">設定 → 其他 → 權杖</string>
+    <string name="netdisk_err_alist_auth">需要 OpenList 權杖：請在網盤設定中填寫權杖，或在伺服器開啟訪客存取</string>
+    <string name="netdisk_err_alist_html">伺服器回傳了網頁而不是介面資料：請檢查位址是否填成 OpenList 根位址</string>
+    <string name="netdisk_err_alist_empty">伺服器回傳了空回應</string>
     <string name="netdisk_err_alist_url">Alist 位址為空</string>
     <string name="netdisk_err_alist_code">Alist 傳回 %1$d</string>
     <string name="netdisk_err_alist_failed">Alist 請求失敗</string>

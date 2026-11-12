@@ -273,6 +273,11 @@
     <string name="netdisk_type_alist">Alist page</string>
     <string name="netdisk_edit">Edit</string>
     <string name="netdisk_local_dir">Local folder</string>
+    <string name="netdisk_type_folder">Folder</string>
+    <string name="netdisk_sort_name">Name</string>
+    <string name="netdisk_sort_date">Date</string>
+    <string name="netdisk_sort_type">Type</string>
+    <string name="netdisk_sort_size">Size</string>
     <string name="netdisk_space_name">Space name</string>
     <string name="netdisk_name_hint">e.g. Home NAS</string>
     <string name="netdisk_no_dir">No folder selected</string>
@@ -367,6 +372,11 @@
     <string name="netdisk_err_open_local_dir">Cannot open local folder</string>
     <string name="netdisk_err_webdav_url">WebDAV URL is empty</string>
     <string name="netdisk_err_webdav_code">WebDAV returned %1$d</string>
+    <string name="netdisk_alist_token">Access token (optional)</string>
+    <string name="netdisk_alist_token_hint">Settings → Other → Token</string>
+    <string name="netdisk_err_alist_auth">OpenList requires a token: fill it in the netdisk settings, or enable guest access on the server</string>
+    <string name="netdisk_err_alist_html">The server returned a web page instead of API data: check the address and the server version</string>
+    <string name="netdisk_err_alist_empty">The server returned an empty response</string>
     <string name="netdisk_err_alist_url">Alist URL is empty</string>
     <string name="netdisk_err_alist_code">Alist returned %1$d</string>
     <string name="netdisk_err_alist_failed">Alist request failed</string>

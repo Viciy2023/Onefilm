@@ -15,6 +15,7 @@ import com.onefilm.android.tv.compose.bridge.NetdiskDrive
 import com.onefilm.android.tv.compose.bridge.NetdiskEntry
 import com.onefilm.android.tv.compose.bridge.NetdiskPlayback
 import com.onefilm.android.tv.db.AppDatabase
+import com.github.catvod.utils.Prefers
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -26,9 +27,21 @@ import java.io.File
 import java.net.URI
 import java.net.URLDecoder
 import java.net.URLEncoder
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 class AppNetdiskDataSource(private val context: Context) : NetdiskDataSource {
+
+    private companion object {
+        /** RFC 1123（WebDAV）与 ISO8601（AList/OpenList）两种时间格式。 */
+        val datePatterns = listOf(
+            "EEE, dd MMM yyyy HH:mm:ss zzz",
+            "yyyy-MM-dd'T'HH:mm:ssXXX",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+            "yyyy-MM-dd HH:mm:ss",
+        )
+    }
 
     private val gson = Gson()
     private val client = OkHttpClient.Builder()
@@ -57,6 +70,18 @@ class AppNetdiskDataSource(private val context: Context) : NetdiskDataSource {
         dao.delete(id)
     }
 
+    override fun sortKey(): Int = Prefers.getInt("netdisk_sort_key", 0)
+
+    override fun setSortKey(key: Int) {
+        Prefers.put("netdisk_sort_key", key.coerceIn(0, 3))
+    }
+
+    override fun sortAscending(): Boolean = Prefers.getBoolean("netdisk_sort_asc", true)
+
+    override fun setSortAscending(ascending: Boolean) {
+        Prefers.put("netdisk_sort_asc", ascending)
+    }
+
     override suspend fun listEntries(drive: NetdiskDrive, path: String, page: Int): List<NetdiskEntry> =
         withContext(Dispatchers.IO) {
             when (drive.type) {
@@ -73,8 +98,7 @@ class AppNetdiskDataSource(private val context: Context) : NetdiskDataSource {
                 0 -> NetdiskPlayback(entry.fileUrl ?: entry.path)
                 1 -> {
                     val config = config(drive)
-                    val url = webDavUrl(config, entry.path)
-                    NetdiskPlayback(url, webDavHeaders(config))
+                    NetdiskPlayback(webDavUrl(config, entry.path), webDavHeaders(config))
                 }
                 2 -> {
                     val config = config(drive)
@@ -107,6 +131,8 @@ class AppNetdiskDataSource(private val context: Context) : NetdiskDataSource {
                     path = fileUrl,
                     isDirectory = file.isDirectory,
                     fileUrl = if (file.isFile) fileUrl else null,
+                    size = if (file.isFile) file.length() else 0L,
+                    modified = file.lastModified(),
                 )
             }.sortedWith(compareByDescending<NetdiskEntry> { it.isDirectory }.thenBy { it.name })
         }
@@ -122,6 +148,8 @@ class AppNetdiskDataSource(private val context: Context) : NetdiskDataSource {
                 path = file.uri.toString(),
                 isDirectory = file.isDirectory,
                 fileUrl = if (file.isFile) file.uri.toString() else null,
+                size = if (file.isFile) file.length() else 0L,
+                modified = file.lastModified(),
             )
         }.sortedWith(compareByDescending<NetdiskEntry> { it.isDirectory }.thenBy { it.name })
     }
@@ -184,10 +212,14 @@ class AppNetdiskDataSource(private val context: Context) : NetdiskDataSource {
             val name = driveRelative.substringAfterLast('/')
             if (name.isBlank()) continue
             val isDirectory = response.getElementsByTagNameNS("*", "collection").length > 0
+            val sizeText = response.getElementsByTagNameNS("*", "getcontentlength").item(0)?.textContent
+            val modifiedText = response.getElementsByTagNameNS("*", "getlastmodified").item(0)?.textContent
             result += NetdiskEntry(
                 name = name,
                 path = if (parentPath.isBlank()) name else "$parentPath/$name",
                 isDirectory = isDirectory,
+                size = if (isDirectory) 0L else sizeText?.trim()?.toLongOrNull() ?: 0L,
+                modified = parseHttpDate(modifiedText),
             )
         }
         return result.sortedWith(compareByDescending<NetdiskEntry> { it.isDirectory }.thenBy { it.name })
@@ -202,40 +234,72 @@ class AppNetdiskDataSource(private val context: Context) : NetdiskDataSource {
         val payload = JsonObject().apply {
             addProperty("path", if (fullPath == "") "/" else fullPath)
             addProperty("password", config.get("password")?.asString.orEmpty())
-            addProperty("page_num", page)
-            addProperty("page_size", 100)
+            addProperty("page", page.coerceAtLeast(1))
+            addProperty("per_page", 100)
+            addProperty("refresh", false)
         }
         val request = Request.Builder()
-            .url("$base/api/public/path")
+            .url("$base/api/fs/list")
             .post(payload.toString().toRequestBody(jsonType))
             .header("Accept", "application/json, text/plain, */*")
+            .apply {
+                val token = config.get("token")?.asString.orEmpty().trim()
+                if (token.isNotEmpty()) header("Authorization", token)
+            }
             .build()
         val response = client.newCall(request).execute()
         response.use {
             if (!it.isSuccessful) throw IllegalStateException(context.getString(R.string.netdisk_err_alist_code, it.code))
-            val rootJson = JsonParser.parseString(it.body?.string().orEmpty()).asJsonObject
-            if (rootJson.get("code")?.asInt != 200) {
-                throw IllegalStateException(rootJson.get("message")?.asString ?: context.getString(R.string.netdisk_err_alist_failed))
+            val rootJson = alistJson(it.body?.string().orEmpty())
+            when (rootJson.get("code")?.asInt ?: 0) {
+                200 -> Unit
+                401 -> throw IllegalStateException(context.getString(R.string.netdisk_err_alist_auth))
+                else -> throw IllegalStateException(
+                    rootJson.get("message")?.asString?.takeIf { message -> message.isNotBlank() }
+                        ?: context.getString(R.string.netdisk_err_alist_failed),
+                )
             }
-            val data = rootJson.getAsJsonObject("data") ?: return emptyList()
-            val files = data.getAsJsonArray("files") ?: data.getAsJsonArray("content")
+            val dataElement = rootJson.get("data")
+            if (dataElement == null || !dataElement.isJsonObject) return emptyList()
+            val data = dataElement.asJsonObject
+            // content/files 可能是 null（空目录或服务端异常），不能直接 getAsJsonArray。
+            val files = data.get("content")?.takeIf { it.isJsonArray }?.asJsonArray
+                ?: data.get("files")?.takeIf { it.isJsonArray }?.asJsonArray
                 ?: return emptyList()
             val result = mutableListOf<NetdiskEntry>()
             files.forEach { item ->
                 val obj = item.asJsonObject
-                val name = obj.get("name")?.asString.orEmpty()
+                val name = obj.get("name")?.takeIf { it.isJsonPrimitive }?.asString.orEmpty()
                 if (name.isBlank()) return@forEach
-                val isDirectory = obj.get("type")?.asInt == 1
+                // OpenList / AList v3 用 is_dir；兼容旧版返回的 type(1=目录)。
+                val isDirectory = obj.get("is_dir")?.takeIf { !it.isJsonNull }?.asBoolean
+                    ?: (obj.get("type")?.takeIf { !it.isJsonNull }?.asInt == 1)
                 val directUrl = obj.get("url")?.asString?.takeIf { it.isNotBlank() }
                 result += NetdiskEntry(
                     name = name,
                     path = if (path.isBlank()) name else "$path/$name",
                     isDirectory = isDirectory,
                     fileUrl = directUrl,
+                    size = if (isDirectory) 0L else obj.get("size")?.takeIf { !it.isJsonNull }?.asLong ?: 0L,
+                    modified = parseIsoTime(obj.get("modified")?.asString),
                 )
             }
             return result.sortedWith(compareByDescending<NetdiskEntry> { it.isDirectory }.thenBy { it.name })
         }
+    }
+
+    /**
+     * 解析 AList / OpenList 的 JSON 响应。
+     *
+     * 路由不存在时 OpenList 会回落到前端 index.html 并返回 200，直接交给 Gson 只会抛
+     * MalformedJsonException；这里统一换成可读的错误提示。
+     */
+    private fun alistJson(text: String): JsonObject {
+        val trimmed = text.trimStart()
+        if (trimmed.isEmpty()) throw IllegalStateException(context.getString(R.string.netdisk_err_alist_empty))
+        if (trimmed.startsWith("<")) throw IllegalStateException(context.getString(R.string.netdisk_err_alist_html))
+        return runCatching { JsonParser.parseString(text).asJsonObject }
+            .getOrElse { throw IllegalStateException(context.getString(R.string.netdisk_err_alist_html)) }
     }
 
     private fun alistFileUrl(config: JsonObject, path: String): String {
@@ -249,15 +313,25 @@ class AppNetdiskDataSource(private val context: Context) : NetdiskDataSource {
             .url("$base/api/fs/get")
             .post(payload.toString().toRequestBody(jsonType))
             .header("Accept", "application/json, text/plain, */*")
+            .apply {
+                val token = config.get("token")?.asString.orEmpty().trim()
+                if (token.isNotEmpty()) header("Authorization", token)
+            }
             .build()
         val response = client.newCall(request).execute()
         response.use {
             if (!it.isSuccessful) throw IllegalStateException(context.getString(R.string.netdisk_err_alist_code, it.code))
-            val rootJson = JsonParser.parseString(it.body?.string().orEmpty()).asJsonObject
-            if (rootJson.get("code")?.asInt != 200) {
-                throw IllegalStateException(rootJson.get("message")?.asString ?: context.getString(R.string.netdisk_err_file_url))
+            val rootJson = alistJson(it.body?.string().orEmpty())
+            when (rootJson.get("code")?.asInt ?: 0) {
+                200 -> Unit
+                401 -> throw IllegalStateException(context.getString(R.string.netdisk_err_alist_auth))
+                else -> throw IllegalStateException(
+                    rootJson.get("message")?.asString?.takeIf { message -> message.isNotBlank() }
+                        ?: context.getString(R.string.netdisk_err_file_url),
+                )
             }
-            return rootJson.getAsJsonObject("data")?.get("raw_url")?.asString
+            return rootJson.get("data")?.takeIf { it.isJsonObject }?.asJsonObject
+                ?.get("raw_url")?.takeIf { it.isJsonPrimitive }?.asString
                 ?: throw IllegalStateException(context.getString(R.string.netdisk_err_raw_url))
         }
     }
@@ -283,6 +357,22 @@ class AppNetdiskDataSource(private val context: Context) : NetdiskDataSource {
     private fun config(drive: NetdiskDrive): JsonObject = runCatching {
         JsonParser.parseString(drive.configJson).asJsonObject
     }.getOrElse { JsonObject() }
+
+    /** WebDAV 的 getlastmodified 是 RFC 1123，个别服务端会给 ISO8601，两种都试。 */
+    private fun parseHttpDate(text: String?): Long {
+        if (text.isNullOrBlank()) return 0L
+        val value = text.trim()
+        for (pattern in datePatterns) {
+            runCatching {
+                val parsed = SimpleDateFormat(pattern, Locale.US).parse(value)
+                if (parsed != null) return parsed.time
+            }
+        }
+        return 0L
+    }
+
+    /** AList / OpenList 的 modified 是 ISO8601（带时区或 Z）。 */
+    private fun parseIsoTime(text: String?): Long = parseHttpDate(text)
 
     private fun joinPath(a: String, b: String): String =
         listOf(a.trim('/'), b.trim('/')).filter { it.isNotBlank() }.joinToString("/")

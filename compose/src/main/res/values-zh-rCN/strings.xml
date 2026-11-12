@@ -273,6 +273,11 @@
     <string name="netdisk_type_alist">Alist 网页</string>
     <string name="netdisk_edit">编辑</string>
     <string name="netdisk_local_dir">本地目录</string>
+    <string name="netdisk_type_folder">文件夹</string>
+    <string name="netdisk_sort_name">名称</string>
+    <string name="netdisk_sort_date">时间</string>
+    <string name="netdisk_sort_type">类型</string>
+    <string name="netdisk_sort_size">大小</string>
     <string name="netdisk_space_name">空间名称</string>
     <string name="netdisk_name_hint">例如：家庭 NAS</string>
     <string name="netdisk_no_dir">未选择目录</string>
@@ -367,6 +372,11 @@
     <string name="netdisk_err_open_local_dir">无法打开本地目录</string>
     <string name="netdisk_err_webdav_url">WebDAV 地址为空</string>
     <string name="netdisk_err_webdav_code">WebDAV 返回 %1$d</string>
+    <string name="netdisk_alist_token">令牌（可选）</string>
+    <string name="netdisk_alist_token_hint">设置 → 其他 → 令牌</string>
+    <string name="netdisk_err_alist_auth">需要 OpenList 令牌：请在网盘设置中填写令牌，或在服务器开启游客访问</string>
+    <string name="netdisk_err_alist_html">服务器返回了网页而不是接口数据：请检查地址是否填成 OpenList 根地址</string>
+    <string name="netdisk_err_alist_empty">服务器返回了空响应</string>
     <string name="netdisk_err_alist_url">Alist 地址为空</string>
     <string name="netdisk_err_alist_code">Alist 返回 %1$d</string>
     <string name="netdisk_err_alist_failed">Alist 请求失败</string>

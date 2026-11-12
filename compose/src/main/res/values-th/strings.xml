@@ -273,6 +273,11 @@
     <string name="netdisk_type_alist">หน้า Alist</string>
     <string name="netdisk_edit">แก้ไข</string>
     <string name="netdisk_local_dir">โฟลเดอร์ในเครื่อง</string>
+    <string name="netdisk_type_folder">โฟลเดอร์</string>
+    <string name="netdisk_sort_name">ชื่อ</string>
+    <string name="netdisk_sort_date">วันที่</string>
+    <string name="netdisk_sort_type">ประเภท</string>
+    <string name="netdisk_sort_size">ขนาด</string>
     <string name="netdisk_space_name">ชื่อพื้นที่</string>
     <string name="netdisk_name_hint">เช่น NAS ที่บ้าน</string>
     <string name="netdisk_no_dir">ยังไม่ได้เลือกโฟลเดอร์</string>
@@ -367,6 +372,11 @@
     <string name="netdisk_err_open_local_dir">เปิดโฟลเดอร์ในเครื่องไม่ได้</string>
     <string name="netdisk_err_webdav_url">URL WebDAV ว่างเปล่า</string>
     <string name="netdisk_err_webdav_code">WebDAV ตอบกลับ %1$d</string>
+    <string name="netdisk_alist_token">โทเคน (ไม่บังคับ)</string>
+    <string name="netdisk_alist_token_hint">ตั้งค่า → อื่นๆ → โทเคน</string>
+    <string name="netdisk_err_alist_auth">OpenList ต้องใช้โทเคน: กรุณากรอกในตั้งค่าดิสก์เครือข่าย หรือเปิดการเข้าถึงสำหรับผู้เยี่ยมชมบนเซิร์ฟเวอร์</string>
+    <string name="netdisk_err_alist_html">เซิร์ฟเวอร์ส่งหน้าเว็บกลับมาแทนข้อมูล API: กรุณาตรวจสอบที่อยู่และเวอร์ชันเซิร์ฟเวอร์</string>
+    <string name="netdisk_err_alist_empty">เซิร์ฟเวอร์ส่งการตอบกลับว่างเปล่า</string>
     <string name="netdisk_err_alist_url">URL Alist ว่างเปล่า</string>
     <string name="netdisk_err_alist_code">Alist ตอบกลับ %1$d</string>
     <string name="netdisk_err_alist_failed">คำขอ Alist ล้มเหลว</string>
