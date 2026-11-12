@@ -116,6 +116,9 @@ sealed interface MobileScreen {
         val returnTo: MobileScreen? = null,
     ) : MobileScreen
     data class Player(val detail: Detail) : MobileScreen
+
+    /** 网盘直接播放：不经过详情页，返回时回到进入前的页面（继续观看 Tab）。 */
+    data class NetdiskPlayer(val returnTo: MobileScreen = Root) : MobileScreen
 }
 
 @Composable
@@ -285,6 +288,18 @@ fun MobileApp() {
             return
         }
 
+        is MobileScreen.NetdiskPlayer -> {
+            val back: () -> Unit = {
+                // 网盘播放是「临时预览」：返回文件列表时直接停掉，避免声音留在后台。
+                PlaybackSession.stop()
+                screen = current.returnTo
+            }
+            MobilePlayerScreen(onBack = back)
+            // 系统返回键同样停播，避免只退出界面但声音还在。
+            BackHandler(enabled = true) { back() }
+            return
+        }
+
         MobileScreen.Root -> Unit
     }
 
@@ -331,6 +346,24 @@ fun MobileApp() {
                         initialTab = libraryTab,
                         onTabChange = { libraryTab = it },
                         onCardClick = ::openCard,
+                        onPlayNetdisk = { playback, entry ->
+                            val name = entry.name.ifBlank {
+                                context.getString(com.onefilm.android.tv.compose.R.string.netdisk_video_name)
+                            }
+                            PlaybackSession.setQueue(
+                                key = "_netdisk",
+                                id = entry.path,
+                                vodTitle = name,
+                                vodPoster = null,
+                                flag = "netdisk",
+                                episodes = listOf(
+                                    com.onefilm.android.tv.compose.feature.player.PlaybackEpisode(name, playback.url),
+                                ),
+                                index = 0,
+                            )
+                            PlaybackSession.play(context, playback.url, headers = playback.headers)
+                            screen = MobileScreen.NetdiskPlayer()
+                        },
                     )
                     MobileTab.LIVE -> MobileLiveScreen(onOpen = ::openLive)
                     // 手机设置直接复用 TV 的设置页：同一套分组与设置项，TV 侧更新自动同步。
@@ -797,6 +830,7 @@ private fun MobileLibraryScreen(
     initialTab: Int,
     onTabChange: (Int) -> Unit,
     onCardClick: (MediaCard) -> Unit,
+    onPlayNetdisk: (com.onefilm.android.tv.compose.bridge.NetdiskPlayback, com.onefilm.android.tv.compose.bridge.NetdiskEntry) -> Unit,
 ) {
     var data by remember { mutableStateOf<LibraryData?>(null) }
     var pendingDelete by remember { mutableStateOf<MediaCard?>(null) }
@@ -809,7 +843,11 @@ private fun MobileLibraryScreen(
             Modifier.fillMaxWidth().padding(vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            listOf(stringResource(R.string.mobile_tab_library), stringResource(R.string.mobile_library_history)).forEachIndexed { index, label ->
+            listOf(
+                stringResource(R.string.mobile_tab_library),
+                stringResource(R.string.mobile_library_history),
+                stringResource(R.string.mobile_library_netdisk),
+            ).forEachIndexed { index, label ->
                 val active = initialTab == index
                 Text(
                     text = label,
@@ -828,7 +866,12 @@ private fun MobileLibraryScreen(
                 )
             }
         }
-        if (data == null) {
+        if (initialTab == 2) {
+            MobileNetdiskScreen(
+                dataSource = ComposeDependencies.netdiskDataSource,
+                onPlay = onPlayNetdisk,
+            )
+        } else if (data == null) {
             MobileLoading()
         } else if (items.isEmpty()) {
             MobileHint(stringResource(R.string.mobile_library_empty))

@@ -77,6 +77,7 @@
     <string name="mobile_search_result_count">%1$d results</string>
     <string name="mobile_search_searching">Searching</string>
     <string name="mobile_library_delete_confirm">Delete this record?</string>
+    <string name="mobile_library_netdisk">Netdisk</string>
     <string name="mobile_library_history">History</string>
     <string name="mobile_library_empty">Nothing here yet</string>
     <string name="mobile_library_swipe_hint">Swipe left or right on an item to delete</string>

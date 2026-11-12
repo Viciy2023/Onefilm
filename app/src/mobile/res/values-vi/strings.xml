@@ -77,6 +77,7 @@
     <string name="mobile_search_result_count">%1$d kết quả</string>
     <string name="mobile_search_searching">Đang tìm</string>
     <string name="mobile_library_delete_confirm">Xóa mục này?</string>
+    <string name="mobile_library_netdisk">Ổ mạng</string>
     <string name="mobile_library_history">Lịch sử</string>
     <string name="mobile_library_empty">Chưa có gì ở đây</string>
     <string name="mobile_library_swipe_hint">Vuốt sang trái hoặc phải trên mục để xoá</string>
