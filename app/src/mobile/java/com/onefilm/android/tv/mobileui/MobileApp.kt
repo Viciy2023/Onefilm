@@ -162,15 +162,18 @@ fun MobileApp() {
         SearchSession.start(ComposeDependencies.searchDataSource, keyword)
     }
 
-    fun openCard(card: MediaCard) {
+    /** 首页 / 分类：与 TV 一致，先按标题进搜索结果页，从结果里选站点再进详情。 */
+    fun openSearchFirst(card: MediaCard) {
+        if (card.title.isNotBlank()) screen = MobileScreen.SearchResults(card.title)
+    }
+
+    /** 搜索结果 / 收藏 / 历史：已知站点与影片 id，直接进详情。 */
+    fun openCardDirect(card: MediaCard) {
         if (card.key.isNotBlank() && card.id.isNotBlank()) {
-            // 首页/分类的榜单条目（豆瓣）没有播放源：先进入搜索结果页，从结果里选站点再进详情。
-            val meta = card.key == "onefilm_home" || card.id.startsWith("douban:")
-            screen = if (meta) {
-                MobileScreen.SearchResults(card.title)
-            } else {
-                MobileScreen.Detail(card.key, card.id, card.title, card.posterUrl)
-            }
+            screen = MobileScreen.Detail(card.key, card.id, card.title, card.posterUrl)
+        } else if (card.title.isNotBlank()) {
+            // 兜底：没有 id 的条目（如榜单）按标题去搜，避免"点了没反应"。
+            screen = MobileScreen.SearchResults(card.title)
         }
     }
 
@@ -326,26 +329,26 @@ fun MobileApp() {
                         searchHistory = emptyList()
                     },
                     onSubmit = { submitSearch(it) },
-                    onCardClick = ::openCard,
+                    onCardClick = ::openCardDirect,
                 )
                 category != null -> MobileCategoryScreen(
                     category = category,
                     dataSource = ComposeDependencies.categoryDataSource,
                     onBack = { categoryTarget = null },
-                    onCardClick = ::openCard,
+                    onCardClick = ::openSearchFirst,
                 )
                 else -> when (tab) {
                     MobileTab.HOME -> MobileHomeScreen(
                         state = homeState,
                         onRetry = { homeRefresh++ },
-                        onCardClick = ::openCard,
+                        onCardClick = ::openSearchFirst,
                         onCategoryClick = { categoryTarget = it },
                     )
                     MobileTab.LIBRARY -> MobileLibraryScreen(
                         dataSource = ComposeDependencies.libraryDataSource,
                         initialTab = libraryTab,
                         onTabChange = { libraryTab = it },
-                        onCardClick = ::openCard,
+                        onCardClick = ::openCardDirect,
                         onPlayNetdisk = { playback, entry ->
                             val name = entry.name.ifBlank {
                                 context.getString(com.onefilm.android.tv.compose.R.string.netdisk_video_name)
@@ -1164,3 +1167,4 @@ private fun MobileSearchResultsScreen(
         }
     }
 }
+
