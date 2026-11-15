@@ -22,4 +22,6 @@ object ComposeDependencies {
     lateinit var updateDataSource: UpdateDataSource
     var dlnaDataSource: DlnaDataSource? = null
     var fileLauncher: FileLauncher? = null
+    /** 打开接口下发的网页（配置中心这类站点的动作项）。 */
+    var webPageLauncher: WebPageLauncher? = null
 }

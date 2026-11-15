@@ -19,6 +19,8 @@ object HomeFeedMapper {
             landscapeUrl = vod.picSlide.orEmpty().ifBlank { null },
             siteName = runCatching { VodConfig.get().getSite(siteKey).name }.getOrNull(),
             folder = vod.isFolder,
+            // 配置中心这类站点的动作项：备注里就是要打开的网址
+            webUrl = vod.remarks.orEmpty().trim().takeIf { it.startsWith("http://") || it.startsWith("https://") },
         )
     }
 

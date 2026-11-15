@@ -684,12 +684,16 @@ class ComposeMainActivity : ComponentActivity() {
                                 onOpenConfig = { showConfigDialog = true },
                                 firstActionFocus = emptyActionFocus,
                                 onCardClick = { card ->
-                                    if (settingsStyleSite && card.id.isNotBlank()) {
-                                        navController.navigate(
-                                            Routes.detail(card.key, card.id, card.title, card.posterUrl),
-                                        )
-                                    } else if (card.title.isNotBlank()) {
-                                        navController.navigate(Routes.search(card.title))
+                                    val web = card.webUrl
+                                    when {
+                                        !web.isNullOrBlank() -> prefetchScope.launch {
+                                            ComposeDependencies.webPageLauncher?.open(web)
+                                        }
+                                        settingsStyleSite && card.id.isNotBlank() ->
+                                            navController.navigate(
+                                                Routes.detail(card.key, card.id, card.title, card.posterUrl),
+                                            )
+                                        card.title.isNotBlank() -> navController.navigate(Routes.search(card.title))
                                     }
                                 },
                                 onCategoryClick = { category ->
@@ -793,12 +797,16 @@ class ComposeMainActivity : ComponentActivity() {
                                 dataSource = categoryDataSource,
                                 onBack = { navController.popBackStack() },
                                 onCardClick = { card ->
-                                    if (settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank()) {
-                                        navController.navigate(
-                                            Routes.detail(card.key, card.id, card.title, card.posterUrl),
-                                        )
-                                    } else if (card.title.isNotBlank()) {
-                                        navController.navigate(Routes.search(card.title))
+                                    val web = card.webUrl
+                                    when {
+                                        !web.isNullOrBlank() -> prefetchScope.launch {
+                                            ComposeDependencies.webPageLauncher?.open(web)
+                                        }
+                                        settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank() ->
+                                            navController.navigate(
+                                                Routes.detail(card.key, card.id, card.title, card.posterUrl),
+                                            )
+                                        card.title.isNotBlank() -> navController.navigate(Routes.search(card.title))
                                     }
                                 },
                             )

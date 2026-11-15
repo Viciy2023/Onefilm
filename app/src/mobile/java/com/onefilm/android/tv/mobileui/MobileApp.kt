@@ -137,6 +137,7 @@ fun MobileApp() {
     var autoCategoryKey by remember { mutableStateOf<String?>(null) }
     // 纯设置型站点（首页只有分类）：卡片点了直接进详情/动作页，不按标题搜索
     var settingsStyleSite by remember { mutableStateOf(false) }
+    val pageScope = rememberCoroutineScope()
     var tab by rememberSaveable { mutableStateOf(MobileTab.HOME) }
     // 「继续观看」页默认打开「历史」。
     var libraryTab by rememberSaveable { mutableIntStateOf(1) }
@@ -171,6 +172,11 @@ fun MobileApp() {
 
     /** 首页 / 分类：与 TV 一致，先按标题进搜索结果页，从结果里选站点再进详情。 */
     fun openSearchFirst(card: MediaCard) {
+        // 接口下发的「打开网页」动作项（备注就是网址）：直接弹网页，不进详情
+        card.webUrl?.takeIf { it.isNotBlank() }?.let { url ->
+            pageScope.launch { ComposeDependencies.webPageLauncher?.open(url) }
+            return
+        }
         // 配置中心这类站点的条目是「打开网页 / 扫码登录」动作，必须直接进详情
         if (settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank()) {
             screen = MobileScreen.Detail(card.key, card.id, card.title, card.posterUrl)

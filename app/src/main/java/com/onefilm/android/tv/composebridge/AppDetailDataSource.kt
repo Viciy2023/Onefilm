@@ -14,7 +14,7 @@ class AppDetailDataSource : DetailDataSource {
 
     override suspend fun load(key: String, id: String): DetailInfo = withContext(Dispatchers.IO) {
         DetailCache.get(key, id)?.let { return@withContext it }
-        val cacheKey = "detail_${key}_${id}"
+        val cacheKey = "detail_v2_${key}_${id}"
         DiskCache.read<DetailInfo>(cacheKey, 24 * 60 * 60_000L)?.let {
             DetailCache.put(it)
             return@withContext it

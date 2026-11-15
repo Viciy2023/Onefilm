@@ -14,6 +14,8 @@ data class MediaCard(
     val landscapeUrl: String? = null,
     /** 站点 folder=true 时，卡片表示下一级目录而不是影片。 */
     val folder: Boolean = false,
+    /** 条目是「打开网页」动作时，这里带要打开的地址（来自接口返回的备注）。 */
+    val webUrl: String? = null,
 ) : Serializable
 
 data class HomeSection(val title: String, val items: List<MediaCard>, val key: String? = null) : Serializable
