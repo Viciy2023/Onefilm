@@ -24,8 +24,12 @@ class HomeViewModel(
             _state.value = runCatching { dataSource.load() }
                 .fold(
                     onSuccess = { feed ->
-                        if (feed.hero.isEmpty() && feed.sections.isEmpty()) HomeUiState.Empty
-                        else HomeUiState.Content(feed)
+                        // 配置中心这类站点只返回分类、不返回影片，不能判成空首页
+                        if (feed.hero.isEmpty() && feed.sections.isEmpty() && feed.categories.isEmpty()) {
+                            HomeUiState.Empty
+                        } else {
+                            HomeUiState.Content(feed)
+                        }
                     },
                     onFailure = { HomeUiState.Error() },
                 )

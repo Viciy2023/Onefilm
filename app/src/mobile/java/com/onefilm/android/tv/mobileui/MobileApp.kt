@@ -133,6 +133,8 @@ fun MobileApp() {
     var homeRefresh by remember { mutableIntStateOf(0) }
     // 「主页」chip 再点一次：选择首页数据源
     var showSitePicker by remember { mutableStateOf(false) }
+    // 配置中心类站点自动进入第一个分类的防重标记
+    var autoCategoryKey by remember { mutableStateOf<String?>(null) }
     var tab by rememberSaveable { mutableStateOf(MobileTab.HOME) }
     // 「继续观看」页默认打开「历史」。
     var libraryTab by rememberSaveable { mutableIntStateOf(1) }
@@ -191,11 +193,25 @@ fun MobileApp() {
         homeState = runCatching { ComposeDependencies.homeDataSource.load() }
             .fold(
                 onSuccess = { feed ->
-                    if (feed.hero.isEmpty() && feed.sections.isEmpty()) HomeUiState.Empty
-                    else HomeUiState.Content(feed)
+                    // 配置中心这类站点只返回分类、不返回影片，不能判成空首页
+                    if (feed.hero.isEmpty() && feed.sections.isEmpty() && feed.categories.isEmpty()) {
+                        HomeUiState.Empty
+                    } else {
+                        HomeUiState.Content(feed)
+                    }
                 },
                 onFailure = { HomeUiState.Error() },
             )
+        // 首页没有影片但有分类：直接进第一个分类（对齐欧歌的「配置中心」体验）
+        val feed = (homeState as? HomeUiState.Content)?.feed
+        if (feed != null && feed.sections.none { it.items.isNotEmpty() }) {
+            val first = feed.categories.firstOrNull()
+            val key = first?.let { it.key + ":" + it.id }
+            if (first != null && key != autoCategoryKey) {
+                autoCategoryKey = key
+                categoryTarget = first
+            }
+        }
     }
 
     if (showSitePicker) {
@@ -556,11 +572,23 @@ private fun MobileHomeScreen(
     onCategoryClick: (HomeCategory) -> Unit,
     onHomeClick: () -> Unit,
 ) {
-    when (state) {
-        HomeUiState.Loading -> MobileLoading()
-        HomeUiState.Empty -> MobileStatus(stringResource(R.string.mobile_home_empty), onRetry)
-        is HomeUiState.Error -> MobileStatus(state.message, onRetry)
-        is HomeUiState.Content -> MobileHomeContent(state, onCardClick, onCategoryClick, onHomeClick)
+    // 「主页」chip 常驻：没有接口 / 加载失败时也要能点开首页数据源面板
+    val loadedCategories = (state as? HomeUiState.Content)?.feed?.categories.orEmpty()
+    Column(Modifier.fillMaxSize()) {
+        if (state !is HomeUiState.Content) {
+            MobileHomeCategoryChips(
+                categories = emptyList(),
+                chipsHeight = 46.dp,
+                onCategoryClick = onCategoryClick,
+                onHomeClick = onHomeClick,
+            )
+        }
+        when (state) {
+            HomeUiState.Loading -> MobileLoading()
+            HomeUiState.Empty -> MobileStatus(stringResource(R.string.mobile_home_empty), onRetry)
+            is HomeUiState.Error -> MobileStatus(state.message, onRetry)
+            is HomeUiState.Content -> MobileHomeContent(state, onCardClick, onCategoryClick, onHomeClick)
+        }
     }
 }
 
@@ -585,7 +613,7 @@ private fun MobileHomeContent(
         val vPad = 8.dp
         val rowGap = 8.dp
         val sectionGap = 12.dp
-        val hasChips = feed.categories.isNotEmpty()
+        val hasChips = true
         val chipsHeight = if (hasChips) 46.dp else 0.dp
         val horizontal = com.onefilm.android.tv.compose.design.PosterStyleController.horizontal
 
@@ -600,7 +628,7 @@ private fun MobileHomeContent(
             ) {
                 if (hasChips) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        MobileHomeCategoryChips(feed, chipsHeight, onCategoryClick, onHomeClick)
+                        MobileHomeCategoryChips(feed.categories, chipsHeight, onCategoryClick, onHomeClick)
                     }
                 }
                 if (hasRecommend) {
@@ -630,7 +658,7 @@ private fun MobileHomeContent(
                 Modifier.fillMaxSize().padding(horizontal = hPad, vertical = vPad),
                 verticalArrangement = Arrangement.spacedBy(sectionGap),
             ) {
-                MobileHomeCategoryChips(feed, chipsHeight, onCategoryClick, onHomeClick)
+                MobileHomeCategoryChips(feed.categories, chipsHeight, onCategoryClick, onHomeClick)
                 if (hasRecommend) {
                     MobileHomeSection(
                         title = null,
@@ -650,12 +678,11 @@ private fun MobileHomeContent(
 /** 首页分类 chips：首个固定为「主页」（展示接口推荐数据），其后是接口分类。 */
 @Composable
 private fun MobileHomeCategoryChips(
-    feed: com.onefilm.android.tv.compose.bridge.HomeFeed,
+    categories: List<HomeCategory>,
     chipsHeight: Dp,
     onCategoryClick: (HomeCategory) -> Unit,
     onHomeClick: () -> Unit,
 ) {
-    if (feed.categories.isEmpty()) return
     val homeLabel = stringResource(com.onefilm.android.tv.compose.R.string.category_home)
     LazyRow(
         Modifier.height(chipsHeight - 6.dp),
@@ -676,7 +703,7 @@ private fun MobileHomeCategoryChips(
                     .padding(horizontal = 12.dp, vertical = 8.dp),
             )
         }
-        items(feed.categories) { category ->
+        items(categories) { category ->
             Text(
                 text = category.name,
                 fontSize = 13.sp,

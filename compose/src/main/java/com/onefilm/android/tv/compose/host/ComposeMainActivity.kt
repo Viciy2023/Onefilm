@@ -348,6 +348,22 @@ class ComposeMainActivity : ComponentActivity() {
                     TvBrandState.notice = brandFeed?.notice.orEmpty()
                     TvBrandState.siteName = brandFeed?.siteName.orEmpty()
                 }
+                // 配置中心这类站点：首页只返回分类、没有影片，进入站点后自动打开第一个分类（对齐欧歌）
+                var autoCategoryKey by remember { mutableStateOf<String?>(null) }
+                val autoFeed = (homeState as? HomeUiState.Content)?.feed
+                LaunchedEffect(autoFeed?.categories, route) {
+                    val feed = autoFeed ?: return@LaunchedEffect
+                    if (route != Routes.HOME) return@LaunchedEffect
+                    if (feed.sections.any { it.items.isNotEmpty() }) return@LaunchedEffect
+                    val first = feed.categories.firstOrNull() ?: return@LaunchedEffect
+                    val key = first.key + ":" + first.id
+                    if (autoCategoryKey == key) return@LaunchedEffect
+                    autoCategoryKey = key
+                    navController.navigate(Routes.category(first.key, first.id, first.name)) {
+                        popUpTo(Routes.HOME) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                }
                 var showConfigDialog by remember { mutableStateOf(false) }
                 var showHomeSitePicker by remember { mutableStateOf(false) }
                 // 遥控器菜单键：只有主页响应，打开「选择首页数据源」
