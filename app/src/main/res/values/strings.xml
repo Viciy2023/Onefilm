@@ -446,4 +446,10 @@
     <string name="playback_preparing">Preparing playback</string>
     <string name="entry_loading">Loading, please wait!</string>
     <string name="external_link_unsupported">This link type is not supported yet. Use a web video page or a direct video link (m3u8 / mp4).</string>
+    <string name="web_login_title">Sign in</string>
+    <string name="web_login_hint">Scan the QR code with your phone. This page closes automatically after sign-in.</string>
+    <string name="web_login_close">Close</string>
+    <string name="web_login_done">Done</string>
+    <string name="web_login_risk">Security check required by the provider. Please sign in with a QR code instead.</string>
+    <string name="web_login_tv_hint">Arrow keys move the pointer, OK to tap</string>
 </resources>

@@ -81,6 +81,11 @@
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
             android:screenOrientation="sensorLandscape" />
 
+        <activity
+            android:name=".ui.activity.TvWebLoginActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation|keyboard|keyboardHidden|navigation"
+            android:screenOrientation="sensorLandscape" />
+
         <service
             android:name=".service.DLNARendererService"
             android:exported="false"

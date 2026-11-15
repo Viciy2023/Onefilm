@@ -436,4 +436,10 @@
     <string name="playback_preparing">正在準備播放</string>
     <string name="entry_loading">正在載入，請稍候！</string>
     <string name="external_link_unsupported">暫不支援此連結類型。請使用網頁影片網址或直鏈影片（m3u8 / mp4）。</string>
+    <string name="web_login_title">帳號登入</string>
+    <string name="web_login_hint">請用手機掃碼登入，登入成功後會自動返回並繼續播放</string>
+    <string name="web_login_close">關閉</string>
+    <string name="web_login_done">完成</string>
+    <string name="web_login_risk">對方要求安全驗證，本次網頁登入不可用，請改用掃碼登入</string>
+    <string name="web_login_tv_hint">方向鍵移動指標，確認鍵點擊</string>
 </resources>

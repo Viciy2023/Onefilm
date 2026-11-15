@@ -436,4 +436,10 @@
     <string name="playback_preparing">正在准备播放</string>
     <string name="entry_loading">正在加载，请稍候！</string>
     <string name="external_link_unsupported">暂不支持该链接类型。请使用网页视频地址或直链视频（m3u8 / mp4）。</string>
+    <string name="web_login_title">账号登录</string>
+    <string name="web_login_hint">请用手机扫码登录，登录成功后会自动返回并继续播放</string>
+    <string name="web_login_close">关闭</string>
+    <string name="web_login_done">完成</string>
+    <string name="web_login_risk">对方要求安全验证，本次网页登录不可用，请改用扫码登录</string>
+    <string name="web_login_tv_hint">方向键移动指针，确认键点击</string>
 </resources>

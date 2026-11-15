@@ -135,6 +135,8 @@ fun MobileApp() {
     var showSitePicker by remember { mutableStateOf(false) }
     // 配置中心类站点自动进入第一个分类的防重标记
     var autoCategoryKey by remember { mutableStateOf<String?>(null) }
+    // 纯设置型站点（首页只有分类）：卡片点了直接进详情/动作页，不按标题搜索
+    var settingsStyleSite by remember { mutableStateOf(false) }
     var tab by rememberSaveable { mutableStateOf(MobileTab.HOME) }
     // 「继续观看」页默认打开「历史」。
     var libraryTab by rememberSaveable { mutableIntStateOf(1) }
@@ -169,6 +171,11 @@ fun MobileApp() {
 
     /** 首页 / 分类：与 TV 一致，先按标题进搜索结果页，从结果里选站点再进详情。 */
     fun openSearchFirst(card: MediaCard) {
+        // 配置中心这类站点的条目是「打开网页 / 扫码登录」动作，必须直接进详情
+        if (settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank()) {
+            screen = MobileScreen.Detail(card.key, card.id, card.title, card.posterUrl)
+            return
+        }
         if (card.title.isNotBlank()) screen = MobileScreen.SearchResults(card.title)
     }
 
@@ -204,6 +211,9 @@ fun MobileApp() {
             )
         // 首页没有影片但有分类：直接进第一个分类（对齐欧歌的「配置中心」体验）
         val feed = (homeState as? HomeUiState.Content)?.feed
+        settingsStyleSite = feed != null &&
+            feed.sections.none { it.items.isNotEmpty() } &&
+            feed.categories.isNotEmpty()
         if (feed != null && feed.sections.none { it.items.isNotEmpty() }) {
             val first = feed.categories.firstOrNull()
             val key = first?.let { it.key + ":" + it.id }

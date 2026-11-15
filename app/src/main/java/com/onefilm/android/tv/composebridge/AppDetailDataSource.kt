@@ -21,7 +21,15 @@ class AppDetailDataSource : DetailDataSource {
         }
         try {
             VodConfig.get().ensureLoaded()
-            val vod = SiteApi.detailContent(key, id).vod.setFlags()
+            var result = SiteApi.detailContent(key, id)
+            // 配置中心这类站点的条目不是一个影片，而是「网页配置 / 扫码登录 / 清除 Cookie」等动作：
+            // spider 会返回 web 配置，先打开网页让用户操作，完成后重新取一次详情。
+            val web = result.takeWeb()
+            if (web != null) {
+                AppWebLogin.login(web)
+                result = SiteApi.detailContent(key, id)
+            }
+            val vod = result.vod.setFlags()
             android.util.Log.d("ComposeDetail", "loaded key=$key id=$id name=${vod.name} pic=${vod.pic} flags=${vod.flags.size}")
             val info = DetailInfo(
                 key = key,

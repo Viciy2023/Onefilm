@@ -430,4 +430,5 @@
     <string name="home_pick_site">請選擇首頁資料來源</string>
     <string name="home_pick_site_empty">目前介面沒有可選站點</string>
     <string name="home_pick_site_current">目前</string>
+    <string name="home_no_recommend">此站點沒有首頁推薦，請從上方分類進入</string>
 </resources>

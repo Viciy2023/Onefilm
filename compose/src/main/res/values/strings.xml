@@ -430,4 +430,5 @@
     <string name="home_pick_site">Select home data source</string>
     <string name="home_pick_site_empty">No selectable sites in this config</string>
     <string name="home_pick_site_current">Current</string>
+    <string name="home_no_recommend">This site has no home recommendations. Use the categories above.</string>
 </resources>

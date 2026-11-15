@@ -273,7 +273,18 @@ private fun TvHomeContent(
 ) {
     val section = state.feed.sections.firstOrNull { it.key == "recommend" && it.items.isNotEmpty() }
         ?: state.feed.sections.firstOrNull { it.items.isNotEmpty() }
-        ?: return
+    if (section == null) {
+        // 配置中心这类站点没有推荐影片：给一句引导，避免整页空白
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text = stringResource(R.string.home_no_recommend),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 16.sp,
+                textAlign = TextAlign.Center,
+            )
+        }
+        return
+    }
     val horizontal = PosterStyleController.horizontal
     // 横版模式首行：左侧英雄卡（2 列 × 2 行）+ 右侧 2×2 四张普通卡；其余条目继续普通网格。
     val ordered = if (horizontal) {

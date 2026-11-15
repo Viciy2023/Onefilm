@@ -62,6 +62,10 @@ public class Result implements Parcelable {
     @JsonAdapter(MsgAdapter.class)
     private String msg;
 
+    /** 站点要求网页登录时返回的配置，见 {@link Web}。 */
+    @SerializedName("web")
+    private Web web;
+
     @SerializedName("danmaku")
     @JsonAdapter(DanmakuAdapter.class)
     private List<Danmaku> danmaku;
@@ -205,6 +209,21 @@ public class Result implements Parcelable {
 
     public void setMsg(String msg) {
         this.msg = msg;
+    }
+
+    public Web getWeb() {
+        return web;
+    }
+
+    public boolean hasWeb() {
+        return web != null && web.isValid();
+    }
+
+    /** 取出登录配置并从结果里移除，避免同一次操作重复弹登录页。 */
+    public Web takeWeb() {
+        Web value = web;
+        this.web = null;
+        return value != null && value.isValid() ? value : null;
     }
 
     public List<Sub> getSubs() {

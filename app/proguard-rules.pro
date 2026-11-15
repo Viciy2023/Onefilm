@@ -92,7 +92,10 @@
 -keep class com.google.zxing.qrcode.decoder.ErrorCorrectionLevel { *; }
 
 
-# Compose bridge models used by the serializable disk cache
+# 登录页按端各自实现，主代码用 Class.forName 按名字查找，必须保留类名
+-keep class com.onefilm.android.tv.ui.activity.TvWebLoginActivity { *; }
+-keep class com.onefilm.android.tv.ui.activity.MobileWebLoginActivity { *; }
+-keep class com.onefilm.android.tv.ui.activity.WebLoginActivity { *; }
 -keep class com.onefilm.android.tv.compose.bridge.** { *; }
 -keepclassmembers class com.onefilm.android.tv.compose.bridge.** implements java.io.Serializable {
     *;

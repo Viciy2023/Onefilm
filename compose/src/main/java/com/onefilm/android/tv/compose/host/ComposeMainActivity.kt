@@ -351,6 +351,10 @@ class ComposeMainActivity : ComponentActivity() {
                 // 配置中心这类站点：首页只返回分类、没有影片，进入站点后自动打开第一个分类（对齐欧歌）
                 var autoCategoryKey by remember { mutableStateOf<String?>(null) }
                 val autoFeed = (homeState as? HomeUiState.Content)?.feed
+                // 配置中心这类「纯设置型」站点：条目不是影片，点了应直接进详情/动作页，而不是按标题去搜索
+                val settingsStyleSite = autoFeed != null &&
+                    autoFeed.sections.none { it.items.isNotEmpty() } &&
+                    autoFeed.categories.isNotEmpty()
                 LaunchedEffect(autoFeed?.categories, route) {
                     val feed = autoFeed ?: return@LaunchedEffect
                     if (route != Routes.HOME) return@LaunchedEffect
@@ -680,7 +684,11 @@ class ComposeMainActivity : ComponentActivity() {
                                 onOpenConfig = { showConfigDialog = true },
                                 firstActionFocus = emptyActionFocus,
                                 onCardClick = { card ->
-                                    if (card.title.isNotBlank()) {
+                                    if (settingsStyleSite && card.id.isNotBlank()) {
+                                        navController.navigate(
+                                            Routes.detail(card.key, card.id, card.title, card.posterUrl),
+                                        )
+                                    } else if (card.title.isNotBlank()) {
                                         navController.navigate(Routes.search(card.title))
                                     }
                                 },
@@ -785,7 +793,11 @@ class ComposeMainActivity : ComponentActivity() {
                                 dataSource = categoryDataSource,
                                 onBack = { navController.popBackStack() },
                                 onCardClick = { card ->
-                                    if (card.title.isNotBlank()) {
+                                    if (settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank()) {
+                                        navController.navigate(
+                                            Routes.detail(card.key, card.id, card.title, card.posterUrl),
+                                        )
+                                    } else if (card.title.isNotBlank()) {
                                         navController.navigate(Routes.search(card.title))
                                     }
                                 },
