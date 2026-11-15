@@ -82,6 +82,7 @@ import com.onefilm.android.tv.compose.bridge.LibraryDataSource
 import com.onefilm.android.tv.compose.bridge.MediaCard
 import com.onefilm.android.tv.compose.bridge.SearchDataSource
 import com.onefilm.android.tv.compose.bridge.UpdateInfo
+import com.onefilm.android.tv.compose.feature.home.HomeSitePickerDialog
 import com.onefilm.android.tv.compose.feature.home.HomeUiState
 import com.onefilm.android.tv.compose.feature.player.PlaybackSession
 import com.onefilm.android.tv.compose.feature.search.SearchSession
@@ -130,6 +131,8 @@ fun MobileApp() {
         )
     }
     var homeRefresh by remember { mutableIntStateOf(0) }
+    // 「主页」chip 再点一次：选择首页数据源
+    var showSitePicker by remember { mutableStateOf(false) }
     var tab by rememberSaveable { mutableStateOf(MobileTab.HOME) }
     // 「继续观看」页默认打开「历史」。
     var libraryTab by rememberSaveable { mutableIntStateOf(1) }
@@ -193,6 +196,18 @@ fun MobileApp() {
                 },
                 onFailure = { HomeUiState.Error() },
             )
+    }
+
+    if (showSitePicker) {
+        HomeSitePickerDialog(
+            options = ComposeDependencies.homeDataSource.sites(),
+            onDismiss = { showSitePicker = false },
+            onPick = { key ->
+                showSitePicker = false
+                // 切换成功才刷新；缓存失效由 dataSource.setHomeSite 负责
+                if (ComposeDependencies.homeDataSource.setHomeSite(key)) homeRefresh++
+            },
+        )
     }
 
     LaunchedEffect(Unit) {
@@ -343,6 +358,7 @@ fun MobileApp() {
                         onRetry = { homeRefresh++ },
                         onCardClick = ::openSearchFirst,
                         onCategoryClick = { categoryTarget = it },
+                        onHomeClick = { showSitePicker = true },
                     )
                     MobileTab.LIBRARY -> MobileLibraryScreen(
                         dataSource = ComposeDependencies.libraryDataSource,
@@ -538,12 +554,13 @@ private fun MobileHomeScreen(
     onRetry: () -> Unit,
     onCardClick: (MediaCard) -> Unit,
     onCategoryClick: (HomeCategory) -> Unit,
+    onHomeClick: () -> Unit,
 ) {
     when (state) {
         HomeUiState.Loading -> MobileLoading()
         HomeUiState.Empty -> MobileStatus(stringResource(R.string.mobile_home_empty), onRetry)
         is HomeUiState.Error -> MobileStatus(state.message, onRetry)
-        is HomeUiState.Content -> MobileHomeContent(state, onCardClick, onCategoryClick)
+        is HomeUiState.Content -> MobileHomeContent(state, onCardClick, onCategoryClick, onHomeClick)
     }
 }
 
@@ -552,6 +569,7 @@ private fun MobileHomeContent(
     state: HomeUiState.Content,
     onCardClick: (MediaCard) -> Unit,
     onCategoryClick: (HomeCategory) -> Unit,
+    onHomeClick: () -> Unit,
 ) {
     val feed = state.feed
     val recommendationIndex = feed.sections.indexOfFirst {
@@ -582,7 +600,7 @@ private fun MobileHomeContent(
             ) {
                 if (hasChips) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        MobileHomeCategoryChips(feed, chipsHeight, onCategoryClick)
+                        MobileHomeCategoryChips(feed, chipsHeight, onCategoryClick, onHomeClick)
                     }
                 }
                 if (hasRecommend) {
@@ -612,7 +630,7 @@ private fun MobileHomeContent(
                 Modifier.fillMaxSize().padding(horizontal = hPad, vertical = vPad),
                 verticalArrangement = Arrangement.spacedBy(sectionGap),
             ) {
-                MobileHomeCategoryChips(feed, chipsHeight, onCategoryClick)
+                MobileHomeCategoryChips(feed, chipsHeight, onCategoryClick, onHomeClick)
                 if (hasRecommend) {
                     MobileHomeSection(
                         title = null,
@@ -635,6 +653,7 @@ private fun MobileHomeCategoryChips(
     feed: com.onefilm.android.tv.compose.bridge.HomeFeed,
     chipsHeight: Dp,
     onCategoryClick: (HomeCategory) -> Unit,
+    onHomeClick: () -> Unit,
 ) {
     if (feed.categories.isEmpty()) return
     val homeLabel = stringResource(com.onefilm.android.tv.compose.R.string.category_home)
@@ -643,7 +662,7 @@ private fun MobileHomeCategoryChips(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
-            // 「主页」= 当前页，展示接口推荐；不需要跳转。
+            // 「主页」= 当前页；再点一次弹出「选择首页数据源」。
             Text(
                 text = homeLabel,
                 fontSize = 13.sp,
@@ -653,6 +672,7 @@ private fun MobileHomeCategoryChips(
                 modifier = Modifier
                     .clip(RoundedCornerShape(14.dp))
                     .background(MaterialTheme.colorScheme.primary)
+                    .clickable { onHomeClick() }
                     .padding(horizontal = 12.dp, vertical = 8.dp),
             )
         }
