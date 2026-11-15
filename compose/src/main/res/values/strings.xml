@@ -427,4 +427,7 @@
     <string name="player_favorited">Favorited</string>
     <string name="settings_saved_lines">Saved lines</string>
     <string name="settings_depot_lines">Repo lines</string>
+    <string name="home_pick_site">Select home data source</string>
+    <string name="home_pick_site_empty">No selectable sites in this config</string>
+    <string name="home_pick_site_current">Current</string>
 </resources>

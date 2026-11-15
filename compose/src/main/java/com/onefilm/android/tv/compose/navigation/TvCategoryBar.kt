@@ -57,6 +57,7 @@ fun TvCategoryBar(
     selectedCategoryId: String?,
     onNavigate: (String) -> Unit,
     onCategory: (HomeCategory) -> Unit,
+    onHomeClick: () -> Unit = {},
     hasCategoryFilters: (HomeCategory) -> Boolean,
     onHomeFocused: (Boolean) -> Unit,
     leftFocus: FocusRequester? = null,
@@ -95,7 +96,12 @@ fun TvCategoryBar(
                 category = category,
                 hasFilter = !home && current && hasCategoryFilters(category),
                 onClick = {
-                    if (home) onNavigate(Routes.HOME) else onCategory(category)
+                    when {
+                        // 已在主页时再点「主页」= 选择首页数据源
+                        home && currentRoute == Routes.HOME -> onHomeClick()
+                        home -> onNavigate(Routes.HOME)
+                        else -> onCategory(category)
+                    }
                 },
                 selected = home && currentRoute == Routes.HOME && !categoryFocusSeen,
                 onFocused = {

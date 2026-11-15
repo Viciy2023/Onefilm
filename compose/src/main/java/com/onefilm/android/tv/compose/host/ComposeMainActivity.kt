@@ -86,6 +86,7 @@ import com.onefilm.android.tv.compose.feature.source.ResolveRoute
 import com.onefilm.android.tv.compose.feature.home.HomeScreen
 import com.onefilm.android.tv.compose.feature.home.HomeUiState
 import com.onefilm.android.tv.compose.feature.home.HomeViewModel
+import com.onefilm.android.tv.compose.feature.home.HomeSitePickerDialog
 import com.onefilm.android.tv.compose.navigation.AdaptiveNavigation
 import com.onefilm.android.tv.compose.navigation.TvBrandState
 import com.onefilm.android.tv.compose.navigation.TvHeader
@@ -117,6 +118,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 
+/** 主页菜单键：由 Compose 内容注册，Activity 负责分发（对齐欧歌的 MENU 键行为）。 */
+private object TvHomeKeyState {
+    @Volatile
+    var onMenu: (() -> Boolean)? = null
+}
+
 class ComposeMainActivity : ComponentActivity() {
 
     @Volatile
@@ -143,6 +150,10 @@ class ComposeMainActivity : ComponentActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // 遥控器菜单键：在主页时打开「选择首页数据源」面板（对齐欧歌的使用习惯）。
+        if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_MENU) {
+            if (TvHomeKeyState.onMenu?.invoke() == true) return true
+        }
         // 控件隐藏时焦点不在任何播放按钮上，Compose 的 onPreviewKeyEvent
         // 收不到按键；这里在全屏播放路由直接处理确认/左右键。
         if (event.action == KeyEvent.ACTION_DOWN && TvPlayerKeyState.fullscreenActive) {
@@ -338,6 +349,16 @@ class ComposeMainActivity : ComponentActivity() {
                     TvBrandState.siteName = brandFeed?.siteName.orEmpty()
                 }
                 var showConfigDialog by remember { mutableStateOf(false) }
+                var showHomeSitePicker by remember { mutableStateOf(false) }
+                // 遥控器菜单键：只有主页响应，打开「选择首页数据源」
+                TvHomeKeyState.onMenu = {
+                    if (route == Routes.HOME) {
+                        showHomeSitePicker = true
+                        true
+                    } else {
+                        false
+                    }
+                }
                 var showExitDialog by remember { mutableStateOf(false) }
                 var showStorageIntro by remember {
                     mutableStateOf(ComposeDependencies.settingsDataSource.shouldShowStorageIntro())
@@ -619,6 +640,7 @@ class ComposeMainActivity : ComponentActivity() {
                                         }
                                     }
                                 },
+                                onHomeClick = { showHomeSitePicker = true },
                                 hasCategoryFilters = { category ->
                                     val version = CategoryFilterController.filtersVersion
                                     version >= 0 && ComposeDependencies.categoryDataSource.hasFilters(category.id)
@@ -784,6 +806,23 @@ class ComposeMainActivity : ComponentActivity() {
                     onDismiss = { showSettingsPanel = false },
                     onConfigChanged = { CategoryCache.clear(); homeViewModel.retry() },
                 )
+                if (showHomeSitePicker) {
+                    HomeSitePickerDialog(
+                        options = remember(showHomeSitePicker) { ComposeDependencies.homeDataSource.sites() },
+                        onDismiss = { showHomeSitePicker = false },
+                        onPick = { key ->
+                            showHomeSitePicker = false
+                            if (ComposeDependencies.homeDataSource.setHomeSite(key)) {
+                                navController.navigate(Routes.HOME) {
+                                    popUpTo(Routes.HOME) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                                homeViewModel.retry()
+                                homeCategoryFocusToken++
+                            }
+                        },
+                    )
+                }
                 TvAdFilterTip(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)

@@ -427,4 +427,7 @@
     <string name="player_favorited">已收藏</string>
     <string name="settings_saved_lines">已儲存線路</string>
     <string name="settings_depot_lines">倉庫線路</string>
+    <string name="home_pick_site">請選擇首頁資料來源</string>
+    <string name="home_pick_site_empty">目前介面沒有可選站點</string>
+    <string name="home_pick_site_current">目前</string>
 </resources>
