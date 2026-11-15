@@ -193,6 +193,16 @@ public class WebLoginActivity extends AppCompatActivity {
                 super.onReceivedError(view, request, error);
                 android.util.Log.w("WebLogin", "resource error: " + request.getUrl() + " -> " + error.getDescription());
             }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
+                return handleSpiderUri(request.getUrl());
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                return handleSpiderUri(TextUtils.isEmpty(url) ? null : android.net.Uri.parse(url));
+            }
         });
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -290,6 +300,34 @@ public class WebLoginActivity extends AppCompatActivity {
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    /** spider 页面用 tv-spider:// 指令与客户端通讯，例如 tv-spider://close 表示操作完成。 */
+    private boolean handleSpiderUri(android.net.Uri uri) {
+        if (uri == null) return false;
+        String scheme = uri.getScheme();
+        if (!"tv-spider".equalsIgnoreCase(scheme)) return false;
+        String host = uri.getHost();
+        String path = uri.getPath();
+        if ("close".equalsIgnoreCase(host) || (path != null && path.contains("close"))) {
+            close(true);
+        }
+        return true;
+    }
+
+    /** 返回键优先让 spider 页面自己处理（对齐上游 window.spiderBack()）。 */
+    @Override
+    public void onBackPressed() {
+        WebView view = webView;
+        if (view != null) {
+            view.evaluateJavascript(
+                    "(() => { if (typeof window.spiderBack !== 'function') return false; window.spiderBack(); return true; })()",
+                    handled -> {
+                        if (!"true".equals(handled)) close(false);
+                    });
+            return;
+        }
+        super.onBackPressed();
     }
 
     private void startCheck() {
