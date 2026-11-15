@@ -9,20 +9,26 @@ import com.onefilm.android.tv.compose.bridge.HomeDataSource
 import com.onefilm.android.tv.compose.bridge.HomeCategory
 import com.onefilm.android.tv.compose.bridge.HomeFeed
 import com.onefilm.android.tv.compose.bridge.HomeSection
+import com.onefilm.android.tv.compose.bridge.HomeSiteOption
 import com.onefilm.android.tv.compose.bridge.HomeFeedCache
+import com.onefilm.android.tv.compose.feature.category.CategoryCache
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class AppHomeDataSource : HomeDataSource {
 
     /**
-     * 磁盘缓存按接口地址隔离。
+     * 磁盘缓存按「接口地址 + 首页站点」隔离。
      *
-     * <p>之前用固定的 "home" 作为 key，换接口后冷启动会先渲染上一份接口的首页，
-     * 包括它的分类列表；用户点到那些分类时，新的接口上自然找不到对应分类，
-     * 就会报「分类加载失败」。
+     * <p>之前用固定的 "home" 作为 key，换接口后冷启动会先渲染上一份接口的首页；
+     * 现在首页站点可切换，缓存不区分站点同样会先闪上一个站点的内容。
      */
-    private fun cacheKey(): String = "home_" + VodConfig.getUrl().orEmpty().hashCode() + "_" + com.github.catvod.utils.LocaleManager.get()
+    private fun cacheKey(): String {
+        val configUrl = VodConfig.getUrl().orEmpty()
+        val siteKey = runCatching { VodConfig.get().getHome().key }.getOrNull().orEmpty()
+        return "home_" + configUrl.hashCode() + "_" + siteKey.hashCode() + "_" +
+            com.github.catvod.utils.LocaleManager.get()
+    }
 
     init {
         HomeFeedCache.feed = runCatching {
@@ -30,8 +36,25 @@ class AppHomeDataSource : HomeDataSource {
         }.getOrNull()
     }
 
-    override suspend fun load(): HomeFeed = withContext(Dispatchers.IO) {
-        VodConfig.get().ensureLoaded()
+    override fun sites(): List<HomeSiteOption> {
+        val homeKey = runCatching { VodConfig.get().getHome().key }.getOrNull().orEmpty()
+        return VodConfig.get().getSites()
+            .filter { it.key.isNotBlank() && !it.isHide() }
+            .map { HomeSiteOption(it.key, it.name.orEmpty(), it.key == homeKey) }
+    }
+
+    override fun setHomeSite(key: String): Boolean {
+        val site = VodConfig.get().getSite(key)
+        if (site.key.isBlank()) return false
+        // 持久化 + RefreshEvent.home() 都在 VodConfig 里完成
+        VodConfig.get().setHome(site)
+        // 站点变了：内存首页与分类缓存都属于上一个站点，必须失效
+        HomeFeedCache.feed = null
+        CategoryCache.clear()
+        return true
+    }
+
+    override suspend fun load(): HomeFeed = withContext(Dispatchers.IO) {        VodConfig.get().ensureLoaded()
         val site = VodConfig.get().getHome()
         if (site.key.isNullOrBlank()) {
             return@withContext HomeFeed(emptyList(), emptyList())

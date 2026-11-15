@@ -33,6 +33,19 @@ object HomeFeedCache {
     var feed: HomeFeed? = null
 }
 
+/** 首页可选站点（「主页」标签再点一次弹出的数据源面板）。 */
+data class HomeSiteOption(
+    val key: String,
+    val name: String,
+    val current: Boolean,
+) : Serializable
+
 interface HomeDataSource {
     suspend fun load(): HomeFeed
+
+    /** 首页可选站点，已过滤隐藏站点，保持配置顺序。 */
+    fun sites(): List<HomeSiteOption> = emptyList()
+
+    /** 切换首页站点并持久化；返回是否切换成功。 */
+    fun setHomeSite(key: String): Boolean = false
 }
