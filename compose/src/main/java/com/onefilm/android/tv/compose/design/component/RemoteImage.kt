@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -30,6 +31,21 @@ fun RemoteImage(
     onSize: ((Int, Int) -> Unit)? = null,
 ) {
     val source = remember(rawUrl) { parseImageSource(rawUrl) }
+    // 接口有时直接把海报做成 base64 的 data URI，Coil 没有对应的 fetcher，这里自己解码
+    if (!rawUrl.isNullOrBlank() && rawUrl.startsWith("data:image", ignoreCase = true)) {
+        val bitmap = remember(rawUrl) { decodeDataUri(rawUrl) }
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = contentDescription,
+                contentScale = contentScale,
+                modifier = modifier.fillMaxSize(),
+            )
+            return
+        }
+        PosterLogoFallback(modifier)
+        return
+    }
     if (source == null) {
         PosterLogoFallback(modifier)
         return
@@ -87,3 +103,11 @@ internal fun PosterLogoFallback(modifier: Modifier = Modifier) {
         )
     }
 }
+
+/** 解码 `data:image/...;base64,xxxx` 形式的海报；解不出来返回 null。 */
+internal fun decodeDataUri(uri: String): android.graphics.Bitmap? = runCatching {
+    val comma = uri.indexOf(',')
+    if (comma <= 0) return null
+    val bytes = android.util.Base64.decode(uri.substring(comma + 1), android.util.Base64.DEFAULT)
+    android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+}.getOrNull()
