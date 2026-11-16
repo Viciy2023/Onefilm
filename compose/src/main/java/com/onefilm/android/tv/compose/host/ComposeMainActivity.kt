@@ -387,7 +387,8 @@ class ComposeMainActivity : ComponentActivity() {
                     mutableStateOf<Pair<String, com.onefilm.android.tv.compose.bridge.PanFormSpec>?>(null)
                 }
                 var panEmby by remember { mutableStateOf<Triple<String, String, String>?>(null) }
-                var panWeb by remember { mutableStateOf<String?>(null) }
+                // 网页版配置中心：扫码打开（与欧歌一致），不再直接跳网页
+                var panLink by remember { mutableStateOf<String?>(null) }
                 // 遥控器菜单键：只有主页响应，打开「选择首页数据源」
                 TvHomeKeyState.onMenu = {
                     if (route == Routes.HOME) {
@@ -867,7 +868,7 @@ class ComposeMainActivity : ComponentActivity() {
                                             panForm = card.key to spec
                                         }
                                         settingsStyleSite && card.title.contains("网页版配置中心") ->
-                                            panWeb = card.webUrl ?: WebConfigStore.get(card.key)
+                                            panLink = card.webUrl ?: WebConfigStore.get(card.key)
                                         settingsStyleSite -> {
                                             val setting = com.onefilm.android.tv.compose.bridge.PanSettings.resolve(card.title)
                                             if (setting != null) {
@@ -1009,17 +1010,12 @@ class ComposeMainActivity : ComponentActivity() {
                         },
                     )
                 }
-                panWeb?.let { url ->
-                    com.onefilm.android.tv.compose.design.component.PanWebConfigDialog(
-                        url = url,
-                        onOpen = {
-                            panWeb = null
-                            prefetchScope.launch {
-                                ComposeDependencies.webPageLauncher?.open(url, null, compact = false)
-                            }
-                        },
-                        onDismiss = { panWeb = null },
-                    )
+                panLink?.let { url ->
+                    com.onefilm.android.tv.compose.design.component.PanQrDialog(
+                        title = "扫码打开网页版配置中心",
+                        message = "用手机扫码打开链接。",
+                        content = url,
+                    ) { panLink = null }
                 }
                 if (showHomeSitePicker) {                    HomeSitePickerDialog(
                         options = remember(showHomeSitePicker) { ComposeDependencies.homeDataSource.sites() },

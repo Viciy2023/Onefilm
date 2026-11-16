@@ -152,7 +152,8 @@ fun MobileApp() {
         mutableStateOf<Pair<String, com.onefilm.android.tv.compose.bridge.PanFormSpec>?>(null)
     }
     var panEmby by remember { mutableStateOf<Triple<String, String, String>?>(null) }
-    var panWeb by remember { mutableStateOf<String?>(null) }
+    // 网页版配置中心二维码
+    var panLink by remember { mutableStateOf<String?>(null) }
     val pageScope = rememberCoroutineScope()
     var tab by rememberSaveable { mutableStateOf(MobileTab.HOME) }
     // 「继续观看」页默认打开「历史」。
@@ -238,7 +239,7 @@ fun MobileApp() {
                 return
             }
             if (card.title.contains("网页版配置中心")) {
-                panWeb = card.webUrl
+                panLink = card.webUrl
                     ?: com.onefilm.android.tv.compose.bridge.WebConfigStore.get(card.key)
                 return
             }
@@ -414,17 +415,12 @@ fun MobileApp() {
             },
         )
     }
-    panWeb?.let { url ->
-        com.onefilm.android.tv.compose.design.component.PanWebConfigDialog(
-            url = url,
-            onOpen = {
-                panWeb = null
-                pageScope.launch {
-                    ComposeDependencies.webPageLauncher?.open(url, null, compact = false)
-                }
-            },
-            onDismiss = { panWeb = null },
-        )
+    panLink?.let { url ->
+        com.onefilm.android.tv.compose.design.component.PanQrDialog(
+            title = "扫码打开网页版配置中心",
+            message = "用手机扫码打开链接。",
+            content = url,
+        ) { panLink = null }
     }
 
     LaunchedEffect(Unit) {
