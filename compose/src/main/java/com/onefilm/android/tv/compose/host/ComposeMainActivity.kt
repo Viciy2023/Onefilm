@@ -887,6 +887,13 @@ class ComposeMainActivity : ComponentActivity() {
                                             }
                                         }
                                         !web.isNullOrBlank() -> openPage()
+                                        // 接口自己的分类页（配置中心这类站点）→ 搜索结果；普通站点分类页 → 详情
+                                        settingsStyleSite && card.id.isNotBlank() ->
+                                            navController.navigate(Routes.search(card.title))
+                                        card.id.isNotBlank() ->
+                                            navController.navigate(
+                                                Routes.detail(card.key, card.id, card.title, card.posterUrl),
+                                            )
                                         card.title.isNotBlank() -> navController.navigate(Routes.search(card.title))
                                     }
                                 },

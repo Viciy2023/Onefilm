@@ -187,8 +187,11 @@ fun MobileApp() {
         SearchSession.start(ComposeDependencies.searchDataSource, keyword)
     }
 
-    /** 首页 / 分类：与 TV 一致，先按标题进搜索结果页，从结果里选站点再进详情。 */
-    fun openSearchFirst(card: MediaCard) {
+    /**
+     * 首页 / 分类：首页影片走搜索结果页；
+     * 普通站点的分类页影片直接进详情；接口自己的分类页仍走搜索结果。
+     */
+    fun openSearchFirst(card: MediaCard, fromCategory: Boolean = false) {
         // 配置中心：注册 / 扫码登录 / Cookie 输入 / 清除 全部走统一原生弹窗
         val categoryId = categoryTarget?.id.orEmpty()
         // 动作卡按标题识别，与站点类型无关（配置站的卡片可能出现在任意站点上下文）
@@ -270,9 +273,13 @@ fun MobileApp() {
             }
             return
         }
-        // 配置中心这类站点的条目是「打开网页 / 扫码登录」动作，必须直接进详情
-        if (settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank()) {
-            screen = MobileScreen.Detail(card.key, card.id, card.title, card.posterUrl)
+        // 普通站点的分类页：影片卡直接进详情播放；接口自己的分类页（配置中心）与首页仍走搜索结果
+        if (fromCategory && card.id.isNotBlank()) {
+            screen = if (settingsStyleSite) {
+                MobileScreen.SearchResults(card.title)
+            } else {
+                MobileScreen.Detail(card.key, card.id, card.title, card.posterUrl)
+            }
             return
         }
         if (card.title.isNotBlank()) screen = MobileScreen.SearchResults(card.title)
@@ -565,7 +572,7 @@ fun MobileApp() {
                     category = category,
                     dataSource = ComposeDependencies.categoryDataSource,
                     onBack = { categoryTarget = null },
-                    onCardClick = ::openSearchFirst,
+                    onCardClick = { openSearchFirst(it, fromCategory = true) },
                 )
                 else -> when (tab) {
                     MobileTab.HOME -> MobileHomeScreen(
