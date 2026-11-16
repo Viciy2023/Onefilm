@@ -261,8 +261,8 @@ fun PanConfirmDialog(
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(modifier = Modifier.size(28.dp))
             }
-        } else {
-            Text("此操作只清除本地已保存的登录信息，可随时重新扫码或粘贴。", fontSize = 13.sp)
+        } else if (!state.body.isNullOrBlank()) {
+            Text(state.body, fontSize = 13.sp)
         }
     }
 }

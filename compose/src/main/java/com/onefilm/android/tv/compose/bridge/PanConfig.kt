@@ -63,4 +63,6 @@ data class PanConfirmState(
     val title: String,
     val message: String,
     val action: String,
+    /** 弹窗正文（可空）；清除类动作才需要额外说明。 */
+    val body: String? = null,
 )

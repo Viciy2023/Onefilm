@@ -1173,5 +1173,6 @@ private fun panClearConfirm(
         title = title,
         message = "确定清除该平台已保存的登录信息吗？",
         action = clearer,
+        body = "此操作只清除本地已保存的登录信息，可随时重新扫码或粘贴。",
     )
 }
