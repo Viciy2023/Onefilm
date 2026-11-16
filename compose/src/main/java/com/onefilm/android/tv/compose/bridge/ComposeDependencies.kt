@@ -24,4 +24,6 @@ object ComposeDependencies {
     var fileLauncher: FileLauncher? = null
     /** 打开接口下发的网页（配置中心这类站点的动作项）。 */
     var webPageLauncher: WebPageLauncher? = null
+    /** 配置中心网盘面板的动作接口（扫码登录 / 清除 Cookie）。 */
+    var panConfigActions: PanConfigActions? = null
 }

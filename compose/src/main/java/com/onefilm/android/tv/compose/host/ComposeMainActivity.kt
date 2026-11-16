@@ -805,10 +805,14 @@ class ComposeMainActivity : ComponentActivity() {
                                     val target = card.webUrl ?: WebConfigStore.pageUrl(card.key, tid)
                                     when {
                                         !target.isNullOrBlank() -> prefetchScope.launch {
+                                            val loginAction = if (card.webUrl == null && card.title.contains("扫码")) {
+                                                "startLogin('" + tid + "','" + card.title.replace("'", "") + "')"
+                                            } else null
                                             ComposeDependencies.webPageLauncher?.open(
                                                 target,
                                                 if (card.webUrl != null) null else card.title,
                                                 compact = card.webUrl == null,
+                                                action = loginAction,
                                             )
                                         }
                                         settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank() ->

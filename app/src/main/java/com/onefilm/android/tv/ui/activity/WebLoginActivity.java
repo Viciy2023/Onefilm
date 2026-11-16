@@ -50,6 +50,8 @@ public class WebLoginActivity extends AppCompatActivity {
     public static final String EXTRA_SELECT = "select";
     /** true：只展示展开后的详情面板（配置中心这类页面），隐藏页面头部与卡片列表。 */
     public static final String EXTRA_COMPACT = "compact";
+    /** 页面加载后要执行的 JS 动作，例如 startLogin('quark','夸克扫码登录')。 */
+    public static final String EXTRA_ACTION = "action";
 
     private static final long CHECK_INTERVAL = 1000L;
 
@@ -70,6 +72,7 @@ public class WebLoginActivity extends AppCompatActivity {
     private TextView hintView;
     private Web options;
     private String selectCard;
+    private String pageAction;
     private boolean compact;
     private boolean finished;
 
@@ -82,6 +85,7 @@ public class WebLoginActivity extends AppCompatActivity {
             return;
         }
         selectCard = getIntent().getStringExtra(EXTRA_SELECT);
+        pageAction = getIntent().getStringExtra(EXTRA_ACTION);
         compact = getIntent().getBooleanExtra(EXTRA_COMPACT, false);
         onConfigureWindow();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -266,10 +270,9 @@ public class WebLoginActivity extends AppCompatActivity {
         doneParams.setMarginEnd(dp(8));
         bar.addView(done, doneParams);
         if (compact) {
-            // 配置中心这类页面：去掉登录标题与「完成」，只保留关闭
-            title.setVisibility(View.GONE);
-            hintView.setVisibility(View.GONE);
-            done.setVisibility(View.GONE);
+            // 配置中心这类页面：完全交给接口页面自己的样式，隐藏我们的标题栏并铺白
+            bar.setVisibility(View.GONE);
+            cardBackground.setColor(Color.WHITE);
         }
         card.addView(bar, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -282,7 +285,8 @@ public class WebLoginActivity extends AppCompatActivity {
         pageContainer.setClipToOutline(true);
         LinearLayout.LayoutParams pageParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
-        pageParams.setMargins(dp(12), 0, dp(12), dp(12));
+        if (compact) pageParams.setMargins(0, 0, 0, 0);
+        else pageParams.setMargins(dp(12), 0, dp(12), dp(12));
         card.addView(pageContainer, pageParams);
         pageContainer.addView(webView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -414,7 +418,9 @@ public class WebLoginActivity extends AppCompatActivity {
               .append(".detail{border:0!important;background:transparent!important;padding:0!important}';")
               .append("document.head.appendChild(s);");
         }
-        if (!TextUtils.isEmpty(selectCard)) {
+        if (!TextUtils.isEmpty(pageAction)) {
+            js.append("setTimeout(function(){try{").append(pageAction).append("}catch(e){}},600);");
+        } else if (!TextUtils.isEmpty(selectCard)) {
             String name = selectCard.replace("\\", "\\\\").replace("'", "\\'");
             js.append("var t=setInterval(function(){")
               .append("if(typeof selectCard==='function'){clearInterval(t);selectCard('").append(name).append("');}},300);")
