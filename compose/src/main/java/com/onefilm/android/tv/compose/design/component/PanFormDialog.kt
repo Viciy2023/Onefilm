@@ -97,25 +97,18 @@ fun PanFormDialog(
         },
     ) {
         spec.fields.forEach { field ->
-            Column(Modifier.fillMaxWidth()) {
-                Text(
-                    text = field.label,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                OutlinedTextField(
-                    value = values[field.key].orEmpty(),
-                    onValueChange = { values[field.key] = it },
-                    modifier = Modifier.fillMaxWidth().height(if (field.multiline) 110.dp else 52.dp),
-                    singleLine = !field.multiline,
-                    placeholder = { Text(field.label, fontSize = 13.sp) },
-                    visualTransformation = if (field.key == "pass" || field.key == "password") {
-                        PasswordVisualTransformation()
-                    } else {
-                        VisualTransformation.None
-                    },
-                )
-            }
+            OutlinedTextField(
+                value = values[field.key].orEmpty(),
+                onValueChange = { values[field.key] = it },
+                modifier = Modifier.fillMaxWidth().height(if (field.multiline) 96.dp else 46.dp),
+                singleLine = !field.multiline,
+                placeholder = { Text(field.label, fontSize = 13.sp) },
+                visualTransformation = if (field.key == "pass" || field.key == "password") {
+                    PasswordVisualTransformation()
+                } else {
+                    VisualTransformation.None
+                },
+            )
         }
         if (spec.extras.isNotEmpty()) {
             Column(
