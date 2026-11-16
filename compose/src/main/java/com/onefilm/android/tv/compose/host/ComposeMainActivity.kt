@@ -382,6 +382,12 @@ class ComposeMainActivity : ComponentActivity() {
                 var panSetting by remember {
                     mutableStateOf<Triple<String, String, com.onefilm.android.tv.compose.bridge.PanSetting>?>(null)
                 }
+                // 表单 / Emby / 网页版配置中心
+                var panForm by remember {
+                    mutableStateOf<Pair<String, com.onefilm.android.tv.compose.bridge.PanFormSpec>?>(null)
+                }
+                var panEmby by remember { mutableStateOf<Triple<String, String, String>?>(null) }
+                var panWeb by remember { mutableStateOf<String?>(null) }
                 // 遥控器菜单键：只有主页响应，打开「选择首页数据源」
                 TvHomeKeyState.onMenu = {
                     if (route == Routes.HOME) {
@@ -837,6 +843,31 @@ class ComposeMainActivity : ComponentActivity() {
                                         }
                                         settingsStyleSite && isPanManualTitle(card.title) ->
                                             panCookie = Triple(card.key, tid, card.title)
+                                        settingsStyleSite && card.title.contains("Emby", ignoreCase = true) ->
+                                            panEmby = Triple(card.key, tid, card.title)
+                                        settingsStyleSite &&
+                                            (card.title.contains("刷新登录") || card.title.contains("重建设备")) -> {
+                                            val action = if (card.title.contains("重建设备")) {
+                                                "resetPan139Device"
+                                            } else {
+                                                "refreshPan139"
+                                            }
+                                            panConfirm = com.onefilm.android.tv.compose.bridge.PanConfirmState(
+                                                siteKey = card.key,
+                                                title = card.title,
+                                                message = "确定执行该操作吗？结果会写回接口配置。",
+                                                action = action,
+                                            )
+                                        }
+                                        settingsStyleSite &&
+                                            com.onefilm.android.tv.compose.bridge.PanForms
+                                                .resolve(tid, card.title) != null -> {
+                                            val spec = com.onefilm.android.tv.compose.bridge.PanForms
+                                                .resolve(tid, card.title)!!
+                                            panForm = card.key to spec
+                                        }
+                                        settingsStyleSite && card.title.contains("网页版配置中心") ->
+                                            panWeb = card.webUrl ?: WebConfigStore.get(card.key)
                                         settingsStyleSite -> {
                                             val setting = com.onefilm.android.tv.compose.bridge.PanSettings.resolve(card.title)
                                             if (setting != null) {
@@ -948,7 +979,47 @@ class ComposeMainActivity : ComponentActivity() {
                                 title = panTitle,
                                 onDone = closeAndRefresh,
                             )
+                        com.onefilm.android.tv.compose.bridge.PanSetting.GoStatus ->
+                            com.onefilm.android.tv.compose.design.component.PanGoStatusDialog(
+                                siteKey = siteKey,
+                                title = panTitle,
+                                onDone = closeAndRefresh,
+                            )
                     }
+                }
+                panForm?.let { (siteKey, spec) ->
+                    com.onefilm.android.tv.compose.design.component.PanFormDialog(
+                        siteKey = siteKey,
+                        spec = spec,
+                        onDone = {
+                            panForm = null
+                            CategoryCache.clear()
+                            homeViewModel.retry()
+                        },
+                    )
+                }
+                panEmby?.let { (siteKey, _, panTitle) ->
+                    com.onefilm.android.tv.compose.design.component.PanEmbyDialog(
+                        siteKey = siteKey,
+                        title = panTitle,
+                        onDone = {
+                            panEmby = null
+                            CategoryCache.clear()
+                            homeViewModel.retry()
+                        },
+                    )
+                }
+                panWeb?.let { url ->
+                    com.onefilm.android.tv.compose.design.component.PanWebConfigDialog(
+                        url = url,
+                        onOpen = {
+                            panWeb = null
+                            prefetchScope.launch {
+                                ComposeDependencies.webPageLauncher?.open(url, null, compact = false)
+                            }
+                        },
+                        onDismiss = { panWeb = null },
+                    )
                 }
                 if (showHomeSitePicker) {                    HomeSitePickerDialog(
                         options = remember(showHomeSitePicker) { ComposeDependencies.homeDataSource.sites() },

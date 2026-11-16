@@ -119,6 +119,15 @@ private fun VerticalOverlayPoster(
         label = "poster-focus",
     )
     val cardShape = RoundedCornerShape(12.dp)
+    // 没有任何海报时用品牌 LOGO 铺底，不再压一层深色渐变（否则整张卡片看起来是黑的）
+    val hasImage = !posterUrl.isNullOrBlank()
+    var imageLoaded by remember(posterUrl) { mutableStateOf(false) }
+    val titleColor = if (hasImage && imageLoaded) Color.White else MaterialTheme.colorScheme.onSurface
+    val subtitleColor = if (hasImage && imageLoaded) {
+        Color.White.copy(alpha = 0.75f)
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
     val sizeModifier = if (width != null) Modifier.width(width) else Modifier.fillMaxWidth()
     Box(
         modifier
@@ -154,17 +163,20 @@ private fun VerticalOverlayPoster(
                     contentScale = ContentScale.Crop,
                     requestWidth = 480,
                     requestHeight = 720,
+                    onSize = { _, _ -> imageLoaded = true },
                     modifier = Modifier.fillMaxSize(),
                 )
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color.Transparent, Color(0x33000000), Color(0xE6000000)),
+                if (hasImage && imageLoaded) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color.Transparent, Color(0x33000000), Color(0xE6000000)),
+                                ),
                             ),
-                        ),
-                )
+                    )
+                }
                 sourceLabel?.takeIf { it.isNotBlank() }?.let { label ->
                     Text(
                         text = label,
@@ -191,7 +203,7 @@ private fun VerticalOverlayPoster(
                 ) {
                     Text(
                         text = title.ifBlank { stringResource(R.string.detail_unnamed) },
-                        color = Color.White,
+                        color = titleColor,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center,
@@ -202,7 +214,7 @@ private fun VerticalOverlayPoster(
                     subtitle?.takeIf { it.isNotBlank() }?.let {
                         Text(
                             text = it,
-                            color = Color.White.copy(alpha = 0.75f),
+                            color = subtitleColor,
                             fontSize = 11.sp,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth(),
@@ -299,15 +311,17 @@ private fun HorizontalPoster(
                         .padding(horizontal = 8.dp, vertical = 3.dp),
                 )
             }
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Color.Transparent, Color(0x33000000), Color(0xE6000000)),
+            if (if (landscapeOk) !landscapeUrl.isNullOrBlank() else !posterUrl.isNullOrBlank()) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(Color.Transparent, Color(0x33000000), Color(0xE6000000)),
+                            ),
                         ),
-                    ),
-            )
+                )
+            }
             Column(
                 Modifier
                     .align(Alignment.BottomCenter)
@@ -318,7 +332,11 @@ private fun HorizontalPoster(
             ) {
                 Text(
                     text = title.ifBlank { stringResource(R.string.detail_unnamed) },
-                    color = Color.White,
+                    color = if (if (landscapeOk) !landscapeUrl.isNullOrBlank() else !posterUrl.isNullOrBlank()) {
+                        Color.White
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
@@ -329,7 +347,11 @@ private fun HorizontalPoster(
                 subtitle?.takeIf { it.isNotBlank() }?.let {
                     Text(
                         text = it,
-                        color = Color.White.copy(alpha = 0.75f),
+                        color = if (if (landscapeOk) !landscapeUrl.isNullOrBlank() else !posterUrl.isNullOrBlank()) {
+                            Color.White.copy(alpha = 0.75f)
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                         fontSize = 11.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth(),

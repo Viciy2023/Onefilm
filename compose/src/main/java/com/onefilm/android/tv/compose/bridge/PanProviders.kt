@@ -53,6 +53,8 @@ object PanProviders {
         }
         if (id == "pan1me" || title.contains("分享社区")) return "pan1me"
         if (title.contains("蜗牛")) return "woniu"
+        // 这些平台没有扫码，但有账号/验证码登录与清除动作
+        if (id == "pan123" || id == "pan139" || id == "thunder") return id
         return login(categoryId, title)
     }
 

@@ -31,6 +31,9 @@ interface PanConfigActions {
     /** 无页面的动作：clearQuarkCookie / setPanOrder 等，action 为完整 query 片段。 */
     suspend fun runAction(siteKey: String, action: String): Boolean
 
+    /** 同上，但把接口的 code / msg 一起返回，供表单弹窗做反馈。 */
+    suspend fun runCommand(siteKey: String, action: String): PanCommandResult
+
     /**
      * 读取配置状态（接口 `action=status`）。值统一转成字符串：数组用逗号拼接，
      * 布尔用 true/false，取不到时返回空 Map。
@@ -39,11 +42,20 @@ interface PanConfigActions {
 
     /** 日志列表（接口 `action=logList`）。 */
     suspend fun logs(siteKey: String): List<PanLogEntry>
+
+    /** Emby 服务器列表（接口 `action=status` 的 `embyServers`）。 */
+    suspend fun embyServers(siteKey: String): List<PanEmbyServer>
 }
 
 /** 从状态里取单个字段（注册链接、当前排序值等）。 */
 suspend fun PanConfigActions.statusValue(siteKey: String, field: String): String? =
     status(siteKey)[field]
+
+/** 动作执行结果：ok 由接口的 code==0 决定，message 是接口自己的提示。 */
+data class PanCommandResult(
+    val ok: Boolean,
+    val message: String,
+)
 
 /** 配置中心里需要二次确认的动作（例如清空 Cookie）。 */
 data class PanConfirmState(

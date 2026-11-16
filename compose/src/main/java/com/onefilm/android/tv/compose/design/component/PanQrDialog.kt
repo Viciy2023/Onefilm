@@ -54,7 +54,11 @@ fun PanQrDialog(
     // 二维码按屏高自适应，保证 1080p 下二维码和按钮同时可见
     val size = min(320f, heightDp * 0.40f).dp
     val image = remember(content) {
-        if (content.isBlank()) null else QrCodes.bitmap(content)?.asImageBitmap()
+        when {
+            content.isBlank() -> null
+            QrCodes.isImage(content) -> QrCodes.bitmapFromDataUri(content)?.asImageBitmap()
+            else -> QrCodes.bitmap(content)?.asImageBitmap()
+        }
     }
     AppDialog(
         title = title,

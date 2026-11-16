@@ -4,6 +4,8 @@ import android.util.Base64
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.onefilm.android.tv.compose.bridge.PanConfigActions
+import com.onefilm.android.tv.compose.bridge.PanCommandResult
+import com.onefilm.android.tv.compose.bridge.PanEmbyServer
 import com.onefilm.android.tv.compose.bridge.PanLogEntry
 import com.onefilm.android.tv.compose.bridge.PanQr
 import com.onefilm.android.tv.compose.bridge.PanQrState
@@ -61,9 +63,16 @@ object AppPanConfig : PanConfigActions {
         }
 
     override suspend fun runAction(siteKey: String, action: String): Boolean =
+        runCommand(siteKey, action).ok
+
+    override suspend fun runCommand(siteKey: String, action: String): PanCommandResult =
         withContext(Dispatchers.IO) {
-            val base = base(siteKey) ?: return@withContext false
-            get(base + "&" + action) != null
+            val base = base(siteKey) ?: return@withContext PanCommandResult(false, "接口不可用")
+            val json = get(base + "&" + action)
+                ?: return@withContext PanCommandResult(false, "请求失败，请检查接口是否在线")
+            val code = json.get("code")?.asInt ?: 0
+            val msg = json.get("msg")?.asString.orEmpty()
+            PanCommandResult(ok = code == 0, message = msg.ifBlank { if (code == 0) "已保存" else "操作失败" })
         }
 
     override suspend fun status(siteKey: String): Map<String, String> =
@@ -74,12 +83,17 @@ object AppPanConfig : PanConfigActions {
             runCatching {
                 json.entrySet().forEach { (name, element) ->
                     if (element == null || element.isJsonNull) return@forEach
-                    val value = when {
-                        element.isJsonArray -> element.asJsonArray.joinToString(",") { it.asString }
-                        element.isJsonPrimitive -> element.asString
-                        else -> element.toString()
+                    when {
+                        // 嵌套对象压平成 name.sub 形式（例如 goProxy.host）
+                        element.isJsonObject -> element.asJsonObject.entrySet().forEach { (sub, value) ->
+                            if (value != null && !value.isJsonNull) result["$name.$sub"] = value.asString
+                        }
+                        element.isJsonArray -> result[name] = element.asJsonArray.joinToString(",") { item ->
+                            if (item.isJsonPrimitive) item.asString else ""
+                        }
+                        element.isJsonPrimitive -> result[name] = element.asString
+                        else -> result[name] = element.toString()
                     }
-                    if (value.isNotBlank()) result[name] = value
                 }
             }
             result
@@ -103,7 +117,25 @@ object AppPanConfig : PanConfigActions {
             }.getOrDefault(emptyList())
         }
 
-    private fun get(url: String): JsonObject? = runCatching {        val request = Request.Builder().url(url).get().build()
+    override suspend fun embyServers(siteKey: String): List<PanEmbyServer> =
+        withContext(Dispatchers.IO) {
+            val base = base(siteKey) ?: return@withContext emptyList()
+            val json = get(base + "&action=status") ?: return@withContext emptyList()
+            val array = json.getAsJsonArray("embyServers") ?: return@withContext emptyList()
+            runCatching {
+                array.mapNotNull { element ->
+                    val item = element.asJsonObject
+                    PanEmbyServer(
+                        name = item.get("servername")?.asString.orEmpty(),
+                        url = item.get("url")?.asString.orEmpty(),
+                        user = item.get("username")?.asString.orEmpty(),
+                    )
+                }
+            }.getOrDefault(emptyList())
+        }
+
+    private fun get(url: String): JsonObject? = runCatching {
+        val request = Request.Builder().url(url).get().build()
         val text = plainClient.newCall(request).execute().use { it.body?.string().orEmpty() }
         val trimmed = text.trim()
         val source = if (trimmed.startsWith("{") || trimmed.startsWith("[")) trimmed else String(Base64.decode(trimmed, Base64.DEFAULT))

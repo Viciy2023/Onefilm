@@ -148,6 +148,11 @@ fun MobileApp() {
     var panSetting by remember {
         mutableStateOf<Triple<String, String, com.onefilm.android.tv.compose.bridge.PanSetting>?>(null)
     }
+    var panForm by remember {
+        mutableStateOf<Pair<String, com.onefilm.android.tv.compose.bridge.PanFormSpec>?>(null)
+    }
+    var panEmby by remember { mutableStateOf<Triple<String, String, String>?>(null) }
+    var panWeb by remember { mutableStateOf<String?>(null) }
     val pageScope = rememberCoroutineScope()
     var tab by rememberSaveable { mutableStateOf(MobileTab.HOME) }
     // 「继续观看」页默认打开「历史」。
@@ -212,6 +217,29 @@ fun MobileApp() {
                     panCookie = Triple(card.key, categoryId, card.title)
                     return
                 }
+                card.title.contains("Emby", ignoreCase = true) -> {
+                    panEmby = Triple(card.key, categoryId, card.title)
+                    return
+                }
+                card.title.contains("刷新登录") || card.title.contains("重建设备") -> {
+                    panConfirm = com.onefilm.android.tv.compose.bridge.PanConfirmState(
+                        siteKey = card.key,
+                        title = card.title,
+                        message = "确定执行该操作吗？结果会写回接口配置。",
+                        action = if (card.title.contains("重建设备")) "resetPan139Device" else "refreshPan139",
+                    )
+                    return
+                }
+            }
+            // 表单类：手机号验证码登录 / 账号密码登录 / DIY 配置地址 / WebDAV 备份
+            com.onefilm.android.tv.compose.bridge.PanForms.resolve(categoryId, card.title)?.let { spec ->
+                panForm = card.key to spec
+                return
+            }
+            if (card.title.contains("网页版配置中心")) {
+                panWeb = card.webUrl
+                    ?: com.onefilm.android.tv.compose.bridge.WebConfigStore.get(card.key)
+                return
             }
             // 综合设置类卡片：能映射到原生弹窗的直接弹窗，其余落到接口页面
             com.onefilm.android.tv.compose.bridge.PanSettings.resolve(card.title)?.let { setting ->
@@ -357,7 +385,45 @@ fun MobileApp() {
                     title = panTitle,
                     onDone = closeAndRefresh,
                 )
+            com.onefilm.android.tv.compose.bridge.PanSetting.GoStatus ->
+                com.onefilm.android.tv.compose.design.component.PanGoStatusDialog(
+                    siteKey = siteKey,
+                    title = panTitle,
+                    onDone = closeAndRefresh,
+                )
         }
+    }
+    panForm?.let { (siteKey, spec) ->
+        com.onefilm.android.tv.compose.design.component.PanFormDialog(
+            siteKey = siteKey,
+            spec = spec,
+            onDone = {
+                panForm = null
+                homeRefresh++
+            },
+        )
+    }
+    panEmby?.let { (siteKey, _, panTitle) ->
+        com.onefilm.android.tv.compose.design.component.PanEmbyDialog(
+            siteKey = siteKey,
+            title = panTitle,
+            onDone = {
+                panEmby = null
+                homeRefresh++
+            },
+        )
+    }
+    panWeb?.let { url ->
+        com.onefilm.android.tv.compose.design.component.PanWebConfigDialog(
+            url = url,
+            onOpen = {
+                panWeb = null
+                pageScope.launch {
+                    ComposeDependencies.webPageLauncher?.open(url, null, compact = false)
+                }
+            },
+            onDismiss = { panWeb = null },
+        )
     }
 
     LaunchedEffect(Unit) {

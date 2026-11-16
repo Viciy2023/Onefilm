@@ -21,4 +21,19 @@ object QrCodes {
         }
         Bitmap.createBitmap(pixels, size, size, Bitmap.Config.ARGB_8888)
     }.getOrNull()
+
+    /**
+     * 接口有时直接返回 base64 的二维码图片（例如 UC TV Token 的
+     * `data:image/png;base64,...`），这种就不要再编码一次，直接解码显示。
+     */
+    fun bitmapFromDataUri(uri: String): Bitmap? = runCatching {
+        val comma = uri.indexOf(',')
+        if (comma <= 0) return null
+        val bytes = android.util.Base64.decode(uri.substring(comma + 1), android.util.Base64.DEFAULT)
+        android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+    }.getOrNull()
+
+    /** 内容是不是接口给的图片而不是二维码文本。 */
+    fun isImage(uri: String): Boolean =
+        uri.startsWith("data:image", ignoreCase = true)
 }

@@ -97,8 +97,8 @@ fun AppDialog(
                         Modifier
                             .weight(1f, fill = false)
                             .verticalScroll(rememberScrollState())
-                            .padding(top = 14.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                            .padding(top = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         content()
                     }

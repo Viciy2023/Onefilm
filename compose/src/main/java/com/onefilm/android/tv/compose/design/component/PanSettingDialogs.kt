@@ -40,50 +40,6 @@ import com.onefilm.android.tv.compose.bridge.PanSettings
 import com.onefilm.android.tv.compose.bridge.statusValue
 import kotlinx.coroutines.launch
 
-/** 弹窗内的可选中行：与按钮同一套焦点/选中表现，遥控器可直接上下移动。 */
-@Composable
-private fun PanSelectRow(
-    label: String,
-    selected: Boolean,
-    enabled: Boolean = true,
-    onClick: () -> Unit,
-) {
-    var focused by remember { mutableStateOf(false) }
-    val background = when {
-        selected -> MaterialTheme.colorScheme.primary.copy(alpha = if (focused) 1f else 0.85f)
-        focused -> MaterialTheme.colorScheme.surfaceVariant
-        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-    }
-    val foreground = if (selected) {
-        MaterialTheme.colorScheme.onPrimary
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(background)
-            .border(
-                width = if (focused) 2.dp else 1.dp,
-                color = if (focused) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
-                shape = RoundedCornerShape(10.dp),
-            )
-            .onFocusChanged { if (enabled) focused = it.isFocused }
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 11.dp),
-    ) {
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-            color = foreground,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
 
 /** 单选型设置弹窗：播放选项 / 多线程代理 / 自动弹幕 / Go DNS / 鸿蒙兼容。 */
 @Composable
@@ -139,7 +95,7 @@ fun PanChoiceDialog(
             }
         } else {
             setting.options.forEach { (value, label) ->
-                PanSelectRow(
+                PanRow(
                     label = label,
                     selected = picked == value,
                     enabled = !saving,
@@ -233,7 +189,7 @@ fun PanOrderDialog(
             }
         } else {
             order.forEachIndexed { position, key ->
-                PanSelectRow(
+                PanRow(
                     label = (position + 1).toString() + ". " + (PanSettings.orderLabels[key] ?: key),
                     selected = position == index,
                     enabled = !saving,
@@ -294,6 +250,70 @@ fun PanLogsDialog(
                         text = listOf(entry.size, entry.time).filter { it.isNotBlank() }.joinToString(" · "),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Go 多线程状态：只读展示接口返回的运行信息，可刷新。 */
+@Composable
+fun PanGoStatusDialog(
+    siteKey: String,
+    title: String,
+    onDone: () -> Unit,
+) {
+    val actions = ComposeDependencies.panConfigActions
+    var status by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    var loading by remember { mutableStateOf(true) }
+    var reload by remember { mutableIntStateOf(0) }
+    LaunchedEffect(siteKey, reload) {
+        loading = true
+        status = actions?.status(siteKey).orEmpty()
+        loading = false
+    }
+    val lines = listOf(
+        "Go 状态" to status["goProxy.statusText"],
+        "运行地址" to status["goProxy.host"],
+        "DNS" to status["goProxy.dns"],
+        "运行方式" to status["goProxy.modeText"],
+        "架构" to status["goProxy.architectureText"],
+        "选择原因" to status["goProxy.reason"],
+        "实际大小" to status["goProxy.actualSizeText"],
+        "期望大小" to status["goProxy.expectedSizeText"],
+        "文件校验" to status["goProxy.validationText"],
+        "最近错误" to status["goProxy.lastError"].orEmpty().ifBlank { "无" },
+    )
+    AppDialog(
+        title = title,
+        subtitle = "这里只读取运行状态和本地资源，不会启动、下载或刷新远程配置。",
+        onDismiss = onDone,
+        actions = {
+            AppDialogAction(
+                label = stringResource(R.string.pan_refresh),
+                modifier = Modifier.weight(1f),
+                enabled = !loading,
+                autoFocus = true,
+                onClick = { reload++ },
+            )
+            AppDialogAction(
+                label = stringResource(R.string.pan_close),
+                modifier = Modifier.weight(1f),
+                primary = true,
+                enabled = !loading,
+                onClick = onDone,
+            )
+        },
+    ) {
+        if (loading) {
+            Text("正在读取 Go 运行状态…", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        } else {
+            lines.forEach { (label, value) ->
+                PanRowBox {
+                    Text(
+                        text = label + "：" + (value?.takeIf { it.isNotBlank() } ?: "-"),
+                        fontSize = 12.sp,
                     )
                 }
             }

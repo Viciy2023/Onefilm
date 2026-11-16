@@ -29,6 +29,9 @@ sealed interface PanSetting {
 
     /** 日志列表。 */
     data object Logs : PanSetting
+
+    /** Go 多线程运行状态（只读）。 */
+    data object GoStatus : PanSetting
 }
 
 object PanSettings {
@@ -57,8 +60,15 @@ object PanSettings {
     fun resolve(title: String): PanSetting? = when {
         title.contains("排序") -> PanSetting.Order
         title.contains("日志") -> PanSetting.Logs
-        // Go 多线程管理只是状态页，没有可选项，交给接口页面
-        title.contains("Go") && title.contains("多线程") -> null
+        // Go 多线程 DNS 是单选题，必须先于「Go + 多线程」的状态页判断
+        title.contains("DNS") -> PanSetting.Choice(
+            title = title,
+            subtitle = "保存后重启 App 生效。",
+            field = "goDns",
+            setter = "setGoDns",
+            options = dnsOptions,
+        )
+        title.contains("Go") && title.contains("多线程") -> PanSetting.GoStatus
         title.contains("播放选项") || title.contains("极速") -> PanSetting.Choice(
             title = title,
             subtitle = "关闭后选集里不再显示极速线路。",
@@ -83,13 +93,6 @@ object PanSettings {
                 "2" to "自动弹幕 · 彩色",
                 "3" to "关闭自动弹幕",
             ),
-        )
-        title.contains("DNS") -> PanSetting.Choice(
-            title = title,
-            subtitle = "保存后重启 App 生效。",
-            field = "goDns",
-            setter = "setGoDns",
-            options = dnsOptions,
         )
         title.contains("鸿蒙") -> PanSetting.Choice(
             title = title,
