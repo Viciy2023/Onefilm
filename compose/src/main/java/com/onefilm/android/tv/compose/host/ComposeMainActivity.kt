@@ -725,7 +725,7 @@ class ComposeMainActivity : ComponentActivity() {
                                                 compact = true,
                                             )
                                         }
-                                        card.id.isNotBlank() ->
+                                        settingsStyleSite && card.id.isNotBlank() ->
                                             navController.navigate(
                                                 Routes.detail(card.key, card.id, card.title, card.posterUrl),
                                             )
@@ -893,7 +893,7 @@ class ComposeMainActivity : ComponentActivity() {
                                             }
                                         }
                                         !web.isNullOrBlank() -> openPage()
-                                        card.id.isNotBlank() ->
+                                        settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank() ->
                                             navController.navigate(
                                                 Routes.detail(card.key, card.id, card.title, card.posterUrl),
                                             )
