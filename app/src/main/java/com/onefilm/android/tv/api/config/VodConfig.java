@@ -223,8 +223,11 @@ public class VodConfig extends BaseConfig {
         Map<String, Site> items = Site.findAll().stream().collect(Collectors.toMap(Site::getKey, Function.identity()));
         getSites().forEach(site -> site.sync(items.get(site.getKey())));
         Site declared = getSites().isEmpty() ? new Site() : getSites().stream().filter(item -> item.getKey().equals(config.getHome())).findFirst().orElse(getSites().get(0));
-        // 记下接口 JSON 自己声明的主页源：首页影片永远取这个站点，与用户切换的站点无关
-        com.onefilm.android.tv.composebridge.ConfigHomeStore.INSTANCE.capture(config.getUrl(), declared.getKey());
+        // 接口 JSON 自己声明的主页源：优先 JSON 的 home，未声明时用第一个站点。
+        // 不能用 config.getHome()，它会被用户切换站点覆盖。
+        String jsonHome = Json.safeString(object, "home");
+        String pinnedKey = !jsonHome.isEmpty() ? jsonHome : (getSites().isEmpty() ? "" : getSites().get(0).getKey());
+        com.onefilm.android.tv.composebridge.ConfigHomeStore.INSTANCE.capture(config.getUrl(), pinnedKey);
         setHome(config, declared, false);
     }
 
