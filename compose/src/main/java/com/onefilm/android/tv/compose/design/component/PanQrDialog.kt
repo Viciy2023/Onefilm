@@ -7,7 +7,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -57,11 +60,17 @@ fun PanQrDialog(
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
-            modifier = Modifier.fillMaxWidth(if (wide) 0.6f else 0.92f),
+            modifier = Modifier
+                .fillMaxWidth(if (wide) 0.6f else 0.92f)
+                .fillMaxHeight(0.92f),
             shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surface,
         ) {
-            Column(Modifier.padding(20.dp)) {
+            Column(
+                Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp),
+            ) {
                 Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(6.dp))
                 Text(message, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -72,7 +81,7 @@ fun PanQrDialog(
                             bitmap = image,
                             contentDescription = null,
                             modifier = Modifier
-                                .size(if (wide) 300.dp else 240.dp)
+                                .size(if (wide) 240.dp else 220.dp)
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(androidx.compose.ui.graphics.Color.White),
                         )
