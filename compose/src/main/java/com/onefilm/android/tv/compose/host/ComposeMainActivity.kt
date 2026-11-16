@@ -691,6 +691,7 @@ class ComposeMainActivity : ComponentActivity() {
                                             ComposeDependencies.webPageLauncher?.open(
                                                 target,
                                                 if (card.webUrl != null) null else card.title,
+                                                compact = card.webUrl == null,
                                             )
                                         }
                                         settingsStyleSite && card.id.isNotBlank() ->
@@ -807,6 +808,7 @@ class ComposeMainActivity : ComponentActivity() {
                                             ComposeDependencies.webPageLauncher?.open(
                                                 target,
                                                 if (card.webUrl != null) null else card.title,
+                                                compact = card.webUrl == null,
                                             )
                                         }
                                         settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank() ->

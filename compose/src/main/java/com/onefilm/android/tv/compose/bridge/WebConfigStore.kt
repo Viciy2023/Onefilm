@@ -10,15 +10,17 @@ package com.onefilm.android.tv.compose.bridge
 object WebConfigStore {
 
     private val bases = mutableMapOf<String, String>()
+    private var last: String? = null
 
     fun put(siteKey: String, url: String) {
         if (siteKey.isBlank() || url.isBlank()) return
         val base = url.substringBefore('#')
         if (!base.startsWith("http://") && !base.startsWith("https://")) return
         bases[siteKey] = base
+        last = base
     }
 
-    fun get(siteKey: String): String? = bases[siteKey]
+    fun get(siteKey: String): String? = bases[siteKey] ?: last
 
     /** 组合某个分类对应的页面地址；没有基址时返回 null。 */
     fun pageUrl(siteKey: String, section: String?): String? {

@@ -48,6 +48,8 @@ public class WebLoginActivity extends AppCompatActivity {
     public static final String EXTRA_WEB = "web";
     /** 打开页面后要自动展开的卡片名称（配置中心这类页面的 selectCard(name)）。 */
     public static final String EXTRA_SELECT = "select";
+    /** true：只展示展开后的详情面板（配置中心这类页面），隐藏页面头部与卡片列表。 */
+    public static final String EXTRA_COMPACT = "compact";
 
     private static final long CHECK_INTERVAL = 1000L;
 
@@ -68,6 +70,7 @@ public class WebLoginActivity extends AppCompatActivity {
     private TextView hintView;
     private Web options;
     private String selectCard;
+    private boolean compact;
     private boolean finished;
 
     @Override
@@ -79,6 +82,7 @@ public class WebLoginActivity extends AppCompatActivity {
             return;
         }
         selectCard = getIntent().getStringExtra(EXTRA_SELECT);
+        compact = getIntent().getBooleanExtra(EXTRA_COMPACT, false);
         onConfigureWindow();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(createContentView());
@@ -261,6 +265,12 @@ public class WebLoginActivity extends AppCompatActivity {
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         doneParams.setMarginEnd(dp(8));
         bar.addView(done, doneParams);
+        if (compact) {
+            // 配置中心这类页面：去掉登录标题与「完成」，只保留关闭
+            title.setVisibility(View.GONE);
+            hintView.setVisibility(View.GONE);
+            done.setVisibility(View.GONE);
+        }
         card.addView(bar, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
@@ -280,7 +290,7 @@ public class WebLoginActivity extends AppCompatActivity {
         onPageContainerReady(pageContainer);
 
         DisplayMetrics metrics = getResources().getDisplayMetrics();
-        int width = (int) (metrics.widthPixels * dialogWidthRatio());
+        int width = (int) (metrics.widthPixels * (compact ? Math.min(dialogWidthRatio(), 0.68f) : dialogWidthRatio()));
         int height = (int) (metrics.heightPixels * dialogHeightRatio());
         FrameLayout.LayoutParams cardParams = new FrameLayout.LayoutParams(width, height, Gravity.CENTER);
         root.addView(card, cardParams);
@@ -384,16 +394,37 @@ public class WebLoginActivity extends AppCompatActivity {
 
     private boolean injected;
 
-    /** 页面加载完成后自动展开指定卡片（配置中心页面里的 selectCard(name)）。 */
+    /**
+     * 页面加载完成后：
+     * 1) compact 模式注入样式，只保留详情面板（对齐欧歌的单卡片弹窗）；
+     * 2) 调用站点的 selectCard(name) 自动展开该卡片；
+     * 3) 把详情面板滚动到可视区。
+     */
     private void injectSelectCard() {
-        if (webView == null || TextUtils.isEmpty(selectCard) || injected) return;
+        if (webView == null || injected) return;
+        if (TextUtils.isEmpty(selectCard) && !compact) return;
         injected = true;
-        String name = selectCard.replace("\\", "\\\\").replace("'", "\\'");
-        String js = "(function(){var t=setInterval(function(){"
-                + "if(typeof selectCard==='function'){clearInterval(t);selectCard('" + name + "');}},300);"
-                + "setTimeout(function(){clearInterval(t);},6000);})()";
-        android.util.Log.d("WebLogin", "inject selectCard: " + selectCard);
-        webView.evaluateJavascript(js, null);
+        StringBuilder js = new StringBuilder("(function(){");
+        if (compact) {
+            js.append("var s=document.createElement('style');")
+              .append("s.textContent='.hero,.tabs,.section-head,.cards{display:none!important}")
+              .append(".wrap{max-width:none!important;padding:8px!important}")
+              .append(".layout{display:block!important}")
+              .append(".panel{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}")
+              .append(".detail{border:0!important;background:transparent!important;padding:0!important}';")
+              .append("document.head.appendChild(s);");
+        }
+        if (!TextUtils.isEmpty(selectCard)) {
+            String name = selectCard.replace("\\", "\\\\").replace("'", "\\'");
+            js.append("var t=setInterval(function(){")
+              .append("if(typeof selectCard==='function'){clearInterval(t);selectCard('").append(name).append("');}},300);")
+              .append("setTimeout(function(){clearInterval(t);},6000);");
+        }
+        js.append("setTimeout(function(){var d=document.querySelector('.detail')||document.getElementById('detailTitle');")
+          .append("if(d&&d.scrollIntoView)d.scrollIntoView({block:'start'});},1000);")
+          .append("})()");
+        android.util.Log.d("WebLogin", "inject selectCard=" + selectCard + " compact=" + compact);
+        webView.evaluateJavascript(js.toString(), null);
     }
 
     /**

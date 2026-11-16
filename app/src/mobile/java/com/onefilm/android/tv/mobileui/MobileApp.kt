@@ -185,6 +185,7 @@ fun MobileApp() {
                     target,
                     // 直接打开网页版配置中心时不选卡片；其余动作卡片自动展开对应面板
                     if (card.webUrl != null) null else card.title,
+                    compact = card.webUrl == null,
                 )
             }
             return
