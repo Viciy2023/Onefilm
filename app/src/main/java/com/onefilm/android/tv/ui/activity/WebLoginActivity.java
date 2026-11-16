@@ -46,6 +46,8 @@ import com.github.catvod.utils.CookieStore;
 public class WebLoginActivity extends AppCompatActivity {
 
     public static final String EXTRA_WEB = "web";
+    /** 打开页面后要自动展开的卡片名称（配置中心这类页面的 selectCard(name)）。 */
+    public static final String EXTRA_SELECT = "select";
 
     private static final long CHECK_INTERVAL = 1000L;
 
@@ -65,6 +67,7 @@ public class WebLoginActivity extends AppCompatActivity {
     private WebView webView;
     private TextView hintView;
     private Web options;
+    private String selectCard;
     private boolean finished;
 
     @Override
@@ -75,6 +78,7 @@ public class WebLoginActivity extends AppCompatActivity {
             finish();
             return;
         }
+        selectCard = getIntent().getStringExtra(EXTRA_SELECT);
         onConfigureWindow();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(createContentView());
@@ -176,6 +180,7 @@ public class WebLoginActivity extends AppCompatActivity {
                 super.onPageFinished(view, url);
                 android.util.Log.d("WebLogin", "page finished: " + url);
                 captureToken(url);
+                injectSelectCard();
             }
 
             @Override
@@ -377,9 +382,22 @@ public class WebLoginActivity extends AppCompatActivity {
         }
     }
 
+    private boolean injected;
+
+    /** 页面加载完成后自动展开指定卡片（配置中心页面里的 selectCard(name)）。 */
+    private void injectSelectCard() {
+        if (webView == null || TextUtils.isEmpty(selectCard) || injected) return;
+        injected = true;
+        String name = selectCard.replace("\\", "\\\\").replace("'", "\\'");
+        String js = "(function(){var t=setInterval(function(){"
+                + "if(typeof selectCard==='function'){clearInterval(t);selectCard('" + name + "');}},300);"
+                + "setTimeout(function(){clearInterval(t);},6000);})()";
+        android.util.Log.d("WebLogin", "inject selectCard: " + selectCard);
+        webView.evaluateJavascript(js, null);
+    }
+
     /**
-     * 阿里云盘的登录态在 localStorage 里（token + refresh_token），cookie 拿不到可用的 access_token。
-     * 页面每次加载完成后抓一次，存在 CloudTokenStore 里供云盘账号模块刷新 token。
+     * 阿里云盘的登录态在 localStorage 里（token + refresh_token），cookie 拿不到可用的 access_token。     * 页面每次加载完成后抓一次，存在 CloudTokenStore 里供云盘账号模块刷新 token。
      */
     private void captureToken(String page) {
         if (webView == null || TextUtils.isEmpty(page) || !page.startsWith("http")) return;

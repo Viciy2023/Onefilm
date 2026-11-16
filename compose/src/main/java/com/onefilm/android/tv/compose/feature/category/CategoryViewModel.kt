@@ -59,15 +59,22 @@ class CategoryViewModel(
             runCatching { dataSource.load(key, tid, page, selected) }
                 .onSuccess { pageData ->
                     val previous = (_state.value as? CategoryUiState.Content)?.page
+                    // 部分接口忽略 page 参数、每页都返回同样内容：必须去重并终止，否则无限重复
+                    val fresh = if (reset || previous == null) {
+                        pageData.items
+                    } else {
+                        val existing = previous.items.mapTo(HashSet()) { it.key + ":" + it.id }
+                        pageData.items.filter { (it.key + ":" + it.id) !in existing }
+                    }
                     val merged = if (reset || previous == null) {
                         pageData
                     } else {
-                        pageData.copy(items = previous.items + pageData.items)
+                        pageData.copy(items = previous.items + fresh)
                     }
                     val content = CategoryUiState.Content(
                         page = merged,
                         loadingMore = false,
-                        endReached = pageData.items.isEmpty(),
+                        endReached = pageData.items.isEmpty() || (!reset && previous != null && fresh.isEmpty()),
                     )
                     _state.value = content
                     // 筛选后的结果不写缓存：离开该分类再回来时应回到无筛选页面。

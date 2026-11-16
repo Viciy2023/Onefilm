@@ -688,7 +688,10 @@ class ComposeMainActivity : ComponentActivity() {
                                     val target = card.webUrl ?: WebConfigStore.pageUrl(card.key, null)
                                     when {
                                         !target.isNullOrBlank() -> prefetchScope.launch {
-                                            ComposeDependencies.webPageLauncher?.open(target)
+                                            ComposeDependencies.webPageLauncher?.open(
+                                                target,
+                                                if (card.webUrl != null) null else card.title,
+                                            )
                                         }
                                         settingsStyleSite && card.id.isNotBlank() ->
                                             navController.navigate(
@@ -801,7 +804,10 @@ class ComposeMainActivity : ComponentActivity() {
                                     val target = card.webUrl ?: WebConfigStore.pageUrl(card.key, tid)
                                     when {
                                         !target.isNullOrBlank() -> prefetchScope.launch {
-                                            ComposeDependencies.webPageLauncher?.open(target)
+                                            ComposeDependencies.webPageLauncher?.open(
+                                                target,
+                                                if (card.webUrl != null) null else card.title,
+                                            )
                                         }
                                         settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank() ->
                                             navController.navigate(

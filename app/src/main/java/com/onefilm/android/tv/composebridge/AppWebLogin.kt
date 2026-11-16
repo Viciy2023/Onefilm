@@ -23,7 +23,7 @@ object AppWebLogin {
     private var pending: CompletableDeferred<Boolean>? = null
 
     /** @return true 表示检测到登录完成（可以重试播放），false 表示用户退出、超时或启动失败。 */
-    suspend fun login(web: Web): Boolean {
+    suspend fun login(web: Web, selectCard: String? = null): Boolean {
         val deferred = CompletableDeferred<Boolean>()
         synchronized(lock) {
             pending?.complete(false)
@@ -34,6 +34,9 @@ object AppWebLogin {
                 val context = App.activity()
                 val intent = Intent(App.get(), loginActivityClass())
                     .putExtra(WebLoginActivity.EXTRA_WEB, App.gson().toJson(web))
+                if (!selectCard.isNullOrBlank()) {
+                    intent.putExtra(WebLoginActivity.EXTRA_SELECT, selectCard)
+                }
                 if (context == null || context.isFinishing || context.isDestroyed) {
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     App.get().startActivity(intent)

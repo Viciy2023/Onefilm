@@ -180,7 +180,13 @@ fun MobileApp() {
                 null
             }
         if (!target.isNullOrBlank()) {
-            pageScope.launch { ComposeDependencies.webPageLauncher?.open(target) }
+            pageScope.launch {
+                ComposeDependencies.webPageLauncher?.open(
+                    target,
+                    // 直接打开网页版配置中心时不选卡片；其余动作卡片自动展开对应面板
+                    if (card.webUrl != null) null else card.title,
+                )
+            }
             return
         }
         // 配置中心这类站点的条目是「打开网页 / 扫码登录」动作，必须直接进详情
