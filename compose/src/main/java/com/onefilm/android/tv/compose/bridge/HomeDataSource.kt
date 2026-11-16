@@ -30,6 +30,8 @@ data class HomeFeed(
     val notice: String = "",
     /** 当前站点是否「纯设置型」（首页只有动作卡/分类，没有影片推荐）。 */
     val settingsStyleSite: Boolean = false,
+    /** 分类来自接口自己的主页源时为 true：这些分类里的影片卡应走搜索结果页。 */
+    val categoryToSearch: Boolean = false,
 ) : Serializable
 
 object HomeFeedCache {

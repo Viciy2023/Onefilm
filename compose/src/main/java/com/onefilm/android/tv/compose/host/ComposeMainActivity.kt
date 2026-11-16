@@ -357,6 +357,8 @@ class ComposeMainActivity : ComponentActivity() {
                 val settingsStyleSite = autoFeed?.settingsStyleSite ?: (autoFeed != null &&
                     autoFeed.sections.none { it.items.isNotEmpty() } &&
                     autoFeed.categories.isNotEmpty())
+                // 分类来自接口自己的主页源 → 分类里的影片卡走搜索结果；来自用户挑选的站点 → 详情
+                val categoryToSearch = autoFeed?.categoryToSearch ?: false
                 LaunchedEffect(autoFeed?.categories, route) {
                     val feed = autoFeed ?: return@LaunchedEffect
                     if (route != Routes.HOME) return@LaunchedEffect
@@ -887,8 +889,8 @@ class ComposeMainActivity : ComponentActivity() {
                                             }
                                         }
                                         !web.isNullOrBlank() -> openPage()
-                                        // 接口自己的分类页（配置中心这类站点）→ 搜索结果；普通站点分类页 → 详情
-                                        settingsStyleSite && card.id.isNotBlank() ->
+                                        // 接口自己的分类页 → 搜索结果；用户挑选的站点分类页 → 详情
+                                        categoryToSearch && card.id.isNotBlank() ->
                                             navController.navigate(Routes.search(card.title))
                                         card.id.isNotBlank() ->
                                             navController.navigate(

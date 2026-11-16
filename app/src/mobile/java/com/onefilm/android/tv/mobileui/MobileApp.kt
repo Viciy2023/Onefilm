@@ -137,6 +137,8 @@ fun MobileApp() {
     var autoCategoryKey by remember { mutableStateOf<String?>(null) }
     // 纯设置型站点（首页只有分类）：卡片点了直接进详情/动作页，不按标题搜索
     var settingsStyleSite by remember { mutableStateOf(false) }
+    // 分类来自接口主页源（true）还是用户挑选的站点（false）
+    var categoryToSearch by remember { mutableStateOf(false) }
     // 配置中心动作统一走 AppDialog 弹窗层（注册二维码 / 扫码登录 / Cookie 输入 / 清除）
     var panLogin by remember { mutableStateOf<Triple<String, String, String>?>(null) }
     var panCookie by remember { mutableStateOf<Triple<String, String, String>?>(null) }
@@ -275,7 +277,7 @@ fun MobileApp() {
         }
         // 普通站点的分类页：影片卡直接进详情播放；接口自己的分类页（配置中心）与首页仍走搜索结果
         if (fromCategory && card.id.isNotBlank()) {
-            screen = if (settingsStyleSite) {
+            screen = if (categoryToSearch) {
                 MobileScreen.SearchResults(card.title)
             } else {
                 MobileScreen.Detail(card.key, card.id, card.title, card.posterUrl)
@@ -318,6 +320,7 @@ fun MobileApp() {
         // 首页没有影片但有分类：直接进第一个分类（对齐欧歌的「配置中心」体验）
         val feed = (homeState as? HomeUiState.Content)?.feed
         settingsStyleSite = feed?.settingsStyleSite ?: false
+        categoryToSearch = feed?.categoryToSearch ?: false
         if (feed != null && feed.sections.none { it.items.isNotEmpty() }) {
             val first = feed.categories.firstOrNull()
             val key = first?.let { it.key + ":" + it.id }

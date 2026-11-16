@@ -115,6 +115,9 @@ class AppHomeDataSource : HomeDataSource {
             settingsStyleSite = selectedResult != null &&
                 selectedResult.list.orEmpty().none { !it.pic.orEmpty().isNullOrBlank() } &&
                 typeSource?.types.orEmpty().isNotEmpty(),
+            // 分类来自接口自己的主页源 → 分类里的影片卡走搜索结果；
+            // 来自用户单独挑选的站点 → 走详情播放。
+            categoryToSearch = selected.key == homeSite.key,
         ).also {
             HomeFeedCache.feed = it
             DiskCache.write(cacheKey(), it)
