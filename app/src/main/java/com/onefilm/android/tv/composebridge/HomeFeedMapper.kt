@@ -10,6 +10,10 @@ import com.onefilm.android.tv.db.AppDatabase
 object HomeFeedMapper {
 
     fun fromVods(vods: List<Vod>, siteKey: String): List<MediaCard> = vods.map { vod ->
+        val remark = vod.remarks.orEmpty().trim()
+        val webUrl = remark.takeIf { it.startsWith("http://") || it.startsWith("https://") }
+        // 配置中心类站点：记下网页基址，供其它动作卡片拼 #分类
+        if (webUrl != null) com.onefilm.android.tv.compose.bridge.WebConfigStore.put(siteKey, webUrl)
         MediaCard(
             key = siteKey,
             id = vod.id.orEmpty(),
@@ -20,7 +24,7 @@ object HomeFeedMapper {
             siteName = runCatching { VodConfig.get().getSite(siteKey).name }.getOrNull(),
             folder = vod.isFolder,
             // 配置中心这类站点的动作项：备注里就是要打开的网址
-            webUrl = vod.remarks.orEmpty().trim().takeIf { it.startsWith("http://") || it.startsWith("https://") },
+            webUrl = remark.takeIf { it.startsWith("http://") || it.startsWith("https://") },
         )
     }
 

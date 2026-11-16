@@ -172,9 +172,15 @@ fun MobileApp() {
 
     /** 首页 / 分类：与 TV 一致，先按标题进搜索结果页，从结果里选站点再进详情。 */
     fun openSearchFirst(card: MediaCard) {
-        // 接口下发的「打开网页」动作项（备注就是网址）：直接弹网页，不进详情
-        card.webUrl?.takeIf { it.isNotBlank() }?.let { url ->
-            pageScope.launch { ComposeDependencies.webPageLauncher?.open(url) }
+        // 配置中心这类站点：动作卡片打开接口下发的网页（备注里带地址，或用基址 + #分类）
+        val target = card.webUrl
+            ?: if (settingsStyleSite) {
+                com.onefilm.android.tv.compose.bridge.WebConfigStore.pageUrl(card.key, categoryTarget?.id)
+            } else {
+                null
+            }
+        if (!target.isNullOrBlank()) {
+            pageScope.launch { ComposeDependencies.webPageLauncher?.open(target) }
             return
         }
         // 配置中心这类站点的条目是「打开网页 / 扫码登录」动作，必须直接进详情

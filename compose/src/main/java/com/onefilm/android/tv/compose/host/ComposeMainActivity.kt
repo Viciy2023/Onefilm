@@ -87,6 +87,7 @@ import com.onefilm.android.tv.compose.feature.home.HomeScreen
 import com.onefilm.android.tv.compose.feature.home.HomeUiState
 import com.onefilm.android.tv.compose.feature.home.HomeViewModel
 import com.onefilm.android.tv.compose.feature.home.HomeSitePickerDialog
+import com.onefilm.android.tv.compose.bridge.WebConfigStore
 import com.onefilm.android.tv.compose.navigation.AdaptiveNavigation
 import com.onefilm.android.tv.compose.navigation.TvBrandState
 import com.onefilm.android.tv.compose.navigation.TvHeader
@@ -684,10 +685,10 @@ class ComposeMainActivity : ComponentActivity() {
                                 onOpenConfig = { showConfigDialog = true },
                                 firstActionFocus = emptyActionFocus,
                                 onCardClick = { card ->
-                                    val web = card.webUrl
+                                    val target = card.webUrl ?: WebConfigStore.pageUrl(card.key, null)
                                     when {
-                                        !web.isNullOrBlank() -> prefetchScope.launch {
-                                            ComposeDependencies.webPageLauncher?.open(web)
+                                        !target.isNullOrBlank() -> prefetchScope.launch {
+                                            ComposeDependencies.webPageLauncher?.open(target)
                                         }
                                         settingsStyleSite && card.id.isNotBlank() ->
                                             navController.navigate(
@@ -797,10 +798,10 @@ class ComposeMainActivity : ComponentActivity() {
                                 dataSource = categoryDataSource,
                                 onBack = { navController.popBackStack() },
                                 onCardClick = { card ->
-                                    val web = card.webUrl
+                                    val target = card.webUrl ?: WebConfigStore.pageUrl(card.key, tid)
                                     when {
-                                        !web.isNullOrBlank() -> prefetchScope.launch {
-                                            ComposeDependencies.webPageLauncher?.open(web)
+                                        !target.isNullOrBlank() -> prefetchScope.launch {
+                                            ComposeDependencies.webPageLauncher?.open(target)
                                         }
                                         settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank() ->
                                             navController.navigate(
