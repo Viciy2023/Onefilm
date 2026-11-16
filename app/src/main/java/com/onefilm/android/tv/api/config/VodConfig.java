@@ -222,7 +222,10 @@ public class VodConfig extends BaseConfig {
         setSites(Json.safeListElement(object, "sites").stream().map(e -> Site.objectFrom(e, spider)).distinct().collect(Collectors.toCollection(ArrayList::new)));
         Map<String, Site> items = Site.findAll().stream().collect(Collectors.toMap(Site::getKey, Function.identity()));
         getSites().forEach(site -> site.sync(items.get(site.getKey())));
-        setHome(config, getSites().isEmpty() ? new Site() : getSites().stream().filter(item -> item.getKey().equals(config.getHome())).findFirst().orElse(getSites().get(0)), false);
+        Site declared = getSites().isEmpty() ? new Site() : getSites().stream().filter(item -> item.getKey().equals(config.getHome())).findFirst().orElse(getSites().get(0));
+        // 记下接口 JSON 自己声明的主页源：首页影片永远取这个站点，与用户切换的站点无关
+        com.onefilm.android.tv.composebridge.ConfigHomeStore.INSTANCE.capture(config.getUrl(), declared.getKey());
+        setHome(config, declared, false);
     }
 
     private void initParse(Config config, JsonObject object) {

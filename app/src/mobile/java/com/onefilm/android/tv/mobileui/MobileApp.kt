@@ -191,7 +191,8 @@ fun MobileApp() {
     fun openSearchFirst(card: MediaCard) {
         // 配置中心：注册 / 扫码登录 / Cookie 输入 / 清除 全部走统一原生弹窗
         val categoryId = categoryTarget?.id.orEmpty()
-        if (settingsStyleSite) {
+        // 动作卡按标题识别，与站点类型无关（配置站的卡片可能出现在任意站点上下文）
+        run {
             when {
                 card.title.contains("注册") -> {
                     panRegister = Triple(card.key, categoryId, card.title)

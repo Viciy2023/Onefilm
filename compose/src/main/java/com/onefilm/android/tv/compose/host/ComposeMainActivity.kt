@@ -717,9 +717,8 @@ class ComposeMainActivity : ComponentActivity() {
                                                 compact = false,
                                             )
                                         }
-                                        settingsStyleSite &&
-                                            com.onefilm.android.tv.compose.bridge.PanProviders
-                                                .isActionTitle(card.title) -> prefetchScope.launch {
+                                        com.onefilm.android.tv.compose.bridge.PanProviders
+                                            .isActionTitle(card.title) -> prefetchScope.launch {
                                             val page = target ?: return@launch
                                             ComposeDependencies.webPageLauncher?.open(
                                                 page,
@@ -727,10 +726,6 @@ class ComposeMainActivity : ComponentActivity() {
                                                 compact = true,
                                             )
                                         }
-                                        settingsStyleSite && card.id.isNotBlank() ->
-                                            navController.navigate(
-                                                Routes.detail(card.key, card.id, card.title, card.posterUrl),
-                                            )
                                         card.title.isNotBlank() -> navController.navigate(Routes.search(card.title))
                                     }
                                 },
@@ -849,20 +844,19 @@ class ComposeMainActivity : ComponentActivity() {
                                         }
                                     }
                                     when {
-                                        settingsStyleSite && card.title.contains("注册") ->
+                                        card.title.contains("注册") ->
                                             panRegister = Triple(card.key, tid, card.title)
-                                        settingsStyleSite && card.title.contains("扫码") ->
+                                        card.title.contains("扫码") ->
                                             panLogin = Triple(card.key, tid, card.title)
-                                        settingsStyleSite && card.title.contains("清除") -> {
+                                        card.title.contains("清除") -> {
                                             val confirm = panClearConfirm(card.key, tid, card.title)
                                             if (confirm != null) panConfirm = confirm else openPage()
                                         }
-                                        settingsStyleSite && isPanManualTitle(card.title) ->
+                                        isPanManualTitle(card.title) ->
                                             panCookie = Triple(card.key, tid, card.title)
-                                        settingsStyleSite && card.title.contains("Emby", ignoreCase = true) ->
+                                        card.title.contains("Emby", ignoreCase = true) ->
                                             panEmby = Triple(card.key, tid, card.title)
-                                        settingsStyleSite &&
-                                            (card.title.contains("刷新登录") || card.title.contains("重建设备")) -> {
+                                        (card.title.contains("刷新登录") || card.title.contains("重建设备")) -> {
                                             val action = if (card.title.contains("重建设备")) {
                                                 "resetPan139Device"
                                             } else {
@@ -875,18 +869,16 @@ class ComposeMainActivity : ComponentActivity() {
                                                 action = action,
                                             )
                                         }
-                                        settingsStyleSite &&
-                                            com.onefilm.android.tv.compose.bridge.PanForms
-                                                .resolve(tid, card.title) != null -> {
+                                        com.onefilm.android.tv.compose.bridge.PanForms
+                                            .resolve(tid, card.title) != null -> {
                                             val spec = com.onefilm.android.tv.compose.bridge.PanForms
                                                 .resolve(tid, card.title)!!
                                             panForm = card.key to spec
                                         }
-                                        settingsStyleSite && card.title.contains("网页版配置中心") ->
+                                        card.title.contains("网页版配置中心") ->
                                             panLink = card.webUrl ?: WebConfigStore.get(card.key)
-                                        settingsStyleSite &&
-                                            com.onefilm.android.tv.compose.bridge.PanProviders
-                                                .isActionTitle(card.title) -> {
+                                        com.onefilm.android.tv.compose.bridge.PanProviders
+                                            .isActionTitle(card.title) -> {
                                             val setting = com.onefilm.android.tv.compose.bridge.PanSettings.resolve(card.title)
                                             if (setting != null) {
                                                 panSetting = Triple(card.key, card.title, setting)
@@ -895,10 +887,6 @@ class ComposeMainActivity : ComponentActivity() {
                                             }
                                         }
                                         !web.isNullOrBlank() -> openPage()
-                                        settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank() ->
-                                            navController.navigate(
-                                                Routes.detail(card.key, card.id, card.title, card.posterUrl),
-                                            )
                                         card.title.isNotBlank() -> navController.navigate(Routes.search(card.title))
                                     }
                                 },

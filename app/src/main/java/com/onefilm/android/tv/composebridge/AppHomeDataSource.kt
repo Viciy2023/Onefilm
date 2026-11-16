@@ -19,15 +19,13 @@ import kotlinx.coroutines.withContext
 class AppHomeDataSource : HomeDataSource {
 
     /**
-     * 磁盘缓存按「接口地址 + 首页站点」隔离。
-     *
-     * <p>之前用固定的 "home" 作为 key，换接口后冷启动会先渲染上一份接口的首页；
-     * 现在首页站点可切换，缓存不区分站点同样会先闪上一个站点的内容。
+     * 磁盘缓存按「接口地址 + 主页源」隔离：
+     * 首页影片永远来自接口 JSON 声明的主页源，切换站点不会换内容。
      */
     private fun cacheKey(): String {
         val configUrl = VodConfig.getUrl().orEmpty()
-        val siteKey = runCatching { VodConfig.get().getHome().key }.getOrNull().orEmpty()
-        return "home_" + configUrl.hashCode() + "_" + siteKey.hashCode() + "_" +
+        val homeKey = pinnedHomeKey().orEmpty()
+        return "home_" + configUrl.hashCode() + "_" + homeKey.hashCode() + "_" +
             com.github.catvod.utils.LocaleManager.get()
     }
 
@@ -35,6 +33,20 @@ class AppHomeDataSource : HomeDataSource {
         HomeFeedCache.feed = runCatching {
             DiskCache.read<HomeFeed>(cacheKey(), 24 * 60 * 60_000L)
         }.getOrNull()
+    }
+
+    /** 接口 JSON 自己声明的主页源；取不到时退回当前站点。 */
+    private fun pinnedHomeKey(): String? {
+        val url = VodConfig.getUrl().orEmpty()
+        val pinned = ConfigHomeStore.get(url)
+        if (!pinned.isNullOrBlank() && VodConfig.get().getSite(pinned).key.isNotBlank()) return pinned
+        return runCatching { VodConfig.get().getHome().key }.getOrNull()
+    }
+
+    private fun pinnedHomeSite(): Site {
+        val key = pinnedHomeKey()
+        val site = if (key.isNullOrBlank()) VodConfig.get().getHome() else VodConfig.get().getSite(key)
+        return site.takeIf { it.key.isNotBlank() } ?: VodConfig.get().getHome()
     }
 
     override fun sites(): List<HomeSiteOption> {
@@ -49,57 +61,41 @@ class AppHomeDataSource : HomeDataSource {
         if (site.key.isBlank()) return false
         // 持久化 + RefreshEvent.home() 都在 VodConfig 里完成
         VodConfig.get().setHome(site)
-        // 站点变了：内存首页与分类缓存都属于上一个站点，必须失效
-        HomeFeedCache.feed = null
+        // 站点变了：分类缓存属于上一个站点，必须失效
         CategoryCache.clear()
-        // 推荐源也要重新挑（不同站点组合下能用的源可能不同）
-        recommendKey = null
+        HomeFeedCache.feed = null
         return true
     }
 
     override suspend fun load(): HomeFeed = withContext(Dispatchers.IO) {
         VodConfig.get().ensureLoaded()
-        val site = VodConfig.get().getHome()
-        if (site.key.isNullOrBlank()) {
+        val selected = VodConfig.get().getHome()
+        val homeSite = pinnedHomeSite()
+        if (homeSite.key.isNullOrBlank()) {
             return@withContext HomeFeed(emptyList(), emptyList())
         }
 
-        val primary = runCatching { SiteApi.homeContent(site) }.getOrNull()
-        var typeSource: Result? = primary
-        var list = primary?.list.orEmpty().filter { !it.name.orEmpty().isNullOrBlank() }
-        var vodsSite = site
-
-        // 所选站点没有首页推荐时（大多数采集站都是这样），自动借用「推荐源」的影视数据，
-        // 保证像欧歌一样：无论切到哪个站点，首页都有内容。
-        if (!hasMoviePoster(list)) {
-            val fallback = pickRecommendSite(site.key)
-            if (fallback != null) {
-                val fallbackResult = runCatching { SiteApi.homeContent(fallback) }.getOrNull()
-                val fallbackList = fallbackResult?.list.orEmpty()
-                    .filter { !it.name.orEmpty().isNullOrBlank() }
-                if (fallbackList.isNotEmpty()) {
-                    list = fallbackList
-                    vodsSite = fallback
-                    if (typeSource?.types.isNullOrEmpty()) typeSource = fallbackResult
-                }
-            }
+        // 首页影片：永远取接口声明的主页源
+        val homeResult = runCatching { SiteApi.homeContent(homeSite) }.getOrNull()
+        // 分类：跟随用户选中的站点；它没有分类时用主页源的
+        val selectedResult: Result? = if (selected.key != homeSite.key) {
+            runCatching { SiteApi.homeContent(selected) }.getOrNull()
+        } else {
+            homeResult
         }
+        val typeSource = selectedResult?.takeIf { it.types.orEmpty().isNotEmpty() } ?: homeResult
 
+        val list = homeResult?.list.orEmpty().filter { !it.name.orEmpty().isNullOrBlank() }
         val types = typeSource?.types.orEmpty()
         android.util.Log.d(
             "ComposeHome",
-            "home=${site.key} vodsFrom=${vodsSite.key} list=${list.size} types=${types.size}",
+            "home=${homeSite.key} selected=${selected.key} list=${list.size} types=${types.size}",
         )
 
-        val vods = HomeFeedMapper.fromVods(list, vodsSite.key)
+        val vods = HomeFeedMapper.fromVods(list, homeSite.key)
         val hero = (vods.filter { !it.posterUrl.isNullOrBlank() }.ifEmpty { vods }).take(5)
-        val categories = types.map { HomeCategory(site.key, it.typeId, it.typeName) }
+        val categories = types.map { HomeCategory(selected.key.ifBlank { homeSite.key }, it.typeId, it.typeName) }
         CategoryFilterStore.put(types)
-        val recommendTitle = if (vodsSite.key != site.key) {
-            "推荐 · " + vodsSite.name.orEmpty()
-        } else {
-            ""
-        }
         val sections = buildList {
             HomeFeedMapper.fromHistory(History.get()).takeIf { it.isNotEmpty() }?.let {
                 add(HomeSection("", it, key = "history"))
@@ -107,61 +103,21 @@ class AppHomeDataSource : HomeDataSource {
             HomeFeedMapper.fromKeeps(Keep.getVod()).takeIf { it.isNotEmpty() }?.let {
                 add(HomeSection("", it, key = "favorites"))
             }
-            if (vods.isNotEmpty()) add(HomeSection(recommendTitle, vods, key = "recommend"))
+            if (vods.isNotEmpty()) add(HomeSection("", vods, key = "recommend"))
         }
         HomeFeed(
             hero = hero,
             sections = sections,
             categories = categories,
-            siteName = site.name.orEmpty(),
-            notice = primary?.msg.orEmpty(),
-            // 站点自己的首页没有影片（只有动作卡/分类）→ 纯设置型站点
-            settingsStyleSite = !hasMoviePoster(
-                primary?.list.orEmpty().filter { !it.name.orEmpty().isNullOrBlank() },
-            ) && categories.isNotEmpty(),
+            siteName = selected.name.orEmpty(),
+            notice = homeResult?.msg.orEmpty(),
+            // 「纯设置型」按用户当前选中的站点判断（配置中心这类站点条目全是动作卡）
+            settingsStyleSite = selectedResult != null &&
+                selectedResult.list.orEmpty().none { !it.pic.orEmpty().isNullOrBlank() } &&
+                typeSource?.types.orEmpty().isNotEmpty(),
         ).also {
             HomeFeedCache.feed = it
             DiskCache.write(cacheKey(), it)
         }
-    }
-
-    /** 首页条目里有多少带海报的影片；配置中心那种动作卡没有海报，会被排除。 */
-    private fun hasMoviePoster(list: List<com.onefilm.android.tv.bean.Vod>): Boolean =
-        list.count { !it.pic.orEmpty().isNullOrBlank() } >= 3
-
-    /**
-     * 挑一个「首页推荐源」：优先上次成功过的站点，其次按配置顺序试几个，
-     * 谁能在首页返回带海报的影片就用谁。
-     */
-    private fun pickRecommendSite(excludeKey: String): Site? {
-        val sites = VodConfig.get().getSites()
-            .filter { it.key.isNotBlank() && !it.isHide() && it.key != excludeKey }
-        if (sites.isEmpty()) return null
-        recommendKey?.let { key ->
-            sites.firstOrNull { it.key == key }?.let { remembered ->
-                val ok = runCatching { SiteApi.homeContent(remembered) }.getOrNull()
-                    ?.let { hasMoviePoster(it.list.orEmpty()) } ?: false
-                if (ok) return remembered
-            }
-        }
-        var tried = 0
-        for (candidate in sites) {
-            if (tried >= MAX_PROBE) break
-            tried++
-            val result = runCatching { SiteApi.homeContent(candidate) }.getOrNull() ?: continue
-            if (hasMoviePoster(result.list.orEmpty())) {
-                recommendKey = candidate.key
-                return candidate
-            }
-        }
-        return null
-    }
-
-    companion object {
-        /** 探测推荐源时最多试几个站点，避免首页加载过慢。 */
-        private const val MAX_PROBE = 4
-
-        @Volatile
-        private var recommendKey: String? = null
     }
 }
