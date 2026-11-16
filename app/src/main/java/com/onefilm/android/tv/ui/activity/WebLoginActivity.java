@@ -87,6 +87,7 @@ public class WebLoginActivity extends AppCompatActivity {
         selectCard = getIntent().getStringExtra(EXTRA_SELECT);
         pageAction = getIntent().getStringExtra(EXTRA_ACTION);
         compact = getIntent().getBooleanExtra(EXTRA_COMPACT, false);
+        android.util.Log.d("WebLogin", "extras select=" + selectCard + " compact=" + compact + " action=" + pageAction);
         onConfigureWindow();
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(createContentView());
@@ -397,6 +398,7 @@ public class WebLoginActivity extends AppCompatActivity {
     }
 
     private boolean injected;
+    private String injectedUrl;
 
     /**
      * 页面加载完成后：
@@ -405,9 +407,12 @@ public class WebLoginActivity extends AppCompatActivity {
      * 3) 把详情面板滚动到可视区。
      */
     private void injectSelectCard() {
-        if (webView == null || injected) return;
-        if (TextUtils.isEmpty(selectCard) && !compact) return;
-        injected = true;
+        String page = webView == null ? null : webView.getUrl();
+        if (webView == null || page == null || page.startsWith("about:")) return;
+        if (TextUtils.isEmpty(selectCard) && TextUtils.isEmpty(pageAction) && !compact) return;
+        // 同一个页面只注入一次；重定向过程中的中间页不算（否则动作会打在空白页上）
+        if (page.equals(injectedUrl)) return;
+        injectedUrl = page;
         StringBuilder js = new StringBuilder("(function(){");
         if (compact) {
             js.append("var s=document.createElement('style');")

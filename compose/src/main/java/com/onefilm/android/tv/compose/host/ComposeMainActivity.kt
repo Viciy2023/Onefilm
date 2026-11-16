@@ -371,6 +371,9 @@ class ComposeMainActivity : ComponentActivity() {
                 }
                 var showConfigDialog by remember { mutableStateOf(false) }
                 var showHomeSitePicker by remember { mutableStateOf(false) }
+                // 配置中心原生弹窗：扫码登录 / 注册二维码
+                var panLogin by remember { mutableStateOf<Triple<String, String, String>?>(null) }
+                var panQr by remember { mutableStateOf<Pair<String, String>?>(null) }
                 // 遥控器菜单键：只有主页响应，打开「选择首页数据源」
                 TvHomeKeyState.onMenu = {
                     if (route == Routes.HOME) {
@@ -802,8 +805,16 @@ class ComposeMainActivity : ComponentActivity() {
                                 dataSource = categoryDataSource,
                                 onBack = { navController.popBackStack() },
                                 onCardClick = { card ->
-                                    val target = card.webUrl ?: WebConfigStore.pageUrl(card.key, tid)
+                                    val web = card.webUrl
+                                    val target = web ?: WebConfigStore.pageUrl(card.key, tid)
                                     when {
+                                        // 配置中心：注册卡直接出链接二维码；扫码卡调接口出登录二维码
+                                        settingsStyleSite && !web.isNullOrBlank() && card.title.contains("注册") -> {
+                                            panQr = card.title to web
+                                        }
+                                        settingsStyleSite && card.title.contains("扫码") -> {
+                                            panLogin = Triple(card.key, tid, card.title)
+                                        }
                                         !target.isNullOrBlank() -> prefetchScope.launch {
                                             val loginAction = if (card.webUrl == null && card.title.contains("扫码")) {
                                                 "startLogin('" + tid + "','" + card.title.replace("'", "") + "')"
@@ -855,8 +866,24 @@ class ComposeMainActivity : ComponentActivity() {
                     onDismiss = { showSettingsPanel = false },
                     onConfigChanged = { CategoryCache.clear(); homeViewModel.retry() },
                 )
-                if (showHomeSitePicker) {
-                    HomeSitePickerDialog(
+                panLogin?.let { (siteKey, provider, panTitle) ->
+                    com.onefilm.android.tv.compose.design.component.PanLoginDialog(
+                        siteKey = siteKey,
+                        provider = provider,
+                        title = panTitle,
+                    ) {
+                        panLogin = null
+                        homeViewModel.retry()
+                    }
+                }
+                panQr?.let { (panTitle, content) ->
+                    com.onefilm.android.tv.compose.design.component.PanQrDialog(
+                        title = panTitle,
+                        message = "用手机扫码打开链接。",
+                        content = content,
+                    ) { panQr = null }
+                }
+                if (showHomeSitePicker) {                    HomeSitePickerDialog(
                         options = remember(showHomeSitePicker) { ComposeDependencies.homeDataSource.sites() },
                         onDismiss = { showHomeSitePicker = false },
                         onPick = { key ->
