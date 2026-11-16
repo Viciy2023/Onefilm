@@ -633,7 +633,23 @@ private fun MobileHomeContent(
         val chipsHeight = if (hasChips) 46.dp else 0.dp
         val horizontal = com.onefilm.android.tv.compose.design.PosterStyleController.horizontal
 
-        if (horizontal) {
+        if (!hasRecommend) {
+            // 配置中心这类站点没有推荐影片：显示引导，避免空白页
+            Column(Modifier.fillMaxSize()) {
+                MobileHomeCategoryChips(feed.categories, chipsHeight, onCategoryClick, onHomeClick)
+                Box(
+                    Modifier.weight(1f).fillMaxWidth().padding(horizontal = 24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(com.onefilm.android.tv.compose.R.string.home_no_recommend),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        } else if (horizontal) {
             // 横版海报：一行两列；第一张是占满整行的英雄卡片，其余按 2 列排列。
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
@@ -652,8 +668,7 @@ private fun MobileHomeContent(
                     item(span = { GridItemSpan(maxLineSpan) }) {
                         com.onefilm.android.tv.mobileui.component.MobileLandscapeCard(
                             card = items.first(),
-                            hero = true,
-                            onClick = { onCardClick(items.first()) },
+                            hero = true,                            onClick = { onCardClick(items.first()) },
                         )
                     }
                     itemsIndexed(items.drop(1)) { _, card ->
