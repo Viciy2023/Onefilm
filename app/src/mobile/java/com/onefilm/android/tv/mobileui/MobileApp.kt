@@ -137,9 +137,6 @@ fun MobileApp() {
     var autoCategoryKey by remember { mutableStateOf<String?>(null) }
     // 纯设置型站点（首页只有分类）：卡片点了直接进详情/动作页，不按标题搜索
     var settingsStyleSite by remember { mutableStateOf(false) }
-    // 配置中心原生弹窗：扫码登录 / 注册二维码
-    var panLogin by remember { mutableStateOf<Triple<String, String, String>?>(null) }
-    var panQr by remember { mutableStateOf<Pair<String, String>?>(null) }
     val pageScope = rememberCoroutineScope()
     var tab by rememberSaveable { mutableStateOf(MobileTab.HOME) }
     // 「继续观看」页默认打开「历史」。
@@ -175,18 +172,6 @@ fun MobileApp() {
 
     /** 首页 / 分类：与 TV 一致，先按标题进搜索结果页，从结果里选站点再进详情。 */
     fun openSearchFirst(card: MediaCard) {
-        // 配置中心：注册卡出链接二维码；扫码卡出登录二维码（原生弹窗）
-        if (settingsStyleSite) {
-            val web = card.webUrl
-            if (!web.isNullOrBlank() && card.title.contains("注册")) {
-                panQr = card.title to web
-                return
-            }
-            if (card.title.contains("扫码")) {
-                panLogin = Triple(card.key, categoryTarget?.id.orEmpty(), card.title)
-                return
-            }
-        }
         // 配置中心这类站点：动作卡片打开接口下发的网页（备注里带地址，或用基址 + #分类）
         val target = card.webUrl
             ?: if (settingsStyleSite) {
@@ -271,24 +256,6 @@ fun MobileApp() {
                 if (ComposeDependencies.homeDataSource.setHomeSite(key)) homeRefresh++
             },
         )
-    }
-
-    panLogin?.let { (siteKey, provider, panTitle) ->
-        com.onefilm.android.tv.compose.design.component.PanLoginDialog(
-            siteKey = siteKey,
-            provider = provider,
-            title = panTitle,
-        ) {
-            panLogin = null
-            homeRefresh++
-        }
-    }
-    panQr?.let { (panTitle, content) ->
-        com.onefilm.android.tv.compose.design.component.PanQrDialog(
-            title = panTitle,
-            message = "用手机扫码打开链接。",
-            content = content,
-        ) { panQr = null }
     }
 
     LaunchedEffect(Unit) {
