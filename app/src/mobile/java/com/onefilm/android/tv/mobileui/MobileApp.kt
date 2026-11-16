@@ -309,9 +309,7 @@ fun MobileApp() {
             )
         // 首页没有影片但有分类：直接进第一个分类（对齐欧歌的「配置中心」体验）
         val feed = (homeState as? HomeUiState.Content)?.feed
-        settingsStyleSite = feed != null &&
-            feed.sections.none { it.items.isNotEmpty() } &&
-            feed.categories.isNotEmpty()
+        settingsStyleSite = feed?.settingsStyleSite ?: false
         if (feed != null && feed.sections.none { it.items.isNotEmpty() }) {
             val first = feed.categories.firstOrNull()
             val key = first?.let { it.key + ":" + it.id }

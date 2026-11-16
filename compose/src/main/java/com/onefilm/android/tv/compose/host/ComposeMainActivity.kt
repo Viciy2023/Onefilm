@@ -353,12 +353,14 @@ class ComposeMainActivity : ComponentActivity() {
                 var autoCategoryKey by remember { mutableStateOf<String?>(null) }
                 val autoFeed = (homeState as? HomeUiState.Content)?.feed
                 // 配置中心这类「纯设置型」站点：条目不是影片，点了应直接进详情/动作页，而不是按标题去搜索
-                val settingsStyleSite = autoFeed != null &&
+                // 首页可能已经用「推荐源」兜底填了影片，所以判定以接口给的标记为准
+                val settingsStyleSite = autoFeed?.settingsStyleSite ?: (autoFeed != null &&
                     autoFeed.sections.none { it.items.isNotEmpty() } &&
-                    autoFeed.categories.isNotEmpty()
+                    autoFeed.categories.isNotEmpty())
                 LaunchedEffect(autoFeed?.categories, route) {
                     val feed = autoFeed ?: return@LaunchedEffect
                     if (route != Routes.HOME) return@LaunchedEffect
+                    // 首页已经有推荐内容（含推荐源兜底）就留在首页；完全没有内容才自动进第一个分类
                     if (feed.sections.any { it.items.isNotEmpty() }) return@LaunchedEffect
                     val first = feed.categories.firstOrNull() ?: return@LaunchedEffect
                     val key = first.key + ":" + first.id

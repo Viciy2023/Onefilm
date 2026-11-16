@@ -28,6 +28,8 @@ data class HomeFeed(
     val categories: List<HomeCategory> = emptyList(),
     val siteName: String = "",
     val notice: String = "",
+    /** 当前站点是否「纯设置型」（首页只有动作卡/分类，没有影片推荐）。 */
+    val settingsStyleSite: Boolean = false,
 ) : Serializable
 
 object HomeFeedCache {
