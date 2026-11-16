@@ -4,47 +4,44 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.platform.LocalConfiguration
 import com.onefilm.android.tv.compose.R
-import androidx.compose.ui.res.stringResource
 import com.onefilm.android.tv.compose.bridge.ComposeDependencies
+import com.onefilm.android.tv.compose.bridge.PanConfirmState
+import com.onefilm.android.tv.compose.bridge.PanProviders
 import com.onefilm.android.tv.compose.bridge.PanQrState
 import com.onefilm.android.tv.compose.bridge.QrCodes
+import com.onefilm.android.tv.compose.bridge.statusValue
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.math.min
 
 /**
- * 网盘二维码弹窗：标题 + 说明 + 二维码 + 关闭。
- *
- * 不做额外装饰，和接口页面自己的弹窗一致（白底、居中二维码）。
+ * 二维码弹窗：统一走 [AppDialog]，样式随主题。
+ * 只做「标题 + 说明 + 二维码 + 关闭」，不再自绘边框/标题栏。
  */
 @Composable
 fun PanQrDialog(
@@ -53,72 +50,61 @@ fun PanQrDialog(
     content: String,
     onClose: () -> Unit,
 ) {
-    val wide = LocalConfiguration.current.screenWidthDp >= 600
-    val image = remember(content) { QrCodes.bitmap(content, if (wide) 360 else 480)?.asImageBitmap() }
-    androidx.compose.ui.window.Dialog(
-        onDismissRequest = onClose,
-        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false),
+    val heightDp = LocalConfiguration.current.screenHeightDp
+    // 二维码按屏高自适应，保证 1080p 下二维码和按钮同时可见
+    val size = min(320f, heightDp * 0.40f).dp
+    val image = remember(content) {
+        if (content.isBlank()) null else QrCodes.bitmap(content)?.asImageBitmap()
+    }
+    AppDialog(
+        title = title,
+        subtitle = message,
+        onDismiss = onClose,
+        actions = {
+            AppDialogAction(
+                label = stringResource(R.string.pan_close),
+                modifier = Modifier.weight(1f),
+                primary = true,
+                autoFocus = true,
+                onClick = onClose,
+            )
+        },
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(if (wide) 0.6f else 0.92f)
-                .fillMaxHeight(0.92f),
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surface,
-        ) {
-            Column(
-                Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
-            ) {
-                Text(title, fontSize = 18.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Spacer(Modifier.height(6.dp))
-                Text(message, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(14.dp))
-                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    if (image != null) {
-                        Image(
-                            bitmap = image,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(if (wide) 240.dp else 220.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(androidx.compose.ui.graphics.Color.White),
-                        )
-                    }
-                }
-                Spacer(Modifier.height(14.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    Box(
-                        Modifier
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .clickable(onClick = onClose)
-                            .padding(horizontal = 20.dp, vertical = 10.dp),
-                    ) {
-                        Text(stringResource(R.string.pan_close), fontSize = 14.sp)
-                    }
-                }
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            if (image != null) {
+                Image(
+                    bitmap = image,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(size)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.White),
+                )
             }
         }
     }
 }
 
-/** 扫码登录弹窗：打开即请求二维码，1.5 秒轮询一次，成功/失败自动关闭。 */
+/** 扫码登录弹窗：请求二维码 → 轮询 → 成功/失败自动结束。 */
 @Composable
 fun PanLoginDialog(
     siteKey: String,
-    provider: String,
+    categoryId: String,
     title: String,
     onClose: () -> Unit,
 ) {
     val actions = ComposeDependencies.panConfigActions
+    val provider = remember(categoryId, title) { PanProviders.login(categoryId, title) }
     var qr by remember { mutableStateOf<String?>(null) }
     var message by remember { mutableStateOf("正在生成二维码…") }
     LaunchedEffect(siteKey, provider) {
+        if (provider == null) {
+            message = "该平台不支持扫码登录"
+            return@LaunchedEffect
+        }
         val result = actions?.startLogin(siteKey, provider, title)
         if (result == null) {
-            message = "二维码生成失败"
+            message = "二维码生成失败，请检查接口是否可用"
             return@LaunchedEffect
         }
         qr = result.text
@@ -132,16 +118,171 @@ fun PanLoginDialog(
                 }
                 is PanQrState.Error -> {
                     message = state.message
+                    qr = null
                     break
                 }
                 else -> Unit
             }
         }
     }
-    val content = qr
-    if (content != null) {
-        PanQrDialog(title = title, message = message, content = content, onClose = onClose)
-    } else {
-        PanQrDialog(title = title, message = message, content = "", onClose = onClose)
+    PanQrDialog(title = title, message = message, content = qr.orEmpty(), onClose = onClose)
+}
+
+/** 注册二维码弹窗：链接取自接口 `action=status`。 */
+@Composable
+fun PanRegisterDialog(
+    siteKey: String,
+    categoryId: String,
+    title: String,
+    onClose: () -> Unit,
+) {
+    val actions = ComposeDependencies.panConfigActions
+    val field = remember(categoryId, title) { PanProviders.registerField(categoryId, title) }
+    var link by remember { mutableStateOf<String?>(null) }
+    var message by remember { mutableStateOf("正在获取注册链接…") }
+    LaunchedEffect(siteKey, field) {
+        val value = field?.let { actions?.statusValue(siteKey, it) }
+        if (value.isNullOrBlank()) {
+            message = "接口暂未返回注册链接"
+        } else {
+            link = value
+            message = "用手机扫码打开注册链接。"
+        }
+    }
+    PanQrDialog(title = title, message = message, content = link.orEmpty(), onClose = onClose)
+}
+
+/** Cookie / Token 手动输入：统一弹窗 + 多行输入框 + 保存。 */
+@Composable
+fun PanCookieDialog(
+    siteKey: String,
+    categoryId: String,
+    title: String,
+    onClose: () -> Unit,
+    onSaved: () -> Unit = {},
+) {
+    var text by remember { mutableStateOf("") }
+    var saving by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val actions = ComposeDependencies.panConfigActions
+    val provider = remember(categoryId, title) { PanProviders.manual(categoryId, title) }
+    val setter = remember(provider) { PanProviders.cookieSetter(provider) }
+    AppDialog(
+        title = title,
+        subtitle = "粘贴后点保存，会写入接口配置并刷新状态。",
+        onDismiss = onClose,
+        actions = {
+            AppDialogAction(
+                label = stringResource(R.string.settings_cancel),
+                modifier = Modifier.weight(1f),
+                enabled = !saving,
+                autoFocus = true,
+                onClick = onClose,
+            )
+            AppDialogAction(
+                label = stringResource(R.string.pan_save),
+                modifier = Modifier.weight(1f),
+                primary = true,
+                enabled = !saving && setter != null && text.isNotBlank(),
+                onClick = {
+                    if (saving) return@AppDialogAction
+                    saving = true
+                    scope.launch {
+                        if (setter != null && text.isNotBlank()) {
+                            actions?.runAction(
+                                siteKey,
+                                "action=$setter&value=" + android.net.Uri.encode(text.trim()),
+                            )
+                        }
+                        saving = false
+                        onSaved()
+                        onClose()
+                    }
+                },
+            )
+        },
+    ) {
+        if (setter == null) {
+            Text("该平台暂不支持手动输入", fontSize = 13.sp)
+        } else {
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier.fillMaxWidth().height(150.dp),
+                placeholder = { Text(PanProviders.cookieHint(provider), fontSize = 13.sp) },
+            )
+        }
+    }
+}
+
+/** 二次确认弹窗（清空 Cookie / Token 等）。 */
+@Composable
+fun PanConfirmDialog(
+    state: PanConfirmState,
+    onDone: () -> Unit,
+) {
+    val actions = ComposeDependencies.panConfigActions
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
+    AppDialog(
+        title = state.title,
+        subtitle = state.message,
+        onDismiss = onDone,
+        actions = {
+            AppDialogAction(
+                label = stringResource(R.string.settings_cancel),
+                modifier = Modifier.weight(1f),
+                enabled = !busy,
+                autoFocus = true,
+                onClick = onDone,
+            )
+            AppDialogAction(
+                label = stringResource(R.string.pan_confirm),
+                modifier = Modifier.weight(1f),
+                primary = true,
+                enabled = !busy,
+                onClick = {
+                    if (busy) return@AppDialogAction
+                    busy = true
+                    scope.launch {
+                        actions?.runAction(state.siteKey, "action=" + state.action)
+                        busy = false
+                        onDone()
+                    }
+                },
+            )
+        },
+    ) {
+        if (busy) {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(modifier = Modifier.size(28.dp))
+            }
+        } else {
+            Text("此操作只清除本地已保存的登录信息，可随时重新扫码或粘贴。", fontSize = 13.sp)
+        }
+    }
+}
+
+/** 信息提示弹窗（例如二维码获取失败、占位说明）。 */
+@Composable
+fun PanInfoDialog(
+    title: String,
+    message: String,
+    onClose: () -> Unit,
+) {
+    AppDialog(
+        title = title,
+        subtitle = message,
+        onDismiss = onClose,
+        actions = {
+            AppDialogAction(
+                label = stringResource(R.string.pan_close),
+                modifier = Modifier.weight(1f),
+                primary = true,
+                autoFocus = true,
+                onClick = onClose,
+            )
+        },
+    ) {
     }
 }

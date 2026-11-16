@@ -432,4 +432,7 @@
     <string name="home_pick_site_current">目前</string>
     <string name="home_no_recommend">此站點沒有首頁推薦，請從上方分類進入</string>
     <string name="pan_close">關閉</string>
+    <string name="pan_save">儲存</string>
+    <string name="pan_confirm">確定</string>
+    <string name="pan_refresh">重新整理</string>
 </resources>

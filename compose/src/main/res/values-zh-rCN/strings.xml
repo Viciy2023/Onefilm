@@ -432,4 +432,7 @@
     <string name="home_pick_site_current">当前</string>
     <string name="home_no_recommend">该站点没有首页推荐，请从上方分类进入</string>
     <string name="pan_close">关闭</string>
+    <string name="pan_save">保存</string>
+    <string name="pan_confirm">确定</string>
+    <string name="pan_refresh">刷新</string>
 </resources>

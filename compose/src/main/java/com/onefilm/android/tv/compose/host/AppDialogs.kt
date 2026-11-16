@@ -30,16 +30,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.onefilm.android.tv.compose.design.component.AppDialogAction
 import kotlinx.coroutines.delay
 import androidx.compose.ui.res.stringResource
 import com.onefilm.android.tv.compose.R
@@ -328,43 +326,11 @@ private fun DialogAction(
     enabled: Boolean = true,
     focusRequester: FocusRequester? = null,
     onClick: () -> Unit,
-) {
-    var focused by remember { mutableStateOf(false) }
-    val background = when {
-        !enabled && primary -> MaterialTheme.colorScheme.surfaceVariant
-        focused && primary -> MaterialTheme.colorScheme.primary
-        focused -> MaterialTheme.colorScheme.surfaceVariant
-        primary -> MaterialTheme.colorScheme.onSurface
-        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
-    }
-    val foreground = when {
-        !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-        focused && primary -> MaterialTheme.colorScheme.onPrimary
-        primary -> MaterialTheme.colorScheme.background
-        else -> MaterialTheme.colorScheme.onSurface
-    }
-    Box(
-        modifier
-            .height(42.dp)
-            .then(if (focusRequester != null) Modifier.focusRequester(focusRequester) else Modifier)
-            .clip(RoundedCornerShape(10.dp))
-            .background(background)
-            .border(
-                width = if (focused) 2.dp else 1.dp,
-                color = if (focused) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
-                shape = RoundedCornerShape(10.dp),
-            )
-            .onFocusChanged { if (enabled) focused = it.isFocused }
-            .clickable(enabled = enabled, onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            fontWeight = if (primary) FontWeight.Medium else FontWeight.Normal,
-            color = foreground,
-            maxLines = 1,
-        )
-    }
-}
+) = AppDialogAction(
+    label = label,
+    modifier = modifier,
+    primary = primary,
+    enabled = enabled,
+    focusRequester = focusRequester,
+    onClick = onClick,
+)

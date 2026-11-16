@@ -371,6 +371,17 @@ class ComposeMainActivity : ComponentActivity() {
                 }
                 var showConfigDialog by remember { mutableStateOf(false) }
                 var showHomeSitePicker by remember { mutableStateOf(false) }
+                // 配置中心动作统一走 AppDialog 弹窗层（注册二维码 / 扫码登录 / Cookie 输入 / 清除）
+                var panLogin by remember { mutableStateOf<Triple<String, String, String>?>(null) }
+                var panCookie by remember { mutableStateOf<Triple<String, String, String>?>(null) }
+                var panRegister by remember { mutableStateOf<Triple<String, String, String>?>(null) }
+                var panConfirm by remember {
+                    mutableStateOf<com.onefilm.android.tv.compose.bridge.PanConfirmState?>(null)
+                }
+                // 综合设置项（排序 / 弹幕 / DNS / 日志等）也走同一套弹窗
+                var panSetting by remember {
+                    mutableStateOf<Triple<String, String, com.onefilm.android.tv.compose.bridge.PanSetting>?>(null)
+                }
                 // 遥控器菜单键：只有主页响应，打开「选择首页数据源」
                 TvHomeKeyState.onMenu = {
                     if (route == Routes.HOME) {
@@ -804,18 +815,37 @@ class ComposeMainActivity : ComponentActivity() {
                                 onCardClick = { card ->
                                     val web = card.webUrl
                                     val target = web ?: WebConfigStore.pageUrl(card.key, tid)
-                                    when {
-                                        !target.isNullOrBlank() -> prefetchScope.launch {
-                                            val loginAction = if (card.webUrl == null && card.title.contains("扫码")) {
-                                                "startLogin('" + tid + "','" + card.title.replace("'", "") + "')"
-                                            } else null
+                                    // 兜底：没有原生弹窗可用的动作，才打开接口页面本身
+                                    fun openPage() {
+                                        if (target.isNullOrBlank()) return
+                                        prefetchScope.launch {
                                             ComposeDependencies.webPageLauncher?.open(
                                                 target,
                                                 if (card.webUrl != null) null else card.title,
                                                 compact = card.webUrl == null,
-                                                action = loginAction,
                                             )
                                         }
+                                    }
+                                    when {
+                                        settingsStyleSite && card.title.contains("注册") ->
+                                            panRegister = Triple(card.key, tid, card.title)
+                                        settingsStyleSite && card.title.contains("扫码") ->
+                                            panLogin = Triple(card.key, tid, card.title)
+                                        settingsStyleSite && isPanManualTitle(card.title) ->
+                                            panCookie = Triple(card.key, tid, card.title)
+                                        settingsStyleSite && card.title.contains("清除") -> {
+                                            val confirm = panClearConfirm(card.key, tid, card.title)
+                                            if (confirm != null) panConfirm = confirm else openPage()
+                                        }
+                                        settingsStyleSite -> {
+                                            val setting = com.onefilm.android.tv.compose.bridge.PanSettings.resolve(card.title)
+                                            if (setting != null) {
+                                                panSetting = Triple(card.key, card.title, setting)
+                                            } else {
+                                                openPage()
+                                            }
+                                        }
+                                        !target.isNullOrBlank() -> openPage()
                                         settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank() ->
                                             navController.navigate(
                                                 Routes.detail(card.key, card.id, card.title, card.posterUrl),
@@ -856,6 +886,70 @@ class ComposeMainActivity : ComponentActivity() {
                     onDismiss = { showSettingsPanel = false },
                     onConfigChanged = { CategoryCache.clear(); homeViewModel.retry() },
                 )
+                panRegister?.let { (siteKey, categoryId, panTitle) ->
+                    com.onefilm.android.tv.compose.design.component.PanRegisterDialog(
+                        siteKey = siteKey,
+                        categoryId = categoryId,
+                        title = panTitle,
+                    ) { panRegister = null }
+                }
+                panLogin?.let { (siteKey, categoryId, panTitle) ->
+                    com.onefilm.android.tv.compose.design.component.PanLoginDialog(
+                        siteKey = siteKey,
+                        categoryId = categoryId,
+                        title = panTitle,
+                    ) {
+                        panLogin = null
+                        CategoryCache.clear()
+                        homeViewModel.retry()
+                    }
+                }
+                panCookie?.let { (siteKey, categoryId, panTitle) ->
+                    com.onefilm.android.tv.compose.design.component.PanCookieDialog(
+                        siteKey = siteKey,
+                        categoryId = categoryId,
+                        title = panTitle,
+                        onClose = { panCookie = null },
+                        onSaved = {
+                            CategoryCache.clear()
+                            homeViewModel.retry()
+                        },
+                    )
+                }
+                panConfirm?.let { state ->
+                    com.onefilm.android.tv.compose.design.component.PanConfirmDialog(state) {
+                        panConfirm = null
+                        CategoryCache.clear()
+                        homeViewModel.retry()
+                    }
+                }
+                panSetting?.let { (siteKey, panTitle, setting) ->
+                    val closeAndRefresh = {
+                        panSetting = null
+                        CategoryCache.clear()
+                        homeViewModel.retry()
+                    }
+                    when (setting) {
+                        is com.onefilm.android.tv.compose.bridge.PanSetting.Choice ->
+                            com.onefilm.android.tv.compose.design.component.PanChoiceDialog(
+                                siteKey = siteKey,
+                                setting = setting,
+                                onDone = closeAndRefresh,
+                            )
+                        com.onefilm.android.tv.compose.bridge.PanSetting.Order ->
+                            com.onefilm.android.tv.compose.design.component.PanOrderDialog(
+                                siteKey = siteKey,
+                                title = panTitle,
+                                onDone = closeAndRefresh,
+                            )
+                        com.onefilm.android.tv.compose.bridge.PanSetting.Logs ->
+                            com.onefilm.android.tv.compose.design.component.PanLogsDialog(
+                                siteKey = siteKey,
+                                title = panTitle,
+                                onDone = closeAndRefresh,
+                            )
+                    }
+                }
                 if (showHomeSitePicker) {                    HomeSitePickerDialog(
                         options = remember(showHomeSitePicker) { ComposeDependencies.homeDataSource.sites() },
                         onDismiss = { showHomeSitePicker = false },
@@ -988,4 +1082,25 @@ private fun SettingsPanelOverlay(
             }
         }
     }
+}
+
+/** 配置中心里「手动粘贴 Cookie / Token / 远程地址」类卡片的标题特征。 */
+private fun isPanManualTitle(title: String): Boolean =
+    com.onefilm.android.tv.compose.bridge.PanProviders.isManualTitle(title)
+
+/** 清除类卡片对应的确认弹窗；接口没有清除动作时返回 null。 */
+private fun panClearConfirm(
+    siteKey: String,
+    categoryId: String,
+    title: String,
+): com.onefilm.android.tv.compose.bridge.PanConfirmState? {
+    val clearer = com.onefilm.android.tv.compose.bridge.PanProviders
+        .clearAction(categoryId, title)
+        ?: return null
+    return com.onefilm.android.tv.compose.bridge.PanConfirmState(
+        siteKey = siteKey,
+        title = title,
+        message = "确定清除该平台已保存的登录信息吗？",
+        action = clearer,
+    )
 }

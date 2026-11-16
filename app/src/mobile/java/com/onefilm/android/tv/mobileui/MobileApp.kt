@@ -137,6 +137,17 @@ fun MobileApp() {
     var autoCategoryKey by remember { mutableStateOf<String?>(null) }
     // 纯设置型站点（首页只有分类）：卡片点了直接进详情/动作页，不按标题搜索
     var settingsStyleSite by remember { mutableStateOf(false) }
+    // 配置中心动作统一走 AppDialog 弹窗层（注册二维码 / 扫码登录 / Cookie 输入 / 清除）
+    var panLogin by remember { mutableStateOf<Triple<String, String, String>?>(null) }
+    var panCookie by remember { mutableStateOf<Triple<String, String, String>?>(null) }
+    var panRegister by remember { mutableStateOf<Triple<String, String, String>?>(null) }
+    var panConfirm by remember {
+        mutableStateOf<com.onefilm.android.tv.compose.bridge.PanConfirmState?>(null)
+    }
+    // 综合设置项（排序 / 弹幕 / DNS / 日志等）也走同一套弹窗
+    var panSetting by remember {
+        mutableStateOf<Triple<String, String, com.onefilm.android.tv.compose.bridge.PanSetting>?>(null)
+    }
     val pageScope = rememberCoroutineScope()
     var tab by rememberSaveable { mutableStateOf(MobileTab.HOME) }
     // 「继续观看」页默认打开「历史」。
@@ -172,7 +183,43 @@ fun MobileApp() {
 
     /** 首页 / 分类：与 TV 一致，先按标题进搜索结果页，从结果里选站点再进详情。 */
     fun openSearchFirst(card: MediaCard) {
-        // 配置中心这类站点：动作卡片打开接口下发的网页（备注里带地址，或用基址 + #分类）
+        // 配置中心：注册 / 扫码登录 / Cookie 输入 / 清除 全部走统一原生弹窗
+        val categoryId = categoryTarget?.id.orEmpty()
+        if (settingsStyleSite) {
+            when {
+                card.title.contains("注册") -> {
+                    panRegister = Triple(card.key, categoryId, card.title)
+                    return
+                }
+                card.title.contains("扫码") -> {
+                    panLogin = Triple(card.key, categoryId, card.title)
+                    return
+                }
+                com.onefilm.android.tv.compose.bridge.PanProviders.isManualTitle(card.title) -> {
+                    panCookie = Triple(card.key, categoryId, card.title)
+                    return
+                }
+                card.title.contains("清除") -> {
+                    val clearer = com.onefilm.android.tv.compose.bridge.PanProviders
+                        .clearAction(categoryId, card.title)
+                    if (clearer != null) {
+                        panConfirm = com.onefilm.android.tv.compose.bridge.PanConfirmState(
+                            siteKey = card.key,
+                            title = card.title,
+                            message = "确定清除该平台已保存的登录信息吗？",
+                            action = clearer,
+                        )
+                        return
+                    }
+                }
+            }
+            // 综合设置类卡片：能映射到原生弹窗的直接弹窗，其余落到接口页面
+            com.onefilm.android.tv.compose.bridge.PanSettings.resolve(card.title)?.let { setting ->
+                panSetting = Triple(card.key, card.title, setting)
+                return
+            }
+        }
+        // 其余动作卡片打开接口下发的网页（备注里带地址，或用基址 + #分类）
         val target = card.webUrl
             ?: if (settingsStyleSite) {
                 com.onefilm.android.tv.compose.bridge.WebConfigStore.pageUrl(card.key, categoryTarget?.id)
@@ -181,14 +228,10 @@ fun MobileApp() {
             }
         if (!target.isNullOrBlank()) {
             pageScope.launch {
-                val loginAction = if (card.webUrl == null && card.title.contains("扫码")) {
-                    "startLogin('" + categoryTarget?.id.orEmpty() + "','" + card.title.replace("'", "") + "')"
-                } else null
                 ComposeDependencies.webPageLauncher?.open(
                     target,
                     if (card.webUrl != null) null else card.title,
                     compact = card.webUrl == null,
-                    action = loginAction,
                 )
             }
             return
@@ -256,6 +299,65 @@ fun MobileApp() {
                 if (ComposeDependencies.homeDataSource.setHomeSite(key)) homeRefresh++
             },
         )
+    }
+
+    panRegister?.let { (siteKey, categoryId, panTitle) ->
+        com.onefilm.android.tv.compose.design.component.PanRegisterDialog(
+            siteKey = siteKey,
+            categoryId = categoryId,
+            title = panTitle,
+        ) { panRegister = null }
+    }
+    panLogin?.let { (siteKey, categoryId, panTitle) ->
+        com.onefilm.android.tv.compose.design.component.PanLoginDialog(
+            siteKey = siteKey,
+            categoryId = categoryId,
+            title = panTitle,
+        ) {
+            panLogin = null
+            homeRefresh++
+        }
+    }
+    panCookie?.let { (siteKey, categoryId, panTitle) ->
+        com.onefilm.android.tv.compose.design.component.PanCookieDialog(
+            siteKey = siteKey,
+            categoryId = categoryId,
+            title = panTitle,
+            onClose = { panCookie = null },
+            onSaved = { homeRefresh++ },
+        )
+    }
+    panConfirm?.let { state ->
+        com.onefilm.android.tv.compose.design.component.PanConfirmDialog(state) {
+            panConfirm = null
+            homeRefresh++
+        }
+    }
+    panSetting?.let { (siteKey, panTitle, setting) ->
+        val closeAndRefresh: () -> Unit = {
+            panSetting = null
+            homeRefresh++
+        }
+        when (setting) {
+            is com.onefilm.android.tv.compose.bridge.PanSetting.Choice ->
+                com.onefilm.android.tv.compose.design.component.PanChoiceDialog(
+                    siteKey = siteKey,
+                    setting = setting,
+                    onDone = closeAndRefresh,
+                )
+            com.onefilm.android.tv.compose.bridge.PanSetting.Order ->
+                com.onefilm.android.tv.compose.design.component.PanOrderDialog(
+                    siteKey = siteKey,
+                    title = panTitle,
+                    onDone = closeAndRefresh,
+                )
+            com.onefilm.android.tv.compose.bridge.PanSetting.Logs ->
+                com.onefilm.android.tv.compose.design.component.PanLogsDialog(
+                    siteKey = siteKey,
+                    title = panTitle,
+                    onDone = closeAndRefresh,
+                )
+        }
     }
 
     LaunchedEffect(Unit) {

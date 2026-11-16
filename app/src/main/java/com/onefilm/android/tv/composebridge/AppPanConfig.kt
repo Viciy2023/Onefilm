@@ -4,6 +4,7 @@ import android.util.Base64
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.onefilm.android.tv.compose.bridge.PanConfigActions
+import com.onefilm.android.tv.compose.bridge.PanLogEntry
 import com.onefilm.android.tv.compose.bridge.PanQr
 import com.onefilm.android.tv.compose.bridge.PanQrState
 import com.onefilm.android.tv.compose.bridge.WebConfigStore
@@ -65,8 +66,44 @@ object AppPanConfig : PanConfigActions {
             get(base + "&" + action) != null
         }
 
-    private fun get(url: String): JsonObject? = runCatching {
-        val request = Request.Builder().url(url).get().build()
+    override suspend fun status(siteKey: String): Map<String, String> =
+        withContext(Dispatchers.IO) {
+            val base = base(siteKey) ?: return@withContext emptyMap()
+            val json = get(base + "&action=status") ?: return@withContext emptyMap()
+            val result = mutableMapOf<String, String>()
+            runCatching {
+                json.entrySet().forEach { (name, element) ->
+                    if (element == null || element.isJsonNull) return@forEach
+                    val value = when {
+                        element.isJsonArray -> element.asJsonArray.joinToString(",") { it.asString }
+                        element.isJsonPrimitive -> element.asString
+                        else -> element.toString()
+                    }
+                    if (value.isNotBlank()) result[name] = value
+                }
+            }
+            result
+        }
+
+    override suspend fun logs(siteKey: String): List<PanLogEntry> =
+        withContext(Dispatchers.IO) {
+            val base = base(siteKey) ?: return@withContext emptyList()
+            val json = get(base + "&action=logList") ?: return@withContext emptyList()
+            val array = json.getAsJsonArray("list") ?: return@withContext emptyList()
+            runCatching {
+                array.mapNotNull { element ->
+                    val item = element.asJsonObject
+                    val name = item.get("name")?.asString ?: return@mapNotNull null
+                    PanLogEntry(
+                        name = name,
+                        size = item.get("sizeText")?.asString.orEmpty(),
+                        time = item.get("modifiedText")?.asString.orEmpty(),
+                    )
+                }
+            }.getOrDefault(emptyList())
+        }
+
+    private fun get(url: String): JsonObject? = runCatching {        val request = Request.Builder().url(url).get().build()
         val text = plainClient.newCall(request).execute().use { it.body?.string().orEmpty() }
         val trimmed = text.trim()
         val source = if (trimmed.startsWith("{") || trimmed.startsWith("[")) trimmed else String(Base64.decode(trimmed, Base64.DEFAULT))
