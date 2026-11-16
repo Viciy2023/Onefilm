@@ -195,10 +195,6 @@ fun MobileApp() {
                     panLogin = Triple(card.key, categoryId, card.title)
                     return
                 }
-                com.onefilm.android.tv.compose.bridge.PanProviders.isManualTitle(card.title) -> {
-                    panCookie = Triple(card.key, categoryId, card.title)
-                    return
-                }
                 card.title.contains("清除") -> {
                     val clearer = com.onefilm.android.tv.compose.bridge.PanProviders
                         .clearAction(categoryId, card.title)
@@ -211,6 +207,10 @@ fun MobileApp() {
                         )
                         return
                     }
+                }
+                com.onefilm.android.tv.compose.bridge.PanProviders.isManualTitle(card.title) -> {
+                    panCookie = Triple(card.key, categoryId, card.title)
+                    return
                 }
             }
             // 综合设置类卡片：能映射到原生弹窗的直接弹窗，其余落到接口页面

@@ -112,17 +112,32 @@ object AppPanConfig : PanConfigActions {
 
     private fun base(siteKey: String): String? {
         bases[siteKey]?.let { return it }
+        // 1) 本机 Webserver 端口：/config 的 302 目标就在这个端口上，最稳。
+        //    配置页入口和接口都在 App 自己的本地 HTTP 服务里，127.0.0.1 一定可达。
+        val local = runCatching {
+            "http://127.0.0.1:" + com.github.catvod.Proxy.getPort() + "/proxy?do=pan"
+        }.getOrNull()
+        if (!local.isNullOrBlank() && probe(local)) return remember(siteKey, local)
+        // 2) 退化：从卡片备注里的配置页地址跟随 302，取最终地址再截掉 action
         val page = WebConfigStore.get(siteKey) ?: return lastBase
-        val request = Request.Builder().url(page).get().build()
-        val location = runCatching {
-            client.newCall(request).execute().use { it.header("Location").orEmpty() }
-        }.getOrNull().orEmpty()
-        val target = location.ifBlank { page }
-        val cut = target.indexOf("&action=")
-        val resolved = if (cut > 0) target.substring(0, cut) else target.substringBefore('?')
+        val finalUrl = runCatching {
+            val request = Request.Builder().url(page).get().build()
+            plainClient.newCall(request).execute().use { it.request.url.toString() }
+        }.getOrNull().orEmpty().ifBlank { page }
+        val cut = finalUrl.indexOf("&action=")
+        val resolved = if (cut > 0) finalUrl.substring(0, cut) else finalUrl
         if (!resolved.startsWith("http")) return lastBase
-        bases[siteKey] = resolved
-        lastBase = resolved
-        return resolved
+        return remember(siteKey, resolved)
     }
+
+    private fun remember(siteKey: String, base: String): String {
+        bases[siteKey] = base
+        lastBase = base
+        return base
+    }
+
+    /** 探一下这个基址能不能用：能返回 `code:0` 才算数。 */
+    private fun probe(base: String): Boolean = runCatching {
+        get(base + "&action=status")?.get("code")?.asInt == 0
+    }.getOrDefault(false)
 }

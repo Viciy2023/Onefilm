@@ -52,6 +52,7 @@ object PanProviders {
             }
         }
         if (id == "pan1me" || title.contains("分享社区")) return "pan1me"
+        if (title.contains("蜗牛")) return "woniu"
         return login(categoryId, title)
     }
 
@@ -81,6 +82,7 @@ object PanProviders {
         "guangya" -> "setGuangYaToken"
         "guangyaZhenYing" -> "setGuangYaZhenYingCookie"
         "pan1me" -> "setPan1MeCookie"
+        "woniu" -> "setWoNiu4KCookie"
         "alistUrl" -> "setAListUrl"
         "webDavUrl" -> "setWebDavUrl"
         "diyVodUrl" -> "setDiyVodUrl"
@@ -98,6 +100,7 @@ object PanProviders {
         "guangya" -> "clearGuangYaToken"
         "guangyaZhenYing" -> "clearGuangYaZhenYingCookie"
         "pan1me" -> "clearPan1MeCookie"
+        "woniu" -> "clearWoNiu4K"
         "alistUrl" -> "clearAListUrl"
         "webDavUrl" -> "clearWebDavUrl"
         "diyVodUrl" -> "clearDiyVodUrl"
@@ -122,6 +125,7 @@ object PanProviders {
         title.contains("手动输入") ||
             title.contains("手动配置") ||
             title.contains("粘贴") ||
+            title.contains("Cookie") ||
             (title.contains("手动") && title.contains("Cookie"))
 
     /** 清除类卡片对应的接口 action；没有对应动作时返回 null。 */

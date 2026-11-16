@@ -196,6 +196,18 @@ fun PanOrderDialog(
                 onClick = onDone,
             )
             AppDialogAction(
+                label = "上移",
+                modifier = Modifier.weight(1f),
+                enabled = !saving && !loading && index > 0,
+                onClick = { move(-1) },
+            )
+            AppDialogAction(
+                label = "下移",
+                modifier = Modifier.weight(1f),
+                enabled = !saving && !loading && order.isNotEmpty() && index < order.lastIndex,
+                onClick = { move(1) },
+            )
+            AppDialogAction(
                 label = stringResource(R.string.pan_save),
                 modifier = Modifier.weight(1f),
                 primary = true,
@@ -226,20 +238,6 @@ fun PanOrderDialog(
                     selected = position == index,
                     enabled = !saving,
                 ) { index = position }
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                AppDialogAction(
-                    label = "上移",
-                    modifier = Modifier.weight(1f),
-                    enabled = !saving && index > 0,
-                    onClick = { move(-1) },
-                )
-                AppDialogAction(
-                    label = "下移",
-                    modifier = Modifier.weight(1f),
-                    enabled = !saving && index < order.lastIndex,
-                    onClick = { move(1) },
-                )
             }
         }
     }

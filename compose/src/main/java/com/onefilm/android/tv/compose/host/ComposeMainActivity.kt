@@ -831,12 +831,12 @@ class ComposeMainActivity : ComponentActivity() {
                                             panRegister = Triple(card.key, tid, card.title)
                                         settingsStyleSite && card.title.contains("扫码") ->
                                             panLogin = Triple(card.key, tid, card.title)
-                                        settingsStyleSite && isPanManualTitle(card.title) ->
-                                            panCookie = Triple(card.key, tid, card.title)
                                         settingsStyleSite && card.title.contains("清除") -> {
                                             val confirm = panClearConfirm(card.key, tid, card.title)
                                             if (confirm != null) panConfirm = confirm else openPage()
                                         }
+                                        settingsStyleSite && isPanManualTitle(card.title) ->
+                                            panCookie = Triple(card.key, tid, card.title)
                                         settingsStyleSite -> {
                                             val setting = com.onefilm.android.tv.compose.bridge.PanSettings.resolve(card.title)
                                             if (setting != null) {
