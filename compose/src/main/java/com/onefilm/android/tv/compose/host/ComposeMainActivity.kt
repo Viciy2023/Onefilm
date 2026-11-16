@@ -703,16 +703,29 @@ class ComposeMainActivity : ComponentActivity() {
                                 onOpenConfig = { showConfigDialog = true },
                                 firstActionFocus = emptyActionFocus,
                                 onCardClick = { card ->
-                                    val target = card.webUrl ?: WebConfigStore.pageUrl(card.key, null)
+                                    // 只有备注里带网址的才是「打开网页」动作；其余按影片处理，
+                                    // 否则配置站的影片卡会被误当成动作卡打开接口页面。
+                                    val web = card.webUrl
+                                    val target = web ?: WebConfigStore.pageUrl(card.key, null)
                                     when {
-                                        !target.isNullOrBlank() -> prefetchScope.launch {
+                                        !web.isNullOrBlank() -> prefetchScope.launch {
                                             ComposeDependencies.webPageLauncher?.open(
-                                                target,
-                                                if (card.webUrl != null) null else card.title,
-                                                compact = card.webUrl == null,
+                                                web,
+                                                null,
+                                                compact = false,
                                             )
                                         }
-                                        settingsStyleSite && card.id.isNotBlank() ->
+                                        settingsStyleSite &&
+                                            com.onefilm.android.tv.compose.bridge.PanProviders
+                                                .isActionTitle(card.title) -> prefetchScope.launch {
+                                            val page = target ?: return@launch
+                                            ComposeDependencies.webPageLauncher?.open(
+                                                page,
+                                                card.title,
+                                                compact = true,
+                                            )
+                                        }
+                                        card.id.isNotBlank() ->
                                             navController.navigate(
                                                 Routes.detail(card.key, card.id, card.title, card.posterUrl),
                                             )
@@ -869,7 +882,9 @@ class ComposeMainActivity : ComponentActivity() {
                                         }
                                         settingsStyleSite && card.title.contains("网页版配置中心") ->
                                             panLink = card.webUrl ?: WebConfigStore.get(card.key)
-                                        settingsStyleSite -> {
+                                        settingsStyleSite &&
+                                            com.onefilm.android.tv.compose.bridge.PanProviders
+                                                .isActionTitle(card.title) -> {
                                             val setting = com.onefilm.android.tv.compose.bridge.PanSettings.resolve(card.title)
                                             if (setting != null) {
                                                 panSetting = Triple(card.key, card.title, setting)
@@ -877,8 +892,8 @@ class ComposeMainActivity : ComponentActivity() {
                                                 openPage()
                                             }
                                         }
-                                        !target.isNullOrBlank() -> openPage()
-                                        settingsStyleSite && card.key.isNotBlank() && card.id.isNotBlank() ->
+                                        !web.isNullOrBlank() -> openPage()
+                                        card.id.isNotBlank() ->
                                             navController.navigate(
                                                 Routes.detail(card.key, card.id, card.title, card.posterUrl),
                                             )

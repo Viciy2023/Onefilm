@@ -133,4 +133,21 @@ object PanProviders {
     /** 清除类卡片对应的接口 action；没有对应动作时返回 null。 */
     fun clearAction(categoryId: String?, title: String): String? =
         cookieClearer(manual(categoryId, title))
+
+    /**
+     * 标题是不是「配置动作卡」（注册/扫码/Cookie/设置项…）。
+     *
+     * 配置中心这类站点的分类页里同时存在动作卡和真实影片卡：动作卡走弹窗，
+     * 影片卡必须走详情/搜索，不能因为「这个站点是配置站」就全部打开接口页面。
+     */
+    fun isActionTitle(title: String): Boolean {
+        if (title.isBlank()) return false
+        val keys = listOf(
+            "注册", "扫码", "手动输入", "手动配置", "粘贴", "清除", "排序", "日志",
+            "弹幕", "鸿蒙", "播放选项", "多线程", "DNS", "备份", "网页版配置中心",
+            "手机号", "短信", "账号密码", "刷新登录", "重建设备", "配置地址",
+            "Emby", "Cookie", "Token", "蜗牛",
+        )
+        return keys.any { title.contains(it, ignoreCase = true) }
+    }
 }

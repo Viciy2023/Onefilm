@@ -22,9 +22,9 @@ object WebConfigStore {
 
     fun get(siteKey: String): String? = bases[siteKey] ?: last
 
-    /** 组合某个分类对应的页面地址；没有基址时返回 null。 */
+    /** 组合某个分类对应的页面地址；只认这个站点记录的基址，绝不跨站点复用。 */
     fun pageUrl(siteKey: String, section: String?): String? {
-        val base = get(siteKey) ?: return null
+        val base = bases[siteKey] ?: return null
         return if (section.isNullOrBlank()) base else "$base#$section"
     }
 }

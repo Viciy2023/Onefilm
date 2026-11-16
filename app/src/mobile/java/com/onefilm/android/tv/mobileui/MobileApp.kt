@@ -243,15 +243,18 @@ fun MobileApp() {
                     ?: com.onefilm.android.tv.compose.bridge.WebConfigStore.get(card.key)
                 return
             }
-            // 综合设置类卡片：能映射到原生弹窗的直接弹窗，其余落到接口页面
-            com.onefilm.android.tv.compose.bridge.PanSettings.resolve(card.title)?.let { setting ->
-                panSetting = Triple(card.key, card.title, setting)
-                return
+            // 只有动作卡才继续走「接口页面」兜底；影片卡要落到详情/搜索
+            if (com.onefilm.android.tv.compose.bridge.PanProviders.isActionTitle(card.title)) {
+                com.onefilm.android.tv.compose.bridge.PanSettings.resolve(card.title)?.let { setting ->
+                    panSetting = Triple(card.key, card.title, setting)
+                    return
+                }
             }
         }
         // 其余动作卡片打开接口下发的网页（备注里带地址，或用基址 + #分类）
+        val isAction = com.onefilm.android.tv.compose.bridge.PanProviders.isActionTitle(card.title)
         val target = card.webUrl
-            ?: if (settingsStyleSite) {
+            ?: if (settingsStyleSite && isAction) {
                 com.onefilm.android.tv.compose.bridge.WebConfigStore.pageUrl(card.key, categoryTarget?.id)
             } else {
                 null
