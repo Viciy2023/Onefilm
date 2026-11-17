@@ -8,6 +8,8 @@ OneFilm là trình phát video dành cho **Android TV, TV box và màn hình l�
 
 Nếu bạn đã có nguồn phim hợp pháp, cấu hình tương thích TVBOX hoặc nguồn kênh trực tiếp, OneFilm chính là trình phát lo phần "trình bày nội dung cho tử tế": tường poster đủ lớn, tìm kiếm đủ nhanh, điều khiển đủ thuận tay, người lớn tuổi và trẻ nhỏ cũng dùng dễ dàng.
 
+🌐 **Trang chủ dự án**: <https://film.onetv.de5.net/>
+
 ![Trang chủ OneFilm TV](docs/screenshots/readme/home.png)
 
 ## Nhìn qua là hiểu

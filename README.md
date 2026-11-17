@@ -8,6 +8,8 @@
 
 如果你手里有合法的影视接口、TVBOX 兼容配置或直播源，壹影就是那个负责把内容“好好呈现出来”的播放器：海报墙够大、搜索够快、遥控器够顺手，老人和孩子也能轻松使用。
 
+🌐 **项目主页**：<https://film.onetv.de5.net/>
+
 ![OneFilm TV 首页](docs/screenshots/readme/home.png)
 
 ## 一眼看懂

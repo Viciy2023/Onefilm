@@ -8,6 +8,8 @@ OneFilm is a video player built for **Android TV, TV boxes, and large phone scre
 
 If you already have a legal media source, a TVBOX-compatible config, or live channel sources, OneFilm is the player that presents that content properly: poster walls big enough, search fast enough, a remote that feels natural, and an interface that grandparents and kids can use with ease.
 
+🌐 **Project homepage**: <https://film.onetv.de5.net/>
+
 ![OneFilm TV home screen](docs/screenshots/readme/home.png)
 
 ## At a glance
