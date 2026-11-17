@@ -3,6 +3,7 @@ package com.onefilm.android.tv.compose.design.component
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -97,12 +98,14 @@ fun PanFormDialog(
         },
     ) {
         spec.fields.forEach { field ->
-            OutlinedTextField(
+            PanTextField(
                 value = values[field.key].orEmpty(),
                 onValueChange = { values[field.key] = it },
-                modifier = Modifier.fillMaxWidth().height(if (field.multiline) 96.dp else 46.dp),
+                placeholder = field.label,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = if (field.multiline) 96.dp else 34.dp),
                 singleLine = !field.multiline,
-                placeholder = { Text(field.label, fontSize = 13.sp) },
                 visualTransformation = if (field.key == "pass" || field.key == "password") {
                     PasswordVisualTransformation()
                 } else {

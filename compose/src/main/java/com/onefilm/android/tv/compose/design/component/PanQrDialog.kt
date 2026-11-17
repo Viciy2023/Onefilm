@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -209,11 +210,12 @@ fun PanCookieDialog(
         if (setter == null) {
             Text("该平台暂不支持手动输入", fontSize = 13.sp)
         } else {
-            OutlinedTextField(
+            PanTextField(
                 value = text,
                 onValueChange = { text = it },
-                modifier = Modifier.fillMaxWidth().height(150.dp),
-                placeholder = { Text(PanProviders.cookieHint(provider), fontSize = 13.sp) },
+                placeholder = PanProviders.cookieHint(provider),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 150.dp),
+                singleLine = false,
             )
         }
     }

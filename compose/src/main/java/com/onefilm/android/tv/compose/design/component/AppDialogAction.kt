@@ -43,25 +43,30 @@ fun AppDialogAction(
     val internal = remember { FocusRequester() }
     val requester = focusRequester ?: internal
     var focused by remember { mutableStateOf(false) }
-    val background = when {
-        !enabled && primary -> MaterialTheme.colorScheme.surfaceVariant
-        focused && primary -> MaterialTheme.colorScheme.primary
-        focused -> MaterialTheme.colorScheme.surfaceVariant
-        primary -> MaterialTheme.colorScheme.onSurface
-        else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
+    val highlighted = enabled && (focused || primary)
+    val brush = when {
+        !enabled -> androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.surfaceVariant)
+        highlighted -> androidx.compose.ui.graphics.Brush.horizontalGradient(
+            listOf(MaterialTheme.colorScheme.onSurface, MaterialTheme.colorScheme.onSurface),
+        )
+        else -> androidx.compose.ui.graphics.Brush.horizontalGradient(
+            listOf(
+                MaterialTheme.colorScheme.surface,
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+            ),
+        )
     }
     val foreground = when {
         !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-        focused && primary -> MaterialTheme.colorScheme.onPrimary
-        primary -> MaterialTheme.colorScheme.background
+        highlighted -> MaterialTheme.colorScheme.background
         else -> MaterialTheme.colorScheme.onSurface
     }
     Box(
         modifier
-            .height(42.dp)
+            .height(32.dp)
             .focusRequester(requester)
             .clip(RoundedCornerShape(10.dp))
-            .background(background)
+            .background(brush)
             .border(
                 width = if (focused) 2.dp else 1.dp,
                 color = if (focused) MaterialTheme.colorScheme.primary
@@ -74,8 +79,8 @@ fun AppDialogAction(
     ) {
         Text(
             text = label,
-            fontSize = 14.sp,
-            fontWeight = if (primary) FontWeight.Medium else FontWeight.Normal,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Normal,
             color = foreground,
             maxLines = 1,
         )

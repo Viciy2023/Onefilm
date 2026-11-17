@@ -115,7 +115,7 @@ object PanForms {
     private fun urlForm(title: String): PanFormSpec? = when {
         title.contains("AList", ignoreCase = true) -> PanFormSpec(
             title = title,
-            subtitle = "保存 AList 远程配置地址，例如 https://9280.kstore.vip/alist.json。",
+            subtitle = "保存 AList 远程配置地址，例如 https://example.com/alist.json。",
             fields = listOf(PanField("value", "远程配置地址")),
             saveQuery = "action=setAListUrl&value={value}",
             clearLabel = "清除地址",
@@ -123,7 +123,7 @@ object PanForms {
         )
         title.contains("WebDav", ignoreCase = true) -> PanFormSpec(
             title = title,
-            subtitle = "保存 WebDav 远程配置地址，例如 https://9280.kstore.vip/webdav.json。",
+            subtitle = "保存 WebDav 远程配置地址，例如 https://example.com/webdav.json。",
             fields = listOf(PanField("value", "远程配置地址")),
             saveQuery = "action=setWebDavUrl&value={value}",
             clearLabel = "清除地址",
@@ -131,7 +131,7 @@ object PanForms {
         )
         title.contains("Vod", ignoreCase = true) -> PanFormSpec(
             title = title,
-            subtitle = "保存 DiyVod 远程配置地址，例如 https://9280.kstore.vip/diyvod.txt。",
+            subtitle = "保存 DiyVod 远程配置地址，例如 https://example.com/diyvod.txt。",
             fields = listOf(PanField("value", "远程配置地址")),
             saveQuery = "action=setDiyVodUrl&value={value}",
             clearLabel = "清除地址",

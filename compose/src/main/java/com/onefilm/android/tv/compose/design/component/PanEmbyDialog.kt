@@ -158,12 +158,12 @@ private fun EmbyField(
     password: Boolean = false,
     onChange: (String) -> Unit,
 ) {
-    OutlinedTextField(
+    PanTextField(
         value = value,
         onValueChange = onChange,
-        modifier = Modifier.fillMaxWidth().height(52.dp),
+        placeholder = label,
+        modifier = Modifier.fillMaxWidth(),
         singleLine = true,
-        placeholder = { Text(label, fontSize = 13.sp) },
         visualTransformation = if (password) PasswordVisualTransformation() else androidx.compose.ui.text.input.VisualTransformation.None,
     )
 }
