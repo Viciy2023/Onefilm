@@ -167,3 +167,46 @@ if (isTv) {
 ## 8. 一句话原则
 
 > **共享业务，不共享屏幕；TV 只做横屏遥控器体验，Mobile 只做竖屏触控体验。**
+
+## 9. UI 统一样式规范（强制）
+
+> 背景：2026-11-17 已把「配置中心」全部弹窗统一到「导航设置」面板的样式。**以后任何新页面、弹窗、设置项，都不允许再引入第二套按钮或输入框样式**，一律复用下列组件；禁止再用 Material3 `OutlinedTextField` / `Button` / `TextButton` 当替代品。
+
+### 9.1 输入框
+
+- 统一组件：`PanFieldRow` + `PanTextField`
+  - 位置：`compose/src/main/java/com/onefilm/android/tv/compose/design/component/PanFieldRow.kt`
+  - 视觉来源：「导航设置」的 `SettingsPanelRow` / `ConfigTextField`
+- 规格（必须一致）：
+  - 容器最小高 **34dp**，圆角 **10dp**
+  - 底色 `surfaceVariant`（未聚焦 alpha 0.55，聚焦为实底）
+  - 边框：未聚焦 **1dp** `outlineVariant` alpha 0.55；聚焦 **2dp** `primary`
+  - 内边距：横向 **12dp** / 纵向 **9dp**
+  - 正文 **14sp** `onSurface`；占位 **13sp** `onSurfaceVariant`
+  - 单行：占位垂直居中；多行（如 Cookie 粘贴）：占位与文本**顶部对齐**，容器最小 **150dp**
+- 密码框：`visualTransformation = PasswordVisualTransformation()`，其它尺寸与普通输入框完全相同。
+
+### 9.2 按钮
+
+- 弹窗按钮：`AppDialogAction`（全局弹窗共用，含 `autoFocus`，TV 必需）
+- 面板 / 标签按钮：`TvTagButton`
+- 规格（必须一致）：
+  - 高 **32dp**，圆角 **10dp**
+  - 未选中：`surface → surfaceVariant(0.55)` 横向渐变 + **1dp** `outlineVariant` 描边
+  - 聚焦 / 选中：`onSurface` 实色 + **2dp** `primary` 描边，文字用 `background` 色
+  - 主按钮用 `primary = true`（深色实底）
+- 同组按钮横向间距 **8dp**。
+
+### 9.3 间距
+
+- 输入框之间、按钮之间：**8dp**
+- 弹窗内容块之间：**10dp**
+- 不允许在单个弹窗里自定义其它间距值。
+
+### 9.4 约束与自查
+
+- 新增 UI 前先问自己：能不能复用 `PanFieldRow` / `PanTextField` / `AppDialogAction` / `TvTagButton`？能复用就必须复用。
+- 确需新增组件时，必须在该组件的 KDOC 里写明「为什么现有组件不能满足」，并在 commit message 里说明。
+- 只统一样式，**不得**改动 action、参数与返回契约。
+- TV 与 Mobile 分别验收；不得把一端的尺寸、间距、布局套到另一端（与第 4 节一致）。
+- 样式改动的验收：至少提供一张对应端的截图，并说明与「导航设置」面板的对比结论。
