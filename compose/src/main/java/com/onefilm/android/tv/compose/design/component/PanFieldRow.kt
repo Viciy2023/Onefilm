@@ -3,6 +3,8 @@ package com.onefilm.android.tv.compose.design.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -40,6 +42,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun PanFieldRow(
     modifier: Modifier = Modifier,
+    contentAlignment: Alignment = Alignment.CenterStart,
     content: @Composable () -> Unit,
 ) {
     var focused by remember { mutableStateOf(false) }
@@ -62,7 +65,7 @@ fun PanFieldRow(
                 else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
                 RoundedCornerShape(10.dp),
             ),
-        contentAlignment = Alignment.CenterStart,
+        contentAlignment = contentAlignment,
     ) {
         CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             content()
@@ -84,7 +87,10 @@ fun PanTextField(
     visualTransformation: androidx.compose.ui.text.input.VisualTransformation =
         androidx.compose.ui.text.input.VisualTransformation.None,
 ) {
-    PanFieldRow(modifier) {
+    PanFieldRow(
+        modifier = modifier,
+        contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart,
+    ) {
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
@@ -94,15 +100,19 @@ fun PanTextField(
             visualTransformation = visualTransformation,
             modifier = Modifier
                 .fillMaxWidth()
+                .then(if (singleLine) Modifier else Modifier.fillMaxHeight())
                 .padding(horizontal = 12.dp, vertical = 9.dp),
             decorationBox = { inner ->
-                Box(contentAlignment = Alignment.CenterStart) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart,
+                ) {
                     if (value.isBlank()) {
                         Text(
                             placeholder,
                             fontSize = 13.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
+                            maxLines = if (singleLine) 1 else Int.MAX_VALUE,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
