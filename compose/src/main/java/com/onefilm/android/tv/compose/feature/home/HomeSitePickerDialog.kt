@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -143,31 +144,49 @@ private fun SiteRow(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
-    val shape = RoundedCornerShape(10.dp)
+    // 样式与点播页顶部接口分类标签（主页 / 热门电影 / …）完全一致：
+    // 8dp 圆角、32dp 高、横向渐变底、未聚焦 1dp / 聚焦 2dp 主色描边、13sp 文字。
+    val shape = RoundedCornerShape(8.dp)
+    val highlighted = focused || option.current
+    val foreground =
+        if (highlighted) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface
     Row(
         modifier
             .fillMaxWidth()
-            .height(38.dp)
+            .height(32.dp)
             .clip(shape)
             .background(
-                if (focused || option.current) MaterialTheme.colorScheme.surfaceVariant
-                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                if (highlighted) {
+                    Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.onSurface,
+                            MaterialTheme.colorScheme.onSurface,
+                        ),
+                    )
+                } else {
+                    Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                        ),
+                    )
+                },
             )
             .border(
                 width = if (focused) 2.dp else 1.dp,
                 color = if (focused) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
                 shape = shape,
             )
             .clickable(interactionSource = interaction, indication = null, onClick = onClick)
-            .padding(horizontal = 12.dp),
+            .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = option.name.ifBlank { option.key },
             fontSize = 13.sp,
-            fontWeight = if (option.current) FontWeight.SemiBold else FontWeight.Normal,
-            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Normal,
+            color = foreground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
@@ -177,7 +196,7 @@ private fun SiteRow(
             Text(
                 text = stringResource(R.string.home_pick_site_current),
                 fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.primary,
+                color = foreground.copy(alpha = 0.85f),
                 maxLines = 1,
             )
         }
