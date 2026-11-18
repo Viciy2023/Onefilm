@@ -42,9 +42,8 @@ README.md.bak.*
 # Bugly symbol upload tool (downloaded, not committed)
 tools/bugly/*.jar
 buglybin/
-.mnemon/runtime/memories.json
-.mnemon/runtime/MEMORY.md
-.mnemon/runtime/USER.md
+# Mnemon 记忆系统本地状态（含 documents/ 下自动生成的官网知识记录）
+/.mnemon/
 *.hprof
 
 # Local test APKs (not committed)
@@ -52,3 +51,15 @@ buglybin/
 
 # wrangler local state
 .wrangler/
+
+# ---- 官方网站（独立静态站，不随 App 仓库做版本控制） ----
+# 站点源码：F:\APK\Onefilm\oenfilmweb（7 个静态页 + assets + 素材脚本）
+/oenfilmweb/
+# 官网自定义域 film.onetv.de5.net 的 Worker 反代源码（本地维护，wrangler 部署）
+/.edge-site/
+# 官网验收截图（本地视觉复核用）
+/.shots/
+# 官网构建与验收过程中的临时备份（.tmp-b3-original.txt、.tmp-toc.png 等）
+/.tmp-*
+# 视觉复核工具的本地缓存
+/.dsh-vision-router/

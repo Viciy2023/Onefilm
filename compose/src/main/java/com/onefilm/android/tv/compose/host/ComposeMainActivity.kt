@@ -878,12 +878,12 @@ class ComposeMainActivity : ComponentActivity() {
                                             panForm = card.key to spec
                                         }
                                         card.title.contains("网页版配置中心") ->
-                                            // 接口没给地址时，退回 App 自带的调试网页（/proxy 同端口，tab=4）
+                                            // 接口没给地址时，退回 App 自带的调试网页（同端口，tab=4）
                                             panLink = card.webUrl
                                                 ?: WebConfigStore.get(card.key)
-                                                ?: runCatching {
-                                                    com.onefilm.android.tv.server.Server.get().getAddress(4)
-                                                }.getOrNull()
+                                                ?: ComposeDependencies.settingsDataSource
+                                                    .configPushUrl()
+                                                    .ifBlank { null }
                                         com.onefilm.android.tv.compose.bridge.PanProviders
                                             .isActionTitle(card.title) -> {
                                             val setting = com.onefilm.android.tv.compose.bridge.PanSettings.resolve(card.title)
