@@ -21,6 +21,7 @@ object PanProviders {
             "pan189" -> "pan189"
             "bili" -> "bili"
             "guangya" -> "guangya"
+            "ali" -> "ali"
             "pan1me" -> "pan1me"
             else -> null
         }
@@ -53,6 +54,10 @@ object PanProviders {
         }
         if (id == "pan1me" || title.contains("分享社区")) return "pan1me"
         if (title.contains("蜗牛")) return "woniu"
+        // 阿里云盘没有扫码/账号密码，只有 refresh_token 一个入口
+        if (id == "ali" || title.contains("阿里云盘") || title.contains("阿里")) return "aliRefresh"
+        // CloudLink 搜索地址（自建实例）
+        if (title.contains("CloudLink", ignoreCase = true)) return "cloudlinkUrl"
         // 这些平台没有扫码，但有账号/验证码登录与清除动作
         if (id == "pan123" || id == "pan139" || id == "thunder") return id
         return login(categoryId, title)
@@ -82,6 +87,8 @@ object PanProviders {
         "pan189" -> "setPan189Cookie"
         "bili" -> "setBiliCookie"
         "guangya" -> "setGuangYaToken"
+        "aliRefresh" -> "setAliRefresh"
+        "cloudlinkUrl" -> "setCloudLinkBase"
         "guangyaZhenYing" -> "setGuangYaZhenYingCookie"
         "pan1me" -> "setPan1MeCookie"
         "woniu" -> "setWoNiu4KCookie"
@@ -100,6 +107,8 @@ object PanProviders {
         "pan189" -> "clearPan189Cookie"
         "bili" -> "clearBiliCookie"
         "guangya" -> "clearGuangYaToken"
+        "aliRefresh" -> "clearAli"
+        "cloudlinkUrl" -> "clearCloudLinkBase"
         "guangyaZhenYing" -> "clearGuangYaZhenYingCookie"
         "pan1me" -> "clearPan1MeCookie"
         "woniu" -> "clearWoNiu4K"
@@ -116,6 +125,8 @@ object PanProviders {
     fun cookieHint(provider: String?): String = when (provider) {
         "ucToken" -> "请粘贴 UC TV Token"
         "guangya" -> "请粘贴光鸭 Token"
+        "aliRefresh" -> "请粘贴阿里云盘 refresh_token"
+        "cloudlinkUrl" -> "请填写 CloudLink 地址（含 /api/search?kw=）"
         "alistUrl" -> "请填写 AList 远程配置地址"
         "webDavUrl" -> "请填写 WebDav 远程配置地址"
         "diyVodUrl" -> "请填写 Vod 远程配置地址"

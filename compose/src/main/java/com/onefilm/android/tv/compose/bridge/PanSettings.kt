@@ -101,6 +101,35 @@ object PanSettings {
             setter = "setHongMeng",
             options = listOf("true" to "开启鸿蒙兼容", "false" to "关闭鸿蒙兼容"),
         )
+        // 搜索源开关：网盘搜索并发调用的四个源，关掉就不再请求
+        title.contains("搜索源") && title.contains("CloudLink", ignoreCase = true) -> PanSetting.Choice(
+            title = title,
+            subtitle = "自建 CloudLink Finder 的搜索接口（自带链接有效性校验）。",
+            field = "srcCloudlink",
+            setter = "setSrcCloudlink",
+            options = listOf("true" to "开启", "false" to "关闭"),
+        )
+        title.contains("搜索源") && title.contains("pansou", ignoreCase = true) -> PanSetting.Choice(
+            title = title,
+            subtitle = "pansou.app 的公开实例，覆盖夸克/百度/阿里/迅雷/UC。",
+            field = "srcPansou",
+            setter = "setSrcPansou",
+            options = listOf("true" to "开启", "false" to "关闭"),
+        )
+        title.contains("搜索源") && title.contains("gesoso", ignoreCase = true) -> PanSetting.Choice(
+            title = title,
+            subtitle = "gesoso.fun（原 MiSou），只覆盖夸克/UC。",
+            field = "srcGesoso",
+            setter = "setSrcGesoso",
+            options = listOf("true" to "开启", "false" to "关闭"),
+        )
+        title.contains("搜索源") && title.contains("pansearch", ignoreCase = true) -> PanSetting.Choice(
+            title = title,
+            subtitle = "pansearch.me，当前网络下不可达，留作备用。",
+            field = "srcPansearch",
+            setter = "setSrcPansearch",
+            options = listOf("true" to "开启", "false" to "关闭"),
+        )
         else -> null
     }
 }

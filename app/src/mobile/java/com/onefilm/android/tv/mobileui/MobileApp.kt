@@ -247,6 +247,9 @@ fun MobileApp() {
             if (card.title.contains("网页版配置中心")) {
                 panLink = card.webUrl
                     ?: com.onefilm.android.tv.compose.bridge.WebConfigStore.get(card.key)
+                    ?: runCatching {
+                        com.onefilm.android.tv.server.Server.get().getAddress(4)
+                    }.getOrNull()
                 return
             }
             // 只有动作卡才继续走「接口页面」兜底；影片卡要落到详情/搜索
