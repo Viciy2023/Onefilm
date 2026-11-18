@@ -164,6 +164,63 @@ if (isTv) {
 - `.github/workflows/release.yml` 已带 `-PruneOldApks`；本地手动发版同样必须加这两个参数。
 - 清理前确认新版本清单已在线上（脚本内置回读校验），避免把客户端指向不存在的包。
 
+## 7.2 自建接口（spider）部署到盒子
+
+> 目标机：局域网内的 OpenWrt/海思盒子，用 Docker 里的 `tvbox-openresty`（8899→80）提供静态文件。
+> **本仓库不得写入任何主机地址以外的凭据**；账号密码只放在本机环境变量或 gitignored 的本地文件里。
+
+### 7.2.1 部署目录
+
+| 项 | 值 |
+|---|---|
+| 站点根目录（容器内视角） | `/mnt/docker-data/tvbox/data` |
+| 网盘接口目录 | `/mnt/docker-data/tvbox/data/onefilm` |
+| 对外地址 | `http://<盒子IP>:8899/onefilm/{own,stable,full}.json` |
+| jar 地址 | `http://<盒子IP>:8899/onefilm/onefilm-spider.jar` |
+
+### 7.2.2 标准流程
+
+1. **构建**：在 `F:\APK\Onefilm-spider` 执行 `.\build.ps1`，记下输出的 jar md5。
+2. **生成配置**（自动把 md5 写入站点 jar 字段）：
+   ```powershell
+   .\scripts\make-config.ps1 -JarHost "http://<盒子IP>:8899/onefilm"
+   ```
+   产物在 `configs\{own,stable,full}.json`。若需要把分散的网盘站点（夸克/UC/…/我的网盘）也并进三个文件，按 `docs/2026-11-17-pan-search.md` 的「站点配置」一节合并。
+3. **备份**（必须，时间戳后缀便于回滚）：
+   ```bash
+   cd /mnt/docker-data/tvbox/data/onefilm
+   ts=$(date +%Y%m%d-%H%M%S)
+   for f in onefilm-spider.jar own.json stable.json full.json; do cp -p $f $f.bak.$ts; done
+   ```
+4. **上传**：`onefilm-spider.jar` + 三个 json，共 4 个文件。
+5. **校验**（两步都要过）：
+   - 机内：`md5sum` 与本地构建产物的 md5 逐项一致；
+   - 线上：`GET http://<盒子IP>:8899/onefilm/<文件名>` 返回 `200`，且下载内容的 md5 与本地一致。
+6. **客户端**：只改接口地址，不需要重装 App；已加载过同名地址的，必须清缓存或重启 App，否则可能继续用旧配置。
+
+### 7.2.3 回滚
+
+```bash
+cd /mnt/docker-data/tvbox/data/onefilm
+cp -p onefilm-spider.jar.bak.<时间戳> onefilm-spider.jar
+cp -p own.json.bak.<时间戳>   own.json
+cp -p stable.json.bak.<时间戳> stable.json
+cp -p full.json.bak.<时间戳>   full.json
+```
+
+### 7.2.4 连接方式（凭据不入库）
+
+- 传输：`pscp` / `plink`（PuTTY 套件），或用系统自带 `scp`/`ssh`。
+- 主机、用户名、密码**只从环境变量读取**，例如 `$env:ONEFILM_BOX_HOST`、`$env:ONEFILM_BOX_USER`、`$env:ONEFILM_BOX_PASS`；禁止把明文密码写进 `AGENTS.md`、脚本、README 或提交记录。
+- 首次连接需确认一次主机密钥指纹（`plink -hostkey SHA256:…`），指纹可以入库，密码不行。
+
+### 7.2.5 已知注意事项
+
+- 盒子只读静态托管（openresty），**不支持 WebDAV 写入**（`OPTIONS`/`PROPFIND` 返回 405），只能走 SSH/SMB。
+- `full.json` 的全局 `spider` 可能是第三方 jar；网盘站点必须各自带 `jar` 字段指向 `onefilm/onefilm-spider.jar`，否则在 full 里不生效。
+- 阿里云盘登录态、各网盘 Cookie 都存在**客户端本机**（`files/onefilm-pan.json`），换设备需重新登录，不随接口部署迁移。
+- 网盘搜索的 CloudLink 源地址默认指向内网实例；换了盒子或端口要在「配置中心 → 搜索源」里改，或直接关掉该源。
+
 ## 8. 一句话原则
 
 > **共享业务，不共享屏幕；TV 只做横屏遥控器体验，Mobile 只做竖屏触控体验。**
