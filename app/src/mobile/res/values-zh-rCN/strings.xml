@@ -1,0 +1,209 @@
+<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+
+    <!-- App -->
+    <string name="app_keep">我的收藏</string>
+    <string name="app_history">最近观看</string>
+
+    <!-- Nav -->
+    <string name="nav_vod">点播</string>
+    <string name="nav_live">直播</string>
+    <string name="nav_setting">设置</string>
+
+    <!-- Menu -->
+    <string name="menu_sync">同步</string>
+    <string name="menu_delete">删除</string>
+    <string name="menu_search">搜索</string>
+    <string name="menu_site">站点</string>
+    <string name="menu_reset">重置</string>
+
+    <!-- Vod -->
+    <string name="vod_home">推荐</string>
+
+    <!-- Detail -->
+    <string name="detail_flag">线路</string>
+    <string name="detail_episode">选集</string>
+    <string name="detail_quality">画质</string>
+    <string name="detail_content">简介</string>
+    <string name="detail_search">快搜“<xliff:g name="name">%s</xliff:g>”</string>
+    <string name="detail_favorite_add">加入收藏</string>
+    <string name="detail_favorite_added">已收藏</string>
+
+    <!-- Device -->
+    <string name="device_select">选择装置</string>
+    <string name="device_offline">装置已离线</string>
+    <string name="device_scan">请扫描壹影 QRCode 进行绑定</string>
+
+    <!-- Control -->
+    <string name="control_speed">倍速</string>
+    <string name="control_scale">缩放</string>
+    <string name="control_track">轨道</string>
+    <string name="control_other">其它</string>
+
+    <!-- Dialog -->
+    <string name="dialog_delete_record">删除全部纪录？</string>
+    <string name="dialog_delete_keep">收藏纪录将会全部删除。</string>
+    <string name="dialog_delete_history">观看纪录将会全部删除。</string>
+
+    <!-- Timer -->
+    <string name="timer_5">5 分钟</string>
+    <string name="timer_15">15 分钟</string>
+    <string name="timer_30">30 分钟</string>
+    <string name="timer_60">1 小时</string>
+    <string name="timer_delay">延长 5 分钟</string>
+    <string name="timer_cancel">取消定时器</string>
+
+    <!-- Hint -->
+    <string name="shortcut"> 已于主萤幕新增捷径。</string>
+
+    <string-array name="select_background">
+        <item>关</item>
+        <item>开</item>
+        <item>画中画</item>
+    </string-array>
+
+    <!-- Mobile App -->
+    <string name="mobile_app_brand">壹影</string>
+    <string name="mobile_tab_home">首页</string>
+    <string name="mobile_tab_continue">继续观看</string>
+    <string name="mobile_tab_library">收藏</string>
+    <string name="mobile_home_empty">暂无内容</string>
+    <string name="mobile_home_recommend">推荐</string>
+    <string name="mobile_home_continue">继续观看</string>
+    <string name="mobile_home_continue_empty">暂无观看记录</string>
+    <string name="mobile_search_hint">搜索电影、剧集、演员</string>
+    <string name="mobile_search_clear">清空</string>
+    <string name="mobile_search_idle">输入关键词，开始聚合搜索</string>
+    <string name="mobile_search_empty">没有找到「%1$s」</string>
+    <string name="mobile_search_result_count">找到 %1$d 个结果</string>
+    <string name="mobile_search_searching">搜索中</string>
+    <string name="mobile_library_delete_confirm">删除这条记录？</string>
+    <string name="mobile_library_netdisk">网盘</string>
+    <string name="mobile_library_history">历史</string>
+    <string name="mobile_library_empty">这里还没有内容</string>
+    <string name="mobile_library_swipe_hint">向左或向右滑动条目可删除</string>
+    <string name="mobile_unnamed">未命名</string>
+    <string name="mobile_live_desc">打开直播频道列表，选择频道开始观看</string>
+    <string name="mobile_live_open">打开直播</string>
+    <string name="mobile_retry">重试</string>
+    <string name="mobile_back">‹ 返回</string>
+    <string name="mobile_category">分类</string>
+    <string name="mobile_filter">筛选</string>
+    <string name="mobile_category_load_failed">分类加载失败</string>
+
+    <!-- Mobile Settings -->
+    <string name="mobile_settings_section_api">接口配置</string>
+    <string name="mobile_settings_vod_api">点播接口</string>
+    <string name="mobile_settings_live_api">直播接口</string>
+    <string name="mobile_settings_wall_api">壁纸接口</string>
+    <string name="mobile_settings_section_appearance">外观</string>
+    <string name="mobile_settings_theme">外观主题</string>
+    <string name="mobile_settings_theme_minimal">简约</string>
+    <string name="mobile_settings_theme_dark">暗黑</string>
+    <string name="mobile_settings_theme_system">跟随系统</string>
+    <string name="mobile_settings_language">界面语言</string>
+    <string name="mobile_settings_wallpaper">壁纸切换</string>
+    <string name="mobile_settings_follow_config">跟随配置</string>
+    <string name="mobile_settings_incognito">隐身模式</string>
+    <string name="mobile_settings_incognito_desc">不写入历史与缓存</string>
+    <string name="mobile_settings_adblock">广告过滤</string>
+    <string name="mobile_settings_adblock_desc">播放时自动跳过 m3u8 贴片广告</string>
+    <string name="mobile_ad_filter_success_tip">ONEFILM提示您：本片广告过滤成功，祝您观影愉快！</string>
+    <string name="mobile_settings_section_subtitle">字幕</string>
+    <string name="mobile_settings_subtitle_position">字幕位置</string>
+    <string name="mobile_settings_subtitle_color">字幕颜色</string>
+    <string name="mobile_settings_subtitle_edge">字幕描边</string>
+    <string name="mobile_settings_subtitle_size">字幕大小</string>
+    <string name="mobile_settings_subtitle_style">字幕样式</string>
+    <string name="mobile_settings_style_original">原始</string>
+    <string name="mobile_settings_style_system">系统</string>
+    <string name="mobile_settings_style_custom">自定义</string>
+    <string name="mobile_settings_section_danmaku">弹幕</string>
+    <string name="mobile_settings_danmaku_show">显示弹幕</string>
+    <string name="mobile_settings_danmaku_show_desc">加载并渲染弹幕</string>
+    <string name="mobile_settings_danmaku_load">弹幕加载</string>
+    <string name="mobile_settings_danmaku_load_desc">从弹幕服务器加载弹幕</string>
+    <string name="mobile_settings_danmaku_auto">自动搜索</string>
+    <string name="mobile_settings_danmaku_auto_desc">播放时按片名和集数自动匹配</string>
+    <string name="mobile_settings_danmaku_api">弹幕 API</string>
+    <string name="mobile_settings_danmaku_api_default">跟随接口配置</string>
+    <string name="mobile_settings_danmaku_api_hint">留空则使用接口配置中的地址</string>
+    <string name="mobile_settings_danmaku_size">弹幕字号</string>
+    <string name="mobile_settings_danmaku_alpha">弹幕透明度</string>
+    <string name="mobile_settings_danmaku_speed">弹幕速度</string>
+    <string name="mobile_settings_danmaku_lines">滚动行数</string>
+    <string name="mobile_settings_danmaku_lines_value">%1$d 行</string>
+    <string name="mobile_settings_danmaku_block">弹幕屏蔽词</string>
+    <string name="mobile_settings_danmaku_block_desc">多个关键词用逗号分隔</string>
+    <string name="mobile_settings_not_set">未设置</string>
+    <string name="mobile_settings_section_playback">播放</string>
+    <string name="mobile_settings_play_timeout">播放超时</string>
+    <string name="mobile_settings_play_engine">播放引擎</string>
+    <string name="mobile_settings_background">后台播放</string>
+    <string name="mobile_settings_background_off">关闭</string>
+    <string name="mobile_settings_background_bg">后台</string>
+    <string name="mobile_settings_buffer">缓冲区</string>
+    <string name="mobile_settings_seconds_value">%1$d 秒</string>
+    <string name="mobile_settings_render_mode">渲染方式</string>
+    <string name="mobile_settings_tunnel">隧道解码</string>
+    <string name="mobile_settings_tunnel_desc">需要 Surface 渲染</string>
+    <string name="mobile_settings_audio_passthrough">音频直通</string>
+    <string name="mobile_settings_audio_passthrough_desc">HDMI / 功放透传</string>
+    <string name="mobile_settings_audio_soft">音频偏软解</string>
+    <string name="mobile_settings_audio_soft_desc">软解优先使用 Audio 解码器</string>
+    <string name="mobile_settings_video_soft">视频偏软解</string>
+    <string name="mobile_settings_video_soft_desc">软解优先使用 Video 解码器</string>
+    <string name="mobile_settings_dv_output">Dolby Vision 输出</string>
+    <string name="mobile_settings_search_threads">搜索线程</string>
+    <string name="mobile_settings_search_sites">参与搜索的站点</string>
+    <string name="mobile_settings_manage">点击管理</string>
+    <string name="mobile_settings_section_cache">预加载与缓存</string>
+    <string name="mobile_settings_preload">开启预加载</string>
+    <string name="mobile_settings_preload_desc">使用 PlayerManager 预加载</string>
+    <string name="mobile_settings_preload_next">预加载下一集</string>
+    <string name="mobile_settings_preload_next_desc">Exo 路径生效</string>
+    <string name="mobile_settings_preload_threads">预加载线程</string>
+    <string name="mobile_settings_cache_size">缓存大小</string>
+    <string name="mobile_settings_cache_days">缓存天数</string>
+    <string name="mobile_settings_days_value">%1$d 天</string>
+    <string name="mobile_settings_clear_cache">清除缓存</string>
+    <string name="mobile_settings_export">导出诊断</string>
+    <string name="mobile_settings_export_desc">写入 Download</string>
+    <string name="mobile_settings_export_failed">导出失败，请检查存储权限</string>
+    <string name="mobile_settings_export_ok">已导出：%1$s</string>
+    <string name="mobile_settings_section_update">更新</string>
+    <string name="mobile_settings_force_update">强制升级</string>
+    <string name="mobile_settings_force_update_desc">检测到新版后自动下载并强制更新</string>
+    <string name="mobile_settings_reset_ua">重置 UA</string>
+    <string name="mobile_settings_reset_ua_desc">清空自定义</string>
+    <string name="mobile_settings_section_about">关于</string>
+    <string name="mobile_settings_version">版本</string>
+    <string name="mobile_settings_latest_version">最新版本</string>
+    <string name="mobile_settings_contact_us">联系我们</string>
+    <string name="mobile_settings_contact_us_desc">加入 Telegram 交流群</string>
+    <string name="mobile_settings_load_failed">加载失败</string>
+    <string name="mobile_settings_enter_url">请输入接口地址</string>
+    <string name="mobile_settings_line_name_hint">线路名称（可选）</string>
+    <string name="mobile_settings_url_hint">请输入接口 URL</string>
+    <string name="mobile_settings_loading">加载中…</string>
+    <string name="mobile_settings_save_load">保存并加载</string>
+    <string name="mobile_settings_cancel">取消</string>
+    <string name="mobile_settings_save">保存</string>
+    <string name="mobile_settings_done">完成</string>
+    <string name="mobile_settings_sites_selected">已选 %1$d / %2$d</string>
+    <string name="mobile_settings_select_all">全选</string>
+    <string name="mobile_settings_select_none">全不选</string>
+    <string name="mobile_settings_sites_empty">当前接口没有可搜索的站点</string>
+    <string name="mobile_settings_clear_cache_confirm">确定清除缓存？</string>
+    <string name="mobile_settings_clear_cache_desc">将删除图片缓存和临时文件，不会删除收藏和观看记录。</string>
+    <string name="mobile_settings_clear">清除</string>
+    <string name="mobile_settings_current">当前</string>
+    <string name="mobile_settings_load">加载</string>
+    <string name="mobile_settings_repo_lines">仓库线路</string>
+
+    <string name="mobile_line_title">线路</string>
+    <string name="mobile_speed_title">倍速</string>
+    <string name="mobile_subtitle_title">字幕</string>
+    <string name="mobile_searching_source">正在搜索可用站点…</string>
+    <string name="mobile_no_source">没有找到播放源</string>
+    <string name="mobile_other_sites">其他可用站点</string>
+</resources>

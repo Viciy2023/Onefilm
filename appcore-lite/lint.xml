@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <issue id="NewApi">
+        <!--
+          Media.java 使用 CompletableFuture。lint 报 NewApi(24)，但 coreLibraryDesugaring
+          已提供 backport：已核对 desugar_jdk_libs_nio-2.1.5.jar 内含
+          java/util/concurrent/CompletableFuture.class，构建产物会被 desugar 改写。属误报。
+        -->
+        <ignore regexp=".*[/\\]server[/\\]process[/\\]Media\.java" />
+
+        <!--
+          以下 10 个文件在 LITE 侧由 src/shim/com/... 下的「加 minSdk 21 守卫」副本替代，
+          原文件不参与 LITE 编译（见 build.gradle 的 java.exclude 列表）。
+          已用 javap 核对：debug 产物里的 ExternalFont 含 sanitizeStemLegacy，确认走的是副本。
+          lint 仍会扫描共享源目录里的原文件，所以在这里忽略；副本若丢失，编译会直接失败。
+        -->
+        <ignore regexp=".*[/\\]bean[/\\]Vod\.java" />
+        <ignore regexp=".*[/\\]utils[/\\]Util\.java" />
+        <ignore regexp=".*[/\\]utils[/\\]UpdateManifest\.java" />
+        <ignore regexp=".*[/\\]player[/\\]subtitle[/\\]ExternalFont\.java" />
+        <ignore regexp=".*[/\\]service[/\\]PlaybackService\.java" />
+        <ignore regexp=".*[/\\]ui[/\\]activity[/\\]PlaybackActivity\.java" />
+        <ignore regexp=".*[/\\]ui[/\\]activity[/\\]WebLoginActivity\.java" />
+        <ignore regexp=".*[/\\]player[/\\]mpv[/\\]MpvUtil\.java" />
+        <ignore regexp=".*[/\\]receiver[/\\]BootReceiver\.java" />
+        <ignore regexp=".*[/\\]dlna[/\\]DLNARenderingControlImpl\.java" />
+    </issue>
+</lint>

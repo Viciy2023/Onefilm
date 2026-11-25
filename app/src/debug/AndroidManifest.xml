@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name=".debug.ComposeSmokeActivity"
+            android:exported="true" />
+        <activity
+            android:name=".debug.DanmakuSmokeActivity"
+            android:exported="true" />
+        <activity
+            android:name=".debug.PlaybackSmokeActivity"
+            android:exported="true" />
+        <activity
+            android:name=".debug.AssSmokeActivity"
+            android:exported="true" />
+        <activity
+            android:name=".debug.ChapterSmokeActivity"
+            android:exported="true" />
+        <activity
+            android:name=".debug.MpvClientSmokeActivity"
+            android:exported="true" />
+        <activity
+            android:name=".debug.MpvPlayerSmokeActivity"
+            android:exported="true" />
+        <activity
+            android:name=".debug.SubtitleOffsetSmokeActivity"
+            android:exported="true" />
+        <activity
+            android:name=".debug.TrackSwitchSmokeActivity"
+            android:exported="true" />
+        <activity
+            android:name=".debug.ExoTrackSwitchSmokeActivity"
+            android:exported="true" />
+        <activity
+            android:name=".debug.FormalPlayerSmokeActivity"
+            android:exported="true" />
+    </application>
+</manifest>

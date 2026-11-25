@@ -1,0 +1,161 @@
+plugins {
+    alias libs.plugins.android.application
+    alias libs.plugins.kotlin.compose
+}
+
+// 版本号与 TV/手机版完全一致（唯一来源 gradle.properties），只额外带 -lite 后缀
+def appVersionName = project.findProperty('onefilm.versionName') ?: '0.1.7'
+def appVersionCode = (project.findProperty('onefilm.versionCode') ?: '8').toString().toInteger()
+
+// 发版签名与 :app 完全是同一套（key.properties / local.properties，均不入库）
+def localProps = new Properties()
+def localPropsFile = rootProject.file('local.properties')
+if (localPropsFile.exists()) {
+    localPropsFile.withInputStream { localProps.load(it) }
+}
+def keyProps = new Properties()
+def keyPropsFile = rootProject.file('key.properties')
+if (keyPropsFile.exists()) {
+    keyPropsFile.withInputStream { keyProps.load(it) }
+}
+def signingStoreFile = keyProps['storeFile'] ?: localProps['storeFile']
+def signingKeyAlias = keyProps['keyAlias'] ?: localProps['keyAlias']
+def signingStorePassword = keyProps['storePassword'] ?: localProps['storePassword']
+def signingKeyPassword = keyProps['keyPassword'] ?: localProps['keyPassword'] ?: signingStorePassword
+def hasReleaseSigning = signingStoreFile && signingKeyAlias && signingStorePassword && signingKeyPassword
+
+android {
+    namespace = 'com.onefilm.android.tv.lite'
+    compileSdk libs.versions.compileSdk.get().toInteger()
+
+    defaultConfig {
+        applicationId 'com.onefilm.android.tv.lite'
+        minSdk 21
+        // 与 TV 端一致：targetSdk 28，避开 jar 里 targetSdk>=29 的 System.load 分支
+        targetSdk 28
+        versionCode appVersionCode
+        versionName "${appVersionName}-lite"
+        manifestPlaceholders = [
+                BUGLY_APPID : "",
+                BUGLY_APPKEY: "",
+        ]
+        ndk {
+            // LITE 只出 armeabi-v7a 单包：5.x 电视/投影仪、手机（32 位运行时）都能装
+            abiFilters 'armeabi-v7a'
+        }
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile rootProject.file(signingStoreFile)
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPassword
+                storePassword signingStorePassword
+                // 5.x 设备必须能验 v1 签名
+                enableV1Signing = true
+                enableV2Signing = true
+            }
+        }
+    }
+
+    buildFeatures {
+        compose = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+        coreLibraryDesugaringEnabled = true
+    }
+
+    configurations.configureEach {
+        exclude group: 'stax', module: 'stax-api'
+        exclude group: 'xpp3', module: 'xpp3'
+        exclude group: 'com.android.support'
+        resolutionStrategy {
+            force libs.okhttp
+        }
+    }
+
+    lint {
+        disable 'ExpiredTargetSdkVersion'
+        disable 'UnsafeOptInUsageError'
+        disable 'RestrictedApi'
+        disable 'MissingTranslation'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = true
+            shrinkResources = true
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.release
+            } else {
+                // 没有签名文件时仅用于本地验证，不用于发版
+                signingConfig = signingConfigs.debug
+            }
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                    rootProject.file('app/proguard-rules.pro'),
+                    rootProject.file('app/proguard-rules-media.pro')
+        }
+    }
+}
+
+dependencies {
+    // 业务层 + View 入口 + 资源（复用 :app 源码）
+    implementation project(':appcore-lite')
+    // Compose 界面（复用 :compose 源码，依赖降到 minSdk 21）
+    implementation project(':compose-lite')
+
+    implementation platform('androidx.compose:compose-bom:2024.06.00')
+    implementation libs.compose.ui
+    implementation libs.compose.material3
+    implementation libs.activity.compose
+
+    coreLibraryDesugaring libs.desugar
+}
+
+// 产物命名与 TV / 手机版保持一致：OneFilm-<label>-v<version>-<abi>.apk
+// LITE 只出 armeabi-v7a 单包，因此 abi 固定；version 用基础版本号（0.1.39），
+// APK 内部的 versionName 仍是 0.1.39-lite。
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs.each { output ->
+            output.outputFileName.set("OneFilm-LITE-v${appVersionName}-armeabi-v7a.apk")
+        }
+    }
+}
+
+// 与 :app 一样导出到仓库根的 Release/apk（该目录已被 .gitignore 忽略）
+tasks.matching { it.name == 'assembleRelease' }.configureEach {
+    doLast {
+        copy {
+            from layout.buildDirectory.dir('outputs/apk/release')
+            include 'OneFilm-LITE-*.apk'
+            into rootProject.file('Release/apk')
+            includeEmptyDirs = false
+        }
+    }
+}
+
+// 与 :app 相同的处理：AGP 9.3 会请求未发布的 compose-group-mapping:2.2.10，
+// release 验证构建时关掉该任务，并给 L8 准备一个空的映射文件。
+if (project.hasProperty("skipComposeMapping")) {
+    tasks.configureEach {
+        if (name.contains("ReleaseComposeMapping")) enabled = false
+    }
+    tasks.register("generateEmptyComposeMappingLite") {
+        outputs.upToDateWhen { false }
+        doLast {
+            def file = file("${buildDir}/intermediates/mapping/release/mergeReleaseComposeMapping/mapping.txt")
+            file.parentFile.mkdirs()
+            file.text = ""
+        }
+    }
+    tasks.configureEach { task ->
+        if (task.name.startsWith("l8DexDesugarLib")) {
+            task.dependsOn("generateEmptyComposeMappingLite")
+        }
+    }
+}

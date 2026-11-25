@@ -1,0 +1,9 @@
+[submodule "aisubtitle"]
+	path = aisubtitle
+	url = https://github.com/Viciy2023/OneFilm-aisubtitle.git
+[submodule "adblock"]
+	path = adblock
+	url = https://github.com/Viciy2023/OneFilm-adblock.git
+[submodule "third_party/media3"]
+	path = third_party/media3
+	url = https://github.com/Viciy2023/OneFilm-player.git

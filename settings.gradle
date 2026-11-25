@@ -1,0 +1,40 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+        google()
+    }
+}
+
+plugins {
+    id "org.gradle.toolchains.foojay-resolver-convention" version "1.0.0"
+}
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        mavenCentral()
+        google()
+        flatDir { dirs "$rootDir/app/libs", "$rootDir/aisubtitle/libs" }
+        maven { url = "https://jitpack.io" }
+    }
+}
+
+include ':app'
+include ':core'
+// 去广告：源码在私有仓库 OneFilm-adblock，以 submodule 挂回本路径；外部克隆缺失时跳过（构建会失败，属预期）
+if (file('adblock').exists()) include ':adblock'
+include ':media3compat'
+include ':mpvruntime'
+include ':mpvapi'
+include ':catvod'
+include ':chaquo'
+include ':quickjs'
+include ':compose'
+// AI 字幕引擎（TV/手机使用；LITE 不依赖）
+include ':aisubtitle'
+// LITE-TV（Android 5.0+）：独立 app 模块 + 复用 :app 业务源码的 appcore-lite + 复用 :compose 界面的 compose-lite
+include ':appcore-lite'
+include ':compose-lite'
+include ':lite-tv'
+rootProject.name = "OneFilm"

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+
+    <uses-feature
+        android:name="android.hardware.microphone"
+        android:required="false" />
+
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <application android:banner="@mipmap/ic_banner">
+
+        <meta-data
+            android:name="design_width_in_dp"
+            android:value="960" />
+
+        <meta-data
+            android:name="design_height_in_dp"
+            android:value="540" />
+
+        <activity
+            android:name=".ui.activity.EntryActivity"
+            android:exported="true"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@style/Theme.Splash">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+
+        <activity
+            android:name=".ui.activity.CastActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:screenOrientation="sensorLandscape">
+            <intent-filter>
+                <action android:name="${applicationId}.cast" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ui.activity.VodActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name=".ui.activity.LiveActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:parentActivityName="com.onefilm.android.tv.compose.host.ComposeMainActivity"
+            android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name=".ui.activity.VideoActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation|keyboard|keyboardHidden|navigation"
+            android:launchMode="singleTop"
+            android:parentActivityName="com.onefilm.android.tv.compose.host.ComposeMainActivity"
+            android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name=".ui.activity.PushActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name=".ui.activity.FileActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name=".ui.activity.TvWebLoginActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation|keyboard|keyboardHidden|navigation"
+            android:screenOrientation="sensorLandscape" />
+
+        <service
+            android:name=".service.DLNARendererService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <receiver
+            android:name=".receiver.BootReceiver"
+            android:exported="true"
+            android:priority="999">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+</manifest>

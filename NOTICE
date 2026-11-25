@@ -1,0 +1,35 @@
+OneFilm
+Copyright (C) 2026 OneFilm contributors
+
+This project is a derivative work based on FongMi/TV.
+
+Upstream:
+  Repository: https://github.com/FongMi/TV
+  Branch: fongmi
+  Initial commit: 0af3b31a1783b8fa4f0ce12e52ac9fad78ddfb1e
+  Version: 5.6.3
+
+License:
+  OneFilm and its derivative works are distributed under the GNU General
+  Public License, version 3 (GPL-3.0). See LICENSE.md for the full text.
+  Upstream copyright headers are retained.
+
+Third-party components:
+  - AndroidX / Jetpack Compose / Navigation / Lifecycle (Apache-2.0)
+  - AndroidX Media3 and Media3 UI (Apache-2.0 unless otherwise stated)
+  - Coil image loading (Apache-2.0)
+  - OkHttp / Okio (Apache-2.0)
+  - Gson (Apache-2.0)
+  - Material Icons Extended (Apache-2.0)
+  - MPV / libmpv, libass, FFmpeg and related native components
+    (see their upstream licenses and the files under third_party/)
+  - FongMi/TV engine modules (GPL-3.0)
+
+  This NOTICE lists the main components; the license text shipped with each
+  dependency and the upstream project remains authoritative. Prebuilt AARs
+  under app/libs/ must be audited before public redistribution.
+
+Trademarks and artwork:
+  OneFilm does not claim affiliation with Apple TV, Disney+, Netflix, or any
+  other third-party brand. Third-party trademarks, posters, and screenshots
+  remain the property of their respective owners.

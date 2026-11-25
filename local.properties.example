@@ -1,0 +1,17 @@
+# Copy to local.properties and adjust paths. local.properties is git-ignored.
+#
+# Android SDK (required)
+sdk.dir=D\:\\android_sdk
+
+# Release signing (optional for debug builds; required for a signed release)
+# storeFile=C\:\\path\\to\\onefilm-release.jks
+# keyAlias=onefilm
+# storePassword=change-me
+# keyPassword=change-me
+
+# Bugly 崩溃上报（可选）。不填则 App 启动时跳过初始化，上报功能关闭。
+# TV 与手机是两个应用包，各有一套 appId/appKey，在 Bugly 控制台分别创建。
+# bugly.appId.tv=xxxxxxxxxx
+# bugly.appKey.tv=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+# bugly.appId.mobile=xxxxxxxxxx
+# bugly.appKey.mobile=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx

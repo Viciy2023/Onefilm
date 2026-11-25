@@ -1,0 +1,54 @@
+<resources>
+
+    <style name="Theme.Base" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/white</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:windowAnimationStyle">@style/NoAnim</item>
+    </style>
+
+    <!-- Android 12+ 的 Theme.SplashScreen 父主题是 DeviceDefault.DayNight，自带 ActionBar，
+         不关掉会在启动页上方显示一条带应用名的黑色标题栏。 -->
+    <style name="Theme.Splash" parent="Theme.SplashScreen">
+        <item name="postSplashScreenTheme">@style/Theme.App</item>
+        <item name="windowSplashScreenBackground">#FFFFFFFF</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+    </style>
+
+    <style name="Theme.App" parent="Theme.Base" />
+
+    <style name="Theme.Crash" parent="Theme.Base">
+        <item name="android:windowBackground">@color/grey_800</item>
+        <item name="android:windowDisablePreview">true</item>
+    </style>
+
+    <style name="NoAnim">
+        <item name="android:activityOpenEnterAnimation">@null</item>
+        <item name="android:activityOpenExitAnimation">@null</item>
+        <item name="android:activityCloseEnterAnimation">@null</item>
+        <item name="android:activityCloseExitAnimation">@null</item>
+    </style>
+
+    <style name="Shadow">
+        <item name="android:shadowColor">#B0000000</item>
+        <item name="android:shadowDx">1.5</item>
+        <item name="android:shadowDy">1.5</item>
+        <item name="android:shadowRadius">2</item>
+    </style>
+
+    <style name="Control">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/selector_chip</item>
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">true</item>
+        <item name="android:nextFocusUp">@id/exo_progress</item>
+        <item name="android:textColor">@color/text</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+</resources>

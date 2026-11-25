@@ -1,0 +1,13 @@
+package com.onefilm.android.tv.compose.feature.category
+
+import com.onefilm.android.tv.compose.bridge.CategoryPage
+
+sealed interface CategoryUiState {
+    data object Loading : CategoryUiState
+    data class Content(
+        val page: CategoryPage,
+        val loadingMore: Boolean = false,
+        val endReached: Boolean = false,
+    ) : CategoryUiState
+    data class Error(val message: String = "") : CategoryUiState
+}

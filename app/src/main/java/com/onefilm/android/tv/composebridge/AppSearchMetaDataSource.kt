@@ -1,0 +1,85 @@
+package com.onefilm.android.tv.composebridge
+
+import android.content.Context
+import com.onefilm.android.tv.App
+import com.onefilm.android.tv.compose.R
+import com.onefilm.android.tv.bean.Word
+import com.onefilm.android.tv.compose.bridge.SearchMetaDataSource
+import com.onefilm.android.tv.compose.bridge.SearchRank
+import com.onefilm.android.tv.setting.Setting
+import com.onefilm.android.tv.utils.ZhuToPin
+import com.github.catvod.net.OkHttp
+import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.net.URLEncoder
+
+class AppSearchMetaDataSource(private val context: Context) : SearchMetaDataSource {
+
+    override fun history(): List<String> = runCatching {
+        App.gson().fromJson<List<String>>(
+            Setting.getKeyword(),
+            TypeToken.getParameterized(List::class.java, String::class.java).type,
+        ).orEmpty()
+    }.getOrDefault(emptyList())
+
+    override fun hot(): List<String> = runCatching {
+        Word.objectFrom(Setting.getHot()).data.map { it.title }.filter { it.isNotBlank() }
+    }.getOrDefault(emptyList())
+
+    override suspend fun refreshRankings(): List<SearchRank> = withContext(Dispatchers.IO) {
+        listOf(
+            context.getString(R.string.search_rank_tv) to 3,
+            context.getString(R.string.search_rank_movie) to 2,
+            context.getString(R.string.search_rank_variety) to 4,
+        ).mapNotNull { (title, cat) ->
+            runCatching {
+                val url = "https://api.web.360kan.com/v1/rank?cat=$cat"
+                OkHttp.newCall(url).execute().use { response ->
+                    SearchRank(
+                        title = title,
+                        words = Word.objectFrom(response.body.string()).data
+                            .map { it.title }
+                            .filter { it.isNotBlank() },
+                    )
+                }
+            }.getOrNull()
+        }.filter { it.words.isNotEmpty() }
+    }
+
+    override fun clearHistory() {
+        Setting.putKeyword("[]")
+    }
+
+    override suspend fun refreshHot(): List<String> = withContext(Dispatchers.IO) {
+        runCatching {
+            val url = "https://api.web.360kan.com/v1/rank?cat=1"
+            OkHttp.newCall(url).execute().use { response ->
+                val body = response.body.string()
+                Setting.putHot(body)
+                Word.objectFrom(body).data.map { it.title }.filter { it.isNotBlank() }
+            }
+        }.getOrDefault(hot())
+    }
+
+    override fun record(keyword: String) {
+        if (keyword.isBlank()) return
+        val items = history().toMutableList()
+        items.remove(keyword)
+        items.add(0, keyword)
+        runCatching {
+            Setting.putKeyword(App.gson().toJson(items.take(20)))
+        }
+    }
+
+    override suspend fun suggest(text: String): List<String> = withContext(Dispatchers.IO) {
+        if (text.isBlank()) return@withContext emptyList()
+        runCatching {
+            val url = "https://suggest.video.iqiyi.com/?if=mobile&key=" +
+                URLEncoder.encode(ZhuToPin.get(text), "UTF-8")
+            OkHttp.newCall(url).execute().use { response ->
+                Word.objectFrom(response.body.string()).data.map { it.title }.filter { it.isNotBlank() }
+            }
+        }.getOrDefault(emptyList())
+    }
+}

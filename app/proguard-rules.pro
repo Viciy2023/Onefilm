@@ -1,0 +1,115 @@
+# Bugly (crash reporting + analytics)
+-keep class com.tencent.bugly.** { *; }
+-dontwarn com.tencent.bugly.**
+
+# TV
+-keep class androidx.leanback.widget.** { *; }
+-keep class com.fongmi.quickjs.method.** { *; }
+
+# Compose 首页的「直播」导航通过反射调用（LiveActivity 只在 leanback flavor 里），
+# 没有这条 keep 规则时 R8 会把 start(Context) 当无用代码裁掉，点击直播会毫无反应。
+-keep class com.onefilm.android.tv.ui.activity.LiveActivity {
+    public static void start(android.content.Context);
+}
+-keep class com.onefilm.android.tv.bean.** { *; }
+
+# Gson
+-keep class com.google.gson.** { *; }
+
+# SimpleXML
+-keep interface org.simpleframework.xml.core.Label { public *; }
+-keep class * implements org.simpleframework.xml.core.Label { public *; }
+-keep interface org.simpleframework.xml.core.Parameter { public *; }
+-keep class * implements org.simpleframework.xml.core.Parameter { public *; }
+-keep interface org.simpleframework.xml.core.Extractor { public *; }
+-keep class * implements org.simpleframework.xml.core.Extractor { public *; }
+-keepclassmembers,allowobfuscation class * { @org.simpleframework.xml.Path <fields>; }
+-keepclassmembers,allowobfuscation class * { @org.simpleframework.xml.Root <fields>; }
+-keepclassmembers,allowobfuscation class * { @org.simpleframework.xml.Text <fields>; }
+-keepclassmembers,allowobfuscation class * { @org.simpleframework.xml.Element <fields>; }
+-keepclassmembers,allowobfuscation class * { @org.simpleframework.xml.Attribute <fields>; }
+-keepclassmembers,allowobfuscation class * { @org.simpleframework.xml.ElementList <fields>; }
+
+# OkHttp
+-dontwarn okhttp3.**
+-keep class okio.** { *; }
+-keep class okhttp3.** { *; }
+
+# SLF4J
+-keeppackagenames org.slf4j.**
+-keep class org.slf4j.** { *; }
+
+# Kotlin
+-keeppackagenames kotlin.**
+-keep class kotlin.** { *; }
+
+# CatVod
+-keep class com.github.catvod.Proxy { *; }
+-keep class com.github.catvod.crawler.** { *; }
+-keep class * extends com.github.catvod.crawler.Spider
+
+# Jianpian
+-keep class com.p2p.** { *; }
+
+# JUPnP
+-dontwarn org.jupnp.**
+-keep class org.jupnp.** { *; }
+-keep class javax.xml.** { *; }
+
+# Nano
+-keep class fi.iki.elonen.** { *; }
+
+# NewPipeExtractor
+-keep class javax.script.** { *; }
+-keep class jdk.dynalink.** { *; }
+-keep class org.mozilla.javascript.* { *; }
+-keep class org.mozilla.javascript.** { *; }
+-keep class org.mozilla.javascript.engine.** { *; }
+-keep class org.mozilla.classfile.ClassFileWriter
+-keep class org.schabi.newpipe.extractor.timeago.patterns.** { *; }
+-keep class org.schabi.newpipe.extractor.services.youtube.protos.** { *; }
+-dontwarn org.mozilla.javascript.JavaToJSONConverters
+-dontwarn org.mozilla.javascript.tools.**
+-dontwarn com.google.re2j.**
+-dontwarn javax.script.**
+-dontwarn jdk.dynalink.**
+
+# Sardine
+-keep class com.thegrizzlylabs.sardineandroid.** { *; }
+
+# TVBus
+-keep class com.tvbus.engine.** { *; }
+
+# XunLei
+-keep class com.xunlei.downloadlib.** { *; }
+
+# Zxing QRCode ABI
+-keep class com.google.zxing.* { *; }
+-keep class com.google.zxing.common.BitMatrix { *; }
+-keep class com.google.zxing.common.HybridBinarizer { *; }
+-keep class com.google.zxing.qrcode.QRCodeReader { *; }
+-keep class com.google.zxing.qrcode.QRCodeWriter { *; }
+-keep class com.google.zxing.qrcode.decoder.ErrorCorrectionLevel { *; }
+
+
+# 登录页按端各自实现，主代码用 Class.forName 按名字查找，必须保留类名
+-keep class com.onefilm.android.tv.ui.activity.TvWebLoginActivity { *; }
+-keep class com.onefilm.android.tv.ui.activity.MobileWebLoginActivity { *; }
+-keep class com.onefilm.android.tv.ui.activity.WebLoginActivity { *; }
+-keep class com.onefilm.android.tv.compose.bridge.** { *; }
+-keepclassmembers class com.onefilm.android.tv.compose.bridge.** implements java.io.Serializable {
+    *;
+}
+
+# ---------------------------------------------------------------------------
+# AI 字幕（:aisubtitle）
+# 已从「反射挂载」改为编译期调用 + appcore-lite 功能桩，因此不再需要为本项目
+# 类保留名称；只需保证 sherpa-onnx 的 JNI 字段名（见下）。
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# sherpa-onnx：JNI 通过反射按「字段名」读取 Kotlin data class 的成员
+# （实测报错：Failed to get field ID for decodingMethod），字段被 R8 改名后
+# 原生层直接抛 RuntimeException。整个包保留类名与成员名。
+# ---------------------------------------------------------------------------
+-keep class com.k2fsa.sherpa.onnx.** { *; }

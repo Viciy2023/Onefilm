@@ -1,0 +1,210 @@
+plugins {
+    alias libs.plugins.android.library
+    // 共享源码里有 Kotlin（composebridge/*.kt），需要 Kotlin 编译支持
+    alias libs.plugins.kotlin.compose
+}
+
+/**
+ * LITE 专用业务内核。
+ *
+ * 直接复用 `:app` 的源码（main + leanback flavor），不复制文件：
+ *   - `../app/src/main/java`      业务层（api/bean/setting/player/db/utils/...）+ 共享 View 组件
+ *   - `../app/src/main/res`       共享资源
+ *   - `../app/src/leanback/java`  TV 侧 View 界面（直播/文件/推送/网页登录等入口仍可用）
+ *   - `../app/src/leanback/res`   TV 侧资源
+ *
+ * 界面层来自 `:compose-lite`（同一份 TV Compose 源码，仅把依赖降到 minSdk 21）。
+ * 这样 `:app` 一个字都不用改，LITE 与 TV 端业务永远同源。
+ */
+// 版本号唯一来源与 `:app` 相同：gradle.properties 的 onefilm.versionName / onefilm.versionCode
+def appVersionName = project.findProperty('onefilm.versionName') ?: '0.1.7'
+def appVersionCode = (project.findProperty('onefilm.versionCode') ?: '8').toString().toInteger()
+def liteVersionName = "${appVersionName}-lite"
+def liteUpdateUrl = project.findProperty('onefilm.liteUpdateStableUrl')
+        ?: 'https://onefilmapk.alibabagroup.de5.net/onefilm-lite.json'
+
+android {
+    namespace = 'com.onefilm.android.tv'
+    compileSdk libs.versions.compileSdk.get().toInteger()
+
+    defaultConfig {
+        minSdk 21
+        versionCode appVersionCode
+        versionName liteVersionName
+        buildConfigField "String", "FLAVOR", '"leanback"'
+        buildConfigField "String", "VERSION_NAME", "\"${liteVersionName}\""
+        buildConfigField "int", "VERSION_CODE", "${appVersionCode}"
+        buildConfigField "String", "APPLICATION_ID", '"com.onefilm.android.tv.lite"'
+        buildConfigField "String", "UPDATE_STABLE_URL", "\"${liteUpdateUrl}\""
+        buildConfigField "String", "BUGLY_APP_ID", '""'
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [
+                        "eventBusIndex": "com.onefilm.android.tv.event.EventIndex",
+                ]
+            }
+        }
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = [
+                    'src/main/java',
+                    'src/shim/com',
+                    '../app/src/main/java',
+                    '../app/src/leanback/java',
+            ]
+            // Kotlin 源集不会自动跟随 java.srcDirs，必须显式声明；否则 .kt（composebridge）不会被编译
+            kotlin.srcDirs = [
+                    'src/main/java',
+                    'src/shim/com',
+                    '../app/src/main/java',
+                    '../app/src/leanback/java',
+            ]
+            // 以下 10 个文件在 LITE 侧有「加 minSdk 21 守卫」的副本（src/shim/com/...），
+            // 原版不参与编译；`:app` 自身的构建不受影响。
+            java.exclude 'com/onefilm/android/tv/bean/Vod.java'
+            java.exclude 'com/onefilm/android/tv/utils/Util.java'
+            java.exclude 'com/onefilm/android/tv/utils/UpdateManifest.java'
+            java.exclude 'com/onefilm/android/tv/player/subtitle/ExternalFont.java'
+            java.exclude 'com/onefilm/android/tv/service/PlaybackService.java'
+            java.exclude 'com/onefilm/android/tv/ui/activity/PlaybackActivity.java'
+            java.exclude 'com/onefilm/android/tv/ui/activity/WebLoginActivity.java'
+            java.exclude 'com/onefilm/android/tv/player/mpv/MpvUtil.java'
+            java.exclude 'com/onefilm/android/tv/receiver/BootReceiver.java'
+            java.exclude 'com/onefilm/android/tv/dlna/DLNARenderingControlImpl.java'
+            // L1 瘦身：Python / 迅雷 / 投屏三个要求 minSdk 24 的组件，LITE 用同 API 的桩替代
+            java.exclude 'com/onefilm/android/tv/api/loader/PyLoader.java'
+            java.exclude 'com/onefilm/android/tv/player/extractor/Thunder.java'
+            java.exclude 'com/onefilm/android/tv/player/extractor/TVBus.java'
+            kotlin.exclude 'com/onefilm/android/tv/bean/Vod.java'
+            kotlin.exclude 'com/onefilm/android/tv/utils/Util.java'
+            kotlin.exclude 'com/onefilm/android/tv/utils/UpdateManifest.java'
+            kotlin.exclude 'com/onefilm/android/tv/player/subtitle/ExternalFont.java'
+            kotlin.exclude 'com/onefilm/android/tv/service/PlaybackService.java'
+            kotlin.exclude 'com/onefilm/android/tv/ui/activity/PlaybackActivity.java'
+            kotlin.exclude 'com/onefilm/android/tv/ui/activity/WebLoginActivity.java'
+            kotlin.exclude 'com/onefilm/android/tv/player/mpv/MpvUtil.java'
+            kotlin.exclude 'com/onefilm/android/tv/receiver/BootReceiver.java'
+            kotlin.exclude 'com/onefilm/android/tv/dlna/DLNARenderingControlImpl.java'
+            kotlin.exclude 'com/onefilm/android/tv/api/loader/PyLoader.java'
+            kotlin.exclude 'com/onefilm/android/tv/player/extractor/Thunder.java'
+            kotlin.exclude 'com/onefilm/android/tv/player/extractor/TVBus.java'
+            res.srcDirs = [
+                    '../app/src/main/res',
+                    '../app/src/leanback/res',
+            ]
+            // Web 配置页与 cacert.pem 都在 assets 里，必须一起复用
+            assets.srcDirs = ['../app/src/main/assets']
+        }
+    }
+
+    buildFeatures {
+        buildConfig = true
+        viewBinding = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+        coreLibraryDesugaringEnabled = true
+    }
+
+    configurations.configureEach {
+        exclude group: 'stax', module: 'stax-api'
+        exclude group: 'xpp3', module: 'xpp3'
+        exclude group: 'com.android.support'
+        resolutionStrategy {
+            force libs.okhttp
+        }
+    }
+
+    lint {
+        disable 'ExpiredTargetSdkVersion'
+        // 共享源码在「库模块」下会出现的误报，与真实 API 兼容无关
+        disable 'UnsafeOptInUsageError'
+        disable 'RestrictedApi'
+        disable 'MissingTranslation'
+        disable 'GradleDependency'
+        disable 'OldTargetApi'
+    }
+}
+
+dependencies {
+    // 共享的 Compose TV 界面（与 `:app` 用的是同一份源码，只是依赖降到 Compose 1.7）
+    implementation project(':compose-lite')
+    // composebridge/*.kt 会经过 Compose 编译器，插件要求 classpath 上有 runtime
+    implementation 'androidx.compose.runtime:runtime:1.6.8'
+
+    implementation("androidx.media3:media3-session:1.8.0") { exclude group: "androidx.media3" }
+    implementation("androidx.media3:media3-effect:1.8.0") { exclude group: "androidx.media3" }
+    implementation libs.guava
+    implementation "com.github.LumeraD3v:assrender:1.0.2"
+    implementation libs.annotation
+    implementation project(':core')
+    implementation project(':adblock')
+    implementation libs.zxing.core
+    implementation libs.gson
+    implementation libs.okhttp
+    implementation "androidx.documentfile:documentfile:1.0.1"
+    implementation project(':media3compat')
+    implementation project(':mpvapi')
+    // settings.gradle 已把 app/libs 配成 flatDir；用仓库坐标而不是本地文件，库模块才能打包 AAR
+    implementation(name: 'forcetech-release', ext: 'aar')
+    implementation(name: 'hook-release', ext: 'aar')
+    implementation(name: 'jianpian-release', ext: 'aar')
+    implementation(name: 'lib-common-release', ext: 'aar')
+    implementation(name: 'lib-container-release', ext: 'aar')
+    implementation(name: 'lib-database-release', ext: 'aar')
+    implementation(name: 'lib-datasource-okhttp-release', ext: 'aar')
+    implementation(name: 'lib-datasource-release', ext: 'aar')
+    implementation(name: 'lib-datasource-rtmp-release', ext: 'aar')
+    implementation(name: 'lib-decoder-release', ext: 'aar')
+    implementation(name: 'lib-exoplayer-dash-release', ext: 'aar')
+    implementation(name: 'lib-exoplayer-hls-release', ext: 'aar')
+    implementation(name: 'lib-exoplayer-release', ext: 'aar')
+    implementation(name: 'lib-exoplayer-rtsp-release', ext: 'aar')
+    implementation(name: 'lib-exoplayer-smoothstreaming-release', ext: 'aar')
+    implementation(name: 'lib-extractor-release', ext: 'aar')
+    implementation(name: 'lib-ui-release', ext: 'aar')
+    implementation project(':catvod')
+    implementation project(':quickjs')
+    // ↓↓↓ 以下为「支持 minSdk 21」的最后一档版本（:app 用的新版已要求 23） ↓↓↓
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.lifecycle:lifecycle-service:2.8.7'
+    implementation 'androidx.media:media:1.7.0'
+    implementation libs.palette
+    implementation libs.recyclerview
+    // Room 2.7.x 是支持 minSdk 21 的最后一个大版本；2.8 起要求 23
+    implementation 'androidx.room:room-runtime:2.7.2'
+    annotationProcessor 'androidx.room:room-compiler:2.7.2'
+    implementation libs.android.gif.drawable
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    implementation 'com.github.bumptech.glide:okhttp3-integration:4.16.0'
+    implementation libs.bundles.jupnp
+    implementation libs.customactivityoncrash
+    implementation libs.eventbus
+    implementation libs.flexbox
+    implementation libs.rtmp.client
+    implementation libs.lottie
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation libs.materialdesigncolors
+    implementation libs.nanohttpd
+    implementation libs.newpipeextractor
+    implementation libs.permissionx
+    implementation libs.simple.xml
+    implementation libs.splashscreen
+    implementation libs.swiperefreshlayout
+    implementation libs.textdrawable
+    implementation libs.viewpager2
+    // TV 侧 View 界面（直播/文件/推送入口）
+    implementation libs.leanback
+    implementation libs.androidautosize
+    // 崩溃上报：与 TV 版同一套（LITE 先留空 AppID 由 gradle.properties 决定）
+    implementation 'com.tencent.bugly:crashreport:4.1.9.7'
+
+    annotationProcessor libs.eventbus.annotation.processor
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
+
+    coreLibraryDesugaring libs.desugar
+}

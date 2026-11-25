@@ -1,0 +1,668 @@
+package com.onefilm.android.tv.composebridge
+
+import android.content.Context
+import android.net.Uri
+import com.onefilm.android.tv.compose.R
+
+import androidx.media3.common.DolbyVisionOutputPolicy
+import com.onefilm.android.tv.App
+import com.onefilm.android.tv.api.config.LiveConfig
+import com.onefilm.android.tv.api.config.WallConfig
+import com.onefilm.android.tv.bean.Config
+import com.onefilm.android.tv.bean.DepotStore
+import com.onefilm.android.tv.impl.Callback
+import com.github.catvod.bean.Doh
+import com.onefilm.android.tv.BuildConfig
+import com.onefilm.android.tv.event.ServerEvent
+import com.onefilm.android.tv.api.config.VodConfig
+import com.onefilm.android.tv.compose.bridge.SettingsDataSource
+import com.onefilm.android.tv.compose.bridge.SettingsSnapshot
+import com.onefilm.android.tv.compose.bridge.SearchSiteItem
+import com.onefilm.android.tv.composebridge.SearchSettings
+import com.onefilm.android.tv.compose.bridge.ServerEventBridge
+import com.onefilm.android.tv.compose.bridge.HomeFeedCache
+import com.onefilm.android.tv.compose.bridge.DetailCache
+import com.onefilm.android.tv.compose.bridge.ConfigLine
+import com.onefilm.android.tv.compose.bridge.DanmakuProbeResult
+import com.github.catvod.net.OkHttp
+import okhttp3.FormBody
+import okhttp3.Request
+import com.onefilm.android.tv.setting.DanmakuSetting
+import com.onefilm.android.tv.setting.DecodeSetting
+import com.onefilm.android.tv.setting.PlayerSetting
+import com.onefilm.android.tv.setting.PreloadSetting
+import com.onefilm.android.tv.setting.Setting
+import com.onefilm.android.tv.setting.SpeedSetting
+import com.onefilm.android.tv.setting.SubtitleSetting
+import com.onefilm.android.tv.utils.FileUtil
+import com.github.catvod.utils.Path
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+class AppSettingsDataSource(private val context: Context) : SettingsDataSource {
+
+    @Volatile
+    private var cachedCacheSizeLabel: String = context.getString(R.string.settings_calculating)
+
+    @Volatile
+    private var cachedLatestVersion: String? = null
+
+    override suspend fun latestVersion(): String {
+        cachedLatestVersion?.let { return it }
+        val version = withContext(Dispatchers.IO) {
+            runCatching { com.onefilm.android.tv.utils.UpdateManifest.fetch().version }
+                .getOrNull()
+                .orEmpty()
+        }
+        if (version.isNotBlank()) cachedLatestVersion = version
+        return version
+    }
+
+    init {
+        EventBus.getDefault().register(this)
+        Thread {
+            cachedCacheSizeLabel = runCatching {
+                FileUtil.byteCountToDisplaySize(Path.size(Path.cache()))
+            }.getOrDefault("—")
+        }.start()
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onServerEvent(event: ServerEvent) {
+        if (event.type() == ServerEvent.Type.SETTING) {
+            ServerEventBridge.pushSetting(event.text(), event.name())
+        }
+    }
+
+    private var wallLoading = false
+
+    private val subtitleColors = listOf(
+        context.getString(R.string.player_color_white) to SubtitleSetting.SUBTITLE_COLOR_WHITE,
+        context.getString(R.string.player_color_yellow) to SubtitleSetting.SUBTITLE_COLOR_YELLOW,
+        context.getString(R.string.player_color_cyan) to SubtitleSetting.SUBTITLE_COLOR_CYAN,
+        context.getString(R.string.player_color_green) to SubtitleSetting.SUBTITLE_COLOR_GREEN,
+    )
+
+    override fun load(): SettingsSnapshot {
+        ensureWallpaperLoadedIfNeeded()
+        return SettingsSnapshot(
+        engineMpv = PlayerSetting.isMpv(),
+        background = PlayerSetting.getBackground(),
+        bufferSeconds = PlayerSetting.getBuffer(),
+        playTimeoutSeconds = PlayerSetting.getPlayTimeout(),
+        renderTexture = PlayerSetting.getRender() == PlayerSetting.RENDER_TEXTURE,
+        tunnel = DecodeSetting.isTunnel(),
+        audioPassThrough = DecodeSetting.isAudioPassThrough(),
+        audioPrefer = DecodeSetting.isAudioPrefer(),
+        videoPrefer = DecodeSetting.isVideoPrefer(),
+        dvPolicyLabel = dolbyLabel(DecodeSetting.getDolbyVisionOutputPolicy()),
+        subtitleStyle = SubtitleSetting.getStyleMode(),
+        subtitleScale = SubtitleSetting.getScale(),
+        subtitlePosition = SubtitleSetting.getPosition(),
+        subtitleColorLabel = subtitleColors.firstOrNull {
+            it.second == SubtitleSetting.getTextBaseColor()
+        }?.first ?: context.getString(R.string.settings_custom),
+        subtitleEdgeWidth = SubtitleSetting.getEdgeWidth(),
+        danmakuBlockWords = com.github.catvod.utils.Prefers.getString("compose_danmaku_block_words"),
+        danmakuShow = DanmakuSetting.isShow(),
+        danmakuLoad = DanmakuSetting.isLoad(),
+        danmakuAuto = DanmakuSetting.isAuto(),
+        danmakuApi = DanmakuSetting.getEffectiveApiUrl().orEmpty(),
+        danmakuScale = DanmakuSetting.getTextScale(),
+        danmakuTransparency = DanmakuSetting.getTransparency(),
+        danmakuDurationMs = DanmakuSetting.getDurationMs(),
+        danmakuLines = DanmakuSetting.getMaxScrollLines(),
+        danmakuStyle = DanmakuSetting.getStyleMode(),
+        danmakuColorMode = DanmakuSetting.getColorMode(),
+        danmakuBold = DanmakuSetting.isTextBold(),
+        danmakuTopLines = DanmakuSetting.getMaxTopLines(),
+        danmakuBottomLines = DanmakuSetting.getMaxBottomLines(),
+        danmakuTimeOffsetMs = DanmakuSetting.getTimeOffsetMs(),
+        danmakuMaxOnScreen = DanmakuSetting.getMaxOnScreen(),
+        preloadEnabled = PreloadSetting.isEnabled(),
+        preloadNext = PreloadSetting.isNextEpisodeEnabled(),
+        preloadThreads = PreloadSetting.getThreads(),
+        preloadSizeMb = PreloadSetting.getSizeMb(),
+        ua = Setting.getUa(),
+        version = BuildConfig.VERSION_NAME,
+        configUrl = VodConfig.getUrl().orEmpty(),
+        liveConfigUrl = LiveConfig.getUrl().orEmpty(),
+        wallConfigUrl = WallConfig.getUrl().orEmpty(),
+        incognito = Setting.isIncognito(),
+        aiSubtitleEnabled = com.github.catvod.utils.Prefers.getBoolean("ai_subtitle_enabled", false),
+        dohLabel = runCatching { Doh.objectFrom(Setting.getDoh()).getName() }.getOrNull().orEmpty(),
+        themeMode = com.github.catvod.utils.Prefers.getInt("compose_theme_mode", 0),
+        posterStyle = com.github.catvod.utils.Prefers.getInt("compose_poster_style", 0),
+        cacheDays = Setting.getHistoryDays(),
+        cacheSizeLabel = cachedCacheSizeLabel,
+        wallpaperLabel = when (Setting.getWall()) {
+            0 -> context.getString(R.string.settings_wall_none)
+            5 -> context.getString(R.string.settings_wall_network)
+            else -> context.getString(R.string.settings_wall_solid, Setting.getWall())
+        },
+        forceUpdate = Setting.getForceUpdate(),
+        updateCheck = Setting.getUpdate(),
+        searchThreads = SearchSettings.threads(),
+        adblock = Setting.isAdblock(),
+        )
+    }
+
+    override suspend fun refreshCacheSize(): String {
+        val label = runCatching {
+            withContext(Dispatchers.IO) {
+                FileUtil.byteCountToDisplaySize(Path.size(Path.cache()))
+            }
+        }.getOrDefault("—")
+        cachedCacheSizeLabel = label
+        return label
+    }
+
+    override fun setAdblock(enabled: Boolean) {
+        Setting.putAdblock(enabled)
+    }
+
+    override fun setEngine(mpv: Boolean) {
+        PlayerSetting.putEngine(if (mpv) PlayerSetting.ENGINE_MPV else PlayerSetting.ENGINE_EXO)
+    }
+
+    override fun setBackground(mode: Int) {
+        PlayerSetting.putBackground(mode)
+    }
+
+    override fun setBufferSeconds(seconds: Int) {
+        PlayerSetting.putBuffer(seconds)
+    }
+
+    override fun setRenderTexture(texture: Boolean) {
+        PlayerSetting.putRender(if (texture) PlayerSetting.RENDER_TEXTURE else PlayerSetting.RENDER_SURFACE)
+    }
+
+    override fun setTunnel(enabled: Boolean) {
+        DecodeSetting.putTunnel(enabled)
+    }
+
+    override fun setAudioPassThrough(enabled: Boolean) {
+        DecodeSetting.putAudioPassThrough(enabled)
+    }
+
+    override fun setAudioPrefer(enabled: Boolean) {
+        DecodeSetting.putAudioPrefer(enabled)
+    }
+
+    override fun setVideoPrefer(enabled: Boolean) {
+        DecodeSetting.putVideoPrefer(enabled)
+    }
+
+    override fun cycleDolbyVisionPolicy() {
+        val next = when (DecodeSetting.getDolbyVisionOutputPolicy()) {
+            DolbyVisionOutputPolicy.AUTO -> DolbyVisionOutputPolicy.ASSUME_SUPPORTED
+            DolbyVisionOutputPolicy.ASSUME_SUPPORTED -> DolbyVisionOutputPolicy.ASSUME_UNSUPPORTED
+            else -> DolbyVisionOutputPolicy.AUTO
+        }
+        DecodeSetting.putDolbyVisionOutputPolicy(next)
+    }
+
+    override fun setSubtitleStyle(style: Int) {
+        SubtitleSetting.putStyleMode(style)
+    }
+
+    override fun setSubtitleScale(scale: Float) {
+        SubtitleSetting.putScale(scale)
+    }
+
+    override fun setSubtitlePosition(position: Float) {
+        SubtitleSetting.putPosition(position)
+    }
+
+    override fun setSubtitleEdgeWidth(width: Float) {
+        SubtitleSetting.putEdgeWidth(width)
+    }
+
+    override fun setDanmakuBlockWords(words: String) {
+        com.github.catvod.utils.Prefers.put("compose_danmaku_block_words", words)
+    }
+
+    override fun cycleSubtitleColor() {
+        val current = SubtitleSetting.getTextBaseColor()
+        val index = subtitleColors.indexOfFirst { it.second == current }
+        val next = subtitleColors[(index + 1).takeIf { it >= 0 }?.mod(subtitleColors.size) ?: 0]
+        SubtitleSetting.putTextColor(next.second)
+    }
+
+    override fun setDanmakuShow(show: Boolean) {
+        DanmakuSetting.putShow(show)
+    }
+
+    override fun setDanmakuLoad(enabled: Boolean) {
+        DanmakuSetting.putLoad(enabled)
+    }
+
+    override fun setDanmakuAuto(enabled: Boolean) {
+        DanmakuSetting.putAuto(enabled)
+    }
+
+    override fun setDanmakuApi(url: String) {
+        DanmakuSetting.putApiUrl(url.trim())
+    }
+
+    override fun speedPresets(): FloatArray = SpeedSetting.getPresets()
+
+    override suspend fun probeDanmakuApi(url: String): DanmakuProbeResult = withContext(Dispatchers.IO) {
+        val target = url.trim()
+        if (target.isEmpty()) return@withContext DanmakuProbeResult(false, "")
+        if (!target.startsWith("http://") && !target.startsWith("https://")) {
+            return@withContext DanmakuProbeResult(false, "http(s):// required")
+        }
+        // 1) danmu_api 风格：/api/config 返回 JSON（含 version），最快也最能说明服务端活着
+        probeConfig(target)?.let { return@withContext DanmakuProbeResult(true, it) }
+        // 2) 其它服务端：按真实请求方式发一次不可能命中的搜索，只看 HTTP 是否可达
+        probeSearch(target)
+    }
+
+    /** GET {origin}/api/config，成功时返回版本号。 */
+    private fun probeConfig(target: String): String? = runCatching {
+        val uri = Uri.parse(target)
+        val host = uri.host ?: return@runCatching null
+        val port = if (uri.port > 0) ":${uri.port}" else ""
+        val configUrl = "${uri.scheme}://$host$port/api/config"
+        OkHttp.newCall(OkHttp.client(8_000L), configUrl).execute().use { response ->
+            if (!response.isSuccessful) return@runCatching null
+            val body = response.body?.string().orEmpty()
+            val version = Regex("\"version\"\\s*:\\s*\"([^\"]+)\"").find(body)?.groupValues?.get(1)
+            if (version.isNullOrBlank()) "HTTP ${response.code}" else "v$version"
+        }
+    }.getOrNull()
+
+    /** 按真实请求方式探活：模板地址走 GET，否则 POST 一次轻量搜索。 */
+    private fun probeSearch(target: String): DanmakuProbeResult = runCatching {
+        val client = OkHttp.client(12_000L)
+        val call = if (target.contains("{name}") || target.contains("{episode}")) {
+            OkHttp.newCall(
+                client,
+                target.replace("{name}", "OneFilmProbe").replace("{episode}", "1"),
+            )
+        } else {
+            val body = FormBody.Builder().add("name", "OneFilmProbe").add("episode", "1").build()
+            client.newCall(Request.Builder().url(target).post(body).build())
+        }
+        call.execute().use { response ->
+            DanmakuProbeResult(response.isSuccessful, "HTTP ${response.code}")
+        }
+    }.getOrElse { error ->
+        DanmakuProbeResult(false, (error.message ?: error.javaClass.simpleName).take(120))
+    }
+
+    override fun setDanmakuScale(scale: Float) {
+        DanmakuSetting.putTextScale(scale)
+    }
+
+    override fun setDanmakuTransparency(value: Float) {
+        DanmakuSetting.putTransparency(value)
+    }
+
+    override fun setDanmakuDuration(ms: Long) {
+        DanmakuSetting.putDurationMs(ms)
+    }
+
+    override fun setDanmakuLines(lines: Int) {
+        DanmakuSetting.putMaxScrollLines(lines)
+    }
+
+    override fun setDanmakuStyle(mode: Int) {
+        DanmakuSetting.putStyleMode(mode)
+    }
+
+    override fun setDanmakuColorMode(mode: Int) {
+        DanmakuSetting.putColorMode(mode)
+    }
+
+    override fun setDanmakuBold(bold: Boolean) {
+        DanmakuSetting.putTextBold(bold)
+    }
+
+    override fun setDanmakuTopLines(lines: Int) {
+        DanmakuSetting.putMaxTopLines(lines)
+    }
+
+    override fun setDanmakuBottomLines(lines: Int) {
+        DanmakuSetting.putMaxBottomLines(lines)
+    }
+
+    override fun setDanmakuTimeOffsetMs(offset: Long) {
+        DanmakuSetting.putTimeOffsetMs(offset)
+    }
+
+    override fun setDanmakuMaxOnScreen(value: Int) {
+        DanmakuSetting.putMaxOnScreen(value)
+    }
+
+    override fun setPreloadEnabled(enabled: Boolean) {
+        PreloadSetting.putEnabled(enabled)
+    }
+
+    override fun setPreloadNext(enabled: Boolean) {
+        PreloadSetting.putNextEpisodeEnabled(enabled)
+    }
+
+    override fun setPreloadThreads(threads: Int) {
+        PreloadSetting.putThreads(threads)
+    }
+
+    override fun setPreloadSizeMb(sizeMb: Int) {
+        PreloadSetting.putSizeMb(sizeMb)
+    }
+
+    override fun resetUa() {
+        Setting.putUa("")
+    }
+
+    override fun setUa(ua: String) {
+        Setting.putUa(ua.trim())
+    }
+
+    override fun backgroundMode(): Int = PlayerSetting.getBackground()
+
+    override fun loadConfig(
+        type: Int,
+        url: String,
+        name: String,
+        onResult: (Boolean, String) -> Unit,
+    ) {
+        if (type == 0) DepotStore.markLineIfKnown(url)
+        val config = if (type == 0 && DepotStore.isLine(url)) {
+            // 仓库里的线路不写配置表，只在「线路」弹窗里展示
+            Config.transientConfig(0, url, name)
+        } else {
+            Config.find(url, type)
+        }
+        if (name.isNotBlank()) config.setName(name)
+        val callback = object : Callback() {
+            override fun success() {
+                config.update()
+                if (type == 0) {
+                    // 换接口后必须丢掉首页与它的分类，否则会停留在上一份接口的分类上。
+                    HomeFeedCache.feed = null
+                    DiskCache.delete("home_" + url.hashCode())
+                }
+                if (type == 1) {
+                    com.github.catvod.utils.Prefers.put("compose_live_url", url)
+                }
+                if (type == 2) {
+                    Setting.putWall(5)
+                    Setting.putWallType(Setting.getExternalWallType())
+                }
+                App.post { onResult(true, "") }
+            }
+
+            override fun error(msg: String) {
+                App.post { onResult(false, msg) }
+            }
+        }
+        when (type) {
+            0 -> VodConfig.load(config, callback)
+            1 -> LiveConfig.load(config, callback)
+            else -> WallConfig.load(config, callback)
+        }
+    }
+
+    override fun configLines(type: Int): List<ConfigLine> {
+        val currentUrl = when (type) {
+            0 -> VodConfig.getUrl()
+            1 -> LiveConfig.getUrl()
+            else -> WallConfig.getUrl()
+        }.orEmpty()
+        return Config.getAll(type).map { config ->
+            ConfigLine(
+                name = config.desc.orEmpty().ifBlank { config.url.orEmpty() },
+                url = config.url.orEmpty(),
+                current = config.url.orEmpty() == currentUrl,
+                type = type,
+                kind = if (type == 0) DepotStore.kind(config.url.orEmpty()) else 0,
+            )
+        }
+    }
+
+    override suspend fun detectConfigKinds() = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        val pending = runCatching { configLines(0) }
+            .getOrDefault(emptyList())
+            .filter { it.kind == DepotStore.KIND_UNKNOWN }
+            .take(12)
+        for (line in pending) {
+            runCatching {
+                val text = com.github.catvod.net.OkHttp.string(line.url)
+                when {
+                    text.contains("\"urls\"") -> DepotStore.markDepot(line.url)
+                    text.contains("\"sites\"") -> DepotStore.markSingle(line.url)
+                }
+            }
+        }
+    }
+
+    override fun allConfigLines(): List<ConfigLine> {
+        // 多仓里的线路只在线路弹窗展示，不混进「配置」列表（兼容旧版本残留的数据）
+        val depotLines = runCatching { DepotStore.lines().map { it.url }.toSet() }.getOrDefault(emptySet())
+        return listOf(0, 1).flatMap { configLines(it) }
+            .filter { it.url !in depotLines }
+    }
+
+    override fun depotName(): String = runCatching {
+        // 只有当前加载的接口属于这个仓库时，才显示仓库名
+        if (DepotStore.isActive(VodConfig.getUrl().orEmpty())) DepotStore.currentName() else ""
+    }.getOrDefault("")
+
+    override fun depotLines(): List<ConfigLine> = runCatching {
+        if (!DepotStore.isActive(VodConfig.getUrl().orEmpty())) return emptyList()
+        val current = DepotStore.selectedLine()
+        DepotStore.lines().map { entry ->
+            ConfigLine(
+                name = entry.name.ifBlank { entry.url },
+                url = entry.url,
+                current = entry.url == current,
+                type = 0,
+            )
+        }
+    }.getOrDefault(emptyList())
+
+    override fun selectDepotLine(url: String, name: String, onResult: (Boolean, String) -> Unit) {
+        DepotStore.selectLine(url)
+        loadConfig(0, url, name, onResult)
+    }
+
+    override fun deleteConfigLine(type: Int, url: String) {
+        val activeUrl = when (type) {
+            0 -> VodConfig.getUrl()
+            1 -> LiveConfig.getUrl()
+            else -> WallConfig.getUrl()
+        }.orEmpty()
+        Config.delete(url, type)
+        if (activeUrl == url || Config.getAll(type).isEmpty()) clearActiveConfig(type)
+    }
+
+    private fun clearActiveConfig(type: Int) {
+        when (type) {
+            0 -> {
+                VodConfig.get().clear().config(Config.create(0))
+                com.github.catvod.utils.Prefers.put("config_0", "")
+            }
+            1 -> {
+                LiveConfig.get().clear().config(Config.create(1))
+                com.github.catvod.utils.Prefers.put("config_1", "")
+            }
+            else -> {
+                WallConfig.get().config(Config.create(2))
+                com.github.catvod.utils.Prefers.put("config_2", "")
+            }
+        }
+    }
+
+    override fun cycleDoh() {
+        val items = VodConfig.get().doh
+        if (items.isEmpty()) return
+        val current = items.indexOf(Doh.objectFrom(Setting.getDoh()))
+        val next = items[(current + 1).takeIf { it >= 0 }?.mod(items.size) ?: 0]
+        Setting.putDoh(next.toString())
+        // 立即重新初始化 OkHttp 的 DNS，无需重启 App。
+        runCatching { OkHttp.dns().setDoh { Doh.objectFrom(Setting.getDoh()) } }
+    }
+
+    override fun cyclePlayTimeout() {
+        val values = listOf(5, 10, 15, 20, 30, 45, 60)
+        val current = PlayerSetting.getPlayTimeout()
+        PlayerSetting.putPlayTimeout(values[(values.indexOf(current).takeIf { it >= 0 } ?: 2).let { (it + 1) % values.size }])
+    }
+
+    override fun setIncognito(enabled: Boolean) {
+        Setting.putIncognito(enabled)
+    }
+
+    // ---- AI 字幕 ----
+
+    override fun aiSubtitleEnabled(): Boolean =
+        com.github.catvod.utils.Prefers.getBoolean("ai_subtitle_enabled", false)
+
+    override fun setAiSubtitleEnabled(enabled: Boolean) {
+        com.github.catvod.utils.Prefers.put("ai_subtitle_enabled", enabled)
+        // 关闭时立即释放模型/线程（抽头保留，重新开启无需重播）
+        if (!enabled) runCatching { com.onefilm.android.tv.aisubtitle.AiSubtitleEngine.get().shutdown() }
+    }
+
+    override fun aiSubtitleAvailable(): Boolean =
+        runCatching { com.onefilm.android.tv.aisubtitle.AiSubtitleEngine.modelReady(context) }.getOrDefault(false)
+
+    override fun aiSubtitleModelLabel(): String {
+        val dir = com.onefilm.android.tv.aisubtitle.AiSubtitleEngine.modelDir(context)
+        val sizeMb = runCatching { dir.listFiles()?.sumOf { it.length() }?.div(1024.0 * 1024.0) ?: 0.0 }.getOrDefault(0.0)
+        return if (aiSubtitleAvailable()) "普通话 · 已安装 · %.1f MB".format(sizeMb) else "普通话 · 未安装"
+    }
+
+    override fun setForceUpdate(enabled: Boolean) {
+        Setting.putForceUpdate(enabled)
+    }
+
+    override fun setUpdateCheck(enabled: Boolean) {
+        Setting.putUpdate(enabled)
+    }
+
+    override fun setThemeMode(mode: Int) {
+        com.github.catvod.utils.Prefers.put("compose_theme_mode", mode.coerceIn(0, 2))
+    }
+
+    override fun setPosterStyle(style: Int) {
+        com.github.catvod.utils.Prefers.put("compose_poster_style", if (style == 1) 1 else 0)
+    }
+
+    override fun configPushUrl(): String = runCatching {
+        com.onefilm.android.tv.server.Server.get().getAddress(4)
+    }.getOrDefault("")
+
+    override fun qrBitmap(content: String, size: Int): android.graphics.Bitmap? = runCatching {
+        val hints = hashMapOf<com.google.zxing.EncodeHintType, Any>(
+            com.google.zxing.EncodeHintType.CHARACTER_SET to "UTF-8",
+            com.google.zxing.EncodeHintType.MARGIN to 1,
+        )
+        val matrix = com.google.zxing.MultiFormatWriter().encode(
+            content,
+            com.google.zxing.BarcodeFormat.QR_CODE,
+            size,
+            size,
+            hints,
+        )
+        val bitmap = android.graphics.Bitmap.createBitmap(size, size, android.graphics.Bitmap.Config.ARGB_8888)
+        for (x in 0 until size) {
+            for (y in 0 until size) {
+                bitmap.setPixel(x, y, if (matrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+            }
+        }
+        bitmap
+    }.getOrNull()
+
+    override fun setCacheDays(days: Int) {
+        Setting.putHistoryDays(days)
+    }
+
+    override fun setSearchThreads(threads: Int) {
+        SearchSettings.putThreads(threads)
+    }
+
+    override fun searchSites(): List<SearchSiteItem> = runCatching {
+        val disabled = SearchSettings.disabledSites(VodConfig.getUrl().orEmpty())
+        VodConfig.get().sites
+            .filter { it.isSearchable }
+            .map { SearchSiteItem(key = it.key, name = it.name, enabled = it.key !in disabled) }
+    }.getOrDefault(emptyList())
+
+    override fun setSearchSiteEnabled(key: String, enabled: Boolean) {
+        SearchSettings.setSiteEnabled(VodConfig.getUrl().orEmpty(), key, enabled)
+    }
+
+    override fun setAllSearchSites(enabled: Boolean) {
+        val keys = runCatching {
+            VodConfig.get().sites.filter { it.isSearchable }.map { it.key }
+        }.getOrDefault(emptyList())
+        SearchSettings.setAllEnabled(VodConfig.getUrl().orEmpty(), keys, enabled)
+    }
+
+    override fun clearCache() {
+        Path.clear(Path.cache())
+        HomeFeedCache.feed = null
+        DetailCache.clear()
+        SearchResultCache.items = emptyList()
+        runCatching {
+            Path.files().listFiles { _, name -> name.startsWith("vod_config_") }
+                ?.forEach { it.delete() }
+        }
+    }
+
+    override fun exportDiagnostics(): String = runCatching {
+        com.onefilm.android.tv.utils.CrashLog.export(com.github.catvod.Init.context())
+    }.getOrDefault("")
+
+    override fun shouldShowStorageIntro(): Boolean = !Setting.getStorageIntroDone()
+
+    override fun markStorageIntroDone() {
+        Setting.putStorageIntroDone(true)
+    }
+
+    private fun ensureWallpaperLoadedIfNeeded() {
+        if (Setting.getWall() != 5) return
+        ensureWallpaperLoaded()
+    }
+
+    private fun ensureWallpaperLoaded() {
+        if (wallLoading || Path.wall(0).exists()) return
+        wallLoading = true
+        WallConfig.load(
+            Config.create(2).url(WallConfig.getUrl()),
+            object : Callback() {
+                override fun success() {
+                    wallLoading = false
+                    Setting.putWallType(Setting.getExternalWallType())
+                    com.onefilm.android.tv.event.ConfigEvent.wall()
+                }
+
+                override fun error(msg: String) {
+                    wallLoading = false
+                }
+            },
+        )
+    }
+
+    override fun cycleWallpaper() {
+        val next = (Setting.getWall() + 1) % 6
+        Setting.putWall(next)
+        Setting.putWallType(
+            if (next == 5) Setting.getExternalWallType() else 0,
+        )
+        if (next == 5) ensureWallpaperLoaded()
+        com.onefilm.android.tv.event.ConfigEvent.wall()
+    }
+
+    private fun dolbyLabel(mode: Int): String = when (mode) {
+        DolbyVisionOutputPolicy.ASSUME_SUPPORTED -> context.getString(R.string.settings_dv_force_on)
+        DolbyVisionOutputPolicy.ASSUME_UNSUPPORTED -> context.getString(R.string.settings_dv_force_off)
+        else -> context.getString(R.string.settings_dv_auto)
+    }
+}

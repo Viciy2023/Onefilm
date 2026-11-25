@@ -1,0 +1,165 @@
+package com.onefilm.android.tv.compose.feature.player
+
+import android.content.Context
+import androidx.media3.common.Player
+import com.onefilm.android.tv.compose.R
+import com.onefilm.android.tv.compose.bridge.ComposeDependencies
+
+/**
+ * 播放器菜单项：纯数据 + 动作，不依赖 Compose，便于单独维护和后续补测试。
+ */
+data class PlayerMenuEntry(
+    val label: String,
+    val enabled: Boolean = true,
+    /** 遥控器长按（用于片头/片尾重置）。必须放在 onClick 前面，否则尾随 lambda 会绑到长按上。 */
+    val onLongClick: (() -> Unit)? = null,
+    val onClick: () -> Unit = {},
+)
+
+/**
+ * 菜单构建所需的外部动作。PlayerControls 负责注入 UI 状态相关回调，
+ * 其余状态（倍速、循环、字幕、音轨等）直接从 PlaybackSession 读取。
+ */
+class PlayerMenuActions(
+    val onPrevious: (() -> Unit)?,
+    val onNext: (() -> Unit)?,
+    val onOpenEpisodes: () -> Unit,
+    /** 打开章节面板；媒体没有内嵌章节时为 null。 */
+    val onOpenChapters: (() -> Unit)?,
+    /** 打开版次面板；媒体没有内嵌版次时为 null。 */
+    val onOpenEditions: (() -> Unit)?,
+    /** 打开简介面板；详情页没提供简介时为 null。 */
+    val onOpenDescription: (() -> Unit)?,
+    /** 收藏 / 取消收藏当前影片。 */
+    val onToggleFavorite: () -> Unit,
+    /** 打开「解析」引擎选择面板；没有可用解析引擎时为 null。 */
+    val onParse: (() -> Unit)?,
+    /** 打开「清晰度」选择面板；只有一个地址时为 null。 */
+    val onOpenQuality: (() -> Unit)?,
+    /** 手动换线路；详情页没提供多线路时为 null。 */
+    val onSwitchLine: (() -> Unit)?,
+    /** 打开轨道面板（音轨/字幕/视频轨）；没有轨道时为 null。 */
+    val onOpenTracks: (() -> Unit)?,
+    /** 打开弹幕设置面板。 */
+    val onOpenDanmaku: (() -> Unit)?,
+    /** 打开倍速面板。 */
+    val onOpenSpeed: () -> Unit,
+    /** 在线搜索字幕（未配置字幕接口 token 时为 null）。 */
+    val onSearchSubtitle: (() -> Unit)?,
+    /** 导入本地字幕文件。 */
+    val onImportSubtitle: (() -> Unit)?,
+    val onPip: () -> Unit,
+    val onDlna: () -> Unit,
+    /** 打开播放器内的「AI字幕」面板（开关/语种/翻译/显示样式）；AI 字幕不可用时为 null。 */
+    val onOpenAiPanel: (() -> Unit)? = null,
+)
+
+/** 构建全屏播放器的菜单行（顺序与 0.1.7 保持一致）。 */
+fun buildPlayerMenu(actions: PlayerMenuActions, context: Context): List<PlayerMenuEntry> = buildList {
+    fun s(id: Int, vararg args: Any): String = context.getString(id, *args)
+    val defaultLabel = s(R.string.common_default)
+    // 第一排固定顺序：上集-下集-片头-片尾-倍速-弹幕设置-刷新-重播，其余按使用频率排列。
+    add(PlayerMenuEntry(s(R.string.player_prev_ep), actions.onPrevious != null) { actions.onPrevious?.invoke() })
+    add(PlayerMenuEntry(s(R.string.player_next_ep), actions.onNext != null) { actions.onNext?.invoke() })
+    add(
+        PlayerMenuEntry(
+            s(R.string.player_opening, formatTime(PlaybackSession.openingMs)),
+            onClick = { PlaybackSession.markOpening() },
+            onLongClick = { PlaybackSession.clearOpening() },
+        ),
+    )
+    add(
+        PlayerMenuEntry(
+            s(R.string.player_ending, formatTime(PlaybackSession.endingMs)),
+            onClick = { PlaybackSession.markEnding() },
+            onLongClick = { PlaybackSession.clearEnding() },
+        ),
+    )
+    add(
+        PlayerMenuEntry(
+            PlaybackSession.speedText(PlaybackSession.speed),
+            onLongClick = { PlaybackSession.toggleBoost() },
+        ) { actions.onOpenSpeed() },
+    )
+    // 弹幕开关移入弹幕设置面板（面板第一项）；菜单行只保留面板入口。
+    add(PlayerMenuEntry(s(R.string.player_danmaku_settings), actions.onOpenDanmaku != null) { actions.onOpenDanmaku?.invoke() })
+    // AI 字幕：只保留一个入口，打开面板（开关/语种/翻译/显示样式都在面板内，与弹幕设置一致）
+    val aiBridge = ComposeDependencies.aiSubtitle
+    if (aiBridge != null) {
+        add(
+            PlayerMenuEntry(
+                s(R.string.player_ai_subtitle),
+                actions.onOpenAiPanel != null,
+            ) { actions.onOpenAiPanel?.invoke() },
+        )
+    }
+    add(PlayerMenuEntry(s(R.string.player_refresh)) { PlaybackSession.refresh() })
+    add(PlayerMenuEntry(s(R.string.player_replay)) { PlaybackSession.replay() })
+
+    add(PlayerMenuEntry(s(R.string.player_select_episode), PlaybackSession.queue.size > 1) { actions.onOpenEpisodes() })
+    add(PlayerMenuEntry(s(R.string.player_chapter), actions.onOpenChapters != null) { actions.onOpenChapters?.invoke() })
+    add(PlayerMenuEntry(s(R.string.player_edition), actions.onOpenEditions != null) { actions.onOpenEditions?.invoke() })
+    add(PlayerMenuEntry(s(R.string.player_description), actions.onOpenDescription != null) { actions.onOpenDescription?.invoke() })
+    add(
+        PlayerMenuEntry(
+            if (PlaybackSession.favorite) s(R.string.player_favorited) else s(R.string.player_favorite),
+            PlaybackSession.vodId.isNotBlank(),
+        ) { actions.onToggleFavorite() },
+    )
+    add(PlayerMenuEntry(s(R.string.player_parse), actions.onParse != null) { actions.onParse?.invoke() })
+    add(
+        PlayerMenuEntry(
+            s(R.string.player_quality, PlaybackSession.qualityLabel),
+            actions.onOpenQuality != null,
+        ) { actions.onOpenQuality?.invoke() },
+    )
+    add(
+        PlayerMenuEntry(
+            s(R.string.player_line, PlaybackSession.flagName.ifBlank { defaultLabel }),
+            actions.onSwitchLine != null,
+        ) { actions.onSwitchLine?.invoke() },
+    )
+    add(
+        PlayerMenuEntry(
+            if (PlaybackSession.repeatMode == Player.REPEAT_MODE_ONE) s(R.string.player_loop_on) else s(R.string.player_loop_off),
+        ) { PlaybackSession.toggleRepeat() },
+    )
+    add(PlayerMenuEntry(s(R.string.player_track_panel), actions.onOpenTracks != null) { actions.onOpenTracks?.invoke() })
+    add(PlayerMenuEntry(s(R.string.player_subtitle_search), actions.onSearchSubtitle != null) { actions.onSearchSubtitle?.invoke() })
+    add(PlayerMenuEntry(s(R.string.player_subtitle_import), actions.onImportSubtitle != null) { actions.onImportSubtitle?.invoke() })
+    add(PlayerMenuEntry(s(R.string.player_cast)) { actions.onDlna() })
+    add(PlayerMenuEntry(s(R.string.player_pip)) { actions.onPip() })
+    add(PlayerMenuEntry(s(R.string.player_resize, PlaybackSession.resizeLabel)) { PlaybackSession.cycleResizeMode() })
+    add(PlayerMenuEntry(s(R.string.player_engine, if (PlaybackSession.engineMpv) "MPV" else "Exo")) {
+        PlaybackSession.setEngine(!PlaybackSession.engineMpv)
+    })
+    add(PlayerMenuEntry(s(R.string.player_decode, PlaybackSession.decodeLabel)) { PlaybackSession.toggleDecode() })
+    add(PlayerMenuEntry(s(R.string.player_render, PlaybackSession.renderLabel)) { PlaybackSession.toggleRenderMode() })
+    add(PlayerMenuEntry(s(R.string.player_subtitle, PlaybackSession.subtitleLabel.ifBlank { defaultLabel })) { PlaybackSession.cycleSubtitle() })
+    add(PlayerMenuEntry(s(R.string.player_subtitle_size, PlaybackSession.subtitleScale)) {
+        PlaybackSession.cycleSubtitleScale()
+    })
+    add(PlayerMenuEntry(s(R.string.player_subtitle_pos, PlaybackSession.subtitlePosition.toInt())) {
+        PlaybackSession.cycleSubtitlePosition()
+    })
+    add(PlayerMenuEntry(s(R.string.player_subtitle_color, PlaybackSession.subtitleColor)) {
+        PlaybackSession.cycleSubtitleColor()
+    })
+    add(PlayerMenuEntry(s(R.string.player_audio_track, PlaybackSession.audioLabel.ifBlank { defaultLabel })) { PlaybackSession.cycleAudio() })
+    add(PlayerMenuEntry(s(R.string.player_video_track, PlaybackSession.videoLabel.ifBlank { defaultLabel })) { PlaybackSession.cycleVideo() })
+    add(PlayerMenuEntry(s(R.string.player_subtitle_offset, PlaybackSession.textOffsetMs)) { PlaybackSession.shiftTextOffset(100L) })
+    add(PlayerMenuEntry(s(R.string.player_av_offset, PlaybackSession.audioOffsetMs)) { PlaybackSession.shiftAudioOffset(100L) })
+}
+
+/** 时间格式化：菜单与进度标签共用。 */
+internal fun formatTime(ms: Long): String {
+    val totalSeconds = ms.coerceAtLeast(0L) / 1000L
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    return if (hours > 0) {
+        "%d:%02d:%02d".format(hours, minutes, seconds)
+    } else {
+        "%02d:%02d".format(minutes, seconds)
+    }
+}

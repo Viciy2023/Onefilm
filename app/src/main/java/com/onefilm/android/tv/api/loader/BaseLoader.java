@@ -1,0 +1,137 @@
+package com.onefilm.android.tv.api.loader;
+
+import android.text.TextUtils;
+
+import com.onefilm.android.tv.api.config.LiveConfig;
+import com.onefilm.android.tv.api.config.VodConfig;
+import com.onefilm.android.tv.bean.Live;
+import com.onefilm.android.tv.bean.Site;
+import com.onefilm.android.tv.utils.Task;
+import com.github.catvod.crawler.Spider;
+import com.github.catvod.crawler.SpiderNull;
+import com.github.catvod.utils.Crypto;
+
+import org.json.JSONObject;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import dalvik.system.DexClassLoader;
+
+public class BaseLoader {
+
+    private final JarLoader jarLoader;
+    private final PyLoader pyLoader;
+    private final JsLoader jsLoader;
+
+    private BaseLoader() {
+        jarLoader = new JarLoader();
+        pyLoader = createPyLoader();
+        jsLoader = new JsLoader();
+    }
+
+    private static PyLoader createPyLoader() {
+        try {
+            return new PyLoader();
+        } catch (Throwable e) {
+            // x86 模拟器等缺少 Chaquopy 原生库的环境仍允许加载 JSON/JS 接口。
+            return null;
+        }
+    }
+
+    public static BaseLoader get() {
+        return Loader.INSTANCE;
+    }
+
+    private static boolean isJs(String api) {
+        return api.contains(".js");
+    }
+
+    private static boolean isPy(String api) {
+        return api.contains(".py");
+    }
+
+    private static boolean isCsp(String api) {
+        return api.startsWith("csp_");
+    }
+
+    public void clear() {
+        Task.execute(() -> {
+            jarLoader.clear();
+            if (pyLoader != null) pyLoader.clear();
+            jsLoader.clear();
+        });
+    }
+
+    /**
+     * 聚合搜索结束后回收闲置的 JS 引擎，只保留 keepKeys 中的站点（以及最近使用的站点）。
+     * 被回收的站点在下次使用时由 {@link JsLoader#getSpider} 按需重建。
+     */
+    public int retainJs(Collection<String> keepKeys) {
+        return jsLoader.retain(keepKeys);
+    }
+
+    /** 释放单个站点的 JS 引擎（搜索返回后调用），下次使用时自动重建。 */
+    public boolean releaseJs(String key) {
+        return jsLoader.release(key);
+    }
+
+    /** 强制释放（跳过保护窗口），用于超时站点的兜底回收。 */
+    public boolean forceReleaseJs(String key) {
+        return jsLoader.forceRelease(key);
+    }
+
+    public Spider getSpider(String key, String api, String ext, String jar) {
+        if (isPy(api)) return pyLoader == null ? new SpiderNull() : pyLoader.getSpider(key, api, ext);
+        else if (isJs(api)) return jsLoader.getSpider(key, api, ext, jar);
+        else if (isCsp(api)) return jarLoader.getSpider(key, api, ext, jar);
+        else return new SpiderNull();
+    }
+
+    public Spider getSpider(String key) {
+        Site site = VodConfig.get().getSite(key);
+        Live live = LiveConfig.get().getLive(key);
+        if (!site.isEmpty()) return site.spider();
+        if (!live.isEmpty()) return live.spider();
+        return new SpiderNull();
+    }
+
+    public void setRecent(String key, String api, String jar) {
+        if (isJs(api)) jsLoader.setRecent(key);
+        else if (isPy(api)) {
+            if (pyLoader != null) pyLoader.setRecent(key);
+        } else if (isCsp(api)) jarLoader.setRecent(Crypto.md5(jar));
+    }
+
+    public Object[] proxy(Map<String, String> params) throws Exception {
+        if (params.containsKey("siteKey")) return getSpider(params.get("siteKey")).proxy(params);
+        if ("js".equals(params.get("do"))) return jsLoader.proxy(params);
+        if ("py".equals(params.get("do"))) return pyLoader == null ? new Object[0] : pyLoader.proxy(params);
+        return jarLoader.proxy(params);
+    }
+
+    public void parseJar(String jar, boolean recent) {
+        if (TextUtils.isEmpty(jar)) return;
+        String key = Crypto.md5(jar);
+        jarLoader.parseJar(key, jar);
+        if (recent) jarLoader.setRecent(key);
+    }
+
+    public DexClassLoader dex(String jar) {
+        return jarLoader.dex(jar);
+    }
+
+    public JSONObject jsonExt(String key, LinkedHashMap<String, String> jxs, String url) throws Throwable {
+        return jarLoader.jsonExt(key, jxs, url);
+    }
+
+    public JSONObject jsonExtMix(String flag, String key, String name, LinkedHashMap<String, HashMap<String, String>> jxs, String url) throws Throwable {
+        return jarLoader.jsonExtMix(flag, key, name, jxs, url);
+    }
+
+    private static class Loader {
+        static volatile BaseLoader INSTANCE = new BaseLoader();
+    }
+}

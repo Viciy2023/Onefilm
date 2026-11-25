@@ -1,0 +1,537 @@
+package com.onefilm.android.tv.compose.navigation
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.LiveTv
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.onefilm.android.tv.compose.bridge.HomeCategory
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
+import com.onefilm.android.tv.compose.R
+
+object TvHeaderFocusState {
+    var homeCategoryFocused by mutableStateOf(false)
+    var navFocusedOnce by mutableStateOf(false)
+    var homeRoute by mutableStateOf(false)
+}
+
+object TvBrandState {
+    var notice by mutableStateOf("")
+    var siteName by mutableStateOf("")
+}
+
+object TvNavState {
+    var lastLabel by mutableStateOf("")
+}
+
+data class TvNavEntry(
+    val label: String,
+    val icon: ImageVector,
+    val route: String? = null,
+    val onClick: () -> Unit,
+)
+
+enum class TvHeaderVariant {
+    Full,
+    CategoryOnly,
+}
+
+@Composable
+fun TvHeader(
+    currentRoute: String?,
+    categories: List<HomeCategory>,
+    notice: String?,
+    siteName: String? = null,
+    variant: TvHeaderVariant = TvHeaderVariant.Full,
+    selectedCategoryKey: String? = null,
+    selectedCategoryId: String? = null,
+    onNavigate: (String) -> Unit,
+    onLive: () -> Unit,
+    onConfig: () -> Unit,
+    onLine: () -> Unit,
+    onNetwork: () -> Unit,
+    onCategory: (HomeCategory) -> Unit,
+    /** 该分类是否有筛选条件；分类页的分类标签会显示漏斗图标（不单独聚焦）。 */
+    hasCategoryFilters: (HomeCategory) -> Boolean = { false },
+) {
+    val centerText = notice?.takeIf { it.isNotBlank() }
+        ?: siteName?.takeIf { it.isNotBlank() }
+        ?: "ONEFILM"
+    val entries = listOf(
+        TvNavEntry(stringResource(R.string.nav_history), Icons.Outlined.History, route = Routes.HISTORY) { onNavigate(Routes.HISTORY) },
+        TvNavEntry(stringResource(R.string.nav_favorites), Icons.Outlined.Star, route = Routes.LIBRARY) { onNavigate(Routes.LIBRARY) },
+        TvNavEntry(stringResource(R.string.nav_search), Icons.Outlined.Search, route = Routes.SEARCH) { onNavigate(Routes.SEARCH) },
+        TvNavEntry(stringResource(R.string.nav_live), Icons.Outlined.LiveTv) { onLive() },
+        TvNavEntry(stringResource(R.string.nav_config), Icons.Outlined.Tune) { onConfig() },
+        TvNavEntry(stringResource(R.string.nav_lines), Icons.Outlined.SwapHoriz) { onLine() },
+        TvNavEntry(stringResource(R.string.nav_netdisk), Icons.Outlined.Cloud) { onNetwork() },
+        TvNavEntry(stringResource(R.string.nav_settings), Icons.Outlined.Settings, route = Routes.SETTINGS) { onNavigate(Routes.SETTINGS) },
+    )
+
+    BoxWithConstraints(
+        Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background.copy(alpha = 0.8f)),
+    ) {
+        // TV 与手机使用同一套 sp/dp 基准，不再按屏宽二次放大字体，避免 4K 电视溢出。
+        val scale = 1f
+        val focusManager = LocalFocusManager.current
+        val dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+        val navFocusRequesters = remember { mutableMapOf<String, androidx.compose.ui.focus.FocusRequester>() }
+        val initialCategoryFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+        val firstNavFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+        var navFocusEnabled by remember { mutableStateOf(variant != TvHeaderVariant.Full) }
+        var categoryFocusSeen by remember { mutableStateOf(false) }
+        var homeCategoryFocused by remember { mutableStateOf(false) }
+        DisposableEffect(Unit) {
+            onDispose { TvHeaderFocusState.homeCategoryFocused = false }
+        }
+        // 不能在 categories 刷新时重新抢焦点：首页数据晚到会把焦点从
+        // 导航“历史”拽回“主页”，表现为向下永远无法离开分类行。
+        LaunchedEffect(variant, currentRoute) {
+            if (variant == TvHeaderVariant.Full) {
+                navFocusEnabled = false
+                categoryFocusSeen = false
+            }
+            delay(100)
+            when (variant) {
+                TvHeaderVariant.Full -> {
+                    // Home navigation was removed: the API category "主页" is the
+                    // single home entry. Focus it directly on launch/back.
+                    runCatching { initialCategoryFocus.requestFocus() }
+                }
+                TvHeaderVariant.CategoryOnly -> Unit
+            }
+        }
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .onPreviewKeyEvent { event ->
+                    if (homeCategoryFocused &&
+                        event.type == KeyEventType.KeyDown &&
+                        event.key == Key.DirectionDown
+                    ) {
+                        // 在 Compose 自己的焦点树里移动，避免 Activity 提前消费按键后
+                        // FocusRequester 请求失败又把焦点留回“主页”。
+                        homeCategoryFocused = false
+                        navFocusEnabled = true
+                        TvHeaderFocusState.navFocusedOnce = true
+                        runCatching { focusManager.moveFocus(FocusDirection.Down) }
+                        true
+                    } else false
+                },
+        ) {
+        TvBrandRow(
+            centerText = centerText,
+        )
+
+        // 第二行：接口分类。"主页"是唯一主页入口。
+        val allCategories = listOf(HomeCategory("", "", "主页")) + categories
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(
+                    start = 48.dp,
+                    top = (2 * scale).dp,
+                    end = 48.dp,
+                    bottom = (2 * scale).dp,
+                ),
+            horizontalArrangement = Arrangement.spacedBy((6 * scale).dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            allCategories.forEachIndexed { index, category ->
+                val home = category.key.isBlank()
+                val current = if (home) {
+                    currentRoute == Routes.HOME
+                } else {
+                    category.key == selectedCategoryKey && category.id == selectedCategoryId
+                }
+                // 分类行交给 Compose 的默认焦点搜索 + horizontalScroll 自动滚动，
+                // 不再维护显式的左右邻居表；所有标签始终组合，焦点一定可达。
+                TvCategoryChip(
+                    category = category,
+                    // 只有当前所在的分类页标签才显示漏斗；其他标签不显示
+                    hasFilter = variant == TvHeaderVariant.CategoryOnly && !home && current && hasCategoryFilters(category),
+                    onClick = {
+                        if (home) onNavigate(Routes.HOME) else onCategory(category)
+                    },
+                    scale = scale,
+                    selected = home && currentRoute == Routes.HOME && !categoryFocusSeen,
+                    onFocused = {
+                        categoryFocusSeen = true
+                        // “主页”按钮的返回键只负责退出：只要焦点在主页上，
+                        // 不管当前是首页还是分类页，都交给 Activity 弹退出确认。
+                        homeCategoryFocused = home
+                        TvHeaderFocusState.homeCategoryFocused = home
+                        TvHeaderFocusState.navFocusedOnce = false
+                        if (home) navFocusEnabled = true
+                    },
+                    downFocus = null,
+                    leftEdge = index == 0,
+                    rightEdge = index == allCategories.lastIndex,
+                    onFocusTrigger = {
+                        when {
+                            home && currentRoute != Routes.HOME -> onNavigate(Routes.HOME)
+                            !home && !current -> onCategory(category)
+                        }
+                    },
+                    focusRequester = if (index == 0) initialCategoryFocus else null,
+                )
+            }
+        }
+        AnimatedVisibility(
+            visible = variant == TvHeaderVariant.Full,
+            enter = fadeIn(tween(200)) + expandVertically(tween(200)),
+            exit = fadeOut(tween(200)) + shrinkVertically(tween(200)),
+        ) {
+        // 第三行：功能导航。九项等权铺满，图标 + 文字。
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .drawBehind {
+                    val stroke = 1.dp.toPx()
+                    val y = stroke / 2f
+                    drawLine(
+                        color = dividerColor,
+                        start = Offset(0f, y),
+                        end = Offset(size.width, y),
+                        strokeWidth = stroke,
+                    )
+                }
+                .padding(horizontal = 48.dp, vertical = (4 * scale).dp),
+            horizontalArrangement = Arrangement.spacedBy((12 * scale).dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            entries.forEach { entry ->
+                val focusRequester = if (entry.route == Routes.HISTORY) firstNavFocus else navFocusRequesters.getOrPut(entry.label) {
+                    androidx.compose.ui.focus.FocusRequester()
+                }
+                TvNavTab(
+                    entry = entry,
+                    modifier = Modifier.weight(1f),
+                    uiScale = scale,
+                    selected = false,
+                    focusEnabled = navFocusEnabled,
+                    onFocused = { TvHeaderFocusState.navFocusedOnce = true },
+                    focusRequester = focusRequester,
+                )
+            }
+        }
+        }
+
+        // 第二行：分类标签。从左往右自然排列，超出屏宽后横向滑动。
+        Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)))
+        }
+    }
+}
+
+@Composable
+fun TvBrandRow(
+    centerText: String = "",
+    modifier: Modifier = Modifier,
+    horizontalPadding: androidx.compose.ui.unit.Dp = 48.dp,
+) {
+    val resolvedCenter = centerText.takeIf { it.isNotBlank() }
+        ?: TvBrandState.notice.takeIf { it.isNotBlank() }
+        ?: TvBrandState.siteName.takeIf { it.isNotBlank() }
+        ?: "ONEFILM"
+    var now by remember { mutableStateOf(LocalDateTime.now()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = LocalDateTime.now()
+            delay(1_000)
+        }
+    }
+    val date = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+    val time = now.format(DateTimeFormatter.ofPattern("HH:mm"))
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val scale = (maxWidth.value / 1000f).coerceIn(1f, 2.4f)
+        Row(
+            Modifier.fillMaxWidth().padding(
+                horizontal = horizontalPadding,
+                vertical = (6 * scale).dp,
+            ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                Text(
+                    text = "ONEFILM",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = (14 * scale).sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp,
+                )
+            }
+            Box(Modifier.weight(1.4f), contentAlignment = Alignment.Center) {
+                Text(
+                    text = resolvedCenter,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = (14 * scale).sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                Text(
+                    text = "$date   $time",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = (14 * scale).sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TvNavTab(
+    entry: TvNavEntry,
+    modifier: Modifier = Modifier,
+    uiScale: Float = 1f,
+    selected: Boolean = false,
+    focusEnabled: Boolean = true,
+    onFocused: () -> Unit = {},
+    focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val localFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+    val targetFocus = focusRequester ?: localFocus
+    val shape = RoundedCornerShape(10.dp)
+    val highlighted = selected || focused
+    val contentColor = if (highlighted) {
+        MaterialTheme.colorScheme.background
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    Box(
+        modifier.height((34 * uiScale).dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            Modifier
+                .fillMaxSize()
+                .focusRequester(targetFocus)
+                .onFocusChanged { if (it.isFocused) onFocused() }
+                .clip(shape)
+                .background(
+                    if (highlighted) {
+                        Brush.horizontalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.onSurface,
+                                MaterialTheme.colorScheme.onSurface,
+                            ),
+                        )
+                    } else {
+                        Brush.horizontalGradient(
+                            listOf(
+                                MaterialTheme.colorScheme.surface,
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                            ),
+                        )
+                    },
+                )
+                .border(
+                    if (focused) 2.dp else 1.dp,
+                    if (focused) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                    shape,
+                )
+                .clickable(interactionSource = interaction, indication = null) {
+                    TvNavState.lastLabel = entry.label
+                    targetFocus.requestFocus()
+                    entry.onClick()
+                }
+                .padding(horizontal = (8 * uiScale).dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = entry.icon,
+                contentDescription = entry.label,
+                tint = contentColor,
+                modifier = Modifier.size((16 * uiScale).dp),
+            )
+            Spacer(Modifier.width((5 * uiScale).dp))
+            Text(
+                text = entry.label,
+                color = contentColor,
+                fontSize = (14 * uiScale).sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TvCategoryChip(
+    category: HomeCategory,
+    hasFilter: Boolean = false,
+    onClick: () -> Unit,
+    scale: Float = 1f,
+    selected: Boolean = false,
+    onFocused: () -> Unit = {},
+    onFocusTrigger: () -> Unit = {},
+    downFocus: androidx.compose.ui.focus.FocusRequester? = null,
+    /** 只锁住行首/行尾，防止快速连按在尽头把焦点甩到下方导航。 */
+    leftEdge: Boolean = false,
+    rightEdge: Boolean = false,
+    focusRequester: androidx.compose.ui.focus.FocusRequester? = null,
+    modifier: Modifier = Modifier,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    val localFocus = remember { androidx.compose.ui.focus.FocusRequester() }
+    val targetFocus = focusRequester ?: localFocus
+    LaunchedEffect(focused) {
+        if (focused) {
+            onFocused()
+        }
+    }
+    LaunchedEffect(focused) {
+        if (focused) {
+            // Category pages load on focus; a short debounce avoids firing
+            // while the remote is passing through items.
+            delay(100)
+            if (focused) onFocusTrigger()
+        }
+    }
+    val shape = RoundedCornerShape(8.dp)
+    val highlighted = selected || focused
+    val foreground =
+        if (highlighted) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.onSurface
+    Row(
+        modifier = modifier
+            .focusRequester(targetFocus)
+            .onFocusChanged { if (it.isFocused) onFocused() }
+            .focusProperties {
+                if (downFocus != null) down = downFocus
+                // 行首/行尾自锁，避免默认几何搜索在尽头甩到下方导航。
+                if (leftEdge) left = targetFocus
+                if (rightEdge) right = targetFocus
+            }
+            .clip(shape)
+            .background(
+                if (highlighted) {
+                    Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.onSurface,
+                            MaterialTheme.colorScheme.onSurface,
+                        ),
+                    )
+                } else {
+                    Brush.horizontalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                        ),
+                    )
+                },
+            )
+            .border(
+                if (focused) 2.dp else 1.dp,
+                if (focused) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f),
+                shape,
+            )
+            .clickable(interactionSource = interaction, indication = null) {
+                targetFocus.requestFocus()
+                onClick()
+            }
+            .padding(horizontal = (14 * scale).dp, vertical = (6 * scale).dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = category.name.ifBlank { stringResource(R.string.detail_unnamed) },
+            color = foreground,
+            fontSize = (14 * scale).sp,
+            fontWeight = if (highlighted) FontWeight.SemiBold else FontWeight.Normal,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+        )
+        // 筛选图标放在标签内部，只作提示，不单独聚焦/点击
+        if (hasFilter) {
+            Spacer(Modifier.width((4 * scale).dp))
+            Icon(
+                imageVector = Icons.Filled.FilterList,
+                contentDescription = stringResource(R.string.common_filterable),
+                tint = foreground.copy(alpha = if (highlighted) 0.85f else 0.65f),
+                modifier = Modifier.size((13 * scale).dp),
+            )
+        }
+    }
+}

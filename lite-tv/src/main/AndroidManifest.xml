@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- minSdk 21，而部分依赖声明 23/24；只在这一个模块放行 -->
+    <uses-sdk tools:overrideLibrary="com.fongmi.hook,com.fongmi.android.tv.quickjs,com.onefilm.android.tv.core,com.onefilm.android.tv.adblock,com.github.catvod.crawler,com.onefilm.media3compat,com.onefilm.android.tv.mpv.api,com.onefilm.android.tv.runtime.mpv" />
+
+    <application
+        android:name="com.onefilm.android.tv.lite.LiteApp"
+        android:label="壹家影院 LITE"
+        tools:replace="android:label,android:name">
+
+        <!--
+          ComposeMainActivity 由 `:compose` 模块的 manifest 声明；
+          LITE 通过 compose-lite 复用源码，但清单不会跟着走，必须在宿主里显式声明。
+          属性与 compose/src/main/AndroidManifest.xml 保持一致。
+        -->
+        <activity
+            android:name="com.onefilm.android.tv.compose.host.ComposeMainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:supportsPictureInPicture="true"
+            android:screenOrientation="sensorLandscape"
+            android:windowSoftInputMode="adjustResize">
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="video/*" />
+                <data android:mimeType="audio/*" />
+                <data android:mimeType="text/plain" />
+                <data android:mimeType="application/x-bittorrent" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="smb" />
+                <data android:scheme="rtmp" />
+                <data android:scheme="rtsp" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:mimeType="video/*" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="ed2k" />
+                <data android:scheme="magnet" />
+                <data android:scheme="thunder" />
+                <data android:scheme="jianpian" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>

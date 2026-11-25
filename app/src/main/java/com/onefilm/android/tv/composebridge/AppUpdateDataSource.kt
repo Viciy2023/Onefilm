@@ -1,0 +1,81 @@
+package com.onefilm.android.tv.composebridge
+
+import com.onefilm.android.tv.App
+import com.onefilm.android.tv.compose.bridge.UpdateDataSource
+import com.onefilm.android.tv.compose.bridge.UpdateInfo
+import com.onefilm.android.tv.setting.Setting
+import com.onefilm.android.tv.utils.Download
+import com.onefilm.android.tv.utils.FileUtil
+import com.onefilm.android.tv.utils.Task
+import com.onefilm.android.tv.utils.UpdateManifest
+import com.github.catvod.utils.Path
+import java.io.File
+
+class AppUpdateDataSource : UpdateDataSource {
+
+    private var download: Download? = null
+    /** 最近一次提示的版本号，供 ignore() 精确跳过这一个版本。 */
+    private var lastPromptCode: Int = 0
+
+    override fun check(onResult: (UpdateInfo?) -> Unit) {
+        if (!Setting.getUpdate()) {
+            onResult(null)
+            return
+        }
+        Task.execute {
+            val info = runCatching { UpdateManifest.fetch() }.getOrNull()
+            val result = if (info != null && UpdateManifest.isNewer(info)) {
+                // 用户点过「以后再说」的版本不再追问；换新版本仍然提示。
+                if (info.code > 0 && info.code <= Setting.getIgnoredVersion()) {
+                    null
+                } else {
+                    lastPromptCode = info.code
+                    UpdateInfo(
+                        version = info.version,
+                        notes = info.notes.orEmpty(),
+                        url = info.url,
+                        force = Setting.getForceUpdate(),
+                    )
+                }
+            } else {
+                null
+            }
+            App.post { onResult(result) }
+        }
+    }
+
+    override fun download(
+        url: String,
+        onProgress: (Int) -> Unit,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit,
+    ) {
+        download?.cancel()
+        val task = Download.create(url, Path.cache("update.apk"))
+        download = task
+        task.start(object : Download.Callback {
+            override fun progress(progress: Int) {
+                onProgress(progress)
+            }
+
+            override fun error(msg: String) {
+                onError(msg)
+            }
+
+            override fun success(file: File) {
+                FileUtil.openFile(file)
+                onSuccess()
+            }
+        })
+    }
+
+    override fun cancelDownload() {
+        download?.cancel()
+        download = null
+    }
+
+    override fun ignore() {
+        // 只忽略刚才提示的那个版本，绝不再关掉「检查更新」总开关。
+        if (lastPromptCode > 0) Setting.putIgnoredVersion(lastPromptCode)
+    }
+}

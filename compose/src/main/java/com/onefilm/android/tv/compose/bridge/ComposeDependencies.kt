@@ -1,0 +1,33 @@
+package com.onefilm.android.tv.compose.bridge
+
+object ComposeDependencies {
+    lateinit var homeDataSource: HomeDataSource
+    lateinit var detailDataSource: DetailDataSource
+    lateinit var categoryDataSource: CategoryDataSource
+    lateinit var searchDataSource: SearchDataSource
+    lateinit var searchMetaDataSource: SearchMetaDataSource
+    lateinit var libraryDataSource: LibraryDataSource
+    lateinit var favoriteStore: FavoriteStore
+    lateinit var sourceDataSource: SourceDataSource
+    lateinit var playbackResolver: PlaybackResolver
+    lateinit var parseEngine: ParseEngine
+    lateinit var subtitleRepository: SubtitleRepository
+    lateinit var playbackHistoryStore: PlaybackHistoryStore
+    lateinit var danmakuDataSource: DanmakuDataSource
+    lateinit var legacyPlayerFactory: LegacyPlayerFactory
+    lateinit var settingsDataSource: SettingsDataSource
+    lateinit var liveLauncher: LiveLauncher
+    lateinit var externalIntentHandler: ExternalIntentHandler
+    lateinit var netdiskDataSource: NetdiskDataSource
+    lateinit var updateDataSource: UpdateDataSource
+    var dlnaDataSource: DlnaDataSource? = null
+    var fileLauncher: FileLauncher? = null
+    /** 打开接口下发的网页（配置中心这类站点的动作项）。 */
+    var webPageLauncher: WebPageLauncher? = null
+    /** 配置中心网盘面板的动作接口（扫码登录 / 清除 Cookie）。 */
+    var panConfigActions: PanConfigActions? = null
+    /** AI 字幕（实时语音识别 + 翻译）；LITE 不注入，保持 null。 */
+    var aiSubtitle: AiSubtitleBridge? = null
+    /** AI 字幕模型下载；LITE 不注入，保持 null。 */
+    var aiModel: AiModelBridge? = null
+}

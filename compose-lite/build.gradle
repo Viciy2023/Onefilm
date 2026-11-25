@@ -1,0 +1,99 @@
+plugins {
+    alias libs.plugins.android.library
+    alias libs.plugins.kotlin.compose
+}
+
+/**
+ * LITE 专用 UI 模块：直接复用 `:compose` 的源码（不复制文件），
+ * 但依赖独立固定为「支持 API 21」的一套：
+ *  - Compose BOM 2024.06.00（ui 1.6.8 / foundation 1.6.8，minSdk 21）
+ *  - 不引入 androidx.tv（要求 minSdk 23，且项目代码未使用）
+ *
+ * TV 端继续用 Compose 1.12，LITE 端用 1.6.8，互不影响。
+ */
+android {
+    namespace = 'com.onefilm.android.tv.compose'
+    compileSdk libs.versions.compileSdk.get().toInteger()
+
+    defaultConfig {
+        minSdk 21
+    }
+
+    sourceSets {
+        main {
+            java.srcDirs = ['src/main/java', 'src/shim/com', '../compose/src/main/java']
+            kotlin.srcDirs = ['src/main/java', 'src/shim/com', '../compose/src/main/java']
+            res.srcDirs = ['../compose/src/main/res']
+            // LocalBringIntoViewSpec 是 foundation 1.10+ 的 API，1.6.8 没有；
+            // 这一份在 LITE 侧用等价降级实现替代（见 src/main/java/.../TvFocusScrolling.kt）
+            java.exclude 'com/onefilm/android/tv/compose/design/component/TvFocusScrolling.kt'
+            kotlin.exclude 'com/onefilm/android/tv/compose/design/component/TvFocusScrolling.kt'
+            // Compose 1.6.8 下输入框会吞掉 DPAD，LITE 用带「焦点逃逸」的副本替代
+            java.exclude 'com/onefilm/android/tv/compose/feature/config/ConfigScreen.kt'
+            kotlin.exclude 'com/onefilm/android/tv/compose/feature/config/ConfigScreen.kt'
+            // LITE 去掉设置面板的 45% 黑遮罩（小屏上显示成半屏灰块），用去遮罩版宿主
+            java.exclude 'com/onefilm/android/tv/compose/host/ComposeMainActivity.kt'
+            kotlin.exclude 'com/onefilm/android/tv/compose/host/ComposeMainActivity.kt'
+            // 品牌行加版本后缀：ONEFILM -> ONEFILM_lite
+            java.exclude 'com/onefilm/android/tv/compose/navigation/TvHeader.kt'
+            kotlin.exclude 'com/onefilm/android/tv/compose/navigation/TvHeader.kt'
+        }
+    }
+
+    buildFeatures {
+        compose = true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+        coreLibraryDesugaringEnabled = true
+    }
+
+    lint {
+        disable 'ExpiredTargetSdkVersion'
+        // 共享源码在「库模块」下会出现的非 API 类误报
+        disable 'UnsafeOptInUsageError'
+        disable 'RestrictedApi'
+        disable 'MissingTranslation'
+    }
+}
+
+kotlin {
+    compilerOptions {
+        // Compose 1.6.8 里这些 API 仍是 Experimental（1.12 已稳定），
+        // 统一在此 opt-in，避免改动共享源码。
+        optIn.add("androidx.compose.foundation.ExperimentalFoundationApi")
+        optIn.add("androidx.compose.foundation.layout.ExperimentalLayoutApi")
+        optIn.add("androidx.compose.material3.ExperimentalMaterial3Api")
+        optIn.add("androidx.compose.animation.ExperimentalAnimationApi")
+        optIn.add("androidx.compose.ui.ExperimentalComposeUiApi")
+    }
+}
+
+dependencies {
+    implementation project(':media3compat')
+    implementation project(':core')
+    implementation project(':adblock')
+    implementation project(':catvod')
+    // 用 flatDir 仓库坐标（settings.gradle 已把 app/libs 配进去）。
+    // 不能用 files(...)：appcore-lite 也依赖同一批 AAR，本地文件与仓库坐标会重复打包。
+    implementation(name: 'lib-exoplayer-release', ext: 'aar')
+    implementation(name: 'lib-ui-release', ext: 'aar')
+    implementation(name: 'lib-common-release', ext: 'aar')
+    implementation(name: 'lib-datasource-release', ext: 'aar')
+    implementation platform('androidx.compose:compose-bom:2024.06.00')
+    implementation libs.compose.ui
+    implementation libs.compose.material3
+    implementation 'androidx.compose.material:material-icons-extended'
+    implementation libs.compose.ui.tooling.preview
+    implementation libs.activity.compose
+    implementation libs.navigation.compose
+    implementation libs.lifecycle.viewmodel.compose
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7'
+    implementation 'io.coil-kt:coil-compose:2.7.0'
+    implementation 'com.google.guava:guava:33.3.1-android'
+    implementation libs.zxing.core
+
+    coreLibraryDesugaring libs.desugar
+}

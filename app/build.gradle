@@ -1,0 +1,256 @@
+import com.android.build.api.artifact.SingleArtifact
+import com.fongmi.gradle.AbiApkPackaging
+
+plugins {
+    alias libs.plugins.android.application
+    alias libs.plugins.kotlin.compose
+}
+
+def localProps = new Properties()
+def localPropsFile = rootProject.file('local.properties')
+if (localPropsFile.exists()) {
+    localPropsFile.withInputStream {
+        localProps.load(it)
+    }
+}
+
+// Release signing can be supplied by an ignored key.properties file at repo
+// root (preferred) or by local.properties. Secrets must never be committed.
+def keyProps = new Properties()
+def keyPropsFile = rootProject.file('key.properties')
+if (keyPropsFile.exists()) {
+    keyPropsFile.withInputStream {
+        keyProps.load(it)
+    }
+}
+
+def signingStoreFile = keyProps['storeFile'] ?: localProps['storeFile']
+def signingKeyAlias = keyProps['keyAlias'] ?: localProps['keyAlias']
+def signingStorePassword = keyProps['storePassword'] ?: localProps['storePassword']
+def signingKeyPassword = keyProps['keyPassword'] ?: localProps['keyPassword'] ?: signingStorePassword
+
+def hasReleaseSigning =
+    signingStoreFile &&
+    signingKeyAlias &&
+    signingStorePassword &&
+    signingKeyPassword
+
+// 更新清单放在 R2；APK 本身由 GitHub Releases 分发。
+// 可在 local.properties 中覆盖：
+//   onefilm.updateStableUrl=https://apk.example.com/onefilm-stable.json
+//   onefilm.updateBetaUrl=https://apk.example.com/onefilm-beta.json
+def updateStableUrl = localProps['onefilm.updateStableUrl'] ?: 'https://onefilmapk.alibabagroup.de5.net/onefilm-stable.json'
+def updateBetaUrl = localProps['onefilm.updateBetaUrl'] ?: 'https://onefilmapk.alibabagroup.de5.net/onefilm-beta.json'
+// 版本号唯一来源：gradle.properties 的 onefilm.versionName / onefilm.versionCode。
+// 命令行可用 -Ponefilm.versionName=... 覆盖（CI 用），不要在脚本里再写死版本。
+def appVersionName = project.findProperty('onefilm.versionName') ?: '0.1.7'
+def appVersionCode = (project.findProperty('onefilm.versionCode') ?: '8').toString().toInteger()
+// Bugly appId/appKey 会在 APK 内可被提取，但仍不作为源码公开配置：
+// 统一放在 git-ignored 的 local.properties（bugly.appId.tv / bugly.appKey.tv / ...），
+// 缺失时为空字符串，App 侧检测到空值会直接关闭崩溃上报。
+def buglyAppIdTv = localProps['bugly.appId.tv'] ?: ''
+def buglyAppKeyTv = localProps['bugly.appKey.tv'] ?: ''
+def buglyAppIdMobile = localProps['bugly.appId.mobile'] ?: ''
+def buglyAppKeyMobile = localProps['bugly.appKey.mobile'] ?: ''
+
+android {
+    namespace = 'com.onefilm.android.tv'
+
+    compileSdk libs.versions.compileSdk.get().toInteger()
+
+    defaultConfig {
+        applicationId "com.onefilm.android.tv"
+        minSdk libs.versions.minSdk.get().toInteger()
+        targetSdk libs.versions.targetSdk.get().toInteger()
+        versionCode appVersionCode
+        versionName appVersionName
+        buildConfigField "String", "UPDATE_STABLE_URL", "\"${updateStableUrl}\""
+        buildConfigField "String", "UPDATE_BETA_URL", "\"${updateBetaUrl}\""
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = ["room.schemaLocation": "$projectDir/schemas".toString(), "eventBusIndex": "com.onefilm.android.tv.event.EventIndex"]
+            }
+        }
+    }
+
+    flavorDimensions = ["device"]
+
+    productFlavors {
+        leanback {
+            dimension "device"
+            // TV 端保持 targetSdk < 29：爬虫 jar 里的 guard 在 targetSdk>=29 时会在进程内
+            // System.load soproxy-android-arm.so（2GB 盒子必崩），targetSdk=28 时保持同样的进程外启动行为，
+            // 改为 nohup 启动 goproxy-android-arm 独立进程。
+            targetSdk 28
+            manifestPlaceholders = [BUGLY_APPID: buglyAppIdTv, BUGLY_APPKEY: buglyAppKeyTv]
+            buildConfigField "String", "BUGLY_APP_ID", "\"${buglyAppIdTv}\""
+        }
+        mobile {
+            dimension "device"
+            applicationIdSuffix ".mobile"
+            manifestPlaceholders = [BUGLY_APPID: buglyAppIdMobile, BUGLY_APPKEY: buglyAppKeyMobile]
+            buildConfigField "String", "BUGLY_APP_ID", "\"${buglyAppIdMobile}\""
+        }
+    }
+
+    buildFeatures {
+        buildConfig = true
+        viewBinding = true
+        compose = true
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile rootProject.file(signingStoreFile)
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPassword
+                storePassword signingStorePassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = true
+            shrinkResources = true
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.release
+            }
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro', 'proguard-rules-media.pro'
+        }
+    }
+
+    configurations.configureEach {
+        exclude group: 'stax', module: 'stax-api'
+        exclude group: 'xpp3', module: 'xpp3'
+        exclude group: 'com.android.support'
+        resolutionStrategy {
+            force libs.okhttp
+        }
+    }
+
+    lint {
+        disable 'UnsafeOptInUsageError'
+        disable 'ExpiredTargetSdkVersion'
+    }
+
+    compileOptions {
+        coreLibraryDesugaringEnabled = true
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+AbiApkPackaging.configure(project, SingleArtifact.APK.INSTANCE)
+
+tasks.withType(JavaCompile).configureEach {
+    // SPIKE: collect the full missing-API list instead of javac's 100-error cap
+    options.compilerArgs += ["-Xmaxerrs", "3000"]
+}
+
+dependencies {
+    implementation platform(libs.compose.bom)
+    implementation libs.activity.compose
+    implementation libs.lifecycle.viewmodel.compose
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7'
+    implementation libs.compose.ui
+    implementation libs.compose.ui.tooling.preview
+    implementation libs.compose.material3
+    implementation 'androidx.compose.material:material-icons-extended'
+    implementation libs.tv.material
+    implementation libs.tv.foundation
+    debugImplementation libs.compose.ui.tooling
+
+    // Local media3 fork AARs (17 modules) replace the missing upstream artifacts
+    implementation("androidx.media3:media3-session:1.8.0") { exclude group: "androidx.media3" }
+    implementation("androidx.media3:media3-effect:1.8.0") { exclude group: "androidx.media3" }
+    implementation libs.guava
+    implementation "com.github.LumeraD3v:assrender:1.0.2"
+    implementation libs.annotation
+    testImplementation 'junit:junit:4.13.2'
+    implementation project(':core')
+    implementation project(':adblock')
+    implementation libs.zxing.core
+    // Bugly: crashreport 4.x 已把 jar 和 so 合并发布，不要再加 nativecrashreport。
+    implementation 'com.tencent.bugly:crashreport:4.1.9.7'
+    implementation libs.gson
+    implementation libs.okhttp
+    implementation "androidx.documentfile:documentfile:1.0.1"
+    implementation project(':compose')
+    // AI 字幕引擎（TV/手机使用；LITE 不依赖）
+    implementation project(':aisubtitle')
+    implementation project(':media3compat')
+    implementation project(':mpvapi')
+    implementation fileTree(dir: "libs", include: ["*.aar"])
+    implementation project(':catvod')
+    implementation project(':chaquo')
+    implementation project(':quickjs')
+    implementation libs.appcompat
+    implementation libs.lifecycle.service
+    implementation libs.media
+    implementation libs.palette
+    implementation libs.recyclerview
+    implementation libs.room.runtime
+    implementation libs.splashscreen
+    implementation libs.swiperefreshlayout
+    implementation libs.viewpager2
+    implementation libs.android.gif.drawable
+    implementation libs.bundles.glide
+    implementation libs.bundles.jupnp
+    implementation libs.customactivityoncrash
+    implementation libs.eventbus
+    implementation libs.flexbox
+    implementation libs.rtmp.client
+    implementation libs.lottie
+    implementation libs.material
+    implementation libs.materialdesigncolors
+    implementation libs.nanohttpd
+    implementation libs.newpipeextractor
+    implementation libs.permissionx
+    implementation libs.simple.xml
+    implementation libs.textdrawable
+    leanbackImplementation libs.leanback
+    leanbackImplementation libs.androidautosize
+    mobileImplementation libs.biometric
+    mobileImplementation libs.zxing.android.embedded
+    mobileImplementation 'io.coil-kt:coil-compose:2.7.0'
+    annotationProcessor libs.room.compiler
+    annotationProcessor libs.eventbus.annotation.processor
+    annotationProcessor libs.glide.compiler
+    coreLibraryDesugaring libs.desugar
+}
+
+
+
+// AGP 9.3 may request compose-group-mapping:2.2.10 which is not published.
+// Release verification builds can skip that auxiliary mapping task.
+if (project.hasProperty("skipComposeMapping")) {
+    tasks.configureEach {
+        if (name.contains("ReleaseComposeMapping")) enabled = false
+    }
+    // L8 still consumes the Compose mapping file as an input. When its producer
+    // is disabled that input is missing and the build fails, so generate empty
+    // placeholders before every L8 task runs. Registering the generator outside
+    // configureEach avoids creating tasks while another task is being configured.
+    tasks.register("generateEmptyComposeMapping") {
+        outputs.upToDateWhen { false }
+        doLast {
+            ["leanbackRelease", "mobileRelease"].each { variantDir ->
+                def variant = variantDir.substring(0, 1).toUpperCase() + variantDir.substring(1)
+                def file = file("${buildDir}/intermediates/mapping/${variantDir}/merge${variant}ComposeMapping/mapping.txt")
+                file.parentFile.mkdirs()
+                file.text = ""
+            }
+        }
+    }
+    tasks.configureEach { task ->
+        if (task.name.startsWith("l8DexDesugarLib")) {
+            task.dependsOn("generateEmptyComposeMapping")
+        }
+    }
+}

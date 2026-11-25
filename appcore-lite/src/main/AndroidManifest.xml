@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="ScopedStorage">
+
+    <!--
+      LITE 的 minSdk 是 21，但这些依赖库的清单里写的是 23/24。
+      它们只在「对应功能真正被调用」时才会碰到新 API，所以用 overrideLibrary
+      放行清单检查；`:app` 的构建配置保持不变。
+    -->
+    <uses-sdk tools:overrideLibrary="com.fongmi.hook,com.fongmi.android.tv.quickjs,com.onefilm.android.tv.core,com.onefilm.android.tv.adblock,com.github.catvod.crawler,com.onefilm.media3compat,com.onefilm.android.tv.mpv.api,com.onefilm.android.tv.runtime.mpv" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+
+    <queries>
+        <intent>
+            <action android:name="android.settings.MANAGE_APP_ALL_FILES_ACCESS_PERMISSION" />
+            <data android:scheme="package" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.MANAGE_ALL_FILES_ACCESS_PERMISSION" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.OPEN_DOCUMENT" />
+            <data android:mimeType="*/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:mimeType="video/*" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="text/plain" />
+        </intent>
+    </queries>
+
+    <application
+        android:name="com.onefilm.android.tv.App"
+        android:allowBackup="false"
+        android:appCategory="video"
+        android:banner="@mipmap/ic_banner"
+        android:enableOnBackInvokedCallback="true"
+        android:hardwareAccelerated="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:pageSizeCompat="enabled"
+        android:requestLegacyExternalStorage="true"
+        android:resizeableActivity="true"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.App"
+        android:usesCleartextTraffic="true"
+        tools:replace="android:allowBackup,android:label">
+
+        <!-- 崩溃上报：LITE 先留空，由 gradle.properties / manifestPlaceholders 决定 -->
+        <meta-data
+            android:name="BUGLY_APPID"
+            android:value="${BUGLY_APPID}" />
+        <meta-data
+            android:name="BUGLY_APP_CHANNEL"
+            android:value="onefilm-lite" />
+        <meta-data
+            android:name="BUGLY_ENABLE_DEBUG"
+            android:value="false" />
+
+        <!-- TV 横屏按 1920x1080 设计（AutoSize） -->
+        <meta-data
+            android:name="design_width_in_dp"
+            android:value="960" />
+        <meta-data
+            android:name="design_height_in_dp"
+            android:value="540" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="com.onefilm.android.tv.Startup"
+                android:value="androidx.startup" />
+        </provider>
+
+        <activity
+            android:name="com.onefilm.android.tv.ui.activity.EntryActivity"
+            android:exported="true"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@style/Theme.Splash">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.onefilm.android.tv.ui.activity.CrashActivity"
+            android:process=":error_activity"
+            android:theme="@style/Theme.Crash" />
+
+        <activity
+            android:name="com.onefilm.android.tv.ui.activity.CastActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:screenOrientation="sensorLandscape">
+            <intent-filter>
+                <action android:name="${applicationId}.cast" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="com.onefilm.android.tv.ui.activity.VodActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name="com.onefilm.android.tv.ui.activity.LiveActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:parentActivityName="com.onefilm.android.tv.compose.host.ComposeMainActivity"
+            android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name="com.onefilm.android.tv.ui.activity.VideoActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation|keyboard|keyboardHidden|navigation"
+            android:launchMode="singleTop"
+            android:parentActivityName="com.onefilm.android.tv.compose.host.ComposeMainActivity"
+            android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name="com.onefilm.android.tv.ui.activity.PushActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name="com.onefilm.android.tv.ui.activity.FileActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
+            android:screenOrientation="sensorLandscape" />
+
+        <activity
+            android:name="com.onefilm.android.tv.ui.activity.TvWebLoginActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|uiMode|orientation|keyboard|keyboardHidden|navigation"
+            android:screenOrientation="sensorLandscape" />
+
+        <service
+            android:name="com.onefilm.android.tv.service.PlaybackService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaLibraryService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name="com.onefilm.android.tv.service.DLNARendererService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <receiver
+            android:name="com.onefilm.android.tv.receiver.ActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="${applicationId}.stop" />
+                <action android:name="${applicationId}.prev" />
+                <action android:name="${applicationId}.next" />
+                <action android:name="${applicationId}.play" />
+                <action android:name="${applicationId}.pause" />
+                <action android:name="${applicationId}.audio" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="com.onefilm.android.tv.receiver.BootReceiver"
+            android:exported="true"
+            android:priority="999">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+
+    </application>
+
+</manifest>
